@@ -12,9 +12,9 @@ const rl = readline.createInterface({
 
 var stateStoreFile = './state.json';  // You can replace this with the location you want to store the file in, I think this will work best for heroku and for testing.
 
-var resteemAccount = ENV.RESTEEM_ACCOUNT || 'dlux-io';
-var resteemReward = ENV.RESTEEM_REWARD || 10000;
-var startingBlock = ENV.STARTINGBLOCK || 28503701;     // PUT A RECENT BLOCK HERE -- GENESIS BLOCK
+const resteemAccount = ENV.RESTEEM_ACCOUNT || 'dlux-io';
+const resteemReward = ENV.RESTEEM_REWARD || 10000;
+const startingBlock = ENV.STARTINGBLOCK || 28507900;     // PUT A RECENT BLOCK HERE -- GENESIS BLOCK
 // /\ and \/ are placeholders. They will act as the genesis state if no file is found.
 
 const username = ENV.ACCOUNT || 'dlux-io';
@@ -27,6 +27,7 @@ var processor;
 
 var state = {
   balances: {
+    'dlux-io': 1000000000,
     shredz7: 100000000,
     disregardfiat: 1290171349,
     eastmael: 2642016222,
@@ -84,6 +85,7 @@ if(fs.existsSync(stateStoreFile)) {
   startApp();
 } else {
   console.log('No state store file found. Starting from the genesis block+state');
+  startApp();
 }
 
 
@@ -110,8 +112,9 @@ function startApp() {
 
   processor.onNoPrefix('follow', function(json, from) {  // Follow id includes both follow and resteem.
     if(json[0] === 'reblog') {
-      if(json.author === 'dlux' && state.balances[from] !== undefined && state.balances[from] > 0) {
+      if(json.author === resteemAccount && state.balances[from] !== undefined && state.balances[from] > 0) {
         state.balances[from] += resteemReward;
+        state.balances[resteemAccount] -= resteemReward;
         console.log('Resteem reward of', resteemReward,'given to', from);
       }
     }
