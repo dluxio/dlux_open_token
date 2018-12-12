@@ -14,7 +14,7 @@ var stateStoreFile = './state.json';  // You can replace this with the location 
 
 const resteemAccount = ENV.RESTEEM_ACCOUNT || 'dlux-io';
 const resteemReward = ENV.RESTEEM_REWARD || 10000;
-const startingBlock = ENV.STARTINGBLOCK || 28507900;     // PUT A RECENT BLOCK HERE -- GENESIS BLOCK
+var startingBlock = ENV.STARTINGBLOCK || 28507900;     // PUT A RECENT BLOCK HERE -- GENESIS BLOCK
 // /\ and \/ are placeholders. They will act as the genesis state if no file is found.
 
 const username = ENV.ACCOUNT || 'dlux-io';
