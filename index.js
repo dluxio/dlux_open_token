@@ -92,7 +92,7 @@ if(fs.existsSync(stateStoreFile)) {
 
 
 function startApp() {
-  processor = steemState(client, steem, startingBlock, 10, prefix);
+  processor = steemState(client, steem, startingBlock, 10, prefix, 'irreversible');
 
 
   processor.on('send', function(json, from) {
