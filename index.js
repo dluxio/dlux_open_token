@@ -112,7 +112,7 @@ function startApp() {
 
   processor.onNoPrefix('follow', function(json, from) {  // Follow id includes both follow and resteem.
     if(json[0] === 'reblog') {
-      if(json.author === resteemAccount && state.balances[from] !== undefined && state.balances[from] > 0) {
+      if(json[1].author === resteemAccount && state.balances[from] !== undefined && state.balances[from] > 0) {
         state.balances[from] += resteemReward;
         state.balances[resteemAccount] -= resteemReward;
         console.log('Resteem reward of', resteemReward,'given to', from);
