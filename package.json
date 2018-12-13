@@ -17,7 +17,9 @@
   "license": "MIT",
   "dependencies": {
     "dsteem": "^0.11.2",
-    "steem-state": "^1.0.9",
+    "express": "^4.16.4",
+    "ipfs-api": "^26.1.2",
+    "steem-state": "^1.1.0",
     "steem-transact": "^1.0.2"
   }
 }

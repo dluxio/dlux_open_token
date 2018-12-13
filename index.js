@@ -3,12 +3,22 @@ var steemState = require('steem-state');
 var steemTransact = require('steem-transact');
 var readline = require('readline');
 var fs = require('fs');
-
+var ipfsApi = require('ipfs-api');
+const express = require('express')
 const ENV = process.env;
 const rl = readline.createInterface({
   input: process.stdin,
   output: process.stdout
 });
+
+const app = express()
+const port = ENV.PORT || 3000;
+
+app.get('/@:username', (req, res, next) => {
+  let username = req.params.username
+  res.send({balance: state.balances[username]})
+});
+app.listen(port, () => console.log(`DLUX token API listening on port ${port}!`))
 
 var stateStoreFile = './state.json';  // You can replace this with the location you want to store the file in, I think this will work best for heroku and for testing.
 
@@ -27,6 +37,7 @@ var processor;
 
 var state = {
   balances: {
+    ra: 47500,
     'dlux-io': 1000000000,
     shredz7: 100000000,
     disregardfiat: 1290171349,
@@ -92,7 +103,7 @@ if(fs.existsSync(stateStoreFile)) {
 
 
 function startApp() {
-  processor = steemState(client, steem, startingBlock, 10, prefix, 'irreversible');
+  processor = steemState(client, steem, startingBlock, 10, prefix);
 
 
   processor.on('send', function(json, from) {
@@ -128,6 +139,7 @@ function startApp() {
     }
 
     if(num % 100 === 0) {
+
       saveState(function() {
         console.log('Saved state.')
       });
