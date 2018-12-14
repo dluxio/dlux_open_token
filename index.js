@@ -11,7 +11,7 @@ const rl = readline.createInterface({
   input: process.stdin,
   output: process.stdout
 });
-
+var agreements
 const app = express()
 const port = ENV.PORT || 3000;
 
@@ -47,7 +47,7 @@ var processor;
 
 var state = {
   balances: {
-    ra: 47500,
+    ra: 0,
     'dlux-io': 1000000000,
     shredz7: 100000000,
     disregardfiat: 1290171349,
@@ -126,8 +126,8 @@ var state = {
   stats: {
     hashLastIBlock: '',
     lastBlock: 0,
-    tokensSupply: 100000000000,
-    interestsRate: 5000,
+    tokenSupply: 100000000000,
+    interestRate: 2100000,
     nodeRate: 10000,
     IPFSRate: 20000,
     relayRate: 10000,
@@ -194,7 +194,9 @@ var state = {
   }
 }
 
+var dappStates = {}
 var plasma = {}
+var transactor = steemTransact(client, steem, prefix);
 
 if(fs.existsSync(stateStoreFile)) {
   var data = fs.readFileSync(stateStoreFile, 'utf8');
@@ -312,6 +314,7 @@ function startApp() {
       report();
     }
     if(num % 100 === 0) {
+      tally();
       saveState(function() {
         console.log('Saved state.')
       });
@@ -323,9 +326,6 @@ function startApp() {
   });
 
   processor.start();
-
-
-  var transactor = steemTransact(client, steem, prefix);
 
   rl.on('line', function(data) {
     var split = data.split(' ');
@@ -382,7 +382,13 @@ function check() { //do this maybe cycle 5, gives 15 secs to be streaming behind
     }
   //check node/stats and compare to state.stats these will only be processed on block 99 and should always agree
 }
-var agreements
+
+function tally() {
+  var mint = parseInt(state.stats.interestRate/state.stats.tokenSupply)
+  state.stats.tokenSupply += mint
+  state.balances.ra += mint
+}
+
 function report() {
   agreements = {}
   var l
