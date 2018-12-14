@@ -385,8 +385,12 @@ function check() { //do this maybe cycle 5, gives 15 secs to be streaming behind
 
 function report() {
   var agreements = {}
-  var l = plasma.markets.nodes.length  || 0
-  if (!l){
+  var l
+  try {
+    l = plasma.markets.nodes.length
+  }
+  catch (err) {
+    l = 0
     agreements['dlux-io'].node = 'dlux-io'
     agreements['dlux-io'].agreement = true
     agreements['dlux-io'].top = true
