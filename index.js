@@ -6,14 +6,16 @@ var fs = require('fs');
 var ipfsApi = require('ipfs-api');
 const args = require('minimist')(process.argv.slice(2));
 const express = require('express')
-const ENV = process.env;
 const rl = readline.createInterface({
   input: process.stdin,
   output: process.stdout
 });
 var agreements
 const app = express()
+const ENV = process.env;
 const port = ENV.PORT || 3000;
+const key = ENV.KEY || 'posting key';
+const username = ENV.ACCOUNT || 'disregardfiat';
 
 app.get('/@:username', (req, res, next) => {
   let username = req.params.username
@@ -32,11 +34,9 @@ var stateStoreFile = './state.json';  // You can replace this with the location 
 
 const resteemAccount = 'dlux-io';
 const resteemReward = 10000;
-var startingBlock = 28564700;
+var startingBlock = 28567800;
 // /\ and \/ are placeholders. They will act as the genesis state if no file is found.
 
-const username = ENV.ACCOUNT;
-const key = ENV.KEY;
 
 const prefix = 'dlux_token_';
 const streamMode = args.mode || 'irreversible';
@@ -283,9 +283,15 @@ function startApp() {
   });
 
   processor.on('report', function(json, from) {
-    if (from === state.markets.node[from].self && state.markets.node[from].domain) {
+    var cfrom, domain
+    try {
+      cfrom = state.markets.node[from].self
+      domain = state.markets.node[from].domain
+    }
+    catch (err) {
+    }
+    if (from === cfrom && domain) {
       console.log(`@${from} has posted a report`)
-
     } else {
       console.log(`@${from} has posted a spurious report`)
     }
@@ -384,7 +390,10 @@ function check() { //do this maybe cycle 5, gives 15 secs to be streaming behind
 }
 
 function tally() {
-  var mint = parseInt(state.stats.interestRate/state.stats.tokenSupply)
+  var i =  state.stats.interestRate
+  var s = state.stats.tokenSupply
+  var mint = parseInt( i / s )
+  console.log(mint, i, s)
   state.stats.tokenSupply += mint
   state.balances.ra += mint
 }
