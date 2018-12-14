@@ -32,7 +32,7 @@ var stateStoreFile = './state.json';  // You can replace this with the location 
 
 const resteemAccount = 'dlux-io';
 const resteemReward = 10000;
-var startingBlock = 28541502;
+var startingBlock = 28563800;
 // /\ and \/ are placeholders. They will act as the genesis state if no file is found.
 
 const username = ENV.ACCOUNT;
@@ -386,6 +386,11 @@ function check() { //do this maybe cycle 5, gives 15 secs to be streaming behind
 function report() {
   var agreements = {}
   var l = plasma.markets.nodes.length
+  if (!l){
+    agreements['dlux-io'].node = 'dlux-io'
+    agreements['dlux-io'].agreement = true
+    agreements['dlux-io'].top = true
+  }
   if (l>100){l=100}
   for (i=0;i<l;i++){
     var self = plasma.markets.nodes[i];
