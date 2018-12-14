@@ -391,9 +391,11 @@ function report() {
   }
   catch (err) {
     l = 0
-    agreements['dlux-io'].node = 'dlux-io'
-    agreements['dlux-io'].agreement = true
-    agreements['dlux-io'].top = true
+    agreements['dlux-io'] = {
+      node: 'dlux-io',
+      agreement: true,
+      top: true
+    }
   }
   if (l>100){l=100}
   for (i=0;i<l;i++){
