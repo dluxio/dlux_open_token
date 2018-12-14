@@ -17,7 +17,8 @@ const port = ENV.PORT || 3000;
 
 app.get('/@:username', (req, res, next) => {
   let username = req.params.username
-  res.send({balance: state.balances[username]})
+  let bal = state.balances[username] || 0
+  res.send({balance: bal})
 });
 app.get('/stats', (req, res, next) => {
   res.send({stats: state.stats})
@@ -107,7 +108,6 @@ var state = {
         markegiles: 5000
       },
       liquidating: {
-        //schedule
       }
     },
     markegiles: {
@@ -183,11 +183,11 @@ var state = {
     },
     contributors: {
       'disregardfiat': {
-        self: 'dlux-io',
+        self: 'disregardfiat',
         bidRate: 1
       },
       'markegiles': {
-        self: 'dlux-io',
+        self: 'markegiles',
         bidRate: 1
       }
     }
@@ -231,9 +231,9 @@ function startApp() {
 
   processor.on('node_add', function(json, from) {
     if(json.domain && typeof json.domain === 'string') {
-      state.markets.nodes[from].domain = json.domain;
-      state.markets.nodes[from].self = from;
-      state.markets.nodes[from].bidRate = json.bidRate || 10000;
+      state.markets.node[from].domain = json.domain;
+      state.markets.node[from].self = from;
+      state.markets.node[from].bidRate = json.bidRate || 10000;
       console.log(`@${from} has bidded the steem-state node ${json.domain} at ${json.bidRate}`)
     } else {
       console.log('Invalid steem-state node operation from', from)
@@ -241,8 +241,8 @@ function startApp() {
   });
 
   processor.on('node_delete', function(json, from) {
-    delete state.markets.nodes[from].domain
-    delete state.markets.nodes[from].bidRate
+    delete state.markets.node[from].domain
+    delete state.markets.node[from].bidRate
     console.log(`@${from} has deleted their steem-state node`)
   });
 
@@ -281,8 +281,12 @@ function startApp() {
   });
 
   processor.on('report', function(json, from) {
+    if (from === state.markets.node[from].self && state.markets.node[from].domain) {
+      console.log(`@${from} has posted a report`)
 
-    console.log(`@${from} has posted a report`)
+    } else {
+      console.log(`@${from} has posted a spurious report`)
+    }
   });
 
   processor.onNoPrefix('follow', function(json, from) {  // Follow id includes both follow and resteem.
@@ -301,9 +305,13 @@ function startApp() {
         console.log('At block', num, 'with', result.head_block_number-num, 'left until real-time.')
       });
     }
-
+    if(num % 100 === 5 && processor.isStreaming()) {
+      check();
+    }
+    if(num % 100 === 90 && processor.isStreaming()) {
+      report();
+    }
     if(num % 100 === 0) {
-
       saveState(function() {
         console.log('Saved state.')
       });
@@ -345,7 +353,7 @@ function startApp() {
       })
     } else if(split[0] === 'exit') {
       exit();
-    } else if(split[0] === 'state') { 
+    } else if(split[0] === 'state') {
       console.log(JSON.stringify(state, null, 2));
     } else {
       console.log("Invalid command.");
@@ -355,6 +363,7 @@ function startApp() {
 
 function tally() {//do on % 100 prior to save
   //looks for json reports from node runners updates stat
+
 }
 
 function check() { //do this maybe cycle 5, gives 15 secs to be streaming behind
@@ -362,16 +371,16 @@ function check() { //do this maybe cycle 5, gives 15 secs to be streaming behind
   for (i = 0; i < state.markets.node.length; i++ ) {
     var self = state.markets.nodes[i].self
     plasma.markets.nodes[self] = {
-      node: state.markets.nodes[i].self,
+      self: self,
       agreement: false,
     }
-    fetch(`${state.markets.nodes[i].domain}/stats`)
+    fetch(`${state.markets.nodes[self].domain}/stats`)
       .then(function(response) {
         return response.json().body;
       })
       .then(function(myJson) {
         console.log(JSON.stringify(myJson));
-        if (state.stats.hashLastIBlock === myJson.hashLastIBlock){
+        if (state.stats.hashLastIBlock === myJson.stats.hashLastIBlock){
           plasma.markets.nodes[self].agreement = true
         }
       });
@@ -380,7 +389,41 @@ function check() { //do this maybe cycle 5, gives 15 secs to be streaming behind
 }
 
 function report() {
-  //sum plasma and post a transaction
+  var agreements = {}
+  var l = plasma.markets.nodes.length
+  if (l>100){l=100}
+  for (i=0;i<l;i++){
+    var self = plasma.markets.nodes[i];
+    if (plasma.markets.nodes[i].agreement){
+      agreements[self] = {
+        node: self
+        agreement: true
+      }
+    }
+  }
+  for (i=0;i<state.runners.length;i++){
+    var self = state.runners[i].self;
+    if (agreements[self]) {
+      agreements[self].top = true
+    } else if (plasma.markets.nodes[self].agreement) {
+      agreements[self] = {
+        node: self
+        agreement: true
+      }
+    } else {
+      agreements[self] = {
+        node: self
+        agreement: false
+      }
+    }
+  }
+  transactor.json(username, key, 'report', {
+    agreements
+  }, function(err, result) {
+    if(err) {
+      console.error(err);
+    }
+  })//sum plasma and post a transaction
 }
 
 function exit() {
