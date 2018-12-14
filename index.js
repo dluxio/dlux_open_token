@@ -361,11 +361,6 @@ function startApp() {
   });
 }
 
-function tally() {//do on % 100 prior to save
-  //looks for json reports from node runners updates stat
-
-}
-
 function check() { //do this maybe cycle 5, gives 15 secs to be streaming behind
   delete plasma.markets;
   for (i = 0; i < state.markets.node.length; i++ ) {
@@ -396,7 +391,7 @@ function report() {
     var self = plasma.markets.nodes[i];
     if (plasma.markets.nodes[i].agreement){
       agreements[self] = {
-        node: self
+        node: self,
         agreement: true
       }
     }
@@ -407,12 +402,12 @@ function report() {
       agreements[self].top = true
     } else if (plasma.markets.nodes[self].agreement) {
       agreements[self] = {
-        node: self
+        node: self,
         agreement: true
       }
     } else {
       agreements[self] = {
-        node: self
+        node: self,
         agreement: false
       }
     }
