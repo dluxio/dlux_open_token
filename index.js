@@ -4,10 +4,8 @@ var steemTransact = require('steem-transact');
 var readline = require('readline');
 var fs = require('fs');
 var ipfsApi = require('ipfs-api');
-const express = require('express');
-
 const args = require('minimist')(process.argv.slice(2));
-
+const express = require('express')
 const ENV = process.env;
 const rl = readline.createInterface({
   input: process.stdin,
@@ -21,23 +19,27 @@ app.get('/@:username', (req, res, next) => {
   let username = req.params.username
   res.send({balance: state.balances[username]})
 });
-app.listen(port, () => console.log(`DLUX token API listening on port ${port}!`))
+app.get('/stats', (req, res, next) => {
+  res.send({stats: state.stats})
+});
+app.get('/markets', (req, res, next) => {
+  res.send({markets: state.markets})
+});
+app.listen(port, () => console.log(`DLUX token API listening on port ${port}!\nAvailible commands:\n/@username =>Balance\n/stats\n/markets`))
 
 var stateStoreFile = './state.json';  // You can replace this with the location you want to store the file in, I think this will work best for heroku and for testing.
 
-const resteemAccount = ENV.RESTEEM_ACCOUNT || 'dlux-io';
-const resteemReward = ENV.RESTEEM_REWARD || 10000;
-var startingBlock = ENV.STARTINGBLOCK || 28541502;     // PUT A RECENT BLOCK HERE -- GENESIS BLOCK
+const resteemAccount = 'dlux-io';
+const resteemReward = 10000;
+var startingBlock = 28541502;
 // /\ and \/ are placeholders. They will act as the genesis state if no file is found.
 
-const username = ENV.ACCOUNT || 'dlux-io';
+const username = ENV.ACCOUNT;
 const key = ENV.KEY;
 
-const prefix = ENV.PREFIX || 'dlux_token_';
+const prefix = 'dlux_token_';
 const streamMode = args.mode || 'irreversible';
-
 console.log("Streaming using mode", streamMode);
-
 const clientURL = ENV.APIURL || 'https://api.steemit.com'
 var client = new steem.Client(clientURL);
 var processor;
@@ -92,8 +94,107 @@ var state = {
     stackin: 18253402,
     dera123: 151322740,
     rovill: 137550227
+  },
+  powered: {
+    disregardfiat: {
+      liquid: 5000,
+      powered: 5000,
+      totalPowered: 5000,
+      delegatedOut: {
+        markegiles: 5000
+      },
+      delegatedIn: {
+        markegiles: 5000
+      },
+      liquidating: {
+        //schedule
+      }
+    },
+    markegiles: {
+      liquid: 5000,
+      powered: 5000,
+      delegatedOut: {
+        disregardfiat: 5000
+      },
+      delegatedIn: {
+        disregardfiat: 5000
+      }
+    }
+  },
+  chrono: {
+  },
+  stats: {
+    hashLastIBlock: '',
+    lastBlock: 0,
+    tokensSupply: 100000000000,
+    interestsRate: 5000,
+    nodeRate: 10000,
+    IPFSRate: 20000,
+    relayRate: 10000,
+    contributorRate: 20000,
+    savingsRate: 10000,
+    marketingRate: 20000,
+    contentRate: 10000,
+    currationRate: 25000,
+    exchangeRate: {
+      steemDlux: '',
+      btcDlux: '',
+      ethDlux: '',
+      usdDlux: ''
+    }
+  },
+  dex: {
+    buyBook: {
+
+    },
+    sellBook: {
+
+    }
+  },
+  runners: {
+    'dlux-io': {
+      self: 'dlux-io',
+      domain: 'https://dlux-token.herokuapp.com',
+      bidRate: 10000,
+      report: {}
+    }
+  },
+  markets: {
+    node: {
+      'dlux-io': {
+        self: 'dlux-io',
+        domain: 'https://dlux-token.herokuapp.com',
+        bidRate: 10000
+      }
+    },
+    ipfs: {
+      'dlux-io': {
+        self: 'dlux-io',
+        domain: 'https://ipfs.dlux.io',
+        bidRate: 20000,
+      }
+    },
+    relay: {
+      'dlux-io': {
+        self: 'dlux-io',
+        domain: 'https://chat.dlux.io',
+        bidRate: 10000
+      }
+    },
+    contributors: {
+      'disregardfiat': {
+        self: 'dlux-io',
+        bidRate: 1
+      },
+      'markegiles': {
+        self: 'dlux-io',
+        bidRate: 1
+      }
+    }
   }
 }
+
+var plasma = {}
 
 if(fs.existsSync(stateStoreFile)) {
   var data = fs.readFileSync(stateStoreFile, 'utf8');
@@ -126,6 +227,62 @@ function startApp() {
     } else {
       console.log('Invalid send operation from', from)
     }
+  });
+
+  processor.on('node_add', function(json, from) {
+    if(json.domain && typeof json.domain === 'string') {
+      state.markets.nodes[from].domain = json.domain;
+      state.markets.nodes[from].self = from;
+      state.markets.nodes[from].bidRate = json.bidRate || 10000;
+      console.log(`@${from} has bidded the steem-state node ${json.domain} at ${json.bidRate}`)
+    } else {
+      console.log('Invalid steem-state node operation from', from)
+    }
+  });
+
+  processor.on('node_delete', function(json, from) {
+    delete state.markets.nodes[from].domain
+    delete state.markets.nodes[from].bidRate
+    console.log(`@${from} has deleted their steem-state node`)
+  });
+
+  processor.on('ipfs_add', function(json, from) {
+    if(json.domain && typeof json.domain === 'string') {
+      state.markets.ipfs[from].domain = json.domain;
+      state.markets.ipfs[from].self = from;
+      state.markets.ipfs[from].bidRate = json.bidRate || 20000;
+      console.log(`@${from} has bidded the ipfs node ${json.domain} at ${json.bidRate}`)
+    } else {
+      console.log('Invalid ipfs node operation from', from)
+    }
+  });
+
+  processor.on('ipfs_delete', function(json, from) {
+    delete state.markets.ipfs[from].domain
+    delete state.markets.ipfs[from].bidRate
+    console.log(`@${from} has deleted their ipfs node`)
+  });
+
+  processor.on('relay_add', function(json, from) {
+    if(json.domain && typeof json.domain === 'string') {
+      state.markets.relay[from].domain = json.domain;
+      state.markets.relay[from].self = from;
+      state.markets.relay[from].bidRate = json.bidRate || 10000;
+      console.log(`@${from} has bidded the relay ${json.domain} at ${json.bidRate}`)
+    } else {
+      console.log('Invalid relay operation from', from)
+    }
+  });
+
+  processor.on('relay_delete', function(json, from) {
+    delete state.markets.relay[from].domain
+    delete state.markets.relay[from].bidRate
+    console.log(`@${from} has deleted their relay`)
+  });
+
+  processor.on('report', function(json, from) {
+
+    console.log(`@${from} has posted a report`)
   });
 
   processor.onNoPrefix('follow', function(json, from) {  // Follow id includes both follow and resteem.
@@ -188,12 +345,42 @@ function startApp() {
       })
     } else if(split[0] === 'exit') {
       exit();
-    } else if(split[0] === 'state') {
+    } else if(split[0] === 'state') { 
       console.log(JSON.stringify(state, null, 2));
     } else {
       console.log("Invalid command.");
     }
   });
+}
+
+function tally() {//do on % 100 prior to save
+  //looks for json reports from node runners updates stat
+}
+
+function check() { //do this maybe cycle 5, gives 15 secs to be streaming behind
+  delete plasma.markets;
+  for (i = 0; i < state.markets.node.length; i++ ) {
+    var self = state.markets.nodes[i].self
+    plasma.markets.nodes[self] = {
+      node: state.markets.nodes[i].self,
+      agreement: false,
+    }
+    fetch(`${state.markets.nodes[i].domain}/stats`)
+      .then(function(response) {
+        return response.json().body;
+      })
+      .then(function(myJson) {
+        console.log(JSON.stringify(myJson));
+        if (state.stats.hashLastIBlock === myJson.hashLastIBlock){
+          plasma.markets.nodes[self].agreement = true
+        }
+      });
+    }
+  //check node/stats and compare to state.stats these will only be processed on block 99 and should always agree
+}
+
+function report() {
+  //sum plasma and post a transaction
 }
 
 function exit() {
