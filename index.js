@@ -188,6 +188,8 @@ function startApp() {
       })
     } else if(split[0] === 'exit') {
       exit();
+    } else if(split[0] === 'state') {
+      console.log(JSON.stringify(state, null, 2));
     } else {
       console.log("Invalid command.");
     }
