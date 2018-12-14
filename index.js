@@ -6,6 +6,8 @@ var fs = require('fs');
 var ipfsApi = require('ipfs-api');
 const express = require('express');
 
+const args = require('minimist')(process.argv.slice(2));
+
 const ENV = process.env;
 const rl = readline.createInterface({
   input: process.stdin,
@@ -32,6 +34,10 @@ const username = ENV.ACCOUNT || 'dlux-io';
 const key = ENV.KEY;
 
 const prefix = ENV.PREFIX || 'dlux_token_';
+const streamMode = args.mode || 'irreversible';
+
+console.log("Streaming using mode", streamMode);
+
 const clientURL = ENV.APIURL || 'https://api.steemit.com'
 var client = new steem.Client(clientURL);
 var processor;
@@ -104,7 +110,7 @@ if(fs.existsSync(stateStoreFile)) {
 
 
 function startApp() {
-  processor = steemState(client, steem, startingBlock, 10, prefix);
+  processor = steemState(client, steem, startingBlock, 10, prefix, streamMode);
 
 
   processor.on('send', function(json, from) {
