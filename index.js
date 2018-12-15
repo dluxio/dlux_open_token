@@ -14,9 +14,12 @@ var agreements
 const app = express()
 const ENV = process.env;
 const port = ENV.PORT || 3000;
-const key = ENV.KEY || 'posting key';
+const key = ENV.KEY || 'private-key';
 const username = ENV.ACCOUNT || 'disregardfiat';
 
+app.get('/', (req, res, next) => {
+  res.send({challenge: 'accepted'})
+});
 app.get('/@:username', (req, res, next) => {
   let username = req.params.username
   let bal = state.balances[username] || 0
@@ -47,7 +50,15 @@ var processor;
 
 var state = {
   balances: {
-    ra: 0,
+    ra: 0, //reward_account
+    rb: 0, //reward_budget for PRs and Bounties ... falls over to content
+    rc: 0, //reward_content for distribution to steem content and it's curators
+    rd: 0, //reward_delegation for distribution to delegators paid ever 25.2 hours on daily block
+    re: 0, //reward_earn for distribution over powered up dlux
+    ri: 0, //reward_ipfs for IPFS distribution
+    rr: 0, //reward_relays for relays
+    rn: 0, //reward_nodes
+    rm: 0, //reward_marketing
     'dlux-io': 1000000000,
     shredz7: 100000000,
     disregardfiat: 1290171349,
@@ -131,10 +142,11 @@ var state = {
     nodeRate: 10000,
     IPFSRate: 20000,
     relayRate: 10000,
-    contributorRate: 20000,
+    budgetRate: 20000,
+    maxBudget: 1000000000,
     savingsRate: 10000,
-    marketingRate: 20000,
-    contentRate: 10000,
+    marketingRate: 10000,
+    delegationRate: 10000,
     currationRate: 25000,
     exchangeRate: {
       steemDlux: '',
@@ -319,6 +331,19 @@ function startApp() {
     if(num % 100 === 90 && processor.isStreaming()) {
       report();
     }
+    if((num - 20000) % 30240  === 0 && processor.isStreaming()) { //time for daily magic
+
+      if (username == 'dlux-io') {
+        transactor.json(username, key, 'send', {
+          to: to,
+          amount: amount
+        }, function(err, result) {
+          if(err) {
+            console.error(err);
+          }
+        })
+      }
+    }
     if(num % 100 === 0) {
       tally();
       saveState(function() {
@@ -369,14 +394,15 @@ function startApp() {
 
 function check() { //do this maybe cycle 5, gives 15 secs to be streaming behind
   delete plasma.markets;
-  for (i = 0; i < state.markets.node.length; i++ ) {
-    var self = state.markets.nodes[i].self
+  for (var account in state.markets.node) {
+    var self = state.markets.nodes[account].self
     plasma.markets.nodes[self] = {
       self: self,
       agreement: false,
     }
     fetch(`${state.markets.nodes[self].domain}/stats`)
       .then(function(response) {
+        console.log(response)
         return response.json().body;
       })
       .then(function(myJson) {
@@ -386,44 +412,29 @@ function check() { //do this maybe cycle 5, gives 15 secs to be streaming behind
         }
       });
     }
-  //check node/stats and compare to state.stats these will only be processed on block 99 and should always agree
 }
 
 function tally() {
-  var i =  state.stats.interestRate
-  var s = state.stats.tokenSupply
-  var mint = parseInt( i / s )
-  console.log(mint, i, s)
+  var mint = parseInt(state.stats.tokenSupply/state.stats.interestRate)
   state.stats.tokenSupply += mint
   state.balances.ra += mint
 }
 
 function report() {
   agreements = {}
-  var l
-  try {
-    l = plasma.markets.nodes.length
-  }
-  catch (err) {
-    l = 0
-    agreements['dlux-io'] = {
-      node: 'dlux-io',
-      agreement: true,
-      top: true
-    }
-  }
-  if (l>100){l=100}
-  for (i=0;i<l;i++){
-    var self = plasma.markets.nodes[i];
-    if (plasma.markets.nodes[i].agreement){
-      agreements[self] = {
-        node: self,
-        agreement: true
+  if (plasma.markets) {
+    for (var node in plasma.markets.nodes){
+      var self = plasma.markets.nodes[node];
+      if (plasma.markets.nodes[self].agreement){
+        agreements[self] = {
+          node: self,
+          agreement: true
+        }
       }
     }
   }
-  for (i=0;i<state.runners.length;i++){
-    var self = state.runners[i].self;
+  for (var node in state.runners){
+    var self = state.runners[node].self;
     if (agreements[self]) {
       agreements[self].top = true
     } else if (plasma.markets.nodes[self].agreement) {
