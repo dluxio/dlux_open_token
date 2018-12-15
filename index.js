@@ -14,7 +14,7 @@ var agreements
 const app = express()
 const ENV = process.env;
 const port = ENV.PORT || 3000;
-const key = ENV.KEY || 'posting key';
+const key = ENV.KEY || '';
 const username = ENV.ACCOUNT || 'disregardfiat';
 
 app.get('/', (req, res, next) => {
@@ -211,7 +211,13 @@ var state = {
 }
 
 var dappStates = {}
-var plasma = {}
+var plasma = {
+  markets: {
+    nodes: {},
+    ipfss: {},
+    relays: {}
+  }
+}
 var transactor = steemTransact(client, steem, prefix);
 
 if(fs.existsSync(stateStoreFile)) {
@@ -387,9 +393,6 @@ function startApp() {
 }
 
 function check() { //do this maybe cycle 5, gives 15 secs to be streaming behind
-  plasma.markets = {
-    nodes: {}
-  }
   for (var account in state.markets.node) {
     var self = state.markets.node[account].self
     plasma.markets.nodes[self] = {
@@ -398,7 +401,6 @@ function check() { //do this maybe cycle 5, gives 15 secs to be streaming behind
     }
     fetch(`${state.markets.node[self].domain}/stats`)
       .then(function(response) {
-        console.log(response)
         return response.json();
       })
       .then(function(myJson) {
@@ -424,7 +426,7 @@ function report() {
   agreements = {}
   if (plasma.markets) {
     for (var node in plasma.markets.nodes){
-      var self = plasma.markets.nodes[node];
+      var self = plasma.markets.nodes[node].self;
       if (plasma.markets.nodes[self].agreement){
         agreements[self] = {
           node: self,
