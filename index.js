@@ -15,7 +15,8 @@ const app = express()
 const ENV = process.env;
 const port = ENV.PORT || 3000;
 const key = ENV.KEY || '';
-const username = ENV.ACCOUNT || 'disregardfiat';
+const username = ENV.ACCOUNT || 'dlux-io';
+const NODEDOMAIN = ENV.DOMAIN
 
 app.get('/', (req, res, next) => {
   res.setHeader('Content-Type', 'application/json');
@@ -173,6 +174,12 @@ var state = {
       domain: 'https://dlux-token.herokuapp.com',
       bidRate: 10000,
       report: {}
+    },
+    'disregardfiat': {
+      self: 'disregardfiat',
+      domain: 'https://dlux-token-peer.herokuapp.com',
+      bidRate: 10000,
+      report: {}
     }
   },
   markets: {
@@ -180,6 +187,11 @@ var state = {
       'dlux-io': {
         self: 'dlux-io',
         domain: 'https://dlux-token.herokuapp.com',
+        bidRate: 10000
+      },
+      'disregardfiat': {
+        self: 'disregardfiat',
+        domain: 'https://dlux-token-peer.herokuapp.com',
         bidRate: 10000
       }
     },
