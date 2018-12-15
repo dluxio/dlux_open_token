@@ -399,6 +399,11 @@ function startApp() {
 }
 
 function check() { //do this maybe cycle 5, gives 15 secs to be streaming behind
+  plasma.markets = {
+    nodes: {},
+    ipfss: {},
+    relays: {}
+  }
   for (var account in state.markets.node) {
     var self = state.markets.node[account].self
     plasma.markets.nodes[self] = {
