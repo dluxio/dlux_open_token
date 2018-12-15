@@ -320,6 +320,7 @@ function startApp() {
     catch (err) {
     }
     if (from === cfrom && domain) {
+      
       console.log(`@${from} has posted a report`)
     } else {
       if (from === username && NODEDOMAIN) {
@@ -356,7 +357,7 @@ function startApp() {
     if(num % 100 === 5 && processor.isStreaming()) {
       check();
     }
-    if(num % 100 === 70 && processor.isStreaming()) {
+    if(num % 100 === 50 && processor.isStreaming()) {
       report();
     }
     if((num - 20000) % 30240  === 0 && processor.isStreaming()) { //time for daily magic
