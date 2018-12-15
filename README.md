@@ -1,1 +1,33 @@
 dlux-token-node
+
+This is the custom implementation of `STEEM-STATE` for the dlux ecosystem.
+
+This program is the Decentralized Autonomous Organization built on the STEEM blockchain and participated in by posting custom json from associated accounts.
+
+This is the test environment. Upon completion of the following features we will announce a genesis block and begin our DAO:
+* DEX for currency exchange
+* Decentralized markets for p2p services
+    * IPFS pinning
+    * Provide consensus and API (this software)
+    * Encrypted anonymous dApp relays
+* An NFT, Non-fungible Token, implementation
+* Incentive mechanisms for participation
+
+***
+
+This software is meant to be run as a public API for dlux token data.
+
+While it runs it verifies other nodes are operating correctly and confirms this by posting a customJson transaction to steem. 288 messages will be required per day per node operator.
+
+Deploy from heroku and set ENV variables with a steem name and posting key.
+config vars= ACCOUNT | KEY
+
+Once your node is running post a custom json transaction with the following details:
+A dApp form for this will be made shortly
+
+```
+dlux_token_node_add
+
+domain: https://dlux.fullpath.tld
+bidRate: integer 0 to 10000 (payout is determined from average bidrates)
+```
