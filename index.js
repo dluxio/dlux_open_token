@@ -43,7 +43,7 @@ var stateStoreFile = './state.json';  // You can replace this with the location 
 
 const resteemAccount = 'dlux-io';
 const resteemReward = 10000;
-var startingBlock = 28573000;
+var startingBlock = 28577000;
 // /\ and \/ are placeholders. They will act as the genesis state if no file is found.
 
 
@@ -262,9 +262,14 @@ function startApp() {
 
   processor.on('node_add', function(json, from) {
     if(json.domain && typeof json.domain === 'string') {
-      state.markets.node[from].domain = json.domain;
-      state.markets.node[from].self = from;
-      state.markets.node[from].bidRate = json.bidRate || 10000;
+      var int = parseInt(json.bidRate)
+      if (int < 1) {int = 10000}
+      if (int > 10000) {int = 10000}
+      state.markets.node[from] = {
+        domain: json.domain,
+        self: from,
+        bidRate: int
+      }
       console.log(`@${from} has bidded the steem-state node ${json.domain} at ${json.bidRate}`)
     } else {
       console.log('Invalid steem-state node operation from', from)
@@ -279,9 +284,14 @@ function startApp() {
 
   processor.on('ipfs_add', function(json, from) {
     if(json.domain && typeof json.domain === 'string') {
-      state.markets.ipfs[from].domain = json.domain;
-      state.markets.ipfs[from].self = from;
-      state.markets.ipfs[from].bidRate = json.bidRate || 20000;
+      var int = parseInt(json.bidRate)
+      if (int < 1) {int = 20000}
+      if (int > 20000) {int = 20000}
+      state.markets.ipfs[from] = {
+        domain: json.domain,
+        self: from,
+        bidRate: int
+      }
       console.log(`@${from} has bidded the ipfs node ${json.domain} at ${json.bidRate}`)
     } else {
       console.log('Invalid ipfs node operation from', from)
@@ -296,9 +306,14 @@ function startApp() {
 
   processor.on('relay_add', function(json, from) {
     if(json.domain && typeof json.domain === 'string') {
-      state.markets.relay[from].domain = json.domain;
-      state.markets.relay[from].self = from;
-      state.markets.relay[from].bidRate = json.bidRate || 10000;
+      var int = parseInt(json.bidRate)
+      if (int < 1) {int = 1000}
+      if (int > 10000) {int = 10000}
+      state.markets.relay[from] = {
+        domain: json.domain,
+        self: from,
+        bidRate: int
+      }
       console.log(`@${from} has bidded the relay ${json.domain} at ${json.bidRate}`)
     } else {
       console.log('Invalid relay operation from', from)
@@ -320,7 +335,7 @@ function startApp() {
     catch (err) {
     }
     if (from === cfrom && domain) {
-      
+
       console.log(`@${from} has posted a report`)
     } else {
       if (from === username && NODEDOMAIN) {
