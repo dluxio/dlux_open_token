@@ -211,13 +211,7 @@ var state = {
 }
 
 var dappStates = {}
-var plasma = {
-  markets: {
-    nodes: {},
-    ipfss: {},
-    relays: {}
-  }
-}
+var plasma = {}
 var transactor = steemTransact(client, steem, prefix);
 
 if(fs.existsSync(stateStoreFile)) {
