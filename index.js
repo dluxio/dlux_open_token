@@ -323,6 +323,7 @@ function startApp() {
       console.log(`@${from} has posted a report`)
     } else {
       if (from === username && NODEDOMAIN) {
+        console.log(`@${from} has posted a spurious report and in now attempting to register`)
         transactor.json(username, key, 'node_add', {
           domain: NODEDOMAIN,
           bidRate: BIDRATE
