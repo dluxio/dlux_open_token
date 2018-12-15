@@ -14,22 +14,26 @@ var agreements
 const app = express()
 const ENV = process.env;
 const port = ENV.PORT || 3000;
-const key = ENV.KEY || 'private-key';
+const key = ENV.KEY || 'posting key';
 const username = ENV.ACCOUNT || 'disregardfiat';
 
 app.get('/', (req, res, next) => {
-  res.send({challenge: 'accepted'})
+  res.setHeader('Content-Type', 'application/json');
+  res.send({stats: state.stats})
 });
 app.get('/@:username', (req, res, next) => {
   let username = req.params.username
   let bal = state.balances[username] || 0
-  res.send({balance: bal})
+  res.setHeader('Content-Type', 'application/json');
+  res.send(JSON.stringify({balance: bal}, null, 3))
 });
 app.get('/stats', (req, res, next) => {
-  res.send({stats: state.stats})
+  res.setHeader('Content-Type', 'application/json');
+  res.send(JSON.stringify({stats: state.stats}, null, 3))
 });
 app.get('/markets', (req, res, next) => {
-  res.send({markets: state.markets})
+  res.setHeader('Content-Type', 'application/json');
+  res.send(JSON.stringify({markets: state.markets}, null, 3))
 });
 app.listen(port, () => console.log(`DLUX token API listening on port ${port}!\nAvailible commands:\n/@username =>Balance\n/stats\n/markets`))
 
@@ -37,7 +41,7 @@ var stateStoreFile = './state.json';  // You can replace this with the location 
 
 const resteemAccount = 'dlux-io';
 const resteemReward = 10000;
-var startingBlock = 28567800;
+var startingBlock = 28573000;
 // /\ and \/ are placeholders. They will act as the genesis state if no file is found.
 
 
@@ -325,24 +329,14 @@ function startApp() {
         console.log('At block', num, 'with', result.head_block_number-num, 'left until real-time.')
       });
     }
-    if(num % 100 === 5 && processor.isStreaming()) {
+    if(num % 100 === 1 && processor.isStreaming()) {
       check();
     }
-    if(num % 100 === 90 && processor.isStreaming()) {
+    if(num % 100 === 70 && processor.isStreaming()) {
       report();
     }
     if((num - 20000) % 30240  === 0 && processor.isStreaming()) { //time for daily magic
-
-      if (username == 'dlux-io') {
-        transactor.json(username, key, 'send', {
-          to: to,
-          amount: amount
-        }, function(err, result) {
-          if(err) {
-            console.error(err);
-          }
-        })
-      }
+      dao();
     }
     if(num % 100 === 0) {
       tally();
@@ -393,17 +387,19 @@ function startApp() {
 }
 
 function check() { //do this maybe cycle 5, gives 15 secs to be streaming behind
-  delete plasma.markets;
+  plasma.markets = {
+    nodes: {}
+  }
   for (var account in state.markets.node) {
-    var self = state.markets.nodes[account].self
+    var self = state.markets.node[account].self
     plasma.markets.nodes[self] = {
       self: self,
       agreement: false,
     }
-    fetch(`${state.markets.nodes[self].domain}/stats`)
+    fetch(`${state.markets.node[self].domain}/stats`)
       .then(function(response) {
         console.log(response)
-        return response.json().body;
+        return response.json();
       })
       .then(function(myJson) {
         console.log(JSON.stringify(myJson));
@@ -420,6 +416,10 @@ function tally() {
   state.balances.ra += mint
 }
 
+function dao() {
+  //disperses funds for delegation, as well as ICO bids
+}
+
 function report() {
   agreements = {}
   if (plasma.markets) {
@@ -432,30 +432,30 @@ function report() {
         }
       }
     }
-  }
-  for (var node in state.runners){
-    var self = state.runners[node].self;
-    if (agreements[self]) {
-      agreements[self].top = true
-    } else if (plasma.markets.nodes[self].agreement) {
-      agreements[self] = {
-        node: self,
-        agreement: true
-      }
-    } else {
-      agreements[self] = {
-        node: self,
-        agreement: false
+    for (var node in state.runners){
+      var self = state.runners[node].self;
+      if (agreements[self]) {
+        agreements[self].top = true
+      } else if (plasma.markets.nodes[self].agreement) {
+        agreements[self] = {
+          node: self,
+          agreement: true
+        }
+      } else {
+        agreements[self] = {
+          node: self,
+          agreement: false
+        }
       }
     }
+    transactor.json(username, key, 'report', {
+        agreements
+      }, function(err, result) {
+        if(err) {
+          console.error(err);
+        }
+    })//sum plasma and post a transaction
   }
-  transactor.json(username, key, 'report', {
-    agreements
-  }, function(err, result) {
-    if(err) {
-      console.error(err);
-    }
-  })//sum plasma and post a transaction
 }
 
 function exit() {
