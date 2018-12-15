@@ -5,6 +5,8 @@ var readline = require('readline');
 var fs = require('fs');
 var ipfsApi = require('ipfs-api');
 const express = require('express');
+var dex = require('./dex');
+var utils = require('./utils');
 
 const args = require('minimist')(process.argv.slice(2));
 
@@ -27,8 +29,11 @@ var stateStoreFile = './state.json';  // You can replace this with the location 
 
 const resteemAccount = ENV.RESTEEM_ACCOUNT || 'dlux-io';
 const resteemReward = ENV.RESTEEM_REWARD || 10000;
-var startingBlock = ENV.STARTINGBLOCK || 28541502;     // PUT A RECENT BLOCK HERE -- GENESIS BLOCK
+var startingBlock = ENV.STARTINGBLOCK || 28587649;     // PUT A RECENT BLOCK HERE -- GENESIS BLOCK
 // /\ and \/ are placeholders. They will act as the genesis state if no file is found.
+const dexConfig = {
+
+};
 
 const username = ENV.ACCOUNT || 'dlux-io';
 const key = ENV.KEY;
@@ -92,7 +97,20 @@ var state = {
     stackin: 18253402,
     dera123: 151322740,
     rovill: 137550227
+  },
+  dex: {
+    buy_orders: {},
+    sell_orders: {},
+    pending_transfers: {}
   }
+}
+
+function getState() {
+  return state;
+}
+
+function setState(newState) {
+  state = newState;
 }
 
 if(fs.existsSync(stateStoreFile)) {
@@ -114,7 +132,7 @@ function startApp() {
 
 
   processor.on('send', function(json, from) {
-    if(json.to && typeof json.to === 'string' && typeof json.amount === 'number' && (json.amount | 0) === json.amount && json.amount >= 0 && state.balances[from] && state.balances[from] >= json.amount) {
+    if(json.to && typeof json.to === 'string' && utils.isInteger(json.amount) && json.amount >= 0 && state.balances[from] && state.balances[from] >= json.amount) {
 
       if(state.balances[json.to] === undefined) {
         state.balances[json.to] = 0;
@@ -127,6 +145,8 @@ function startApp() {
       console.log('Invalid send operation from', from)
     }
   });
+
+  processor = dex.create(processor, dexConfig, getState, setState);
 
   processor.onNoPrefix('follow', function(json, from) {  // Follow id includes both follow and resteem.
     if(json[0] === 'reblog') {
@@ -188,6 +208,11 @@ function startApp() {
       })
     } else if(split[0] === 'exit') {
       exit();
+    } else if(split[0] === 'state') {
+      console.log(JSON.stringify(state, null, 2));
+    } else if(split[0] === 'buy') {
+      dex.createBuy(transactor, username, key, parseInt(split[1]), parseInt(split[2]));
+      console.log('Placing order...');
     } else {
       console.log("Invalid command.");
     }
