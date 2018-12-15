@@ -20,7 +20,7 @@ const NODEDOMAIN = ENV.DOMAIN
 
 app.get('/', (req, res, next) => {
   res.setHeader('Content-Type', 'application/json');
-  res.send({stats: state.stats})
+  res.send(JSON.stringify({stats: state.stats, node: username}, null, 3))
 });
 app.get('/@:username', (req, res, next) => {
   let username = req.params.username
@@ -30,11 +30,11 @@ app.get('/@:username', (req, res, next) => {
 });
 app.get('/stats', (req, res, next) => {
   res.setHeader('Content-Type', 'application/json');
-  res.send(JSON.stringify({stats: state.stats}, null, 3))
+  res.send(JSON.stringify({stats: state.stats, node: username}, null, 3))
 });
 app.get('/markets', (req, res, next) => {
   res.setHeader('Content-Type', 'application/json');
-  res.send(JSON.stringify({markets: state.markets}, null, 3))
+  res.send(JSON.stringify({markets: state.markets, node: username}, null, 3))
 });
 app.listen(port, () => console.log(`DLUX token API listening on port ${port}!\nAvailible commands:\n/@username =>Balance\n/stats\n/markets`))
 
@@ -341,7 +341,7 @@ function startApp() {
         console.log('At block', num, 'with', result.head_block_number-num, 'left until real-time.')
       });
     }
-    if(num % 100 === 1 && processor.isStreaming()) {
+    if(num % 100 === 5 && processor.isStreaming()) {
       check();
     }
     if(num % 100 === 70 && processor.isStreaming()) {
@@ -416,8 +416,8 @@ function check() { //do this maybe cycle 5, gives 15 secs to be streaming behind
       })
       .then(function(myJson) {
         console.log(JSON.stringify(myJson));
-        if (state.stats.hashLastIBlock === myJson.stats.hashLastIBlock){
-          plasma.markets.nodes[self].agreement = true
+        if (state.stats.tokenSupply === myJson.stats.tokenSupply){
+          plasma.markets.nodes[myJson.node].agreement = true
         }
       });
     }
