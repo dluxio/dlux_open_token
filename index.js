@@ -17,6 +17,7 @@ const port = ENV.PORT || 3000;
 const key = ENV.KEY || '';
 const username = ENV.ACCOUNT || 'dlux-io';
 const NODEDOMAIN = ENV.DOMAIN
+const BIDRATE = ENV.BIDRATE
 
 app.get('/', (req, res, next) => {
   res.setHeader('Content-Type', 'application/json');
@@ -321,6 +322,16 @@ function startApp() {
     if (from === cfrom && domain) {
       console.log(`@${from} has posted a report`)
     } else {
+      if (from === username && NODEDOMAIN) {
+        transactor.json(username, key, 'node_add', {
+          domain: NODEDOMAIN,
+          bidRate: BIDRATE
+        }, function(err, result) {
+          if(err) {
+            console.error(err);
+          }
+        })
+      }
       console.log(`@${from} has posted a spurious report`)
     }
   });
@@ -424,6 +435,7 @@ function check() { //do this maybe cycle 5, gives 15 secs to be streaming behind
 }
 
 function tally() {
+  //count agreements and make the runners list, update market rate for node services
   var mint = parseInt(state.stats.tokenSupply/state.stats.interestRate)
   state.stats.tokenSupply += mint
   state.balances.ra += mint
