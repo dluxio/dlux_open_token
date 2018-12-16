@@ -537,10 +537,12 @@ function tally(num) {//tally state before save and next report
       runners: {},
       tally: {},
       votes: 0
-    }
+    },
+    election: {},
+    results: []
   }
   for (var node in state.runners){ //find out who is in the runners group
-    tally.agreements.runners[node] = state.runners[node] //move the state data to tally to process
+    tally.agreements.runners[node] = state.markets.node[node] //move the state data to tally to process
     tally.agreements.tally[node] = {
       self: node,
       votes: 0
@@ -574,7 +576,9 @@ function tally(num) {//tally state before save and next report
     }
   }
   if (l < 20) {
-    tally.election = state.markets.node
+    for (var node in state.markets.node) {
+      tally.election[node] = state.markets.node[node]
+    }
     tally.results = []
     for (var node in state.runners){
       delete tally.election[node]
@@ -587,17 +591,18 @@ function tally(num) {//tally state before save and next report
     for (var node in tally.election){
       tally.results.push([node, parseInt(((tally.election[node].yays / tally.election[node].attempts) * tally.election[node].attempts))])
     }
-    tally.result.sort(function(a, b) {
+    tally.results.sort(function(a, b) {
       return a[1] - b[1];
     })
     tally.winner = tally.results.pop()
     for (var node in tally.winner){
       state.runners[node] = state.markets.node[node]
     }
-    for (var node in state.runners) {
-      state.markets.node[node].wins++
-    }
-  }//count agreements and make the runners list, update market rate for node services
+  }
+  for (var node in state.runners) {
+    state.markets.node[node].wins++
+  }
+  //count agreements and make the runners list, update market rate for node services
   var mint = parseInt(state.stats.tokenSupply/state.stats.interestRate)
   state.stats.tokenSupply += mint
   state.balances.ra += mint
