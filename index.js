@@ -4,13 +4,17 @@ var steemTransact = require('steem-transact');
 var readline = require('readline');
 var fs = require('fs');
 const IPFS = require('ipfs-api');
-const ipfs = new IPFS({ host: 'ipfs.infura.io', port: 5001, protocol: 'https' });
+var ipfs = new IPFS({ host: 'ipfs.infura.io', port: 5001, protocol: 'https' });
 const args = require('minimist')(process.argv.slice(2));
 const express = require('express')
 const rl = readline.createInterface({
   input: process.stdin,
   output: process.stdout
 });
+var cycle = 0
+function cycleIPFS(num){
+  ipfs = new IPFS({ host: state.gateways[num], port: 5001, protocol: 'https' });
+}
 var agreements
 const app = express()
 const ENV = process.env;
@@ -48,7 +52,7 @@ app.listen(port, () => console.log(`DLUX token API listening on port ${port}!\nA
 var stateStoreFile = './state.json';  // You can replace this with the location you want to store the file in, I think this will work best for heroku and for testing.
 const resteemAccount = 'dlux-io';
 const resteemReward = 10000;
-var startingBlock = 28615500;
+var startingBlock = 28614700;
 // /\ and \/ are placeholders. They will act as the genesis state if no file is found.
 
 
@@ -175,6 +179,29 @@ var state = {
 
     }
   },
+  gateways:[
+    'gateway.ipfs.io',
+    'cloudflare-ipfs.com',
+    'ipfs.infura.io',
+    'ipfs.ink',
+    'siderus.io',
+    'ipfs.jes.xxx',
+    'ipfs.eternum.io',
+    'xmine128.tk',
+    'hardbin.com',
+    'ipfs.wa.hle.rs',
+    'venus.i.ipfs.io',
+    'rx14.co.uk',
+    'ipfs.renehsz.com',
+    'ipfs.leiyun.org',
+    'ipfs.macholibre.org',
+    'ipfs.works',
+    'ipfs.work',
+    'ipfs.macholibre.org',
+    'ipfs.leotindall.com',
+    'gateway.swedneck.xyz',
+    'snap1.d.tube'
+  ],
   runners: {
     'dlux-io': {
       self: 'dlux-io',
@@ -713,6 +740,7 @@ function ipfsSaveState(blocknum) {
     console.log('Saved: ' + ipfsHash[0].hash)
   } else {
     console.log(err)
+    cycleIPFS(cycle++)
     ipfsSaveState(blocknum)
   }
   })
