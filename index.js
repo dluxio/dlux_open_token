@@ -34,7 +34,7 @@ const key = ENV.KEY || '';
 const username = ENV.ACCOUNT || 'dlux-io';
 const NODEDOMAIN = ENV.DOMAIN
 const BIDRATE = ENV.BIDRATE
-const engineCrank =  ENV.STARTHASH || ''
+const engineCrank =  ENV.STARTHASH || 'QmQravyZo4qCzhnwdm55tAexGJmzatkcMFqF5wLgAZuyQ9'
 
 app.get('/', (req, res, next) => {
   res.setHeader('Content-Type', 'application/json')
@@ -370,8 +370,8 @@ function startApp() {
   processor.on('node_add', function(json, from) {
     if(json.domain && typeof json.domain === 'string') {
       var int = parseInt(json.bidRate)
-      if (int < 1) {int = 10000}
-      if (int > 10000) {int = 10000}
+      if (int < 1) {int = 1000}
+      if (int > 1000) {int = 1000}
       if (state.markets.node[from]){
         state.markets.node[from].domain = json.domain
         state.markets.node[from].bidRate = int
@@ -402,8 +402,8 @@ function startApp() {
   processor.on('ipfs_add', function(json, from) {
     if(json.domain && typeof json.domain === 'string') {
       var int = parseInt(json.bidRate)
-      if (int < 1) {int = 20000}
-      if (int > 20000) {int = 20000}
+      if (int < 1) {int = 2000}
+      if (int > 2000) {int = 2000}
       state.markets.ipfs[from] = {
         domain: json.domain,
         self: from,
@@ -425,7 +425,7 @@ function startApp() {
     if(json.domain && typeof json.domain === 'string') {
       var int = parseInt(json.bidRate)
       if (int < 1) {int = 1000}
-      if (int > 10000) {int = 10000}
+      if (int > 1000) {int = 1000}
       state.markets.relay[from] = {
         domain: json.domain,
         self: from,
