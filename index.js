@@ -625,7 +625,7 @@ function tally(num) {//tally state before save and next report
   var consensus
   for (var node in state.runners){
       l++
-    if (tally.agreements.tally[node].votes / tally.agreements.votes > 2 / 3) {
+    if (tally.agreements.tally[node].votes / tally.agreements.votes >= 2 / 3) {
       consensus = tally.agreements.runners[node].report.hash
     } else if(state.markets.node[node].report.hash !== state.stats.hashLastIBlock) {
       delete state.runners[node]
