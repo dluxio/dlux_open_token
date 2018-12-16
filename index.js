@@ -19,18 +19,7 @@ const key = ENV.KEY || '';
 const username = ENV.ACCOUNT || 'dlux-io';
 const NODEDOMAIN = ENV.DOMAIN
 const BIDRATE = ENV.BIDRATE
-var hashLashIBlock
-function ipfsSaveState(blocknum) {
-  ipfs.add(Buffer.from(JSON.stringify([blocknum, state])), (err, ipfsHash) => {
-    if (!err){
-    hashLashIBlock = ipfsHash[0].hash
-    plasma.hashBlock = blocknum
-    console.log('Saved: ' + ipfsHash[0].hash)
-  } else {
-    console.log(err)
-  }
-  })
-};
+const engineCrank =  ENV.STARTHASH || 'QmWKYzK6Ro8d3GJmfFsoHp5eFxVD5GeNYYYpBN8WFZX5Rf'
 
 app.get('/', (req, res, next) => {
   res.setHeader('Content-Type', 'application/json');
@@ -268,29 +257,19 @@ var dappStates = {}
 var plasma = {}
 var transactor = steemTransact(client, steem, prefix);
 
-fetch(`${state.markets.node['dlux-io'].domain}/stats`)
-  .then(function(response) {
-    return response.json();
-  })
-  .then(function(myJson) {
-    if(myJson.stats.hashLashIBlock && myJson.stats.hashLashIBlock !== 'start'){
-    engineCrank =  myJson.stats.hashLashIBlock
-    startingBlock = myJson.stats.lastBlock
-    console.log(`Attempting to start from IPFS save state ${engineCrank} @blocl ${startingBlock}`);
-    ipfs.cat(engineCrank, (err, file) => {
-      if (!err){
-      var data = JSON.parse(file);
-      state = data[1];
-      startApp();
-    } else {
-      console.log('Failed to retrienve File from IPFS\n', err);
-    }
-  })
-  } else {
-    console.log(`Replaying Chain until valid IPFS discovery`)
+console.log(`Attempting to start from IPFS save state ${engineCrank} @blocl ${startingBlock}`);
+ipfs.cat(engineCrank, (err, file) => {
+  if (!err){
+    var data = JSON.parse(file);
+    startingBlock = data[0]
+    state = data[1];
     startApp();
+  } else {
+    startApp();
+    console.log(`${engineCrank} failed to load, Replaying from genesis.\nYou may want to set the env var STARTHASH\nFind it at any token API such as token.dlux.io`)
   }
-  });
+});
+
 /*
 if(fs.existsSync(stateStoreFile)) {
   var data = fs.readFileSync(stateStoreFile, 'utf8');
@@ -647,7 +626,7 @@ function report(num) {
     }
     transactor.json(username, key, 'report', {
         agreements: agreements,
-        hash: hashLastIBlock,
+        hash: plasma.hashLastIBlock,
         block: plasma.hashBlock
       }, function(err, result) {
         if(err) {
@@ -674,3 +653,16 @@ function saveState(callback) {
   fs.writeFileSync(stateStoreFile, JSON.stringify([currentBlock, state]));
   callback();
 }
+
+function ipfsSaveState(blocknum) {
+  ipfs.add(Buffer.from(JSON.stringify([blocknum, state])), (err, ipfsHash) => {
+    if (!err){
+    plasma.hashLastIBlock = ipfsHash[0].hash
+    plasma.hashBlock = blocknum
+    console.log('Saved: ' + ipfsHash[0].hash)
+  } else {
+    console.log(err)
+    ipfsSaveState(blocknum)
+  }
+  })
+};
