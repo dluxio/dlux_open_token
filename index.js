@@ -23,9 +23,9 @@ const BIDRATE = ENV.BIDRATE
 function ipfsSaveState(blocknum) {
   ipfs.add(Buffer.from(JSON.stringify([blocknum, state])), (err, ipfsHash) => {
     if (!err){
-    plasma.hashLashIBlock = ipfsHash
+    plasma.hashLashIBlock = ipfsHash.hash
     plasma.hashBlock = blocknum
-    console.log('Saved: ' + ipfsHash)
+    console.log('Saved: ' + ipfsHash.hash)
   } else {
     console.log(err)
   }
