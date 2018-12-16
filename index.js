@@ -192,7 +192,6 @@ var state = {
     'venus.i.ipfs.io',
     'rx14.co.uk',
     'ipfs.renehsz.com',
-    'ipfs.leiyun.org',
     'ipfs.macholibre.org',
     'ipfs.works',
     'ipfs.work',
@@ -741,12 +740,12 @@ function ipfsSaveState(blocknum) {
         } else {
           console.log({cycle}, 'Non-Hash returned')
           cycleIPFS(cycle++)
-          ipfsSaveState(blocknum)
+          //ipfsSaveState(blocknum)
         }
     } else {
     console.log({cycle}, err)
     cycleIPFS(cycle++)
-    ipfsSaveState(blocknum)
+    //ipfsSaveState(blocknum)
   }
   })
 };
