@@ -208,7 +208,9 @@ var state = {
         yays: 1,
         wins: 1,
         lastGood: 0,
-        report: {}
+        report: {
+
+        }
       },
       'disregardfiat': {
         self: 'disregardfiat',
@@ -222,7 +224,7 @@ var state = {
       },
       'markegiles': {
         self: 'markegiles',
-        domain: 'https://dlux-token-peer.herokuapp.com',
+        domain: 'https://dlux-token-markegiles.herokuapp.com',
         bidRate: 1,
         attempts: 1,
         yays: 1,
@@ -271,7 +273,7 @@ fetch(`${state.markets.node['dlux-io'].domain}/stats`)
     return response.json();
   })
   .then(function(myJson) {
-    if(myJson.stats.hashLashIBlock){
+    if(myJson.stats.hashLashIBlock && myJson.stats.hashLashIBlock !== 'start'){
     engineCrank =  myJson.stats.hashLashIBlock
     startingBlock = myJson.stats.lastBlock
     console.log(`Attempting to start from IPFS save state ${engineCrank} @blocl ${startingBlock}`);
@@ -408,7 +410,7 @@ function startApp() {
     catch (err) {
     }
     if (from === cfrom && domain) {
-      state.markets.node[from].reports = json
+      state.markets.node[from].report = json
       console.log(`@${from}'s report has been processed`)
     } else {
       if (from === username && NODEDOMAIN && BIDRATE) {
