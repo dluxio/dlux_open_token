@@ -71,7 +71,7 @@ app.listen(port, () => console.log(`DLUX token API listening on port ${port}!\nA
 var stateStoreFile = './state.json';  // You can replace this with the location you want to store the file in, I think this will work best for heroku and for testing.
 const resteemAccount = 'dlux-io';
 const resteemReward = 10000;
-var startingBlock = 28614700;
+var startingBlock = 28625000;
 // /\ and \/ are placeholders. They will act as the genesis state if no file is found.
 
 
