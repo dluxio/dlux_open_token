@@ -203,30 +203,30 @@ var state = {
       'dlux-io': {
         self: 'dlux-io',
         domain: 'https://dlux-token.herokuapp.com',
-        bidRate: 10000,
-        attempts: 0,
-        yays: 0,
-        wins: 0,
+        bidRate: 1,
+        attempts: 1,
+        yays: 1,
+        wins: 1,
         lastGood: 0,
         report: {}
       },
       'disregardfiat': {
         self: 'disregardfiat',
         domain: 'https://dlux-token-peer.herokuapp.com',
-        bidRate: 10000,
-        attempts: 0,
-        yays: 0,
-        wins: 0,
+        bidRate: 1,
+        attempts: 1,
+        yays: 1,
+        wins: 1,
         lastGood: 0,
         report: {}
       },
       'markegiles': {
         self: 'markegiles',
         domain: 'https://dlux-token-peer.herokuapp.com',
-        bidRate: 10000,
-        attempts: 0,
-        yays: 0,
-        wins: 0,
+        bidRate: 1,
+        attempts: 1,
+        yays: 1,
+        wins: 1,
         lastGood: 0,
         report: {}
       }
@@ -328,15 +328,20 @@ function startApp() {
       var int = parseInt(json.bidRate)
       if (int < 1) {int = 10000}
       if (int > 10000) {int = 10000}
-      state.markets.node[from] = {
-        domain: json.domain,
-        self: from,
-        bidRate: int,
-        attempts: 0,
-        yays: 0,
-        wins: 0,
-        lastGood: 0,
-        report: {}
+      if (state.markets.node[from]){
+        state.markets.node[from].domain = json.domain
+        state.markets.node[from].bidRate = int
+      } else {
+        state.markets.node[from] = {
+          domain: json.domain,
+          self: from,
+          bidRate: int,
+          attempts: 0,
+          yays: 0,
+          wins: 0,
+          lastGood: 0,
+          report: {}
+        }
       }
       console.log(`@${from} has bid the steem-state node ${json.domain} at ${json.bidRate}`)
     } else {
