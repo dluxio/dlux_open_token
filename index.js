@@ -42,7 +42,7 @@ const key = ENV.KEY || '';
 const username = ENV.ACCOUNT || 'dlux-io';
 const NODEDOMAIN = ENV.DOMAIN
 const BIDRATE = ENV.BIDRATE
-const engineCrank =  ENV.STARTHASH || 'QmQravyZo4qCzhnwdm55tAexGJmzatkcMFqF5wLgAZuyQ9'
+const engineCrank =  ENV.STARTHASH || 'QmTRRZmf9BPtZJL3xarCVzHZNLbt6gNML4FK62fEQWGbov'
 
 app.get('/', (req, res, next) => {
   res.setHeader('Content-Type', 'application/json')
@@ -71,7 +71,7 @@ app.listen(port, () => console.log(`DLUX token API listening on port ${port}!\nA
 var stateStoreFile = './state.json';  // You can replace this with the location you want to store the file in, I think this will work best for heroku and for testing.
 const resteemAccount = 'dlux-io';
 const resteemReward = 10000;
-var startingBlock = 28614700;
+var startingBlock = 28541502;
 // /\ and \/ are placeholders. They will act as the genesis state if no file is found.
 
 
@@ -741,21 +741,15 @@ function saveState(callback) {
 function ipfsSaveState(blocknum, hashable) {
   ipfs.add(hashable, (err, ipfsHash) => {
     if (!err){
-      if(ipfsHash[0].hash.substr(0,1) === 'Qm') {
-          plasma.hashLastIBlock = ipfsHash[0].hash
-          console.log('Saved: ' + ipfsHash[0].hash)
-        } else {
-          console.log({cycle}, 'Non-Hash returned', ipfsHash[0].hash)
-          cycleIPFS(cycle++)
-          if (cycle >= 25){
-            cycle = 0;
-            return;
-          }
-        }
+      plasma.hashLastIBlock = ipfsHash[0].hash
+      console.log('Saved: ' + ipfsHash[0].hash)
     } else {
-    console.log({cycle}, err)
-    cycleIPFS(cycle++)
-    //ipfsSaveState(blocknum)
-  }
+      console.log({cycle}, 'Non-Hash returned', ipfsHash[0].hash)
+      cycleIPFS(cycle++)
+      if (cycle >= 25){
+        cycle = 0;
+        return;
+      }
+    }
   })
 };
