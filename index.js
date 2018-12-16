@@ -289,7 +289,7 @@ fetch(`${state.markets.node['dlux-io'].domain}/stats`)
     startApp();
   }
   });
-
+/*
 if(fs.existsSync(stateStoreFile)) {
   var data = fs.readFileSync(stateStoreFile, 'utf8');
   var json = JSON.parse(data);
@@ -300,7 +300,7 @@ if(fs.existsSync(stateStoreFile)) {
   console.log('No state store file found. Starting from the genesis block+state');
   startApp();
 }
-
+*/
 
 
 
@@ -409,9 +409,6 @@ function startApp() {
     }
     if (from === cfrom && domain) {
       state.markets.node[from].reports = json
-      if (state.runners[from]) {
-        state.runners[from].report = json
-      }
       console.log(`@${from}'s report has been processed`)
     } else {
       if (from === username && NODEDOMAIN && BIDRATE) {
@@ -532,7 +529,7 @@ function check() { //do this maybe cycle 5, gives 15 secs to be streaming behind
     }
 }
 
-function tally(num) {
+function tally(num) {//tally state before save and next report
   var tally = {
     agreements: {
       runners: {},
@@ -540,16 +537,16 @@ function tally(num) {
       votes: 0
     }
   }
-  for (var node in state.runners){
-    tally.agreements.runners[node] = state.runners[node]
+  for (var node in state.runners){ //find out who is in the runners group
+    tally.agreements.runners[node] = state.runners[node] //move the state data to tally to process
     tally.agreements.tally[node] = {
       self: node,
       votes: 0
-    }
+    } //build a dataset to count
   }
-  for (var node in tally.agreements.runners) {
-    if (tally.agreements.runners[node].report.agreements[node].agreement == true){
-      tally.agreements.votes++
+  for (var node in tally.agreements.runners) { //cycle through this data
+    if (tally.agreements.runners[node].report.agreements[node].agreement == true){ //only count what nodes believe are true
+      tally.agreements.votes++ //total votes
       for (var subnode in tally.agreements.runners[node].report.agreements){
         if(tally.agreements.runners[node].report.agreements[subnode].agreement == true && tally.agreements.tally[subnode]){
           tally.agreements.tally[subnode].votes++
@@ -581,7 +578,7 @@ function tally(num) {
       delete tally.election[node]
     }
     for (var node in tally.election){
-      if (tally.election[node].lastGood !== num){
+      if (tally.election[node].lastGood !== num - 100){
         delete tally.election[node]
       }
     }
