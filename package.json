@@ -16,6 +16,9 @@
   "author": "disregardfiat",
   "license": "MIT",
   "dependencies": {
+    "bs58": "^4.0.1",
+    "crypto": "^1.0.1",
+    "crypto-js": "^3.1.9-1",
     "dsteem": "^0.11.2",
     "express": "^4.16.4",
     "ipfs-api": "^26.1.2",
