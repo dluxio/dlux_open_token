@@ -24,6 +24,12 @@ Deploy from heroku and set ENV variables with a steem name and posting key.
 * `KEY` posting key
 * `DOMAIN` https://token.dlux.io
 * `BIDRATE` 1 to 10000 which is average
+* `STARTHASH` A hash from a recent block gets you up to speed in no time
 
-Once your node is running it will register itself by posting a custom json transaction with the following details: Domain and Bidrate
-A dApp form for this will be made shortly
+Once your node is running post a custom json transaction with these details registering your node.
+```
+dlux_token_node_add
+
+domain: https://dlux.fullpath.tld
+bidRate: integer 0 to 10000 (payout is determined from average bidrates)
+```
