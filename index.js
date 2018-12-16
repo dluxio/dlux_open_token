@@ -3,39 +3,69 @@ var steemState = require('steem-state');
 var steemTransact = require('steem-transact');
 var readline = require('readline');
 var fs = require('fs');
-var ipfsApi = require('ipfs-api');
+const IPFS = require('ipfs-api');
+var ipfs = new IPFS({ host: 'ipfs.infura.io', port: 5001, protocol: 'https'});
 const args = require('minimist')(process.argv.slice(2));
 const express = require('express')
-const ENV = process.env;
+const crypto = require('crypto')
+const bs58 = require('bs58')
+const hashFunction = Buffer.from('12', 'hex')
+function hashThis(data) {
+const digest = crypto.createHash('sha256').update(data).digest()
+const digestSize = Buffer.from(digest.byteLength.toString(16), 'hex')
+const combined = Buffer.concat([hashFunction, digestSize, digest])
+const multihash = bs58.encode(combined)
+return multihash.toString()
+}
+
 const rl = readline.createInterface({
   input: process.stdin,
   output: process.stdout
 });
-
+var cycle = 0
+function cycleIPFS(num){
+  //ipfs = new IPFS({ host: state.gateways[num], port: 5001, protocol: 'https' });
+}
+var agreements
 const app = express()
+const ENV = process.env;
 const port = ENV.PORT || 3000;
+const key = ENV.KEY || '';
+const username = ENV.ACCOUNT || 'dlux-io';
+const NODEDOMAIN = ENV.DOMAIN
+const BIDRATE = ENV.BIDRATE
+const engineCrank =  ENV.STARTHASH || 'QmQravyZo4qCzhnwdm55tAexGJmzatkcMFqF5wLgAZuyQ9'
 
+app.get('/', (req, res, next) => {
+  res.setHeader('Content-Type', 'application/json')
+  res.send(JSON.stringify({stats: state.stats, node: username}, null, 3))
+});
 app.get('/@:username', (req, res, next) => {
   let username = req.params.username
-  res.send({balance: state.balances[username]})
+  let bal = state.balances[username] || 0
+  res.setHeader('Content-Type', 'application/json');
+  res.send(JSON.stringify({balance: bal}, null, 3))
 });
 app.get('/stats', (req, res, next) => {
-  res.send({stats: state.stats})
+  res.setHeader('Content-Type', 'application/json');
+  res.send(JSON.stringify({stats: state.stats, node: username}, null, 3))
+});
+app.get('/runners', (req, res, next) => {
+  res.setHeader('Content-Type', 'application/json');
+  res.send(JSON.stringify({stats: state.runners, node: username}, null, 3))
 });
 app.get('/markets', (req, res, next) => {
-  res.send({markets: state.markets})
+  res.setHeader('Content-Type', 'application/json');
+  res.send(JSON.stringify({markets: state.markets, node: username}, null, 3))
 });
 app.listen(port, () => console.log(`DLUX token API listening on port ${port}!\nAvailible commands:\n/@username =>Balance\n/stats\n/markets`))
 
 var stateStoreFile = './state.json';  // You can replace this with the location you want to store the file in, I think this will work best for heroku and for testing.
-
 const resteemAccount = 'dlux-io';
 const resteemReward = 10000;
-var startingBlock = 28541502;
+var startingBlock = 28614700;
 // /\ and \/ are placeholders. They will act as the genesis state if no file is found.
 
-const username = ENV.ACCOUNT;
-const key = ENV.KEY;
 
 const prefix = 'dlux_token_';
 const streamMode = args.mode || 'irreversible';
@@ -46,7 +76,15 @@ var processor;
 
 var state = {
   balances: {
-    ra: 47500,
+    ra: 0, //reward_account
+    rb: 0, //reward_budget for PRs and Bounties ... falls over to content
+    rc: 0, //reward_content for distribution to steem content and it's curators
+    rd: 0, //reward_delegation for distribution to delegators paid ever 25.2 hours on daily block
+    re: 0, //reward_earn for distribution over powered up dlux
+    ri: 0, //reward_ipfs for IPFS distribution
+    rr: 0, //reward_relays for relays
+    rn: 0, //reward_nodes
+    rm: 0, //reward_marketing
     'dlux-io': 1000000000,
     shredz7: 100000000,
     disregardfiat: 1290171349,
@@ -107,7 +145,6 @@ var state = {
         markegiles: 5000
       },
       liquidating: {
-        //schedule
       }
     },
     markegiles: {
@@ -125,17 +162,19 @@ var state = {
   },
   stats: {
     hashLastIBlock: '',
+    parentBlock: '',
     lastBlock: 0,
-    tokensSupply: 100000000000,
-    interestsRate: 5000,
-    nodeRate: 10000,
-    IPFSRate: 20000,
-    relayRate: 10000,
-    contributorRate: 20000,
-    savingsRate: 10000,
-    marketingRate: 20000,
-    contentRate: 10000,
-    currationRate: 25000,
+    tokenSupply: 100000000000,
+    interestRate: 2100000,
+    nodeRate: 1000,
+    IPFSRate: 2000,
+    relayRate: 1000,
+    budgetRate: 2000,
+    maxBudget: 1000000000,
+    savingsRate: 1000,
+    marketingRate: 1000,
+    delegationRate: 1000,
+    currationRate: 2500,
     exchangeRate: {
       steemDlux: '',
       btcDlux: '',
@@ -154,9 +193,11 @@ var state = {
   runners: {
     'dlux-io': {
       self: 'dlux-io',
-      domain: 'https://dlux-token.herokuapp.com',
-      bidRate: 10000,
-      report: {}
+      domain: 'https://dlux-token.herokuapp.com'
+    },
+    'disregardfiat': {
+      self: 'disregardfiat',
+      domain: 'https://dlux-token-peer.herokuapp.com'
     }
   },
   markets: {
@@ -164,38 +205,135 @@ var state = {
       'dlux-io': {
         self: 'dlux-io',
         domain: 'https://dlux-token.herokuapp.com',
-        bidRate: 10000
-      }
-    },
+        bidRate: 1,
+        attempts: 1,
+        yays: 1,
+        wins: 1,
+        lastGood: 0,
+        report: {
+          agreements:{
+            'dlux-io': {
+              node:	"dlux-io",
+              agreement:	true
+            },
+            disregardfiat: {
+              node:	"disregardfiat",
+              agreement:	true
+            },
+            markegiles:	{
+              node:	"markegiles",
+              agreement: true
+            }
+          },
+          hash: "QmTfmV2qQbvH7k26JmdBFBiqATfL8PL1vQJiVaojc8TLjV",
+          block:	28611600
+          }
+      },
+      'disregardfiat': {
+        self: 'disregardfiat',
+        domain: 'https://dlux-token-peer.herokuapp.com',
+        bidRate: 1,
+        attempts: 1,
+        yays: 1,
+        wins: 1,
+        lastGood: 0,
+        report: {
+          agreements:{
+            'dlux-io': {
+              node:	"dlux-io",
+              agreement:	true
+            },
+            disregardfiat: {
+              node:	"disregardfiat",
+              agreement:	true
+            },
+            markegiles:	{
+              node:	"markegiles",
+              agreement: true
+            }
+          },
+          hash: "QmTfmV2qQbvH7k26JmdBFBiqATfL8PL1vQJiVaojc8TLjV",
+          block:	28611600
+          }
+        },
+      'markegiles': {
+        self: 'markegiles',
+        domain: 'https://dlux-token-markegiles.herokuapp.com',
+        bidRate: 1,
+        attempts: 1,
+        yays: 1,
+        wins: 1,
+        lastGood: 0,
+        report: {
+          agreements:{
+            'dlux-io': {
+              node:	"dlux-io",
+              agreement:	true
+            },
+            disregardfiat: {
+              node:	"disregardfiat",
+              agreement:	true
+            },
+            markegiles:	{
+              node:	"markegiles",
+              agreement:	true
+            }
+          },
+          hash:	"QmTfmV2qQbvH7k26JmdBFBiqATfL8PL1vQJiVaojc8TLjV",
+          block:	28611600
+          }
+    }
+  },
     ipfs: {
       'dlux-io': {
         self: 'dlux-io',
-        domain: 'https://ipfs.dlux.io',
+        domain: 'ipfs.infura.io',
         bidRate: 20000,
+        report: {}
       }
     },
     relay: {
       'dlux-io': {
         self: 'dlux-io',
         domain: 'https://chat.dlux.io',
-        bidRate: 10000
+        bidRate: 10000,
+        report: {}
       }
     },
     contributors: {
       'disregardfiat': {
-        self: 'dlux-io',
-        bidRate: 1
+        self: 'disregardfiat',
+        bidRate: 1,
+        report: {}
       },
       'markegiles': {
-        self: 'dlux-io',
-        bidRate: 1
+        self: 'markegiles',
+        bidRate: 1,
+        report: {}
       }
     }
   }
 }
 
+var dappStates = {}
 var plasma = {}
+var transactor = steemTransact(client, steem, prefix);
 
+console.log(`Attempting to start from IPFS save state ${engineCrank} @blocl ${startingBlock}`);
+  ipfs.cat(engineCrank, (err, file) => {
+    if (!err){
+      var data = JSON.parse(file);
+      startingBlock = data[0]
+      state = data[1];
+      startApp();
+    } else {
+      startApp();
+      console.log(`${engineCrank} failed to load, Replaying from genesis.\nYou may want to set the env var STARTHASH\nFind it at any token API such as token.dlux.io`)
+    }
+  });
+
+
+/*
 if(fs.existsSync(stateStoreFile)) {
   var data = fs.readFileSync(stateStoreFile, 'utf8');
   var json = JSON.parse(data);
@@ -206,7 +344,7 @@ if(fs.existsSync(stateStoreFile)) {
   console.log('No state store file found. Starting from the genesis block+state');
   startApp();
 }
-
+*/
 
 
 
@@ -231,27 +369,47 @@ function startApp() {
 
   processor.on('node_add', function(json, from) {
     if(json.domain && typeof json.domain === 'string') {
-      state.markets.nodes[from].domain = json.domain;
-      state.markets.nodes[from].self = from;
-      state.markets.nodes[from].bidRate = json.bidRate || 10000;
-      console.log(`@${from} has bidded the steem-state node ${json.domain} at ${json.bidRate}`)
+      var int = parseInt(json.bidRate)
+      if (int < 1) {int = 1000}
+      if (int > 1000) {int = 1000}
+      if (state.markets.node[from]){
+        state.markets.node[from].domain = json.domain
+        state.markets.node[from].bidRate = int
+      } else {
+        state.markets.node[from] = {
+          domain: json.domain,
+          self: from,
+          bidRate: int,
+          attempts: 0,
+          yays: 0,
+          wins: 0,
+          lastGood: 0,
+          report: {}
+        }
+      }
+      console.log(`@${from} has bid the steem-state node ${json.domain} at ${json.bidRate}`)
     } else {
       console.log('Invalid steem-state node operation from', from)
     }
   });
 
   processor.on('node_delete', function(json, from) {
-    delete state.markets.nodes[from].domain
-    delete state.markets.nodes[from].bidRate
+    delete state.markets.node[from].domain
+    delete state.markets.node[from].bidRate
     console.log(`@${from} has deleted their steem-state node`)
   });
 
   processor.on('ipfs_add', function(json, from) {
     if(json.domain && typeof json.domain === 'string') {
-      state.markets.ipfs[from].domain = json.domain;
-      state.markets.ipfs[from].self = from;
-      state.markets.ipfs[from].bidRate = json.bidRate || 20000;
-      console.log(`@${from} has bidded the ipfs node ${json.domain} at ${json.bidRate}`)
+      var int = parseInt(json.bidRate)
+      if (int < 1) {int = 2000}
+      if (int > 2000) {int = 2000}
+      state.markets.ipfs[from] = {
+        domain: json.domain,
+        self: from,
+        bidRate: int
+      }
+      console.log(`@${from} has bid the ipfs node ${json.domain} at ${json.bidRate}`)
     } else {
       console.log('Invalid ipfs node operation from', from)
     }
@@ -265,10 +423,15 @@ function startApp() {
 
   processor.on('relay_add', function(json, from) {
     if(json.domain && typeof json.domain === 'string') {
-      state.markets.relay[from].domain = json.domain;
-      state.markets.relay[from].self = from;
-      state.markets.relay[from].bidRate = json.bidRate || 10000;
-      console.log(`@${from} has bidded the relay ${json.domain} at ${json.bidRate}`)
+      var int = parseInt(json.bidRate)
+      if (int < 1) {int = 1000}
+      if (int > 1000) {int = 1000}
+      state.markets.relay[from] = {
+        domain: json.domain,
+        self: from,
+        bidRate: int
+      }
+      console.log(`@${from} has bid the relay ${json.domain} at ${json.bidRate}`)
     } else {
       console.log('Invalid relay operation from', from)
     }
@@ -281,8 +444,33 @@ function startApp() {
   });
 
   processor.on('report', function(json, from) {
-
-    console.log(`@${from} has posted a report`)
+    var cfrom, domain
+    try {
+      cfrom = state.markets.node[from].self
+      domain = state.markets.node[from].domain
+    }
+    catch (err) {
+    }
+    if (from === cfrom && domain) {
+      state.markets.node[from].report = json
+      console.log(`@${from}'s report has been processed`)
+    } else {
+      if (from === username && NODEDOMAIN && BIDRATE) {
+        console.log(`This node posted a spurious report and in now attempting to register`)
+        transactor.json(username, key, 'node_add', {
+          domain: NODEDOMAIN,
+          bidRate: BIDRATE
+        }, function(err, result) {
+          if(err) {
+            console.error(err);
+          }
+        })
+      } else if (from === username) {
+        console.log(`This node has posted a spurious report\nPlease configure your DOAMAIN and BIDRATE env variables`)
+      } else {
+      console.log(`@${from} has posted a spurious report`)
+    }
+    }
   });
 
   processor.onNoPrefix('follow', function(json, from) {  // Follow id includes both follow and resteem.
@@ -295,18 +483,33 @@ function startApp() {
     }
   });
 
+  processor.onOperation('comment_options', function(json,from){
+    //add post to dlux to reward list
+  });
+
   processor.onBlock(function(num, block) {
     if(num % 100 === 0 && !processor.isStreaming()) {
       client.database.getDynamicGlobalProperties().then(function(result) {
         console.log('At block', num, 'with', result.head_block_number-num, 'left until real-time.')
       });
     }
-
+    if(num % 100 === 5 && processor.isStreaming()) {
+      attempts = 0;
+      check(num);
+    }
+    if(num % 100 === 50 && processor.isStreaming()) {
+      report(num);
+    }
+    if((num - 20000) % 30240  === 0) { //time for daily magic
+      dao(num);
+    }
     if(num % 100 === 0) {
-
-      saveState(function() {
-        console.log('Saved state.')
-      });
+      tally(num);
+      var blockState = Buffer.from(JSON.stringify([num, state]))
+      plasma.hashBlock = num
+      plasma.hashLastIBlock = hashThis(blockState)
+      console.log(`Signing: ${plasma.hashLastIBlock}`)
+      if(processor.isStreaming()){ipfsSaveState(num, blockState);}
     }
   });
 
@@ -315,9 +518,6 @@ function startApp() {
   });
 
   processor.start();
-
-
-  var transactor = steemTransact(client, steem, prefix);
 
   rl.on('line', function(data) {
     var split = data.split(' ');
@@ -345,7 +545,7 @@ function startApp() {
       })
     } else if(split[0] === 'exit') {
       exit();
-    } else if(split[0] === 'state') { 
+    } else if(split[0] === 'state') {
       console.log(JSON.stringify(state, null, 2));
     } else {
       console.log("Invalid command.");
@@ -353,34 +553,161 @@ function startApp() {
   });
 }
 
-function tally() {//do on % 100 prior to save
-  //looks for json reports from node runners updates stat
-}
-
 function check() { //do this maybe cycle 5, gives 15 secs to be streaming behind
-  delete plasma.markets;
-  for (i = 0; i < state.markets.node.length; i++ ) {
-    var self = state.markets.nodes[i].self
+  plasma.markets = {
+    nodes: {},
+    ipfss: {},
+    relays: {}
+  }
+  for (var account in state.markets.node) {
+    var self = state.markets.node[account].self
     plasma.markets.nodes[self] = {
-      node: state.markets.nodes[i].self,
+      self: self,
       agreement: false,
     }
-    fetch(`${state.markets.nodes[i].domain}/stats`)
+    fetch(`${state.markets.node[self].domain}/stats`)
       .then(function(response) {
-        return response.json().body;
+        return response.json();
       })
       .then(function(myJson) {
-        console.log(JSON.stringify(myJson));
-        if (state.stats.hashLastIBlock === myJson.hashLastIBlock){
-          plasma.markets.nodes[self].agreement = true
+        //console.log(JSON.stringify(myJson));
+        if (state.stats.tokenSupply === myJson.stats.tokenSupply){
+          plasma.markets.nodes[myJson.node].agreement = true
         }
       });
     }
-  //check node/stats and compare to state.stats these will only be processed on block 99 and should always agree
 }
 
-function report() {
-  //sum plasma and post a transaction
+function tally(num) {//tally state before save and next report
+  var tally = {
+    agreements: {
+      runners: {},
+      tally: {},
+      votes: 0
+    },
+    election: {},
+    winner: {},
+    results: []
+  }
+  for (var node in state.runners){ //find out who is in the runners group
+    tally.agreements.runners[node] = state.markets.node[node] //move the state data to tally to process
+    tally.agreements.tally[node] = {
+      self: node,
+      votes: 0
+    } //build a dataset to count
+  }
+  for (var node in tally.agreements.runners) { //cycle through this data
+      if (tally.agreements.runners[node].report.agreements[node].agreement == true){ //only count what nodes believe are true
+        tally.agreements.votes++ //total votes
+        for (var subnode in tally.agreements.runners[node].report.agreements){
+          if(tally.agreements.runners[node].report.agreements[subnode].agreement == true && tally.agreements.tally[subnode]){
+            tally.agreements.tally[subnode].votes++
+          }
+        }
+      }
+  }
+  var l = 0
+  var consensus
+  for (var node in state.runners){
+      l++
+    if (tally.agreements.tally[node].votes / tally.agreements.votes > 2 / 3) {
+      consensus = tally.agreements.runners[node].report.hash
+    } else if(state.markets.node[node].report.hash !== state.stats.hashLastIBlock) {
+      delete state.runners[node]
+      console.log('uh-oh:' + node +' scored '+ tally.agreements.tally[node].votes + '/' + tally.agreements.votes)
+    }
+  }
+  state.stats.lastBlock = state.stats.hashLastIBlock
+  state.stats.hashLastIBlock = consensus
+  for (var node in state.markets.node) {
+      state.markets.node[node].attempts++
+    if (state.markets.node[node].report.hash === state.stats.hashLastIBlock) {
+      state.markets.node[node].yays++
+      state.markets.node[node].lastGood = num
+    }
+  }
+  if (l < 20) {
+    for (var node in state.markets.node) {
+      tally.election[node] = state.markets.node[node]
+    }
+    tally.results = []
+    for (var node in state.runners){
+      delete tally.election[node]
+    }
+    for (var node in tally.election){
+      if (tally.election[node].report.hash !== state.stats.hashLastIBlock){
+        delete tally.election[node]
+      }
+    }
+    var t = 0
+    for (var node in tally.election){
+      t++
+      tally.results.push([node, parseInt(((tally.election[node].yays / tally.election[node].attempts) * tally.election[node].attempts))])
+    }
+    if(t){
+      tally.results.sort(function(a, b) {
+        return a[1] - b[1];
+      })
+      tally.winner = tally.results.pop()
+      state.runners[tally.winner[0]]= {
+        self: state.markets.node[tally.winner[0]].self,
+        domain: state.markets.node[tally.winner[0]].domain
+      }
+    }
+  }
+  for (var node in state.runners) {
+    state.markets.node[node].wins++
+  }
+  //count agreements and make the runners list, update market rate for node services
+  var mint = parseInt(state.stats.tokenSupply/state.stats.interestRate)
+  state.stats.tokenSupply += mint
+  state.balances.ra += mint
+}
+
+function dao() {
+  //disperses funds for delegation, as well as ICO bids
+}
+
+function report(num) {
+  agreements = {}
+  if (plasma.markets) {
+    for (var node in plasma.markets.nodes){
+      var self = plasma.markets.nodes[node].self;
+      if (plasma.markets.nodes[self].agreement){
+        agreements[self] = {
+          node: self,
+          agreement: true
+        }
+      }
+    }
+    for (var node in state.runners){
+      var self = state.runners[node].self;
+      if (agreements[self]) {
+        agreements[self].top = true
+      } else if (plasma.markets.nodes[self].agreement) {
+        agreements[self] = {
+          node: self,
+          agreement: true
+        }
+      } else {
+        agreements[self] = {
+          node: self,
+          agreement: false
+        }
+      }
+    }
+    transactor.json(username, key, 'report', {
+        agreements: agreements,
+        hash: plasma.hashLastIBlock,
+        block: plasma.hashBlock
+      }, function(err, result) {
+        if(err) {
+          console.error(err, `\nMost likely your ACCOUNT and KEY variables are not set!`);
+        } else {
+          console.log(`Sent State report and published ${plasma.hashLastIBlock} for ${plasma.hashBlock}`)
+        }
+    })//sum plasma and post a transaction
+  }
 }
 
 function exit() {
@@ -398,3 +725,26 @@ function saveState(callback) {
   fs.writeFileSync(stateStoreFile, JSON.stringify([currentBlock, state]));
   callback();
 }
+
+function ipfsSaveState(blocknum, hashable) {
+  ipfs.add(hashable, (err, ipfsHash) => {
+    if (!err){
+      if(ipfsHash[0].hash.substr(0,1) == 'Qm') {
+          plasma.hashLastIBlock = ipfsHash[0].hash
+          console.log('Saved: ' + ipfsHash[0].hash)
+        } else {
+          console.log({cycle}, 'Non-Hash returned')
+          cycleIPFS(cycle++)
+          if (cycle >= 25){
+            cycle = 0;
+            return;
+          }
+          ipfsSaveState(blocknum)
+        }
+    } else {
+    console.log({cycle}, err)
+    cycleIPFS(cycle++)
+    //ipfsSaveState(blocknum)
+  }
+  })
+};
