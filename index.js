@@ -180,7 +180,6 @@ var state = {
     }
   },
   gateways:[
-    'gateway.ipfs.io',
     'cloudflare-ipfs.com',
     'ipfs.infura.io',
     'ipfs.ink',
@@ -515,7 +514,7 @@ function startApp() {
     }
     if(num % 100 === 0) {
       tally(num);
-      if(!processor.isStreaming()){ipfsSaveState(num);}
+      if(processor.isStreaming()){ipfsSaveState(num);}
     }
   });
 
@@ -735,11 +734,17 @@ function saveState(callback) {
 function ipfsSaveState(blocknum) {
   ipfs.add(Buffer.from(JSON.stringify([blocknum, state])), (err, ipfsHash) => {
     if (!err){
-    plasma.hashLastIBlock = ipfsHash[0].hash
-    plasma.hashBlock = blocknum
-    console.log('Saved: ' + ipfsHash[0].hash)
-  } else {
-    console.log(err)
+      if(ipfsHash[0].hash.substr(0,1) == 'Qm') {
+          plasma.hashLastIBlock = ipfsHash[0].hash
+          plasma.hashBlock = blocknum
+          console.log('Saved: ' + ipfsHash[0].hash)
+        } else {
+          console.log({cycle}, 'Non-Hash returned')
+          cycleIPFS(cycle++)
+          ipfsSaveState(blocknum)
+        }
+    } else {
+    console.log({cycle}, err)
     cycleIPFS(cycle++)
     ipfsSaveState(blocknum)
   }
