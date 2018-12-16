@@ -19,7 +19,7 @@ const key = ENV.KEY || '';
 const username = ENV.ACCOUNT || 'dlux-io';
 const NODEDOMAIN = ENV.DOMAIN
 const BIDRATE = ENV.BIDRATE
-const engineCrank =  ENV.STARTHASH || ''
+const engineCrank =  ENV.STARTHASH || 'QmbCnRaUsbdpMTppE6gjrnqA996yq5aQVXgVoe216y2n2i'
 
 app.get('/', (req, res, next) => {
   res.setHeader('Content-Type', 'application/json')
@@ -591,9 +591,9 @@ function tally(num) {//tally state before save and next report
       l++
     if (tally.agreements.tally[node].votes / tally.agreements.votes > 2 / 3) {
       consensed = tally.agreements.runners[node].report.hash
-    } else {
+    } else if(state.markets.node[node].report.hash !== consensed) {
       delete state.runners[node]
-      console.log('uh-oh', + tally.agreements.tally[node].votes + '/' + tally.agreements.votes)
+      console.log('uh-oh:' + node +' scored '+ tally.agreements.tally[node].votes + '/' + tally.agreements.votes)
     }
   }
   for (var node in state.markets.node) {
