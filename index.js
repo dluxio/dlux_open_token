@@ -488,7 +488,7 @@ function startApp() {
     }
     if(num % 100 === 0) {
       tally(num);
-      ipfsSaveState(num);
+      if(!processor.isStreaming()){ipfsSaveState(num);}
     }
   });
 
