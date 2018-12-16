@@ -19,7 +19,7 @@ const key = ENV.KEY || '';
 const username = ENV.ACCOUNT || 'dlux-io';
 const NODEDOMAIN = ENV.DOMAIN
 const BIDRATE = ENV.BIDRATE
-const engineCrank =  ENV.STARTHASH || 'QmbCnRaUsbdpMTppE6gjrnqA996yq5aQVXgVoe216y2n2i'
+const engineCrank =  ENV.STARTHASH || ''
 
 app.get('/', (req, res, next) => {
   res.setHeader('Content-Type', 'application/json')
@@ -586,19 +586,21 @@ function tally(num) {//tally state before save and next report
       }
   }
   var l = 0
-  var consensed = 0
+  var consensus
   for (var node in state.runners){
       l++
     if (tally.agreements.tally[node].votes / tally.agreements.votes > 2 / 3) {
-      consensed = tally.agreements.runners[node].report.hash
-    } else if(state.markets.node[node].report.hash !== consensed) {
+      consensus = tally.agreements.runners[node].report.hash
+    } else if(state.markets.node[node].report.hash !== state.stats.hashLastIBlock) {
       delete state.runners[node]
       console.log('uh-oh:' + node +' scored '+ tally.agreements.tally[node].votes + '/' + tally.agreements.votes)
     }
   }
+  state.stats.lastBlock = state.stats.hashLastIBlock
+  state.stats.hashLastIBlock = consensus
   for (var node in state.markets.node) {
       state.markets.node[node].attempts++
-    if (state.markets.node[node].report.hash === consensed) {
+    if (state.markets.node[node].report.hash === state.stats.hashLastIBlock) {
       state.markets.node[node].yays++
       state.markets.node[node].lastGood = num
     }
@@ -612,7 +614,7 @@ function tally(num) {//tally state before save and next report
       delete tally.election[node]
     }
     for (var node in tally.election){
-      if (tally.election[node].report.hash !== consensed){
+      if (tally.election[node].report.hash !== state.stats.hashLastIBlock){
         delete tally.election[node]
       }
     }
