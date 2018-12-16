@@ -3,29 +3,37 @@ var steemState = require('steem-state');
 var steemTransact = require('steem-transact');
 var readline = require('readline');
 var fs = require('fs');
+
 const IPFS = require('ipfs-api');
 var ipfs = new IPFS({ host: 'ipfs.infura.io', port: 5001, protocol: 'https'});
 const args = require('minimist')(process.argv.slice(2));
 const express = require('express')
+
+//Sign state with out storing it
 const crypto = require('crypto')
 const bs58 = require('bs58')
 const hashFunction = Buffer.from('12', 'hex')
 function hashThis(data) {
-const digest = crypto.createHash('sha256').update(data).digest()
-const digestSize = Buffer.from(digest.byteLength.toString(16), 'hex')
-const combined = Buffer.concat([hashFunction, digestSize, digest])
-const multihash = bs58.encode(combined)
-return multihash.toString()
+  const digest = crypto.createHash('sha256').update(data).digest()
+  const digestSize = Buffer.from(digest.byteLength.toString(16), 'hex')
+  const combined = Buffer.concat([hashFunction, digestSize, digest])
+  const multihash = bs58.encode(combined)
+  return multihash.toString()
 }
 
+//
 const rl = readline.createInterface({
   input: process.stdin,
   output: process.stdout
 });
+
+
 var cycle = 0
 function cycleIPFS(num){
   //ipfs = new IPFS({ host: state.gateways[num], port: 5001, protocol: 'https' });
 }
+
+
 var agreements
 const app = express()
 const ENV = process.env;
@@ -317,9 +325,10 @@ var state = {
 
 var dappStates = {}
 var plasma = {}
+
 var transactor = steemTransact(client, steem, prefix);
 
-console.log(`Attempting to start from IPFS save state ${engineCrank} @blocl ${startingBlock}`);
+console.log(`Attempting to start from IPFS save state ${engineCrank}`);
   ipfs.cat(engineCrank, (err, file) => {
     if (!err){
       var data = JSON.parse(file);
@@ -494,7 +503,6 @@ function startApp() {
       });
     }
     if(num % 100 === 5 && processor.isStreaming()) {
-      attempts = 0;
       check(num);
     }
     if(num % 100 === 50 && processor.isStreaming()) {
@@ -565,7 +573,11 @@ function check() { //do this maybe cycle 5, gives 15 secs to be streaming behind
       self: self,
       agreement: false,
     }
-    fetch(`${state.markets.node[self].domain}/stats`)
+    var domain = state.markets.node[self].domain
+    if (domain.slice(-1) == '/') {
+      domain = domain.substring(0, domain.length - 1)
+    }
+    fetch(`${domain}/stats`)
       .then(function(response) {
         return response.json();
       })
@@ -729,17 +741,16 @@ function saveState(callback) {
 function ipfsSaveState(blocknum, hashable) {
   ipfs.add(hashable, (err, ipfsHash) => {
     if (!err){
-      if(ipfsHash[0].hash.substr(0,1) == 'Qm') {
+      if(ipfsHash[0].hash.substr(0,1) === 'Qm') {
           plasma.hashLastIBlock = ipfsHash[0].hash
           console.log('Saved: ' + ipfsHash[0].hash)
         } else {
-          console.log({cycle}, 'Non-Hash returned')
+          console.log({cycle}, 'Non-Hash returned', ipfsHash[0].hash)
           cycleIPFS(cycle++)
           if (cycle >= 25){
             cycle = 0;
             return;
           }
-          ipfsSaveState(blocknum)
         }
     } else {
     console.log({cycle}, err)
