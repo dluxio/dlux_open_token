@@ -19,11 +19,11 @@ const key = ENV.KEY || '';
 const username = ENV.ACCOUNT || 'dlux-io';
 const NODEDOMAIN = ENV.DOMAIN
 const BIDRATE = ENV.BIDRATE
-
+var hashLashIBlock
 function ipfsSaveState(blocknum) {
   ipfs.add(Buffer.from(JSON.stringify([blocknum, state])), (err, ipfsHash) => {
     if (!err){
-    plasma.hashLashIBlock = ipfsHash[0].hash
+    hashLashIBlock = ipfsHash[0].hash
     plasma.hashBlock = blocknum
     console.log('Saved: ' + ipfsHash[0].hash)
   } else {
@@ -647,7 +647,7 @@ function report(num) {
     }
     transactor.json(username, key, 'report', {
         agreements: agreements,
-        hash: plasma.hashLastIBlock,
+        hash: hashLastIBlock,
         block: plasma.hashBlock
       }, function(err, result) {
         if(err) {
