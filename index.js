@@ -25,6 +25,7 @@ function ipfsSaveState(blocknum) {
     if (!err){
     plasma.hashLashIBlock = ipfsHash
     plasma.hashBlock = blocknum
+    console.log('Saved: ' + ipfsHash)
   } else {
     console.log(err)
   }
@@ -645,13 +646,14 @@ function report(num) {
       }
     }
     transactor.json(username, key, 'report', {
-        agreements,
+        agreements: agreements,
         hash: plasma.hashLastIBlock,
         block: plasma.hashBlock
       }, function(err, result) {
         if(err) {
           console.error(err, `\nMost likely your ACCOUNT and KEY variables are not set!`);
-
+        } else {
+          console.log(`Sent State report and published ${plasma.hashLastIBlock} for ${plasma.hashBlock}`)
         }
     })//sum plasma and post a transaction
   }
