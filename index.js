@@ -19,10 +19,10 @@ const key = ENV.KEY || '';
 const username = ENV.ACCOUNT || 'dlux-io';
 const NODEDOMAIN = ENV.DOMAIN
 const BIDRATE = ENV.BIDRATE
-const engineCrank =  ENV.STARTHASH || 'QmWKYzK6Ro8d3GJmfFsoHp5eFxVD5GeNYYYpBN8WFZX5Rf'
+const engineCrank =  ENV.STARTHASH || ''
 
 app.get('/', (req, res, next) => {
-  res.setHeader('Content-Type', 'application/json');
+  res.setHeader('Content-Type', 'application/json')
   res.send(JSON.stringify({stats: state.stats, node: username}, null, 3))
 });
 app.get('/@:username', (req, res, next) => {
@@ -48,7 +48,7 @@ app.listen(port, () => console.log(`DLUX token API listening on port ${port}!\nA
 var stateStoreFile = './state.json';  // You can replace this with the location you want to store the file in, I think this will work best for heroku and for testing.
 const resteemAccount = 'dlux-io';
 const resteemReward = 10000;
-var startingBlock = 28609701;
+var startingBlock = 28611500;
 // /\ and \/ are placeholders. They will act as the genesis state if no file is found.
 
 
@@ -178,13 +178,11 @@ var state = {
   runners: {
     'dlux-io': {
       self: 'dlux-io',
-      domain: 'https://dlux-token.herokuapp.com',
-      report: {}
+      domain: 'https://dlux-token.herokuapp.com'
     },
     'disregardfiat': {
       self: 'disregardfiat',
-      domain: 'https://dlux-token-peer.herokuapp.com',
-      report: {}
+      domain: 'https://dlux-token-peer.herokuapp.com'
     }
   },
   markets: {
@@ -198,8 +196,23 @@ var state = {
         wins: 1,
         lastGood: 0,
         report: {
-
-        }
+          agreements:{
+            'dlux-io': {
+              node:	"dlux-io",
+              agreement:	true
+            },
+            disregardfiat: {
+              node:	"disregardfiat",
+              agreement:	true
+            },
+            markegiles:	{
+              node:	"markegiles",
+              agreement: true
+            }
+          },
+          hash: "QmTfmV2qQbvH7k26JmdBFBiqATfL8PL1vQJiVaojc8TLjV",
+          block:	28611600
+          }
       },
       'disregardfiat': {
         self: 'disregardfiat',
@@ -209,8 +222,25 @@ var state = {
         yays: 1,
         wins: 1,
         lastGood: 0,
-        report: {}
-      },
+        report: {
+          agreements:{
+            'dlux-io': {
+              node:	"dlux-io",
+              agreement:	true
+            },
+            disregardfiat: {
+              node:	"disregardfiat",
+              agreement:	true
+            },
+            markegiles:	{
+              node:	"markegiles",
+              agreement: true
+            }
+          },
+          hash: "QmTfmV2qQbvH7k26JmdBFBiqATfL8PL1vQJiVaojc8TLjV",
+          block:	28611600
+          }
+        },
       'markegiles': {
         self: 'markegiles',
         domain: 'https://dlux-token-markegiles.herokuapp.com',
@@ -219,9 +249,26 @@ var state = {
         yays: 1,
         wins: 1,
         lastGood: 0,
-        report: {}
-      }
-    },
+        report: {
+          agreements:{
+            'dlux-io': {
+              node:	"dlux-io",
+              agreement:	true
+            },
+            disregardfiat: {
+              node:	"disregardfiat",
+              agreement:	true
+            },
+            markegiles:	{
+              node:	"markegiles",
+              agreement:	true
+            }
+          },
+          hash:	"QmTfmV2qQbvH7k26JmdBFBiqATfL8PL1vQJiVaojc8TLjV",
+          block:	28611600
+          }
+    }
+  },
     ipfs: {
       'dlux-io': {
         self: 'dlux-io',
@@ -529,7 +576,6 @@ function tally(num) {//tally state before save and next report
     } //build a dataset to count
   }
   for (var node in tally.agreements.runners) { //cycle through this data
-    try{
       if (tally.agreements.runners[node].report.agreements[node].agreement == true){ //only count what nodes believe are true
         tally.agreements.votes++ //total votes
         for (var subnode in tally.agreements.runners[node].report.agreements){
@@ -538,9 +584,6 @@ function tally(num) {//tally state before save and next report
           }
         }
       }
-    } catch {
-      console.log('This should only catch start-up pain')
-    }
   }
   var l = 0
   var consensed = 0
@@ -550,6 +593,7 @@ function tally(num) {//tally state before save and next report
       consensed = tally.agreements.runners[node].report.hash
     } else {
       delete state.runners[node]
+      console.log('uh-oh', + tally.agreements.tally[node].votes + '/' + tally.agreements.votes)
     }
   }
   for (var node in state.markets.node) {
@@ -568,19 +612,24 @@ function tally(num) {//tally state before save and next report
       delete tally.election[node]
     }
     for (var node in tally.election){
-      if (tally.election[node].lastGood !== num - 100){
+      if (tally.election[node].report.hash !== consensed){
         delete tally.election[node]
       }
     }
+    var t = 0
     for (var node in tally.election){
+      t++
       tally.results.push([node, parseInt(((tally.election[node].yays / tally.election[node].attempts) * tally.election[node].attempts))])
     }
-    tally.results.sort(function(a, b) {
-      return a[1] - b[1];
-    })
-    tally.winner = tally.results.pop()
-    for (var node in tally.winner){
-      state.runners[node] = state.markets.node[node]
+    if(t){
+      tally.results.sort(function(a, b) {
+        return a[1] - b[1];
+      })
+      tally.winner = tally.results.pop()
+      state.runners[tally.winner[0]]= {
+        self: state.markets.node[tally.winner[0]].self,
+        domain: state.markets.node[tally.winner[0]].domain
+      }
     }
   }
   for (var node in state.runners) {
