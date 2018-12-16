@@ -42,7 +42,7 @@ const key = ENV.KEY || '';
 const username = ENV.ACCOUNT || 'dlux-io';
 const NODEDOMAIN = ENV.DOMAIN
 const BIDRATE = ENV.BIDRATE
-const engineCrank =  ENV.STARTHASH || 'QmTRRZmf9BPtZJL3xarCVzHZNLbt6gNML4FK62fEQWGbov'
+const engineCrank =  ENV.STARTHASH || ''
 
 app.get('/', (req, res, next) => {
   res.setHeader('Content-Type', 'application/json')
@@ -71,7 +71,7 @@ app.listen(port, () => console.log(`DLUX token API listening on port ${port}!\nA
 var stateStoreFile = './state.json';  // You can replace this with the location you want to store the file in, I think this will work best for heroku and for testing.
 const resteemAccount = 'dlux-io';
 const resteemReward = 10000;
-var startingBlock = 28541502;
+const startingBlock = 28626700;
 // /\ and \/ are placeholders. They will act as the genesis state if no file is found.
 
 
@@ -327,7 +327,7 @@ var dappStates = {}
 var plasma = {}
 
 var transactor = steemTransact(client, steem, prefix);
-
+if (engineCrank){
 console.log(`Attempting to start from IPFS save state ${engineCrank}`);
   ipfs.cat(engineCrank, (err, file) => {
     if (!err){
@@ -340,7 +340,10 @@ console.log(`Attempting to start from IPFS save state ${engineCrank}`);
       console.log(`${engineCrank} failed to load, Replaying from genesis.\nYou may want to set the env var STARTHASH\nFind it at any token API such as token.dlux.io`)
     }
   });
-
+} else {
+  console.log(`Replaying from ${startingBlock}`)
+  startApp();
+}
 
 /*
 if(fs.existsSync(stateStoreFile)) {
