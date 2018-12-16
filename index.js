@@ -59,7 +59,7 @@ var stateStoreFile = './state.json';  // You can replace this with the location 
 
 const resteemAccount = 'dlux-io';
 const resteemReward = 10000;
-var startingBlock = 28607000;
+var startingBlock = 28609701;
 // /\ and \/ are placeholders. They will act as the genesis state if no file is found.
 
 
@@ -539,6 +539,7 @@ function tally(num) {//tally state before save and next report
       votes: 0
     },
     election: {},
+    winner: {},
     results: []
   }
   for (var node in state.runners){ //find out who is in the runners group
