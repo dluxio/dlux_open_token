@@ -56,7 +56,6 @@ app.get('/markets', (req, res, next) => {
 app.listen(port, () => console.log(`DLUX token API listening on port ${port}!\nAvailible commands:\n/@username =>Balance\n/stats\n/markets`))
 
 var stateStoreFile = './state.json';  // You can replace this with the location you want to store the file in, I think this will work best for heroku and for testing.
-
 const resteemAccount = 'dlux-io';
 const resteemReward = 10000;
 var startingBlock = 28609701;
@@ -523,7 +522,7 @@ function check() { //do this maybe cycle 5, gives 15 secs to be streaming behind
         return response.json();
       })
       .then(function(myJson) {
-        console.log(JSON.stringify(myJson));
+        //console.log(JSON.stringify(myJson));
         if (state.stats.tokenSupply === myJson.stats.tokenSupply){
           plasma.markets.nodes[myJson.node].agreement = true
         }
@@ -550,13 +549,17 @@ function tally(num) {//tally state before save and next report
     } //build a dataset to count
   }
   for (var node in tally.agreements.runners) { //cycle through this data
-    if (tally.agreements.runners[node].report.agreements[node].agreement == true){ //only count what nodes believe are true
-      tally.agreements.votes++ //total votes
-      for (var subnode in tally.agreements.runners[node].report.agreements){
-        if(tally.agreements.runners[node].report.agreements[subnode].agreement == true && tally.agreements.tally[subnode]){
-          tally.agreements.tally[subnode].votes++
+    try{
+      if (tally.agreements.runners[node].report.agreements[node].agreement == true){ //only count what nodes believe are true
+        tally.agreements.votes++ //total votes
+        for (var subnode in tally.agreements.runners[node].report.agreements){
+          if(tally.agreements.runners[node].report.agreements[subnode].agreement == true && tally.agreements.tally[subnode]){
+            tally.agreements.tally[subnode].votes++
+          }
         }
       }
+    } catch {
+      console.log('This should only catch start-up pain')
     }
   }
   var l = 0
