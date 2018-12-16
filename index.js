@@ -735,8 +735,8 @@ function ipfsSaveState(blocknum, hashable) {
         } else {
           console.log({cycle}, 'Non-Hash returned')
           cycleIPFS(cycle++)
-          if (attempts >= 25){
-            attempts = 0;
+          if (cycle >= 25){
+            cycle = 0;
             return;
           }
           ipfsSaveState(blocknum)
