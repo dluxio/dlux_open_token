@@ -669,21 +669,21 @@ function startApp() {
     }
   });
 
-  processor.onOperation('transfer', function(json,from){//ICO calculate
+  processor.onOperation('transfer', function(json){//ICO calculate
     if (json.to == 'robotolux' && json.amount.split(' ')[1] == 'STEEM') {
       const icoEntry = (current - 20000) % 30240
-      const weight = waitWeight(icoEntry)
+      const weight = parseInt((Math.sqrt(1 - Math.pow(icoEntry/(30240), 2))/2 + 0.5)*1000000)
       const amount = parseInt(parseFloat(json.amount) * 1000)
-      state.ico.push({[from]:(weight * amount)})
-      console.log(`${from} bid in DLUX auction with ${json.amount} with a ${weight} multiple`)
+      state.ico.push({[json.from]:(weight * amount)})
+      console.log(`${json.from} bid in DLUX auction with ${json.amount} with a ${weight} multiple`)
     } else if(json.to == 'dlux-io' && json.memo.substr(0,7) == 'DLUX_DEX'){
       const amount = parseInt(parseFloat(json.amount) * 1000)
       const rate = parseInt(json.memo)
       if (json.amount.split(' ')[1] == 'STEEM') { //rate = how many dlux to purchase for the amount paid
-        state.dex.steem.buyOrders.push({from: from, buying: rate, amount: amount, [rate]:amount, rate:parseFloat(rate/amount).toFixed(6)})
+        state.dex.steem.buyOrders.push({from: json.from, buying: rate, amount: amount, [rate]:amount, rate:parseFloat(rate/amount).toFixed(6)})
         sortBuyArray(state.dex.steem.buyOrders, 'rate')
       } else {
-        state.dex.sbd.buyOrders.push({from: from, buying: rate, amount: amount, [rate]:amount, rate:parseFloat(rate/amount).toFixed(6)})
+        state.dex.sbd.buyOrders.push({from: json.from, buying: rate, amount: amount, [rate]:amount, rate:parseFloat(rate/amount).toFixed(6)})
         sortBuyArray(state.dex.sbd.buyOrders, 'rate')
       }
     } else if(json.memo.substr(0,7) == 'DLUX_DEX'){
@@ -695,21 +695,21 @@ function startApp() {
             var rate = state.dex.steem.sellOrders[i].buying
             if (buyAmount > amount) {
               buyAmount = buyAmount - amount
-              state.balances[from] += state.dex.steem.sellOrders[i].buying
-              console.log(`@${from} purchased ${state.dex.steem.sellOrders[i].buying} DLUX from ${json.to} for ${buyAmount} STEEMon the DEX, with some to spare...`)
+              state.balances[json.from] += state.dex.steem.sellOrders[i].buying
+              console.log(`@${json.from} purchased ${state.dex.steem.sellOrders[i].buying} DLUX from ${json.to} for ${buyAmount} STEEMon the DEX, with some to spare...`)
               state.dex.steem.tick = state.dex.steem.sellOrders[i].rate
               state.dex.steem.sellOrders.splice(i,1)
             } else if (buyAmount < amount) {
               var interim = parseInt(rate * buyAmount / amount)
-              state.balances[from] += interim
-              console.log(`@${from} purchased ${interim} DLUX from ${json.to} for ${json.amount} STEEM on the DEX`)
+              state.balances[json.from] += interim
+              console.log(`@${json.from} purchased ${interim} DLUX from ${json.to} for ${json.amount} STEEM on the DEX`)
               state.dex.steem.sellOrders.push({from: json.to, buying: rate - interim, amount: amount - buyAmount, [rate-interim]:amount-buyAmount, rate:parseFloat((rate-interim)/(amount-buyAmount)).toFixed(6)})
               state.dex.steem.tick = state.dex.steem.sellOrders[i].rate
               state.dex.steem.sellOrders.splice(i,1)
               sortSellArray(state.dex.steem.sellOrders, 'rate')
             } else {
-              state.balances[from] += rate
-              console.log(`@${from} purchased ${rate} DLUX from ${json.to} for ${json.amount} STEEM on the DEX`)
+              state.balances[json.from] += rate
+              console.log(`@${json.from} purchased ${rate} DLUX from ${json.to} for ${json.amount} STEEM on the DEX`)
               state.dex.steem.tick = state.dex.steem.sellOrders[i].rate
               state.dex.steem.sellOrders.splice(i,1)
               break;
@@ -724,20 +724,20 @@ function startApp() {
             var rate = state.dex.sbd.sellOrders[i].buying
             if (buyAmount > amount) {
               buyAmount = buyAmount - amount
-              state.balances[from] += state.dex.sbd.sellOrders[i].buying
-              console.log(`@${from} purchased ${state.dex.sbd.sellOrders[i].buying} DLUX from ${json.to} for ${buyAmount} SBD on the DEX, with some to spare... \nwill attempt to overflow order!`)
+              state.balances[json.from] += state.dex.sbd.sellOrders[i].buying
+              console.log(`@${json.from} purchased ${state.dex.sbd.sellOrders[i].buying} DLUX from ${json.to} for ${buyAmount} SBD on the DEX, with some to spare... \nwill attempt to overflow order!`)
               state.dex.sbd.tick = state.dex.sbd.sellOrders[i].rate
               state.dex.sbd.sellOrders.splice(i,1)
             } else if (buyAmount < amount) {
               var interim = parseInt(rate * buyAmount / amount)
-              state.balances[from] += interim
-              console.log(`@${from} purchased ${interim} DLUX from ${json.to} for ${json.amount} SBD on the DEX`)
+              state.balances[json.from] += interim
+              console.log(`@${json.from} purchased ${interim} DLUX from ${json.to} for ${json.amount} SBD on the DEX`)
               state.dex.sbd.sellOrders.push({from: json.to, buying: rate - interim, amount: amount - buyAmount, [rate-interim]:amount-buyAmount, rate:parseFloat((rate-interim)/(amount-buyAmount)).toFixed(6)})
               state.dex.sbd.tick = state.dex.sbd.sellOrders[i].rate
               state.dex.sbd.sellOrders.splice(i,1)
               sortSellArray(state.dex.sbd.sellOrders, 'rate')
             } else {
-              state.balances[from] += rate
+              state.balances[json.from] += rate
               console.log(`@${from} purchased ${rate} DLUX from ${json.to} for ${json.amount} SBD on the DEX`)
               state.dex.sbd.tick = state.dex.sbd.sellOrders[i].rate
               state.dex.sbd.sellOrders.splice(i,1)
@@ -771,7 +771,7 @@ function startApp() {
     }
     if(num % 100 === 0) {
       tally(num);
-      var blockState = Buffer.from(JSON.stringify([num, state]))
+      const blockState = Buffer.from(JSON.stringify([num, state]))
       plasma.hashBlock = num
       plasma.hashLastIBlock = hashThis(blockState)
       console.log(`Signing: ${plasma.hashLastIBlock}`)
