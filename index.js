@@ -42,7 +42,7 @@ const key = ENV.KEY || '';
 const username = ENV.ACCOUNT || 'dlux-io';
 const NODEDOMAIN = ENV.DOMAIN
 const BIDRATE = ENV.BIDRATE
-const engineCrank =  ENV.STARTHASH || ''
+//const engineCrank =  ENV.STARTHASH || ''
 
 app.get('/', (req, res, next) => {
   res.setHeader('Content-Type', 'application/json')
@@ -66,12 +66,17 @@ app.get('/markets', (req, res, next) => {
   res.setHeader('Content-Type', 'application/json');
   res.send(JSON.stringify({markets: state.markets, node: username}, null, 3))
 });
+app.get('/dex', (req, res, next) => {
+  res.setHeader('Content-Type', 'application/json');
+  res.send(JSON.stringify({markets: state.dex, node: username}, null, 3))
+});
 app.listen(port, () => console.log(`DLUX token API listening on port ${port}!\nAvailible commands:\n/@username =>Balance\n/stats\n/markets`))
 
 var stateStoreFile = './state.json';  // You can replace this with the location you want to store the file in, I think this will work best for heroku and for testing.
 const resteemAccount = 'dlux-io';
 const resteemReward = 10000;
-var startingBlock = 28626700;
+var startingBlock = 28643400;
+var current
 // /\ and \/ are placeholders. They will act as the genesis state if no file is found.
 
 
@@ -166,11 +171,12 @@ var state = {
       }
     }
   },
-  chrono: {
-  },
+  chrono: [],
+  posts: [],
+  delegations: [],
+  ico: [],
   stats: {
     hashLastIBlock: '',
-    parentBlock: '',
     lastBlock: 0,
     tokenSupply: 100000000000,
     interestRate: 2100000,
@@ -191,11 +197,25 @@ var state = {
     }
   },
   dex: {
-    buyBook: {
-
+    steem: {
+      tick: '',
+      buyOrders: [],
+      sellOrders: []
     },
-    sellBook: {
-
+    sbd: {
+      tick: '',
+      buyOrders: [],
+      sellOrders: []
+    },
+    eth: {
+      tick: '',
+      buyOrders: [],
+      sellOrders: []
+    },
+    btc: {
+      tick: '',
+      buyOrders: [],
+      sellOrders: []
     }
   },
   runners: {
@@ -213,10 +233,10 @@ var state = {
       'dlux-io': {
         self: 'dlux-io',
         domain: 'https://dlux-token.herokuapp.com',
-        bidRate: 1,
-        attempts: 1,
-        yays: 1,
-        wins: 1,
+        bidRate: 2000,
+        attempts: 10000,
+        yays: 10000,
+        wins: 10000,
         lastGood: 0,
         report: {
           agreements:{
@@ -231,7 +251,15 @@ var state = {
             markegiles:	{
               node:	"markegiles",
               agreement: true
-            }
+            },
+            shredz7:	{
+              node:	"shredz7",
+              agreement: true
+            },
+            caramaeplays: {
+              node:	"caramaeplays",
+              agreement: true
+            },
           },
           hash: "QmTfmV2qQbvH7k26JmdBFBiqATfL8PL1vQJiVaojc8TLjV",
           block:	28611600
@@ -240,10 +268,10 @@ var state = {
       'disregardfiat': {
         self: 'disregardfiat',
         domain: 'https://dlux-token-peer.herokuapp.com',
-        bidRate: 1,
-        attempts: 1,
-        yays: 1,
-        wins: 1,
+        bidRate: 2000,
+        attempts: 10000,
+        yays: 10000,
+        wins: 10000,
         lastGood: 0,
         report: {
           agreements:{
@@ -258,7 +286,15 @@ var state = {
             markegiles:	{
               node:	"markegiles",
               agreement: true
-            }
+            },
+            shredz7:	{
+              node:	"shredz7",
+              agreement: true
+            },
+            caramaeplays: {
+              node:	"caramaeplays",
+              agreement: true
+            },
           },
           hash: "QmTfmV2qQbvH7k26JmdBFBiqATfL8PL1vQJiVaojc8TLjV",
           block:	28611600
@@ -267,10 +303,10 @@ var state = {
       'markegiles': {
         self: 'markegiles',
         domain: 'https://dlux-token-markegiles.herokuapp.com',
-        bidRate: 1,
-        attempts: 1,
-        yays: 1,
-        wins: 1,
+        bidRate: 2000,
+        attempts: 10000,
+        yays: 10000,
+        wins: 10000,
         lastGood: 0,
         report: {
           agreements:{
@@ -284,13 +320,91 @@ var state = {
             },
             markegiles:	{
               node:	"markegiles",
-              agreement:	true
-            }
+              agreement: true
+            },
+            shredz7:	{
+              node:	"shredz7",
+              agreement: true
+            },
+            caramaeplays: {
+              node:	"caramaeplays",
+              agreement: true
+            },
           },
           hash:	"QmTfmV2qQbvH7k26JmdBFBiqATfL8PL1vQJiVaojc8TLjV",
           block:	28611600
-          }
-    }
+        }
+      },
+        'shredz7': {
+          self: 'shredz7',
+          domain: 'https://dlux-token-node.herokuapp.com',
+          bidRate: 2000,
+          attempts: 10000,
+          yays: 10000,
+          wins: 10000,
+          lastGood: 0,
+          report: {
+            agreements:{
+              'dlux-io': {
+                node:	"dlux-io",
+                agreement:	true
+              },
+              disregardfiat: {
+                node:	"disregardfiat",
+                agreement:	true
+              },
+              markegiles:	{
+                node:	"markegiles",
+                agreement: true
+              },
+              shredz7:	{
+                node:	"shredz7",
+                agreement: true
+              },
+              caramaeplays: {
+                node:	"caramaeplays",
+                agreement: true
+              },
+            },
+            hash:	"QmTfmV2qQbvH7k26JmdBFBiqATfL8PL1vQJiVaojc8TLjV",
+            block:	28611600
+            }
+          },
+          'caramaeplays': {
+            self: 'caramaeplays',
+            domain: 'https://dlux-token-caramaeplays.herokuapp.com',
+            bidRate: 2000,
+            attempts: 10000,
+            yays: 10000,
+            wins: 10000,
+            lastGood: 0,
+            report: {
+              agreements:{
+                'dlux-io': {
+                  node:	"dlux-io",
+                  agreement:	true
+                },
+                disregardfiat: {
+                  node:	"disregardfiat",
+                  agreement:	true
+                },
+                markegiles:	{
+                  node:	"markegiles",
+                  agreement: true
+                },
+                shredz7:	{
+                  node:	"shredz7",
+                  agreement: true
+                },
+                caramaeplays: {
+                  node:	"caramaeplays",
+                  agreement: true
+                },
+              },
+              hash:	"QmTfmV2qQbvH7k26JmdBFBiqATfL8PL1vQJiVaojc8TLjV",
+              block:	28611600
+              }
+            }
   },
     ipfs: {
       'dlux-io': {
@@ -377,6 +491,47 @@ function startApp() {
     } else {
       console.log('Invalid send operation from', from)
     }
+  });
+
+  processor.on('dex_steem', function(json, from) {
+    var buyAmount = parseInt(parseFloat(json.steem) * 1000)
+    if (json.dlux >= state.balances[from]){
+      state.dex.steem.sellOrders.push({from: from, buying: buyAmount, amount: json.dlux, [json.dlux]:buyAmount, rate:parseFloat((json.dlux)/(buyAmount)).toFixed(6)})
+      state.balances[from] -= json.dlux
+      console.log(`@${from} has placed an order to sell ${json.dlux} for ${json.steem} STEEM`)
+    }
+  });
+
+  processor.on('dex_sbd', function(json, from) {
+    var buyAmount = parseInt(parseFloat(json.sbd) * 1000)
+    if (json.dlux >= state.balances[from]){
+      state.dex.sbd.sellOrders.push({from: from, buying: buyAmount, amount: json.dlux, [json.dlux]:buyAmount, rate:parseFloat((json.dlux)/(buyAmount)).toFixed(6)})
+      state.balances[from] -= json.dlux
+      console.log(`@${from} has placed an order to sell ${json.dlux} DLUX for ${json.sbd} SBD`)
+    } else {
+      console.log(`${from} tried to place an invalid order on the DEX`)
+    }
+  });
+
+  processor.on('dex_clear', function(json, from) {
+    var l = 0, t = 0
+    for (var i = 0; i < state.dex.steem.sellOrders.length; i++) {
+      if (state.dex.steem.sellOrders[i].from == from) {
+        state.balances[from] += state.dex.steem.sellOrders[i].amount
+        t += state.dex.steem.sellOrders[i].amount
+        state.dex.steem.sellOrders.splice(i,1)
+        i++
+      }
+    }
+    for (var i = 0; i < state.dex.sbd.sellOrders.length; i++) {
+      if (state.dex.sbd.sellOrders[i].from == from) {
+        state.balances[from] += state.dex.sbd.sellOrders[i].amount
+        t += state.dex.sbd.sellOrders[i].amount
+        state.dex.sbd.sellOrders.splice(i,1)
+        i++
+      }
+    }
+    console.log(`${from} has canceled ${i} orders and recouped ${t} DLUX`)
   });
 
   processor.on('node_add', function(json, from) {
@@ -495,11 +650,107 @@ function startApp() {
     }
   });
 
-  processor.onOperation('comment_options', function(json,from){
-    //add post to dlux to reward list
+  processor.onOperation('comment_options', function(json,from){//grab posts to reward
+    try{
+      var filter = json.extensions[0][1].beneficiaries
+    } catch {
+      return
+    }
+    for (var i = 0; i < filter.length; i++) {
+      if (filter[i].account == 'dlux-io' && filter[i].weight > 999){
+        state.posts.push({[json.author]: json.permlink})
+        console.log(`Added ${json.author}/${json.permlink} to dlux rewardable content`)
+        break;
+      }
+    }
+  });
+
+  processor.onOperation('transfer', function(json,from){//ICO calculate
+    if (json.to == 'robotolux' && json.amount.split(' ')[1] == 'STEEM') {
+      const icoEntry = (current - 20000) % 30240
+      const weight = waitWeight(icoEntry)
+      const amount = parseInt(parseFloat(json.amount) * 1000)
+      state.ico.push({[from]:(weight * amount)})
+      console.log(`${from} bid in DLUX auction with ${json.amount} with a ${weight} multiple`)
+    } else if(json.to == 'dlux-io' && json.memo.substr(0,7) == 'DLUX_DEX'){
+      const amount = parseInt(parseFloat(json.amount) * 1000)
+      const rate = parseInt(json.memo)
+      if (json.amount.split(' ')[1] == 'STEEM') { //rate = how many dlux to purchase for the amount paid
+        state.dex.steem.buyOrders.push({from: from, buying: rate, amount: amount, [rate]:amount, rate:parseFloat(rate/amount).toFixed(6)})
+        sortBuyArray(state.dex.steem.buyOrders, 'rate')
+      } else {
+        state.dex.sbd.buyOrders.push({from: from, buying: rate, amount: amount, [rate]:amount, rate:parseFloat(rate/amount).toFixed(6)})
+        sortBuyArray(state.dex.sbd.buyOrders, 'rate')
+      }
+    } else if(json.memo.substr(0,7) == 'DLUX_DEX'){
+      if (json.amount.split(' ')[1] == 'STEEM') {
+        var buyAmount = parseInt(parseFloat(json.amount) * 1000)
+        for (var i = 0; i < state.dex.steem.sellOrders.length; i++){
+          if (state.dex.steem.sellOrders[i].from == json.to) {
+            var amount = state.dex.steem.sellOrders[i].amount
+            var rate = state.dex.steem.sellOrders[i].buying
+            if (buyAmount > amount) {
+              buyAmount = buyAmount - amount
+              state.balances[from] += state.dex.steem.sellOrders[i].buying
+              console.log(`@${from} purchased ${state.dex.steem.sellOrders[i].buying} DLUX from ${json.to} for ${buyAmount} STEEMon the DEX, with some to spare...`)
+              state.dex.steem.tick = state.dex.steem.sellOrders[i].rate
+              state.dex.steem.sellOrders.splice(i,1)
+            } else if (buyAmount < amount) {
+              var interim = parseInt(rate * buyAmount / amount)
+              state.balances[from] += interim
+              console.log(`@${from} purchased ${interim} DLUX from ${json.to} for ${json.amount} STEEM on the DEX`)
+              state.dex.steem.sellOrders.push({from: json.to, buying: rate - interim, amount: amount - buyAmount, [rate-interim]:amount-buyAmount, rate:parseFloat((rate-interim)/(amount-buyAmount)).toFixed(6)})
+              state.dex.steem.tick = state.dex.steem.sellOrders[i].rate
+              state.dex.steem.sellOrders.splice(i,1)
+              sortSellArray(state.dex.steem.sellOrders, 'rate')
+            } else {
+              state.balances[from] += rate
+              console.log(`@${from} purchased ${rate} DLUX from ${json.to} for ${json.amount} STEEM on the DEX`)
+              state.dex.steem.tick = state.dex.steem.sellOrders[i].rate
+              state.dex.steem.sellOrders.splice(i,1)
+              break;
+            }
+          }
+        }
+      } else {
+        var buyAmount = parseInt(parseFloat(json.amount) * 1000)
+        for (var i = 0; i < state.dex.sbd.sellOrders.length; i++){
+          if (state.dex.sbd.sellOrders[i].from == json.to) {
+            var amount = state.dex.sbd.sellOrders[i].amount
+            var rate = state.dex.sbd.sellOrders[i].buying
+            if (buyAmount > amount) {
+              buyAmount = buyAmount - amount
+              state.balances[from] += state.dex.sbd.sellOrders[i].buying
+              console.log(`@${from} purchased ${state.dex.sbd.sellOrders[i].buying} DLUX from ${json.to} for ${buyAmount} SBD on the DEX, with some to spare... \nwill attempt to overflow order!`)
+              state.dex.sbd.tick = state.dex.sbd.sellOrders[i].rate
+              state.dex.sbd.sellOrders.splice(i,1)
+            } else if (buyAmount < amount) {
+              var interim = parseInt(rate * buyAmount / amount)
+              state.balances[from] += interim
+              console.log(`@${from} purchased ${interim} DLUX from ${json.to} for ${json.amount} SBD on the DEX`)
+              state.dex.sbd.sellOrders.push({from: json.to, buying: rate - interim, amount: amount - buyAmount, [rate-interim]:amount-buyAmount, rate:parseFloat((rate-interim)/(amount-buyAmount)).toFixed(6)})
+              state.dex.sbd.tick = state.dex.sbd.sellOrders[i].rate
+              state.dex.sbd.sellOrders.splice(i,1)
+              sortSellArray(state.dex.sbd.sellOrders, 'rate')
+            } else {
+              state.balances[from] += rate
+              console.log(`@${from} purchased ${rate} DLUX from ${json.to} for ${json.amount} SBD on the DEX`)
+              state.dex.sbd.tick = state.dex.sbd.sellOrders[i].rate
+              state.dex.sbd.sellOrders.splice(i,1)
+              break;
+            }
+          }
+        }
+      }
+    }
+  });
+
+  processor.onOperation('delegate_vests', function(json,from){//grab posts to reward
+    console.log(json)
   });
 
   processor.onBlock(function(num, block) {
+    current = num
     if(num % 100 === 0 && !processor.isStreaming()) {
       client.database.getDynamicGlobalProperties().then(function(result) {
         console.log('At block', num, 'with', result.head_block_number-num, 'left until real-time.')
@@ -756,3 +1007,10 @@ function ipfsSaveState(blocknum, hashable) {
     }
   })
 };
+
+function sortBuyArray (array, key) {
+  return array.sort(function(a,b) { return a[key] - b[key];});
+}
+function sortSellArray (array, key) {
+  return array.sort(function(a,b) { return a[key] + b[key];});
+}
