@@ -58,6 +58,10 @@ app.get('/stats', (req, res, next) => {
   res.setHeader('Content-Type', 'application/json');
   res.send(JSON.stringify({stats: state.stats, node: username}, null, 3))
 });
+app.get('/state', (req, res, next) => {
+  res.setHeader('Content-Type', 'application/json');
+  res.send(JSON.stringify({stats: state, node: username}, null, 3))
+});
 app.get('/runners', (req, res, next) => {
   res.setHeader('Content-Type', 'application/json');
   res.send(JSON.stringify({stats: state.runners, node: username}, null, 3))
