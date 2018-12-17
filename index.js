@@ -42,7 +42,7 @@ const key = ENV.KEY || '';
 const username = ENV.ACCOUNT || 'dlux-io';
 const NODEDOMAIN = ENV.DOMAIN
 const BIDRATE = ENV.BIDRATE
-const engineCrank// =  ENV.STARTHASH || ''
+const engineCrank = 0// =  ENV.STARTHASH || ''
 
 app.get('/', (req, res, next) => {
   res.setHeader('Content-Type', 'application/json')
