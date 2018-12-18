@@ -42,7 +42,7 @@ const key = ENV.KEY || '';
 const username = ENV.ACCOUNT || 'dlux-io';
 const NODEDOMAIN = ENV.DOMAIN
 const BIDRATE = ENV.BIDRATE
-const engineCrank = 0// =  ENV.STARTHASH || ''
+const engineCrank = 'QmbdDPeMqYQ9vtdJYSm9RaM7a7Qs9dvBMRqqohtrGMdLFT'
 
 app.get('/', (req, res, next) => {
   res.setHeader('Content-Type', 'application/json')
@@ -749,8 +749,26 @@ function startApp() {
     }
   });
 
-  processor.onOperation('delegate_vests', function(json,from){//grab posts to reward
-    console.log(json)
+  processor.onOperation('delegate_vesting_shares', function(json,from){//grab posts to reward
+    const vests = parseInt(parseFloat(json.vesting_shares)*1000000)
+    if (json.delegatee == 'dlux-io' && vests){
+      for (var i = 0; i < state.delegations.length;i++){
+        if (state.delegators[i].delegations == json.delegator){
+          state.delegations.splice(i,1)
+          break;
+        }
+      }
+        state.delegations.push({delegator:json.delegator,vests})
+        console.log(`${json.delegator} has delegated ${vests} vests to @dlux-io`)
+    } else if (json.delegatee == 'dlux-io' && !vests){
+      for (var i = 0; i < state.delegations.length;i++){
+        if (state.delegations[i].delegator == json.delegator){
+          state.delegations.splice(i,1)
+          break;
+        }
+      }
+      console.log(`${json.delegator} has removed delegation to @dlux-io`)
+    }
   });
 
   processor.onBlock(function(num, block) {
