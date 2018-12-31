@@ -58,7 +58,7 @@ var broadcast = 1
 const username = ENV.ACCOUNT || 'dlux-io';
 const NODEDOMAIN = ENV.DOMAIN
 const BIDRATE = ENV.BIDRATE
-const engineCrank = ''
+const engineCrank = ENV.STARTER || ''
 
 api.get('/', (req, res, next) => {
   res.setHeader('Content-Type', 'application/json')
@@ -362,7 +362,7 @@ var state = {
     node: {
       'dlux-io': {
         self: 'dlux-io',
-        domain: 'http://127.0.0.1:3000',//'https://dlux-token.herokuapp.com',
+        domain: 'https://token.dlux.io',//'https://dlux-token.herokuapp.com',
         bidRate: 2000,
         marketingRate: 2000,
         attempts: 10000,
