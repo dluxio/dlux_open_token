@@ -22,6 +22,10 @@
     "dsteem": "^0.11.2",
     "express": "^4.16.4",
     "ipfs-api": "^26.1.2",
+    "ipfs-unixfs": "^0.1.16",
+    "ipld-dag-pb": "^0.15.2",
+    "rss-generator": "0.0.2",
+    "safe-eval": "^0.4.1",
     "steem-state": "^1.2.0",
     "steem-transact": "^1.0.2"
   }
