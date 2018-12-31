@@ -1421,7 +1421,7 @@ function startApp() {
     if(processor.isStreaming() && escrow){
       if(broadcast){broadcast--}
       while (!broadcast){
-        for (var i = 0; i < state.escrow[num].length; i++){
+        for (var i = 0; i < state.escrow.length; i++){
           if (state.escrow[i][0] = username){
             dsteem.broadcast(state.escrow[i][1], steem.PrivateKey.fromLogin(username, active, 'active')).then(function(result){
               console.log(`Approved escrow to ${state.escrow[i][1][1].to} from ${state.escrow[i][1][1].from} @ block` + result.block_num)
