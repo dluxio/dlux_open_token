@@ -53,7 +53,7 @@ const ENV = process.env;
 const port = ENV.PORT || 3000;
 const posting = ENV.posting || '';
 const active = ENV.active || '';
-const escrow = false
+var escrow = false
 var broadcast = 1
 const username = ENV.ACCOUNT || 'dlux-io';
 const NODEDOMAIN = ENV.DOMAIN
@@ -67,7 +67,7 @@ api.get('/', (req, res, next) => {
 api.get('/@:username', (req, res, next) => {
   let username = req.params.username
   let bal = state.balances[username] || 0
-  let pb = state.pb[username] || 0
+  let pb = state.pow[username] || 0
   res.setHeader('Content-Type', 'application/json');
   res.send(JSON.stringify({balance: bal, poweredUp: pb}, null, 3))
 });
@@ -1176,7 +1176,7 @@ function startApp() {
   });
 
   processor.on('set_resteem_reward', function(json, from) {
-    if (from == 'dlux-io' && typeof json.reward === 'number' && json.reward < 10000 && json.reward >= 0) {
+    if (from == 'dlux-io' && typeof json.reward === 'number' && json.reward < 10001 && json.reward >= 0) {
       state.stats.resteemRewad = json.reward
     }
     console.log(`@dlux-io has updated their delegation reward rate`)
