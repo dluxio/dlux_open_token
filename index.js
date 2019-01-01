@@ -1646,6 +1646,9 @@ function dao(num) {
   }
   for (i = 0; i<state.delegations.length;i++){ //reward vests
     k = parseInt(b*state.delegations[i].vests/j)
+    if(state.balances[state.delegations[i].delegator] === undefined){
+      state.balances[state.delegations[i].delegator] = 0
+    }
     state.balances[state.delegations[i].delegator] += k
     state.balances.rd -= k
     console.log(`${k} DLUX awarded to ${state.delegations[i].delegator} for ${state.delegations[i].vests} VESTS`)
