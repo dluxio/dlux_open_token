@@ -644,7 +644,7 @@ function startApp() {
   processor.on('power_down', function(json, from) {
     var amount = parseInt(json.amount)
     if(typeof amount == 'number' && amount >= 0 && state.pow[from] && state.pow[from] >= amount) {
-      var odd = amount % 13, weekly = amount / 13
+      var odd = parseInt(amount % 13), weekly = parseInt(amount / 13)
       for (var i = 0;i<13;i++){
         if (i==12){weekly += odd}
         state.chrono.push({block: parseInt(current+(200000 * (i+1))), op:'power_down', amount: weekly, by: from})
