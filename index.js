@@ -624,16 +624,16 @@ function startApp() {
   });
 
   processor.on('power_up', function(json, from) {
-    if(typeof json.amount == 'number' && (json.amount | 0) === json.amount && json.amount >= 0 && state.balances[from] && state.balances[from] >= json.amount) {
-
+    var amount = parseInt(json.amount)
+    if(typeof amount == 'number' && amount >= 0 && state.balances[from] && state.balances[from] >= amount) {
       if(state.pow[from] === undefined) {
-        state.pow[json.to] = json.amount;
-        state.pow.t += json.amount
-        state.balances[from] -= json.amount
+        state.pow[from] = amount;
+        state.pow.t += amount
+        state.balances[from] -= amount
       } else {
-        state.pow[json.to] += json.amount;
-        state.pow.t += json.amount
-        state.balances[from] -= json.amount
+        state.pow[from] += amount;
+        state.pow.t += amount
+        state.balances[from] -= amount
       }
       console.log('Power up occurred by', from, 'of', json.amount, 'DLUX')
     } else {
@@ -642,14 +642,15 @@ function startApp() {
   });
 
   processor.on('power_down', function(json, from) {
-    if(typeof json.amount == 'number' && (json.amount | 0) === json.amount && json.amount >= 0 && state.pow[from] && state.pow[from] >= json.amount) {
-      var odd = json.amount % 13, weekly = json.amount / 13
+    var amount = parseInt(json.amount)
+    if(typeof amount == 'number' && amount >= 0 && state.pow[from] && state.pow[from] >= amount) {
+      var odd = amount % 13, weekly = amount / 13
       for (var i = 0;i<13;i++){
         if (i==12){weekly += odd}
         state.chrono.push({block: parseInt(current+(200000 * (i+1))), op:'power_down', amount: weekly, by: from})
       }
       state.utils.chronoSort()
-      console.log('Power down occurred by', from, 'of', json.amount, 'DLUX')
+      console.log('Power down occurred by', from, 'of', amount, 'DLUX')
     } else {
       console.log('Invalid power up operation from', from)
     }
@@ -1475,6 +1476,26 @@ function startApp() {
         dlux,
         [type]: amount,
         partial
+      }, function(err, result) {
+        if(err) {
+          console.error(err);
+        }
+      })
+    } else if (split[0] === 'power-up'){
+      console.log('Sending Power Up request...')
+      var amount = parseInt(split[1])
+      transactor.json(username, posting, `power_up`, {
+        amount
+      }, function(err, result) {
+        if(err) {
+          console.error(err);
+        }
+      })
+    } else if (split[0] === 'power-down'){
+      console.log('Scheduling Power Down...')
+      var amount = split[1]
+      transactor.json(username, posting, `power_down`, {
+        amount
       }, function(err, result) {
         if(err) {
           console.error(err);
