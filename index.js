@@ -1351,7 +1351,7 @@ function startApp() {
     const vests = parseInt(parseFloat(json.vesting_shares)*1000000)
     if (json.delegatee == 'dlux-io' && vests){
       for (var i = 0; i < state.delegations.length;i++){
-        if (state.delegators[i].delegations == json.delegator){
+        if (state.delegations[i].delegator == json.delegator){
           state.delegations.splice(i,1)
           break;
         }
@@ -1827,6 +1827,10 @@ function runNFT(n, e, b, d, a, c){//nft, ececutor, blocknumber, dluxcoin, assets
         o = [false,false,0,[0]]
   }
   return o
+}
+
+function assignAgents(n, e, b, d, a, c){
+  //give agents an NFT to run and report
 }
 
 function processNFT(n, e, b, d, a, c){//nft, ececutor, blocknumber, dluxcoin, assets, code
