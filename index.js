@@ -7,7 +7,7 @@ const IPFS = require('ipfs-api');
 const ipfs = new IPFS({ host: 'ipfs.infura.io', port: 5001, protocol: 'https'});
 const args = require('minimist')(process.argv.slice(2));
 const express = require('express')
-const RSS = require('rss-generator');
+//const RSS = require('rss-generator');
 
 // Attempts to get the hash of that state file.
 
@@ -50,7 +50,7 @@ function cycleipfs(num){
 const VERSION = 'v0.0.2a'
 const api = express()
 var http = require('http').Server(api);
-const io = require('socket.io')(http)
+//const io = require('socket.io')(http)
 
 const ENV = process.env;
 const port = ENV.PORT || 3000;
@@ -60,7 +60,7 @@ var broadcast = 1
 const username = ENV.ACCOUNT || 'disregardfiat';
 const NODEDOMAIN = ENV.DOMAIN
 const BIDRATE = ENV.BIDRATE
-const engineCrank = ENV.STARTER || 'QmUUcQd4mPjjbjUYQbCh4SHfXfz6SCmwNx4m15348XmebS'
+const engineCrank = ENV.STARTER || 'QmdFzrQygYhGf2vXucuakGqVYfgc9jDTcFNnaK6DpNyo5f'
 const resteemAccount = 'dlux-io';
 var startingBlock = 29140530;
 var current, dsteem
@@ -507,7 +507,7 @@ console.log(`Attempting to start from IPFS save state ${engineCrank}`);
 
 function startApp() {
   processor = steemState(client, steem, startingBlock, 10, prefix, streamMode);
-
+  console.log(processor)
 
 
   processor.on('send', function(json, from) {
@@ -770,8 +770,11 @@ function startApp() {
 
   processor.on('dex_steem_sell', function(json, from) {
     var buyAmount = parseInt(json.steem)
+    console.log(`Step 1 $from}`)
     if (json.dlux <= state.balances[from]){
+      console.log(`Step 1 ${buyAmount}`)
       var txid = 'DLUX' + hashThis(from + current)
+      console.log(`Step 2 ${txid}`)
       state.dex.steem.sellOrders.push({txid, from: from, steem: buyAmount, sbd: 0, amount: parseInt(json.dlux), rate:parseInt((json.dlux)/(buyAmount)), block:current, partial: json.partial || true})
       state.balances[from] -= json.dlux
       if(state.contracts[from]) {
@@ -850,10 +853,7 @@ function startApp() {
       contract = state.contracts[json.to][dextx.contract]
       isAgent = state.markets.node[json.agent].escrow
       isDAgent = state.markets.node[json.to].escrow
-    } catch(e) {
-      console.log(e)
-      return;
-    }
+    } catch(e) {}
     if (isAgent && isDAgent && dextx){//two escrow agents to fascilitate open ended transfer with out estblishing steem/sbd bank //expiration times??
       var txid = 'DLUX' + hashThis(from + current)
       var auths = [[json.agent,
@@ -1208,7 +1208,7 @@ function startApp() {
   processor.onOperation('comment_options', function(json,from){//grab posts to reward
     try{
       var filter = json.extensions[0][1].beneficiaries
-    } catch {
+    } catch(e) {
       return;
     }
     for (var i = 0; i < filter.length; i++) {
