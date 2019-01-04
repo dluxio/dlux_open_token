@@ -57,7 +57,7 @@ const port = ENV.PORT || 3000;
 const active = ENV.active || '';
 var escrow = false
 var broadcast = 1
-const username = ENV.ACCOUNT || '';
+const username = ENV.ACCOUNT || 'disregardfiat';
 const NODEDOMAIN = ENV.DOMAIN
 const BIDRATE = ENV.BIDRATE
 const engineCrank = ENV.STARTER || 'QmUUcQd4mPjjbjUYQbCh4SHfXfz6SCmwNx4m15348XmebS'
@@ -844,13 +844,14 @@ function startApp() {
   });
 
   processor.onOperation('escrow_transfer', function(json,from){//grab posts to reward
-    var op, dextx, contract, isAgent
+    var op, dextx, contract, isAgent, isDAgent
     try {
       dextx = json.json_meta.dlux_dex
       contract = state.contracts[json.to][dextx.contract]
       isAgent = state.markets.node[json.agent].escrow
       isDAgent = state.markets.node[json.to].escrow
-    } catch {
+    } catch(e) {
+      console.log(e)
       return;
     }
     if (isAgent && isDAgent && dextx){//two escrow agents to fascilitate open ended transfer with out estblishing steem/sbd bank //expiration times??
