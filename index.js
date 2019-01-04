@@ -7,7 +7,7 @@ const IPFS = require('ipfs-api');
 const ipfs = new IPFS({ host: 'ipfs.infura.io', port: 5001, protocol: 'https'});
 const args = require('minimist')(process.argv.slice(2));
 const express = require('express')
-const RSS = require('rss-generator');
+//const RSS = require('rss-generator');
 
 // Attempts to get the hash of that state file.
 
@@ -47,23 +47,22 @@ function cycleipfs(num){
   //ipfs = new IPFS({ host: state.gateways[num], port: 5001, protocol: 'https' });
 }
 
-const VERSION = 'v0.0.1a'
+const VERSION = 'v0.0.2a'
 const api = express()
 var http = require('http').Server(api);
-const io = require('socket.io')(http)
+//const io = require('socket.io')(http)
 
 const ENV = process.env;
 const port = ENV.PORT || 3000;
-const posting = ENV.posting || '';
 const active = ENV.active || '';
 var escrow = false
 var broadcast = 1
-const username = ENV.ACCOUNT || 'dlux-io';
+const username = ENV.ACCOUNT || 'disregardfiat';
 const NODEDOMAIN = ENV.DOMAIN
 const BIDRATE = ENV.BIDRATE
-const engineCrank = ENV.STARTER || ''
+const engineCrank = ENV.STARTER || 'QmdFzrQygYhGf2vXucuakGqVYfgc9jDTcFNnaK6DpNyo5f'
 const resteemAccount = 'dlux-io';
-var startingBlock = 	29126930;
+var startingBlock = 29140530;
 var current, dsteem
 
 
@@ -77,6 +76,7 @@ var processor;
 if (active) {
   escrow = true
   dsteem = new steem.Client('https://api.steemit.com')
+
 }
 
 api.get('/', (req, res, next) => {
@@ -97,6 +97,10 @@ api.get('/stats', (req, res, next) => {
 api.get('/state', (req, res, next) => {
   res.setHeader('Content-Type', 'application/json');
   res.send(JSON.stringify({state: state, node: username, VERSION, realtime: current}, null, 3))
+});
+api.get('/pending', (req, res, next) => {
+  res.setHeader('Content-Type', 'application/json');
+  res.send(JSON.stringify(NodeOps, null, 3))
 });
 api.get('force', (req, res, next) => {
   res.setHeader('Content-Type', 'application/json');
@@ -224,33 +228,7 @@ var state = {
     'robotolux':30000000000
   },
   rolling: {},
-  nft: {
-    Qmsome:{
-      creator: '',
-      block: '',
-      self: '',
-      bearers: [],//only accounts
-      owner: [],//can be contract
-      owns: [],
-      bal: 0,
-      pow: 0,
-      fee: 0,
-      pool: 0,
-      deposits: {},
-      auths: ['publickey'],
-      authed: ['user'],
-      weight: 1,
-      behavior: 'custom',
-      rule: '',//SP bearer inst // equity loan / auction with raffle / fair bet /
-      memo: '',
-      execute: ['stack'],
-      incrementer: 0,
-      benifactors: [],
-      errors: [],
-      matures: 29000000,
-      expires: 30000000,
-    }
-  },
+  nft: {},
   chrono: [],
   pending: [],
   exeq: [],
@@ -393,10 +371,6 @@ var state = {
               node:	"markegiles",
               agreement: true
             },
-            shredz7:	{
-              node:	"shredz7",
-              agreement: true
-            },
             caramaeplays: {
               node:	"caramaeplays",
               agreement: true
@@ -429,10 +403,6 @@ var state = {
             },
             markegiles:	{
               node:	"markegiles",
-              agreement: true
-            },
-            shredz7:	{
-              node:	"shredz7",
               agreement: true
             },
             caramaeplays: {
@@ -469,10 +439,6 @@ var state = {
               node:	"markegiles",
               agreement: true
             },
-            shredz7:	{
-              node:	"shredz7",
-              agreement: true
-            },
             caramaeplays: {
               node:	"caramaeplays",
               agreement: true
@@ -482,71 +448,39 @@ var state = {
           block:	28611600
         }
       },
-          'caramaeplays': {
-            self: 'caramaeplays',
-            domain: 'https://dlux-token-caramaeplays.herokuapp.com',
-            bidRate: 2000,
-            marketingRate: 2000,
-            attempts: 10000,
-            yays: 10000,
-            wins: 10000,
-            contracts: 0,
-            lastGood: 0,
-            transfers: 0,
-            report: {
-              agreements:{
-                'dlux-io': {
-                  node:	"dlux-io",
-                  agreement:	true
-                },
-                disregardfiat: {
-                  node:	"disregardfiat",
-                  agreement:	true
-                },
-                markegiles:	{
-                  node:	"markegiles",
-                  agreement: true
-                },
-                shredz7:	{
-                  node:	"shredz7",
-                  agreement: true
-                },
-                caramaeplays: {
-                  node:	"caramaeplays",
-                  agreement: true
-                },
-              },
-              hash:	"QmTfmV2qQbvH7k26JmdBFBiqATfL8PL1vQJiVaojc8TLjV",
-              block:	28611600
-              }
-            }
-  },
-    ipfs: {
-      'dlux-io': {
-        self: 'dlux-io',
-        domain: 'ipfs.infura.io',
-        bidRate: 20000,
-        report: {}
-      }
-    },
-    relay: {
-      'dlux-io': {
-        self: 'dlux-io',
-        domain: 'https://chat.dlux.io',
-        bidRate: 10000,
-        report: {}
-      }
-    },
-    contributors: {
-      'disregardfiat': {
-        self: 'disregardfiat',
-        bidRate: 1,
-        report: {}
-      },
-      'markegiles': {
-        self: 'markegiles',
-        bidRate: 1,
-        report: {}
+      'caramaeplays': {
+        self: 'caramaeplays',
+        domain: 'https://dlux-token-caramaeplays.herokuapp.com',
+        bidRate: 2000,
+        marketingRate: 2000,
+        attempts: 10000,
+        yays: 10000,
+        wins: 10000,
+        contracts: 0,
+        lastGood: 0,
+        transfers: 0,
+        report: {
+          agreements:{
+            'dlux-io': {
+              node:	"dlux-io",
+              agreement:	true
+            },
+            disregardfiat: {
+              node:	"disregardfiat",
+              agreement:	true
+            },
+            markegiles:	{
+              node:	"markegiles",
+              agreement: true
+            },
+            caramaeplays: {
+              node:	"caramaeplays",
+              agreement: true
+            },
+          },
+        hash:	"QmTfmV2qQbvH7k26JmdBFBiqATfL8PL1vQJiVaojc8TLjV",
+        block:	28611600
+        }
       }
     }
   }
@@ -577,7 +511,6 @@ console.log(`Attempting to start from IPFS save state ${engineCrank}`);
 
 function startApp() {
   processor = steemState(client, steem, startingBlock, 10, prefix, streamMode);
-
 
 
   processor.on('send', function(json, from) {
@@ -778,41 +711,48 @@ function startApp() {
   processor.on('dex_sell', function(json, from) {
     if(json.contract){
       if (state.balances[from] >= state.contracts[json.to][json.contract].amount){
-        console.log(current + `${from} sold ${state.contracts[json.to][json.contract].amount} DLUX`)
-        state.balances[from] -= state.contracts[json.to][json.contract].amount
-        state.balances[state.contracts[json.to][json.contract].from] += state.contracts[json.to][json.contract].amount
-        state.escrow.push(state.contracts[json.to][json.contract].auths[0])
-        state.escrow.push(state.contracts[json.to][json.contract].auths[1])
-        if (state.contracts[json.to][json.contract].steem) {
-          state.escrow.push([state.contracts[json.to][json.contract].auths[0][1][1].to,
-            [
-              "transfer",
-              {
-                "from": state.contracts[json.to][json.contract].auths[0][1][1].to,
-                "to": from,
-                "amount": {
-                  "amount": state.contracts[json.to][json.contract].steem,
-                  "precision": 3,
-                  "nai": "@@000000021"
-                },
-                "memo": `${json.contract} fulfilled with ${state.contracts[json.to][json.contract].amount} DLUX`
+        if (state.balances[state.contracts[json.to][json.contract].auths[0][1][1].to] > state.contracts[json.to][json.contract].amount){
+          state.balances[state.contracts[json.to][json.contract].auths[0][1][1].to] -= state.contracts[json.to][json.contract].amount
+          console.log(current + `${from} sold ${state.contracts[json.to][json.contract].amount} DLUX`)
+          state.balances[from] -= state.contracts[json.to][json.contract].amount
+          state.balances[state.contracts[json.to][json.contract].from] += state.contracts[json.to][json.contract].amount
+          state.escrow.push(state.contracts[json.to][json.contract].auths[0])
+          state.escrow.push(state.contracts[json.to][json.contract].auths[1])
+          if (state.contracts[json.to][json.contract].steem) {
+            state.escrow.push([state.contracts[json.to][json.contract].auths[0][1][1].to,
+              [
+                "transfer",
+                {
+                  "from": state.contracts[json.to][json.contract].auths[0][1][1].to,
+                  "to": from,
+                  "amount": {
+                    "amount": state.contracts[json.to][json.contract].steem,
+                    "precision": 3,
+                    "nai": "@@000000021"
+                  },
+                  "memo": `${json.contract} fulfilled with ${state.contracts[json.to][json.contract].amount} DLUX`
+                }
+              ]])} else {
+                state.escrow.push([state.contracts[json.to][json.contract].auths[0][1][1].to,
+                  [
+                    "transfer",
+                    {
+                      "from": state.contracts[json.to][json.contract].auths[0][1][1].to,
+                      "to": from,
+                      "amount": {
+                        "amount": state.contracts[json.to][json.contract].sbd,
+                        "precision": 3,
+                        "nai": "@@000000013"
+                      },
+                      "memo": `${json.contract} fulfilled with ${state.contracts[json.to][json.contract].amount} DLUX`
+                    }
+                  ]])
               }
-            ]])} else {
-              state.escrow.push([state.contracts[json.to][json.contract].auths[0][1][1].to,
-                [
-                  "transfer",
-                  {
-                    "from": state.contracts[json.to][json.contract].auths[0][1][1].to,
-                    "to": from,
-                    "amount": {
-                      "amount": state.contracts[json.to][json.contract].sbd,
-                      "precision": 3,
-                      "nai": "@@000000013"
-                    },
-                    "memo": `${json.contract} fulfilled with ${state.contracts[json.to][json.contract].amount} DLUX`
-                  }
-                ]])
             }
+          } else {
+            console.log(`${json.agent} has insuficient liquidity. Contract has been voided.`)
+            state.escrow.push(state.contracts[json.to][json.contract].reject)
+          }
         if(state.contracts[json.to][json.contract].sbd){
           for (var i = 0;i < state.dex.sbd.buyOrders.length;i++){
             if (state.dex.sbd.buyOrders[i].txid == json.contract){
@@ -829,13 +769,15 @@ function startApp() {
           delete state.contracts[json.to][json.contract]
         }
       }
-    }
   });
 
   processor.on('dex_steem_sell', function(json, from) {
     var buyAmount = parseInt(json.steem)
+    console.log(`Step 1 $from}`)
     if (json.dlux <= state.balances[from]){
+      console.log(`Step 1 ${buyAmount}`)
       var txid = 'DLUX' + hashThis(from + current)
+      console.log(`Step 2 ${txid}`)
       state.dex.steem.sellOrders.push({txid, from: from, steem: buyAmount, sbd: 0, amount: parseInt(json.dlux), rate:parseInt((json.dlux)/(buyAmount)), block:current, partial: json.partial || true})
       state.balances[from] -= json.dlux
       if(state.contracts[from]) {
@@ -908,15 +850,13 @@ function startApp() {
   });
 
   processor.onOperation('escrow_transfer', function(json,from){//grab posts to reward
-    var op, dextx, contract, isAgent
+    var op, dextx, contract, isAgent, isDAgent
     try {
       dextx = json.json_meta.dlux_dex
       contract = state.contracts[json.to][dextx.contract]
-      isAgent = state.markets.node[json.agent].report.escrow
-      isDAgent = state.markets.node[json.to].report.escrow
-    } catch {
-      return;
-    }
+      isAgent = state.markets.node[json.agent].escrow
+      isDAgent = state.markets.node[json.to].escrow
+    } catch(e) {}
     if (isAgent && isDAgent && dextx){//two escrow agents to fascilitate open ended transfer with out estblishing steem/sbd bank //expiration times??
       var txid = 'DLUX' + hashThis(from + current)
       var auths = [[json.agent,
@@ -974,7 +914,7 @@ function startApp() {
         }
       }
     }
-    if (contract && isAgent){//{txid, from: from, buying: buyAmount, amount: json.dlux, [json.dlux]:buyAmount, rate:parseFloat((json.dlux)/(buyAmount)).toFixed(6), block:current, partial: json.partial || true
+  } else if (contract && isAgent){//{txid, from: from, buying: buyAmount, amount: json.dlux, [json.dlux]:buyAmount, rate:parseFloat((json.dlux)/(buyAmount)).toFixed(6), block:current, partial: json.partial || true
       if (contract.steem == json.steem_amount.amount  && contract.sbd == json.sbd_amount.amount){
         state.balances[json.from] += contract.amount
         if (contract.steem){
@@ -1071,12 +1011,11 @@ function startApp() {
             "agent": json.agent,
             "who": json.agent,
             "escrow_id": json.escrow_id,
-            "approve": false
+            "approve": false //reject non coded
         }
       ]])
     }
-  }
-});
+  });
 
   processor.onOperation('escrow_approve', function(json) {
     var found = 0
@@ -1084,6 +1023,7 @@ function startApp() {
       if (state.escrow[i][0] == json.agent && state.escrow[i][1][1].escrow_id == json.escrow_id){
         state.escrow.splice(i,1)
         found = 1
+        state.markets.node[json.agent].wins++
         state.pending.push([json.to,
           [
             "escrow_approve",
@@ -1103,6 +1043,7 @@ function startApp() {
       for (var i = 0; i < state.pending.length; i++) {
         if (state.pending[i][0] == json.to && state.pending[i][1][1].escrow_id == json.escrow_id){
           state.pending.splice(i,1)
+          state.markets.node[json.to].wins++
           break;
         }
       }
@@ -1114,6 +1055,7 @@ function startApp() {
     for (var i = 0; i < state.escrow.length; i++) {
       if (state.escrow[i][0] == json.agent && state.escrow[i][1][1].escrow_id == json.escrow_id){
         state.escrow.splice(i,1)
+        state.markets.node[json.agent].wins++
         found = 1
         break;
       }
@@ -1122,6 +1064,9 @@ function startApp() {
       for (var i = 0; i < state.pending.length; i++) {
         if (state.pending[i][0] == json.to && state.pending[i][1][1].escrow_id == json.escrow_id){
           state.pending.splice(i,1)
+          if (state.markets.node[json.to]){
+            state.markets.node[json.to].wins++
+          }
           break;
         }
       }
@@ -1131,6 +1076,8 @@ function startApp() {
 
   processor.on('node_add', function(json, from) {
     if(json.domain && typeof json.domain === 'string') {
+      var z = false
+      if(json.escrow == true){z = true}
       var int = parseInt(json.bidRate)
       if (int < 1) {int = 1000}
       if (int > 1000) {int = 1000}
@@ -1140,6 +1087,8 @@ function startApp() {
       if (state.markets.node[from]){
         state.markets.node[from].domain = json.domain
         state.markets.node[from].bidRate = int
+        state.markets.node[from].escrow = z
+        state.markets.node[from].marketingRate = t
       } else {
         state.markets.node[from] = {
           domain: json.domain,
@@ -1150,8 +1099,10 @@ function startApp() {
           yays: 0,
           wins: 0,
           contracts: 0,
+          escrows: 0,
           lastGood: 0,
-          report: {}
+          report: {},
+          escrow: z
         }
       }
       console.log(current + `@${from} has bid the steem-state node ${json.domain} at ${json.bidRate}`)
@@ -1161,53 +1112,20 @@ function startApp() {
   });
 
   processor.on('node_delete', function(json, from) {
+    state.markets.node[from].escrow = false
+    var found = NaN
+    for (var i = 0;i < state.queue.length;i++){
+      if (state.queue[i] == from){
+        found = i
+        break;
+      }
+    }
+    if (found >= 0){
+      state.queue.splice(found,1)
+    }
     delete state.markets.node[from].domain
     delete state.markets.node[from].bidRate
-    console.log(current + `@${from} has deleted their steem-state node`)
-  });
-
-  processor.on('ipfs_add', function(json, from) {
-    if(json.domain && typeof json.domain === 'string') {
-      var int = parseInt(json.bidRate)
-      if (int < 1) {int = 2000}
-      if (int > 2000) {int = 2000}
-      state.markets.ipfs[from] = {
-        domain: json.domain,
-        self: from,
-        bidRate: int
-      }
-      console.log(current + `@${from} has bid the ipfs node ${json.domain} at ${json.bidRate}`)
-    } else {
-      console.log(current + `Invalid ipfs node operation from ${from}`)
-    }
-  });
-
-  processor.on('ipfs_delete', function(json, from) {
-    delete state.markets.ipfs[from].domain
-    delete state.markets.ipfs[from].bidRate
-    console.log(current + `@${from} has deleted their ipfs node`)
-  });
-
-  processor.on('relay_add', function(json, from) {
-    if(json.domain && typeof json.domain === 'string') {
-      var int = parseInt(json.bidRate)
-      if (int < 1) {int = 1000}
-      if (int > 1000) {int = 1000}
-      state.markets.relay[from] = {
-        domain: json.domain,
-        self: from,
-        bidRate: int
-      }
-      console.log(current + `@${from} has bid the relay ${json.domain} at ${json.bidRate}`)
-    } else {
-      console.log(current + `Invalid relay operation from ${from}`)
-    }
-  });
-
-  processor.on('relay_delete', function(json, from) {
-    delete state.markets.relay[from].domain
-    delete state.markets.relay[from].bidRate
-    console.log(current + `@${from} has deleted their relay`)
+    console.log(current + `@${from} has signed off their dlux node`)
   });
 
   processor.on('set_delegation_reward', function(json, from) {
@@ -1232,22 +1150,35 @@ function startApp() {
   });
 
   processor.on('report', function(json, from) {
-    var cfrom, domain
+    var cfrom, domain, found = NaN
     try {
       cfrom = state.markets.node[from].self
       domain = state.markets.node[from].domain
     }
     catch (err) {
+      console.log(err)
     }
     if (from === cfrom && domain) {
       state.markets.node[from].report = json
+      for (var i = 0;i < state.queue.length;i++){
+        if (state.queue[i] == from){
+          found = i
+          break;
+        }
+      }
+      if (found >= 0){
+        state.queue.push(state.queue.splice(found,1)[0])
+      } else {
+        state.queue.push(from)
+      }
       console.log(current + `@${from}'s report has been processed`)
     } else {
       if (from === username && NODEDOMAIN && BIDRATE) {
         console.log(current + `This node posted a spurious report and in now attempting to register`)
-        transactor.json(username, posting, 'node_add', {
+        transactor.json(username, active, 'node_add', {
           domain: NODEDOMAIN,
-          bidRate: BIDRATE
+          bidRate: BIDRATE,
+          escrow
         }, function(err, result) {
           if(err) {
             console.error(err);
@@ -1281,7 +1212,7 @@ function startApp() {
   processor.onOperation('comment_options', function(json,from){//grab posts to reward
     try{
       var filter = json.extensions[0][1].beneficiaries
-    } catch {
+    } catch(e) {
       return;
     }
     for (var i = 0; i < filter.length; i++) {
@@ -1306,6 +1237,8 @@ function startApp() {
       var txid = json.memo.split(' ')[0]
       for (var i = 0;i < state.escrow.length;i++){
         if(state.escrow[i][1][1].memo.split(' ') == txid && state.escrow[i][0] == json.from){
+          state.markets.node[json.from].wins++
+          state.balances[json.from] += state.contracts[json.to][txid].amount
           state.escrow.splice(i,1)
           break;
         }
@@ -1326,66 +1259,6 @@ function startApp() {
       } else {
         state.dex.sbd.buyOrders.push({from: json.from, buying: rate, amount: amount, [rate]:amount, rate:parseFloat(rate/amount).toFixed(6)})
         sortBuyArray(state.dex.sbd.buyOrders, 'rate')
-      }
-    } else if(json.memo.substr(0,7) == 'DLUX_DEX'){
-      if (json.amount.split(' ')[1] == 'STEEM') {
-        var buyAmount = parseInt(parseFloat(json.amount) * 1000)
-        for (var i = 0; i < state.dex.steem.sellOrders.length; i++){
-          if (state.dex.steem.sellOrders[i].from == json.to) {
-            var amount = state.dex.steem.sellOrders[i].amount
-            var rate = state.dex.steem.sellOrders[i].buying
-            if (buyAmount > amount) {
-              buyAmount = buyAmount - amount
-              state.balances[json.from] += state.dex.steem.sellOrders[i].buying
-              console.log(current + `@${json.from} purchased ${state.dex.steem.sellOrders[i].buying} DLUX from ${json.to} for ${buyAmount} STEEMon the DEX, with some to spare...`)
-              state.dex.steem.tick = state.dex.steem.sellOrders[i].rate
-              state.dex.steem.sellOrders.splice(i,1)
-            } else if (buyAmount < amount) {
-              var interim = parseInt(rate * buyAmount / amount)
-              state.balances[json.from] += interim
-              console.log(current + `@${json.from} purchased ${interim} DLUX from ${json.to} for ${json.amount} STEEM on the DEX`)
-              state.dex.steem.sellOrders.push({from: json.to, buying: rate - interim, amount: amount - buyAmount, [rate-interim]:amount-buyAmount, rate:parseFloat((rate-interim)/(amount-buyAmount)).toFixed(6)})
-              state.dex.steem.tick = state.dex.steem.sellOrders[i].rate
-              state.dex.steem.sellOrders.splice(i,1)
-              sortSellArray(state.dex.steem.sellOrders, 'rate')
-            } else {
-              state.balances[json.from] += rate
-              console.log(current + `@${json.from} purchased ${rate} DLUX from ${json.to} for ${json.amount} STEEM on the DEX`)
-              state.dex.steem.tick = state.dex.steem.sellOrders[i].rate
-              state.dex.steem.sellOrders.splice(i,1)
-              break;
-            }
-          }
-        }
-      } else {
-        var buyAmount = parseInt(parseFloat(json.amount) * 1000)
-        for (var i = 0; i < state.dex.sbd.sellOrders.length; i++){
-          if (state.dex.sbd.sellOrders[i].from == json.to) {
-            var amount = state.dex.sbd.sellOrders[i].amount
-            var rate = state.dex.sbd.sellOrders[i].buying
-            if (buyAmount > amount) {
-              buyAmount = buyAmount - amount
-              state.balances[json.from] += state.dex.sbd.sellOrders[i].buying
-              console.log(current + `@${json.from} purchased ${state.dex.sbd.sellOrders[i].buying} DLUX from ${json.to} for ${buyAmount} SBD on the DEX, with some to spare... \nwill attempt to overflow order!`)
-              state.dex.sbd.tick = state.dex.sbd.sellOrders[i].rate
-              state.dex.sbd.sellOrders.splice(i,1)
-            } else if (buyAmount < amount) {
-              var interim = parseInt(rate * buyAmount / amount)
-              state.balances[json.from] += interim
-              console.log(current + `@${json.from} purchased ${interim} DLUX from ${json.to} for ${json.amount} SBD on the DEX`)
-              state.dex.sbd.sellOrders.push({from: json.to, buying: rate - interim, amount: amount - buyAmount, [rate-interim]:amount-buyAmount, rate:parseFloat((rate-interim)/(amount-buyAmount)).toFixed(6)})
-              state.dex.sbd.tick = state.dex.sbd.sellOrders[i].rate
-              state.dex.sbd.sellOrders.splice(i,1)
-              sortSellArray(state.dex.sbd.sellOrders, 'rate')
-            } else {
-              state.balances[json.from] += rate
-              console.log(current + `@${from} purchased ${rate} DLUX from ${json.to} for ${json.amount} SBD on the DEX`)
-              state.dex.sbd.tick = state.dex.sbd.sellOrders[i].rate
-              state.dex.sbd.sellOrders.splice(i,1)
-              break;
-            }
-          }
-        }
       }
     }
   });
@@ -1414,7 +1287,7 @@ function startApp() {
 
   processor.onBlock(function(num, block) {
     current = num
-  chronoProcess = true
+    chronoProcess = true
     while (chronoProcess){
         if (state.chrono[0] && state.chrono[0].block == num){
         switch (state.chrono[0].op) {
@@ -1444,10 +1317,10 @@ function startApp() {
         console.log('At block', num, 'with', result.head_block_number-num, `left until real-time. DAO @ ${(num - 20000) % 30240}`)
       });
     }
-    if(num % 100 === 5 && processor.isStreaming()) {
+    if(num % 100 === 5 && processor.isStreaming() && state.markets.node[username].domain) {
       check(num);
     }
-    if(num % 100 === 50 && processor.isStreaming()) {
+    if(num % 100 === 50 && processor.isStreaming() && state.markets.node[username].domain) {
       report(num);
       broadcast = 2
     }
@@ -1462,17 +1335,16 @@ function startApp() {
       console.log(current + `Signing: ${plasma.hashLastIBlock}`)
       if(processor.isStreaming()){ipfsSaveState(num, blockState);}
     }
-    if(processor.isStreaming() && escrow){
+    if(processor.isStreaming() && active){
+      var found = NaN
       if(broadcast){broadcast--}
       while (!broadcast){
         for (var i = 0; i < state.escrow.length; i++){
           if (state.escrow[i][0] == username){
-            dsteem.broadcast(state.escrow[i][1], steem.PrivateKey.fromLogin(username, active, 'active')).then(function(result){
-              console.log(current + `Approved escrow to ${state.escrow[i][1][1].to} from ${state.escrow[i][1][1].from} @ block` + result.block_num)
-            }, function(error) {
-              console.error(error)
-            })
-            broadcast = 1
+            for (var j = 0; j < NodeOps.length;j++){
+              if(NodeOps[j][2] == state.escrow[i][1]){found = j}
+            }
+            if (found == NaN){NodeOps.push([0, 'escrow-queue', state.escrow[i][1]]);}
             break;
           }
         }
@@ -1503,8 +1375,28 @@ function startApp() {
         }
         if (task >= 0){
           switch (NodeOps[task][1]) {
+            case 'escrow-transfer':
+              NodeOps[task][0]++
+              dsteem.broadcast(NodeOps[task][2], steem.PrivateKey.fromLogin(username, active, 'active')).then(function(result){
+                console.log(current + `: Broadcast ${NodeOps[task][2][0]} for ${NodeOps[task][2][1].json_meta.contract} @ block ${result.block_num}`)
+                NodeOps.splice(task,1)
+              }, function(error) {
+                console.error(error)
+                NodeOps.push(NodeOps.splice(task,1))
+                broadcast=1
+              })
+              break;
+            case 'escrow-queue':
+              dsteem.broadcast(NodeOps[task][2], steem.PrivateKey.fromLogin(username, active, 'active')).then(function(result){
+                console.log(current + `Signed dlux escrow`)
+              }, function(error) {
+                console.error(error)
+              })
+              broadcast = 1
+              break;
             case 'nft_op':
-              transactor.json(username, posting, 'nft_op', {
+              NodeOps[task][0]++
+              transactor.json(username, active, 'nft_op', {
                 nft: NodeOps[task][2],
                 completed: NodeOps[task][3],
                 runtime: NodeOps[task][4],
@@ -1544,13 +1436,23 @@ function startApp() {
         balance = 0;
       }
       console.log(user, 'has', balance, 'tokens')
+    } else if(split[0] === 'sign-off') {
+      transactor.json(username, active, `node_delete`, {
+      }, function(err, result) {
+        if(err) {
+          console.error(err);
+        } else {
+          broadcast = 2
+        }
+      })
+      console.log(user, 'has', balance, 'tokens')
     } else if(split[0] === 'send') {
       console.log('Sending tokens...')
       var to = split[1];
 
       var amount = parseInt(split[2]);
       broadcast = 2
-      transactor.json(username, posting, 'send', {
+      transactor.json(username, active, 'send', {
         to: to,
         amount: amount
       }, function(err, result) {
@@ -1563,7 +1465,7 @@ function startApp() {
       var dlux = split[1], amount = split[2], type = 'steem', partial = true;
       if (split[3] == 'sbd'){type='sbd'}
       broadcast = 2
-      transactor.json(username, posting, `dex_${type}_sell`, {
+      transactor.json(username, active, `dex_${type}_sell`, {
         dlux,
         [type]: amount,
         partial
@@ -1572,11 +1474,56 @@ function startApp() {
           console.error(err);
         }
       })
+    } else if (split[0] === 'dex-buy-ask-steem'){ //dex-sell 1000(dlux) 100(type) steem(/sbd | type)
+      console.log('Creating Escrow tx')
+      var txid = split[1], amount = split[2], addr = ''
+      //amount is steem by millisteems 1000 = 1.000 steem
+      for (var i = 0; i < state.dex.steem.sellOrders.length;i++){
+        if (state.dex.steem.sellOrders[i].txid = txid){
+          addr = i;break;
+        }
+      }
+      if (addr){
+        var escrowTimer = {}
+        var agents = []
+        var i = 0
+        for (var agent in state.agents){
+          if(i == 3){break}
+          agents.push(agent)
+          i++;
+        }
+        if (agents[0] != username && agents[0] != state.dex.steem.sellOrders[addr].from){agents.push(agents[0])}
+        else if (agents[1] != username && agents[1] != state.dex.steem.sellOrders[addr].from){agents.push(agents[1])}
+        else {agents.push(agents[2])}
+        let now = new Date();
+          escrowTimer.ratifyIn = now.setHours(now.getHours()+1);
+          escrowTimer.ratifyUTC = new Date(escrowTimer.ratifyIn);
+          escrowTimer.ratifyString = escrowTimer.ratifyBy.toISOString();
+          escrowTimer.expiryIn = now.setDate(now.getDate()+3);
+          escrowTimer.expiryUTC = new Date(escrowTimer.expiryIn);
+          escrowTimer.expiryString = escrowTimer.expiryUTC.toISOString();
+        var eidi = txid
+        let eid = parseInt(bs58.decode(eidi.splice(6,4))) //escrow_id from DLUXQmxxxx<this number
+        let params = {
+            from: username,
+            to: state.dex.steem.sellOrders[addr].from,
+            sbd_amount: '0.000 SBD',
+            steem_amount: amount/1000 + ' STEEM',
+            escrow_id: eid,
+            agent: agents[4],
+            fee: '0.000 STEEM',
+            ratification_deadline: escrowTimer.ratifyString,
+            escrow_expiration: escrowTimer.expiryString,
+            json_meta: JSON.stringify({contract: txid, rate: state.dex.steem.sellOrders[addr].rate, partial: true})
+        }
+        console.log(params)
+        NodeOps.push([0,'escrow-transfer',['escrow_transfer', params]]);
+      }
     } else if (split[0] === 'power-up'){
       console.log('Sending Power Up request...')
       var amount = parseInt(split[1])
       broadcast = 2
-      transactor.json(username, posting, `power_up`, {
+      transactor.json(username, active, `power_up`, {
         amount
       }, function(err, result) {
         if(err) {
@@ -1587,7 +1534,7 @@ function startApp() {
       console.log('Scheduling Power Down...')
       var amount = split[1]
       broadcast = 2
-      transactor.json(username, posting, `power_down`, {
+      transactor.json(username, active, `power_down`, {
         amount
       }, function(err, result) {
         if(err) {
@@ -1726,7 +1673,14 @@ function dao(num) {
   t = parseInt(state.balances.ra)
   for (var node in state.runners){ //node rate
     b = parseInt(b) + parseInt(state.markets.node[node].marketingRate )
-    j = parseInt(j) + parseInt(state.markets.node[node].bidRate);i++
+    j = parseInt(j) + parseInt(state.markets.node[node].bidRate)
+    i++
+    console.log(b,j,i)
+  }
+  if (!i){
+    b = state.markets.node['dlux-io'].marketingRate
+    j = state.markets.node['dlux-io'].bidRate
+    i++
   }
   state.stats.marketingRate = parseInt(b/i)
   state.stats.nodeRate = parseInt(j/i)
@@ -1737,7 +1691,7 @@ function dao(num) {
   state.balances.rm += parseInt(t*state.stats.marketingRate/10000)
   if(state.balances.rm > 1000000000){state.balances.rc += state.balances.rm - 1000000000;state.balances.rm = 1000000000}
   state.balances.ra = parseInt(state.balances.ra) - parseInt(t*state.stats.marketingRate/10000)
-  i,j=0
+  i=0,j=0
   console.log(current + `${state.balances.rm} is availible in the marketing account\n${state.balances.rn} DLUX set asside to distribute to nodes`)
   for (var node in state.markets.node){ //tally the wins
     j += state.markets.node[node].wins
@@ -1748,8 +1702,8 @@ function dao(num) {
     if(state.balances[node]){state.balances[node] += i}
     else {state.balances[node] = i}
     state.balances.rn -= i
-    state.markets.node[node].wins = 0
     console.log(current + `@${node} awarded ${i} DLUX for ${state.markets.node[node].wins} credited transaction(s)`)
+    state.markets.node[node].wins = 0
   }
   state.balances.rd += parseInt(t*state.stats.delegationRate/10000) // 10% to delegators
   state.balances.ra -= parseInt(t*state.stats.delegationRate/10000)
@@ -1789,6 +1743,7 @@ function dao(num) {
   }
   state.ico = []
   state.pow.robotolux -= 312500000
+  state.pow.t -= 312500000
   }
   state.balances.rc = state.balances.ra
   state.balances.ra = 0
@@ -1880,7 +1835,7 @@ function report(num) {
         }
       }
     }
-    transactor.json(username, posting, 'report', {
+    transactor.json(username, active, 'report', {
         agreements: agreements,
         hash: plasma.hashLastIBlock,
         block: plasma.hashBlock,
@@ -1986,116 +1941,8 @@ function checkNFT(nft, proposal, executor, bal, assets){
   if(nft.withdraw !== 0){return 8}//trusts and payments for commitment
 
 
-  return
+  return //needs work
 }
-
-/*
-function eval(contract, from, num, ){
-  var touched = false
-  var timedOut = false
-  var valid = true
-  const original = contract
-  var nft = contract
-  const timer =  computeTimer(nft.fee)
-  if (nft.rule.search('') === -1){
-    watch(state, function(){
-      touched = true
-    });
-    setTimeout(function(){timedOut = true}, timer)
-    var output = eval('"use strict";' + nft.rule)
-    var decision = (typeof output[0] == 'number' && output[0] > 0 && output[0] < 8 ) ? output[0] : 2
-    unwatch(state)
-    if(timedOut){
-      transactor.json(username, posting, 'nft_execute', {
-          execute: 'refund_fee',
-          address: original.expires,
-          contract: original.self,
-          memo: 'This contract timed out while executing, better code or more fees please.'
-        }, function(err, result) {
-          if(err) {
-            console.error(err, `Ran ${original.expires}:${original.self} and errored.\nMost likely your ACCOUNT and KEY variables are not set!`);
-          } else {
-            console.log(`Ran ${original.expires}:${original.self} and reported.`)
-          }
-      })
-    } else if (touched) {
-      transactor.json(username, posting, 'nft_execute', {
-          execute: 'refund_flag',
-          creator: original.creator,
-          address: original.expires,
-          contract: original.self,
-          memo: 'This contract was caught trying to execute malicious code'
-        }, function(err, result) {
-          if(err) {
-            console.error(err, `Ran ${original.expires}:${original.self} and errored.\nMost likely your ACCOUNT and KEY variables are not set!`);
-          } else {
-            console.log(`Ran ${original.expires}:${original.self} and reported.`)
-          }
-      })
-    } else {
-      while (decision){
-        switch (decision) {
-          case 1:// refund
-            outcome = 1
-            decision = 0
-            break;
-          case 2: //continue
-            nft = original
-            nft.incrementer++
-            outcome = 2
-            decision = 0
-            break;
-          case 3: //resolve
-            outcome = 3
-            decision = 0
-            break;
-          case 4: //transfer
-            nft = original
-            nft.incrementer++
-            outcome = 4
-            decision = 0
-            break;
-          case 5: //amend
-            var j = 0
-            for(var ben in nft.benifactors){
-              j += nft.benifactors[ben]
-            }
-            if (j !== original.bal){
-              decision = 1
-              break;
-            }
-            outcome = 5
-            decision = 0
-            break;
-          case 6: //withdrawl
-          var j = 0
-            for(var ben in nft.benifactors){
-              j += nft.benifactors[ben]
-            }
-            if (j + output[1] !== original.bal){
-              decision = 1
-              break;
-            }
-          default:
-
-        }
-      }
-    }
-  } else {
-    transactor.json(username, posting, 'nft_execute', {
-        execute: 'refund',
-        address: original.expires,
-        contract: original.self
-      }, function(err, result) {
-        if(err) {
-          console.error(err, `\nMost likely your ACCOUNT and KEY variables are not set!`);
-        } else {
-          console.log(`Sent State report and published ${plasma.hashLastIBlock} for ${plasma.hashBlock}`)
-        }
-    })
-  }
-}
-*/
 
 function computeTimer(fee){
   if (fee == 0){
