@@ -1146,10 +1146,12 @@ function startApp() {
   });
 
   processor.on('report', function(json, from) {
+    console.log('yo?')
     var cfrom, domain, found = NaN
     try {
       cfrom = state.markets.node[from].self
       domain = state.markets.node[from].domain
+      console.log(cfrom,domain)
     }
     catch (err) {
       console.log(err)
