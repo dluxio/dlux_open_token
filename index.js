@@ -98,6 +98,10 @@ api.get('/state', (req, res, next) => {
   res.setHeader('Content-Type', 'application/json');
   res.send(JSON.stringify({state: state, node: username, VERSION, realtime: current}, null, 3))
 });
+api.get('/pending', (req, res, next) => {
+  res.setHeader('Content-Type', 'application/json');
+  res.send(JSON.stringify(NodeOps, null, 3))
+});
 api.get('force', (req, res, next) => {
   res.setHeader('Content-Type', 'application/json');
   res.send(JSON.stringify({stats: state, node: username, VERSION, realtime: current}, null, 3))
@@ -1146,12 +1150,10 @@ function startApp() {
   });
 
   processor.on('report', function(json, from) {
-    console.log('yo?')
     var cfrom, domain, found = NaN
     try {
       cfrom = state.markets.node[from].self
       domain = state.markets.node[from].domain
-      console.log(cfrom,domain)
     }
     catch (err) {
       console.log(err)
@@ -1285,7 +1287,7 @@ function startApp() {
 
   processor.onBlock(function(num, block) {
     current = num
-  chronoProcess = true
+    chronoProcess = true
     while (chronoProcess){
         if (state.chrono[0] && state.chrono[0].block == num){
         switch (state.chrono[0].op) {
