@@ -507,7 +507,6 @@ console.log(`Attempting to start from IPFS save state ${engineCrank}`);
 
 function startApp() {
   processor = steemState(client, steem, startingBlock, 10, prefix, streamMode);
-  console.log(processor)
 
 
   processor.on('send', function(json, from) {
@@ -1153,6 +1152,7 @@ function startApp() {
       domain = state.markets.node[from].domain
     }
     catch (err) {
+      console.log(err)
     }
     if (from === cfrom && domain) {
       state.markets.node[from].report = json
@@ -1937,116 +1937,8 @@ function checkNFT(nft, proposal, executor, bal, assets){
   if(nft.withdraw !== 0){return 8}//trusts and payments for commitment
 
 
-  return
+  return //needs work
 }
-
-/*
-function eval(contract, from, num, ){
-  var touched = false
-  var timedOut = false
-  var valid = true
-  const original = contract
-  var nft = contract
-  const timer =  computeTimer(nft.fee)
-  if (nft.rule.search('') === -1){
-    watch(state, function(){
-      touched = true
-    });
-    setTimeout(function(){timedOut = true}, timer)
-    var output = eval('"use strict";' + nft.rule)
-    var decision = (typeof output[0] == 'number' && output[0] > 0 && output[0] < 8 ) ? output[0] : 2
-    unwatch(state)
-    if(timedOut){
-      transactor.json(username, active, 'nft_execute', {
-          execute: 'refund_fee',
-          address: original.expires,
-          contract: original.self,
-          memo: 'This contract timed out while executing, better code or more fees please.'
-        }, function(err, result) {
-          if(err) {
-            console.error(err, `Ran ${original.expires}:${original.self} and errored.\nMost likely your ACCOUNT and KEY variables are not set!`);
-          } else {
-            console.log(`Ran ${original.expires}:${original.self} and reported.`)
-          }
-      })
-    } else if (touched) {
-      transactor.json(username, active, 'nft_execute', {
-          execute: 'refund_flag',
-          creator: original.creator,
-          address: original.expires,
-          contract: original.self,
-          memo: 'This contract was caught trying to execute malicious code'
-        }, function(err, result) {
-          if(err) {
-            console.error(err, `Ran ${original.expires}:${original.self} and errored.\nMost likely your ACCOUNT and KEY variables are not set!`);
-          } else {
-            console.log(`Ran ${original.expires}:${original.self} and reported.`)
-          }
-      })
-    } else {
-      while (decision){
-        switch (decision) {
-          case 1:// refund
-            outcome = 1
-            decision = 0
-            break;
-          case 2: //continue
-            nft = original
-            nft.incrementer++
-            outcome = 2
-            decision = 0
-            break;
-          case 3: //resolve
-            outcome = 3
-            decision = 0
-            break;
-          case 4: //transfer
-            nft = original
-            nft.incrementer++
-            outcome = 4
-            decision = 0
-            break;
-          case 5: //amend
-            var j = 0
-            for(var ben in nft.benifactors){
-              j += nft.benifactors[ben]
-            }
-            if (j !== original.bal){
-              decision = 1
-              break;
-            }
-            outcome = 5
-            decision = 0
-            break;
-          case 6: //withdrawl
-          var j = 0
-            for(var ben in nft.benifactors){
-              j += nft.benifactors[ben]
-            }
-            if (j + output[1] !== original.bal){
-              decision = 1
-              break;
-            }
-          default:
-
-        }
-      }
-    }
-  } else {
-    transactor.json(username, posting, 'nft_execute', {
-        execute: 'refund',
-        address: original.expires,
-        contract: original.self
-      }, function(err, result) {
-        if(err) {
-          console.error(err, `\nMost likely your ACCOUNT and KEY variables are not set!`);
-        } else {
-          console.log(`Sent State report and published ${plasma.hashLastIBlock} for ${plasma.hashBlock}`)
-        }
-    })
-  }
-}
-*/
 
 function computeTimer(fee){
   if (fee == 0){
