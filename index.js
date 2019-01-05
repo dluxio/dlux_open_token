@@ -1439,7 +1439,7 @@ function startApp() {
             case 'escrow_approve':
               console.log('trying to sign', NodeOps[task][2])
                 steemClient.broadcast.escrowApprove(
-                  active,
+                  wif,
                   NodeOps[task][2].from,
                   NodeOps[task][2].to,
                   NodeOps[task][2].agent,
@@ -1787,7 +1787,7 @@ function dao(num) {
   i=0,j=0
   console.log(current + `${state.balances.rm} is availible in the marketing account\n${state.balances.rn} DLUX set asside to distribute to nodes`)
   for (var node in state.markets.node){ //tally the wins
-    j += state.markets.node[node].wins
+    j = j + parseInt(state.markets.node[node].wins)
   }
   b = state.balances.rn
   for (var node in state.markets.node){ //and pay them
