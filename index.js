@@ -123,42 +123,8 @@ api.get('/dex', (req, res, next) => {
 http.listen(port, function(){
   console.log(`DLUX token API listening on port ${port}`);
 });
-
-const NFT = {
-  self: '',
-  block: '',
-  creator: '',
-  bearers: ['disregardfiat'],//only accounts with weights, last item in array is current "owner"
-  owners: [{'disregardfiat':1}],//can be contracts, but a list of usernames or contracts with weights
-  owns: ['Qmtrash','Qmhash'],//must be contracts
-  bal: 0,//dlux in contract, must equal goes
-  pow: 0,//dlux power in contract(added to bearers amount)
-  fee: 0,//determines time out times
-  pool: 0,//where the fee comes from
-  deposits: {},
-  auths: {
-    '*':'2',
-    'a':'12346789',
-    'b':'28',
-    'c':'25'
-  },
-  authed: ['user'],
-  weight: 1,
-  behavior: 0,// 0 custom, 1 auction, 2 simple equity deposit, 3 simple bet(code 0/1)
-  rule: '',//SP bearer inst // equity loan / auction with raffle / fair bet /
-  memo: '',
-  withdraw: [{user:'name',bal:0}],
-  withdrawPow: {'creator':1},
-  withdrawAsset: {creator:['asset']},
-  incrementer: 0,
-  benifactors: [[{u:'user',d:0}],[]],
-  assetBenifactors: [[['item-user','item']],[]],
-  lastExecutor: ['executor', 'blocknum'],
-  listener: ['search for custom json transactions','address','to','dlux',1],//
-  matures: 29000000,
-  expires: 30000000,
-}
 var state = {
+  limbo: {},
   listeners: [],
   balances: {
     ra: 0, //reward_account
@@ -518,7 +484,7 @@ function startApp() {
     if (json.memo){
       for (var i = 0;i < state.listeners.length;i++){
         if(json.memo == state.listeners[i][0]){
-          if (state.nft[state.listeners[i][1]] && state.nft[state.listeners[i][1]].listener[0] && state.nft[state.listeners[i][1]].listener[0][2] == json.to && state.nft[state.listeners[i][1]].listener[0][3] == json.amount){
+          if (state.contracts[state.listeners[i][1]] && state.contracts[state.listeners[i][1]].listener[0] && state.contracts[state.listeners[i][1]].listener[0][2] == json.to && state.contracts[state.listeners[i][1]].listener[0][3] == json.amount){
             //set up contract execution
           }
         }
@@ -602,7 +568,7 @@ function startApp() {
       for (var i = 0;i <state.posts.length;i++){
         if (state.posts[i].author === json.author && state.posts[i].permlink === json.permlink){
           if (!state.rolling[from]){
-            state.rolling[from] = state.pow[from] * 10
+            state.rolling[from] = (state.pow.n[from] || 0) + state.pow[from] * 10
           }
           if (json.weight > 0 && json.weight < 10001){
           state.posts[i].weight += parseInt(json.weight * state.rolling[from] / 100000)
@@ -623,48 +589,148 @@ function startApp() {
   });
 
   processor.on('create_nft', function(json, from) {
-    if(json.nft){
-      if(!state.nft[from]){
-        state.nft[from] = [['DLUX' + hashThis(from+current+JSON.stringify(json.nft)),json.nft]]
-      } else if (state.nft){
-        state.nft[from].push(['DLUX' + hashThis(from+current),json.nft])
+    var self = 'DLUX' + hashThis(from + current), error = '', actions = [0]
+
+    var nft = {
+      self,
+      block: current,
+      creator: from,
+      bearers: [from],
+      owners: [{[from]:1}],
+      owns: [],
+      bal: 0,
+      pow: 0,
+      fee: 0,
+      pool: 0,
+      deposits: {},
+      auths: { //planned
+        '*':'23',//'*' anyone,'s' authedArray, 'specific', 'a' agent, 'b' bearer, 'c' creator
+        'a':'012346789',//permissions 1 continue, 2 deposit, 3 complex deposit, 4 withdraw, 5 withdraw pow
+        'c':'5',//6 release table 0, 7 release table 1, 8 transfer, 9 change to assets, 10 change of expiration
+        'b':'04',//
+      },//0 destroy,
+      authed: ['user'],
+      weight: 1,//for multisig authed change on expires?? A always requires 2 if distributed
+      behavior: -1,// -1 fail to depositors, -(2 + n) release to [n]table, 0 custom, 1 auction, 2 simple equity deposit, 3 simple bet(code 0/1),
+      rule: '',//SP bearer inst // equity loan / auction with raffle / fair bet /
+      memo: '',
+      icon: '',//ipfs address
+      withdraw: [],
+      withdrawPow: {},
+      withdrawAsset: [],
+      incrementer: 0,
+      stack: [],
+      votes: [],
+      benifactors: [[{u:from,d:json.nft.bal || 0}],[]],
+      assetBenifactors: [[],[]],
+      lastExecutor: [from, current],
+      listener: [],// to set up custom pulls from steem stream, for instance json sm gifts
+      matures: current,
+      expires: current + 100000,
+    }
+    if(json.nft.pow){
+      if(state.pow[from]){
+        if (state.pow[from] > json.nft.pow){
+          actions.append(2)
+        } else {error += 'Insufficient POW to create NFT'}
+      } else {error += 'Insufficient POW to create NFT'}
+    }
+    nft.pow = json.nft.pow || 0
+    if(json.nft.bal){
+      if(state.balances[from]){
+        if (state.balances[from] > json.nft.pow){
+          actions.append(1)
+          nft.deposits = {[from]:json.nft.bal}
+        } else {error += 'Insufficient DLUX to create NFT'}
+      } else {error += 'Insufficient DLUX to create NFT'}
+    }
+    nft.bal = json.nft.bal || 0
+    if(json.nft.pool){
+      if(state.balances[from]){
+        if (state.balances[from] > json.nft.pool + nft.bal){
+          actions.append(1)
+          if(json.nft.fee > 0 && json.nft.fee < 25){nft.fee = json.nft.fee}
+          else {if(json.nft.behavior > 1){nft.fee = 0}else{nft.fee=1}}
+        } else {error += 'Insufficient DLUX to create NFT'}
+      } else {error += 'Insufficient DLUX to create NFT'}
+    }
+    nft.pool = json.nft.pool || 0
+    if (nft.fee && !nft.pool){error = 'Insuffiecient Fee Pool'}
+    if (json.nft.behavior >= 0 && json.nft.behavior < 5) {//cases for contracts
+      nft.behavior = json.nft.behavior
+    }
+    if(nft.behavior == -1){error += 'Contract Behavior not Understood'}
+    if(json.nft.authed){nft.authed = json.nft.authed}
+    if(typeof json.nft.weight === 'number' && json.nft.weight <= nft.authed.length && json.nft.weight >= 0){nft.authed = json.nft.authed}
+    else {nft.weight = 1}
+    if (nft.behavior == 0){nft.rule = json.nft.rule}
+    nft.memo = json.nft.memo || ''
+    nft.icon = json.nft.icon  || ''
+    nft.stack = json.nft.stack  || []
+    //nft.listener = json.nft.listener || []
+    if (json.nft.expires > current){
+      nft.expires = json.nft.expires
+    }
+    if (json.nft.matures && json.nft.matures < json.nft.expires){
+      nft.matures = json.nft.matures
+    }
+    if(!error){
+      if (actions.indexOf(1) >= 0){
+        state.balances[from] -= nft.bal + nft.pool
+        nft.deposits[from] = nft.bal
       }
-      console.log(current + `${from} created an NFT`)
+      if (actions.indexOf(2) >= 0){
+        state.pow[from] -= nft.pow
+        if(state.pow.n[from] === undefined){state.pow.n[from] = 0}
+        state.pow.n[from] += nft.pow
+      }
+      state.contracts[self] = nft
+      if (state.nft[from] === undefined){state.nft[from] = [nft.self]}
+      else {state.nft[from].push(nft.self)}
+      console.log(`${self} created with ${nft.bal} DLUX and ${nft.pow} DLUX POW\n${self} has a ${nft.behavior} behavior`)
     } else {
-      console.log(current + `${from} sent a spurious NFT tx`)
+      console.log(error)
     }
   });
 
-  processor.on('transfer_nft', function(json, from) {
-    var s = 0
-    if(json.to && typeof json.to === 'string'){
-      if(state.nft[from]){
-        for (var i = 0;i<state.nft[from].length;i++){
-          if (state.nft[from][i][0]==json.nftid){
-            if(state.nft[json.to]){
-              state.nft[json.to].push(state.nft[from][i])
-            } else {
-              state.nft[json.to] = [state.nft[from][i]]
-            }
-            state.nft[from].splice(i,1)
-            s = 1
-            console.log(current + `${from} transfered an NFT to ${json.to}`)
-            break;
-          }
+  processor.on('transfer_nft', function(json, from) {//json.to valid contract or random name json.nftid valid contract beared
+    var bearer = '', error = '', to = '', i = 0, c = 0
+    if (state.contracts[json.nftid]){bearer = state.contracts[json.nftid].bearers[-1]}
+    if (json.to.charAt(0) == 'D'){
+      if (json.to == state.contracts[json.to].self){to = json.to;c=1}
+    } else {to = json.to}
+    if (!bearer){error += ' Reciepient Contract not found'}
+    if (bearer != from){error +=' NFT Transfer not authorized.'}
+    if(!to){error += ' Recipient Contract not Found.'}
+    if (!error){
+      for(; i < state.nft[from].length;i++){
+        if(state.nft[from][i] == json.nftid){
+          state.nft[from].splice(i,1)
+          break;
         }
       }
-    }
-    if(!s){
-      console.log(current + `${from} tried to send an NFT that wasn't theirs`)
-    }
+      if(!c){
+        if (state.nft[to] === undefined){state.nft[to] = [json.nftid]}
+        else {state.nft[to].push(json.nftid)}
+      } else {
+        //run nft as asset thru nft process
+      }
+      state.contracts[json.nftid].bearers.push(json.to)
+      if(state.contracts[json.nftid].pow > 0){
+        state.pow.n[state.contracts[json.nftid].bearers[-2]] -= state.contracts[json.nftid].pow
+        if (state.pow.n[json.to] === undefined){state.pow.n[json.to] = 0}
+        state.pow.n[json.to] += state.contracts[json.nftid].pow
+        state.pow.n[from] -= state.contracts[json.nftid].pow
+      }
+    } else {console.log(error)}
   });
 
   processor.on('delete_nft', function(json, from) {
     var e = 1
-    if(json.nftid && typeof json.nftid === 'string' && state.nft[from]){
-        for (var i = 0;i<state.nft[from].length;i++){
-          if (state.nft[from][i][0]==json.nftid){
-            state.nft[from].splice(i,1)
+    if(json.nftid && typeof json.nftid === 'string' && state.contracts[from]){
+        for (var i = 0;i<state.contracts[from].length;i++){
+          if (state.contracts[from][i][0]==json.nftid){
+            state.contracts[from].splice(i,1)
             console.log(current + `${from} deleted an NFT`)
             e=0
             break;
@@ -677,60 +743,60 @@ function startApp() {
   processor.on('nft_op', function(json, from) {
     var i,j, auth = false, ex = ''
     for (i = 0; i < state.exeq.length;i++){
-      if(state.exeq[i][1] == json.nft){
+      if(state.exeq[i][1] == json.nftid){
         if (from == state.exeq[i][0]){
           state.exeq.splice(i,1)
           auth = true
         }
-        ex = json.nft
+        ex = json.nftid
 
         break;
       }
     }//check to see if agent elected
     if(auth && ex){
       for (j = 0; j < state.exes.length; j++){
-        if(state.exes[j].id == json.nft){
+        if(state.exes[j].id == json.nftid){
           state.exes[j].op.push([json.proposal,json.completed,json.runtime])
           auth = 'updated'
           break;
         }
         if(auth == 'updated' && state.exes[j].op.length == 2){
           if (state.exes[j].op[0].proposal == state.exes[j].op[1].proposal){
-            state.nft[json.nft] = json.proposal
+            state.contracts[json.nftid] = json.proposal
             state.exe.splice(j,1)
-            state.utils.cleanExeq(json.nft)
-            console.log(current + `${json.nft} updated`)
+            state.utils.cleanExeq(json.nftid)
+            console.log(current + `${json.nftid} updated`)
           }
         } else if (auth == 'updated' && state.exes[j].op.length == 3){
           if (state.exes[j].op[0].proposal == state.exes[j].op[2].proposal){
-            state.nft[json.nft] = json.proposal
+            state.contracts[json.nftid] = json.proposal
             state.exe.splice(j,1)
-            state.utils.cleanExeq(json.nft)
-            console.log(current + `${json.nft} updated`)
+            state.utils.cleanExeq(json.nftid)
+            console.log(current + `${json.nftid} updated`)
           } else if (state.exes[j].op[1].proposal == state.exes[j].op[2].proposal){
-            state.nft[json.nft] = json.proposal
+            state.contracts[json.nftid] = json.proposal
             state.exe.splice(j,1)
-            state.utils.cleanExeq(json.nft)
-            console.log(current + `${json.nft} updated`)
+            state.utils.cleanExeq(json.nftid)
+            console.log(current + `${json.nftid} updated`)
           }
         }
       }
     } else if (ex){
       if (state.exes[j].op[0].proposal == json.proposal && current > 50 + state.exes[j].b){
-        state.nft[json.nft] = json.proposal
+        state.contracts[json.nftid] = json.proposal
         state.exe.splice(j,1)
-        state.utils.cleanExeq(json.nft)
-        console.log(current + `${json.nft} updated`)
+        state.utils.cleanExeq(json.nftid)
+        console.log(current + `${json.nftid} updated`)
       } else if (state.exes[j].op[1].proposal == json.proposal && current > 50 + state.exes[j].b){
-        state.nft[json.nft] = json.proposal
+        state.contracts[json.nftid] = json.proposal
         state.exe.splice(j,1)
-        state.utils.cleanExeq(json.nft)
-        console.log(current + `${json.nft} updated`)
+        state.utils.cleanExeq(json.nftid)
+        console.log(current + `${json.nftid} updated`)
       } else if (state.exes[j].op[2].proposal == json.proposal && current > 50 + state.exes[j].b){
-        state.nft[json.nft] = json.proposal
+        state.contracts[json.nftid] = json.proposal
         state.exe.splice(j,1)
-        state.utils.cleanExeq(json.nft)
-        console.log(current + `${json.nft} updated`)
+        state.utils.cleanExeq(json.nftid)
+        console.log(current + `${json.nftid} updated`)
       }
     }
   });
@@ -2095,16 +2161,104 @@ function runCustomNFT(contract, executor, blocknum, bal, assets, code){//assets 
   return [done,proposal,milliseconds]
 }
 
+function expireNFT(n){
+  var o, p = n, f = [0];
+  if(n.stack.length == 0){
+    p.behavior = -2
+    p.expires++
+    o = [true,p,1,[0,10]]
+  } else {
+    p.expires = p.stack[0][1]
+    p.behavior = p.stack[0][2]
+    p.rule = p.stack[0][3]
+    o = [true,p,1,[0,10]]
+  }
+}
+
+function processNFT(o,n){
+  if(o[2] > 25){
+    if (parseInt(o[2]/25) < n.pool){
+      n.pool -= parseInt(o[2]/25)
+      state.balances.rn += parseInt(o[2]/25)
+    } else {
+      o[1].behavior = -1
+    }
+  }
+  if(o[3].length < 2 || !o[0] || o[1].behavior < 0){ //process to disolve
+    if(o[1].behavior == -3){ //release to table 1
+      for (var name in o[1].assetBenifactors[1]){
+        for (var i = 0;i < o[1].assetBenifactors[1][name].length;i++){
+          state.contracts[o[1].assetBenifactors[1][name][i]].bearers.push(name)
+          if (state.contracts[o[1].assetBenifactors[1][name][i]].pow > 0){
+            state.pow[state.contracts[o[1].assetBenifactors[1][name][i]].bearers[-2]] -= state.contracts[o[1].assetBenifactors[1][name][i]].pow
+            state.pow[state.contracts[o[1].assetBenifactors[1][name][i]].bearers[-1]] += state.contracts[o[1].assetBenifactors[1][name][i]].pow
+          }
+        }
+      }
+      for (var i = 0; i < o[1].benifactors[1].length;i++){
+        if (state.balances[o[1].benifactors[1][i].u] === undefined){state.balances[o[1].benifactors[1][i].u] = 0}
+        state.balances[o[1].benifactors[1][i].u] += o[1].benifactors[1][i].d
+      }
+      if (state.balances[o[1].creator] === undefined){state.balances[o[1].creator] = 0}
+      state.balances[o[1].creator] += o[1].pool
+      if (state.pow[o[1].creator] === undefined){state.pow[o[1].creator] = 0}
+      state.pow[creator] += o[1].pow
+      delete state.contracts[o[1].self]
+    } else if (o[1].behavior == -2){ //release to table 0
+      for (var name in o[1].assetBenifactors[0]){
+        for (var i = 0;i < o[1].assetBenifactors[0][name].length;i++){
+          state.contracts[o[1].assetBenifactors[0][name][i]].bearers.push(name)
+          if (state.contracts[o[1].assetBenifactors[0][name][i]].pow > 0){
+            state.pow[state.contracts[o[1].assetBenifactors[0][name][i]].bearers[-2]] -= state.contracts[o[1].assetBenifactors[0][name][i]].pow
+            state.pow[state.contracts[o[1].assetBenifactors[0][name][i]].bearers[-1]] += state.contracts[o[1].assetBenifactors[0][name][i]].pow
+          }
+        }
+      }
+      for (var i = 0; i < o[1].benifactors[0].length;i++){
+        if (state.balances[o[1].benifactors[0][i].u] === undefined){state.balances[o[1].benifactors[0][i].u] = 0}
+        state.balances[o[1].benifactors[0][i].u] += o[1].benifactors[0][i].d
+      }
+      if (state.balances[o[1].creator] === undefined){state.balances[o[1].creator] = 0}
+      state.balances[o[1].creator] += o[1].pool
+      if (state.pow[o[1].creator] === undefined){state.pow[o[1].creator] = 0}
+      state.pow[creator] += o[1].pow
+      delete state.contracts[o[1].self]
+    } else { //release to depositers
+      for ( var user in n.deposits) {
+        if (state.balances[user] === undefined){state.balances[user] = 0}
+        state.balances[user] += n.deposits[user]
+      }
+      if(n.pow){
+        if (state.pow[n.creator] === undefined){state.pow[n.creator] = 0}
+        state.pow[creator] += n.pow
+      }
+      if (state.balances[creator] === undefined){state.balances[creator] = 0}
+      state.balances[creator] += n.pool
+      delete state.contracts[o[1].self]
+    }
+  } else { //process updates
+
+  }
+
+
+}
+
 function runNFT(n, e, b, d, a, c){//nft, ececutor, blocknumber, dluxcoin, assets, code
   var o, p = n, f = [0] //output, proposal, finalActions
   switch (n.behavior) {
       case 0: //Custom assign 3 agents and que
-        assignAgents(n, e, b, d, a, c)
-        o = [true,false,0,[0,1]]
-        return o
+        if (state.balances[e] >= d){
+          if(!state.limbo[e]){state.limbo[e] = d}
+          else {state.limbo[e] += d}
+          state.balances[e] -= d
+          assignAgents(n, e, b, d, a, c)
+          o = [true,false,0,[0,1]]
+          return o
+        }
         break;
       case 1: //Auction
-        if (d > n.bal && c == 0 && !a){
+        if (d > n.bal && c == 0 && !a && state.balances[e] >= d){
+          state.balances[e] -= d
           p.lastExecutor.push([e,b,c])
           p.memo = `${e} outbid ${n.lastExecutor[0]} with ${d} for ${n.self}`
           p.withdraw = [n.lastExecutor[0], n.bal]
@@ -2112,15 +2266,17 @@ function runNFT(n, e, b, d, a, c){//nft, ececutor, blocknumber, dluxcoin, assets
           p.benifactors[0][0][0].d = d
           p.bal = d
           p.incrementer++
+          delete p.deposits[n.lastExecutor[0]]
           p.deposits[e] = d
           f.append(2)
           f.append(4)
-          o = [true,p,1,f]
+          o = [true,p,0,f]
         } else {o = [false,false,0,[0]]}
         return o
         break;
       case 2: //simple equity
-        if (d > 0 && c == 0 && !a){
+        if (d > 0 && c == 0 && !a && state.balances[e] >= d){
+          state.balances[e] -= d
           p.lastExecutor = [e,b]
           p.benifactors[0][0].push({u: e, d: d})
           p.bal = n.bal + d
@@ -2128,12 +2284,13 @@ function runNFT(n, e, b, d, a, c){//nft, ececutor, blocknumber, dluxcoin, assets
           if (p.deposits[e]){p.deposits[e] += d}
           else {p.deposits[e] = d}
           f.append(2)
-          o = [true,p,1,f]
+          o = [true,p,0,f]
         } else {o = [false,false,0,[0]]}
         return o
         break;
       case 3: //place simple bet code 0 and code 1 for two way
-        if (d > 0 && c == 0 && !a){
+        if (d > 0 && c == 0 && !a && state.balances[e] >= d){
+          state.balances[e] -= d
           p.lastExecutor = [e,b]
           p.benifactors[0][0].push({u: e, d: d})
           p.bal = n.bal + d
@@ -2141,8 +2298,9 @@ function runNFT(n, e, b, d, a, c){//nft, ececutor, blocknumber, dluxcoin, assets
           if (p.deposits[e]){p.deposits[e] += d}
           else {p.deposits[e] = d}
           f.append(2)
-          o = [true,p,1,f]
-        } else if (d > 0 && c == 1 && !a){
+          o = [true,p,0,f]
+        } else if (d > 0 && c == 1 && !a && state.balances[e] >= d){
+          state.balances[e] -= d
           p.lastExecutor = [e,b]
           p.benifactors[0][1].push({u: e, d: d})
           p.bal = n.bal + d
@@ -2150,7 +2308,7 @@ function runNFT(n, e, b, d, a, c){//nft, ececutor, blocknumber, dluxcoin, assets
           if (p.deposits[e]){p.deposits[e] += d}
           else {p.deposits[e] = d}
           f.append(2)
-          o = [true,p,1,f]
+          o = [true,p,0,f]
         } else {o = [false,false,0,[0]]}
         return o
         break;
@@ -2199,8 +2357,8 @@ function checkNFT(nft, proposal, executor, bal, assets){
   if(nft.benifactors !== proposal.benifactors){}
   if(nft.assetBenifactors !== proposal.assetBenifactors){}
 
-  if(nft.expires !== proposal.expires){return 9}//wills and dead mans switchs
-  if(nft.withdraw !== 0){return 8}//trusts and payments for commitment
+  if(nft.expires !== proposal.expires){actions.append(10)}//wills and dead mans switchs
+  if(nft.withdraw !== 0){actions.append(4)}//trusts and payments for commitment
 
 
   return //needs work
