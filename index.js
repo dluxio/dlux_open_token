@@ -61,9 +61,9 @@ const username = ENV.ACCOUNT || '';
 const wif = steemClient.auth.toWif(username, active, 'active')
 const NODEDOMAIN = ENV.DOMAIN
 const BIDRATE = ENV.BIDRATE
-const engineCrank = ENV.STARTER || 'QmUg9z2V3NDwwsrT4h5mGMy2yvE4Fa51wxhbA6GfYq5EnY'
+const engineCrank = ENV.STARTER || ''
 const resteemAccount = 'dlux-io';
-var startingBlock = 29140530;
+var startingBlock = 29180000;
 var current, dsteem
 
 
@@ -144,7 +144,7 @@ const NFT = {
   },
   authed: ['user'],
   weight: 1,
-  behavior: 0,// 0 custom, 1 auction
+  behavior: 0,// 0 custom, 1 auction, 2 simple equity deposit, 3 simple bet(code 0/1)
   rule: '',//SP bearer inst // equity loan / auction with raffle / fair bet /
   memo: '',
   withdraw: [{user:'name',bal:0}],
@@ -735,76 +735,85 @@ function startApp() {
     }
   });
 
-  processor.on('dex_sell', function(json, from) {
-    if(json.contract){
-      if (state.balances[from] >= state.contracts[json.to][json.contract].amount){
-        if (state.balances[state.contracts[json.to][json.contract].auths[0][1][1].to] > state.contracts[json.to][json.contract].amount){
-          state.balances[state.contracts[json.to][json.contract].auths[0][1][1].to] -= state.contracts[json.to][json.contract].amount
+  processor.on('dex_buy', function(json, from) {
+    var found = ''
+    try {
+      if(state.contracts[json.to][json.contract].sbd){
+        for (var i = 0;i < state.dex.sbd.buyOrders.length;i++){
+          if (state.dex.sbd.buyOrders[i].txid == json.contract){
+            found = state.dex.sbd.buyOrders[i];break;
+          }
+        }
+        //delete state.contracts[json.to][json.contract]
+      } else {
+        for (var i = 0;i < state.dex.steem.buyOrders.length;i++){
+          if (state.dex.steem.buyOrders[i].txid == json.contract){
+            found = state.dex.steem.buyOrders[i];break;
+          }
+        }
+        //delete state.contracts[json.to][json.contract] leave for transaction verification
+      }
+    } catch(e){}
+    if(found){
+      if (state.balances[from] >= found.amount){
+        if (state.balances[found.auths[0][1][1].to] > found.amount){
+          state.balances[found.auths[0][1][1].to] -= found.amount
+          state.contracts[json.to][json.contract].escrow = found.amount
           console.log(current + `${from} sold ${state.contracts[json.to][json.contract].amount} DLUX`)
-          state.balances[from] -= state.contracts[json.to][json.contract].amount
-          state.balances[state.contracts[json.to][json.contract].from] += state.contracts[json.to][json.contract].amount
-          state.escrow.push(state.contracts[json.to][json.contract].auths[0])
-          state.escrow.push(state.contracts[json.to][json.contract].auths[1])
-          if (state.contracts[json.to][json.contract].steem) {
-            state.escrow.push([state.contracts[json.to][json.contract].auths[0][1][1].to,
+          state.balances[from] -= found.amount
+          state.balances[found.from] += found.amount
+          state.escrow.push(found.auths[0])
+          state.escrow.push(found.auths[1])
+          if (found.steem) {
+            state.escrow.push([found.auths[0][1][1].to,
               [
                 "transfer",
                 {
-                  "from": state.contracts[json.to][json.contract].auths[0][1][1].to,
+                  "from": found.auths[0][1][1].to,
                   "to": from,
-                  "amount": {
-                    "amount": state.contracts[json.to][json.contract].steem,
-                    "precision": 3,
-                    "nai": "@@000000021"
-                  },
-                  "memo": `${json.contract} fulfilled with ${state.contracts[json.to][json.contract].amount} DLUX`
+                  "amount": (found.steem/1000).toFixed(3) + ' STEEM',
+                  "memo": `${json.contract} purchased with ${found.amount} DLUX`
                 }
-              ]])} else {
-                state.escrow.push([state.contracts[json.to][json.contract].auths[0][1][1].to,
+              ]])
+            } else {
+                state.escrow.push([found.auths[0][1][1].to,
                   [
                     "transfer",
                     {
-                      "from": state.contracts[json.to][json.contract].auths[0][1][1].to,
+                      "from": found.auths[0][1][1].to,
                       "to": from,
-                      "amount": {
-                        "amount": state.contracts[json.to][json.contract].sbd,
-                        "precision": 3,
-                        "nai": "@@000000013"
-                      },
-                      "memo": `${json.contract} fulfilled with ${state.contracts[json.to][json.contract].amount} DLUX`
+                      "amount": (found.sbd/1000).toFixed(3) + ' SBD',
+                      "memo": `${json.contract} fulfilled with ${found.amount} DLUX`
                     }
-                  ]])
+                ]])
+              }
+              if(found.sbd){
+                for (var i = 0;i < state.dex.sbd.buyOrders.length;i++){
+                  if (state.dex.sbd.buyOrders[i].txid == json.contract){
+                    state.dex.sbd.buyOrders.splice(i,1);break;
+                  }
+                }
+                //delete state.contracts[json.to][json.contract]
+              } else {
+                for (var i = 0;i < state.dex.steem.buyOrders.length;i++){
+                  if (state.dex.steem.buyOrders[i].txid == json.contract){
+                    state.dex.steem.buyOrders.splice(i,1);break;
+                  }
+                }
+                //delete state.contracts[json.to][json.contract] leave for transaction verification
               }
             }
           } else {
             console.log(`${json.agent} has insuficient liquidity. Contract has been voided.`)
-            state.escrow.push(state.contracts[json.to][json.contract].reject)
+            state.escrow.push(found.reject[0])
           }
-        if(state.contracts[json.to][json.contract].sbd){
-          for (var i = 0;i < state.dex.sbd.buyOrders.length;i++){
-            if (state.dex.sbd.buyOrders[i].txid == json.contract){
-              state.dex.sbd.buyOrders.splice(i,1);break;
-            }
-          }
-          delete state.contracts[json.to][json.contract]
-        } else {
-          for (var i = 0;i < state.dex.steem.buyOrders.length;i++){
-            if (state.dex.steem.buyOrders[i].txid == json.contract){
-              state.dex.steem.buyOrders.splice(i,1);break;
-            }
-          }
-          delete state.contracts[json.to][json.contract]
-        }
       }
   });
 
   processor.on('dex_steem_sell', function(json, from) {
     var buyAmount = parseInt(json.steem)
-    console.log(`Step 1 $from}`)
     if (json.dlux <= state.balances[from]){
-      console.log(`Step 1 ${buyAmount}`)
       var txid = 'DLUX' + hashThis(from + current)
-      console.log(`Step 2 ${txid}`)
       state.dex.steem.sellOrders.push({txid, from: from, steem: buyAmount, sbd: 0, amount: parseInt(json.dlux), rate:parseInt((json.dlux)/(buyAmount)), block:current, partial: json.partial || true})
       state.balances[from] -= json.dlux
       if(state.contracts[from]) {
@@ -1261,14 +1270,26 @@ function startApp() {
   });
 
   processor.onOperation('transfer', function(json){//ICO calculate
-    if(json.memo.substr(0,5) == 'DLUXQm') {
+    var contract = ''
+    if(json.memo.substr(0,6) == 'DLUXQm') {
       var txid = json.memo.split(' ')[0]
-      for (var i = 0;i < state.escrow.length;i++){
-        if(state.escrow[i][1][1].memo.split(' ') == txid && state.escrow[i][0] == json.from){
-          state.markets.node[json.from].wins++
-          state.balances[json.from] += state.contracts[json.to][txid].amount
-          state.escrow.splice(i,1)
-          break;
+      if(state.contracts[json.to][txid]){
+        for (var i = 0;i < state.escrow.length;i++){
+          if (state.escrow[i][0] == json.from && state.escrow[i][1][1].from == json.from && state.escrow[i][1][1].to == json.to){
+             if (state.contracts[json.to][txid].steem){
+               if (parseInt(parseFloat(json.amount)*1000) == state.contracts[json.to][txid].steem){
+                 state.balances[json.from] += state.contracts[json.to][txid].escrow
+                 delete state.contracts[json.to][txid]
+                 state.escrow.splice(i,1)
+               }
+             } else if (state.contracts[json.to][txid].sbd) {
+               if (parseInt(parseFloat(json.amount)*1000) == state.contracts[json.to][txid].sbd){
+                 state.balances[json.from] += state.contracts[json.to][txid].escrow
+                 delete state.contracts[json.to][txid]
+                 state.escrow.splice(i,1)
+               }
+             }
+          }
         }
       }
     }
@@ -1550,9 +1571,9 @@ function startApp() {
           console.error(err);
         }
       })
-    } else if (split[0] === 'dex-sell'){ //dex-sell 1000(dlux) 100(type) steem(/sbd | type)
+    } else if (split[0] === 'dex-place-ask'){ //dex-place-ask 1000(dlux) 100(type) steem(/sbd | type)
       console.log('Creating DEX Contract...')
-      var dlux = split[1], amount = split[2], type = 'steem', partial = true;
+      var dlux = split[1], amount = split[2], type = 'steem', partial = false;
       if (split[3] == 'sbd'){type='sbd'}
       broadcast = 2
       transactor.json(username, active, `dex_${type}_sell`, {
@@ -1564,17 +1585,29 @@ function startApp() {
           console.error(err);
         }
       })
-    } else if (split[0] === 'dex-buy-ask-steem'){ //dex-sell 1000(dlux) 100(type) steem(/sbd | type)
+    } else if (split[0] === 'dex-buy-ask'){ //dex-buy-ask DLUXQmxxxx 1-10000(assumes 10000 /full if blank) you can go over and buy contracts of better rates and have the remainder returned to your account
       console.log('Creating Escrow tx...')
-      var txid = split[1], amount = split[2], addr = ''
+      var txid = split[1], addr = '', receiver = '', amount, type
       //amount is steem by millisteems 1000 = 1.000 steem
       for (var i = 0; i < state.dex.steem.sellOrders.length;i++){
         if (state.dex.steem.sellOrders[i].txid == txid){
           console.log(state.dex.steem.sellOrders[i].txid)
-          addr = i;break;
+          addr = state.dex.steem.sellOrders[i]
+          reciever = state.dex.steem.sellOrders[i].from
+          type = ' STEEM'
         }
       }
-      if (addr >= 0){
+      if(!addr){
+        type = ' SBD'
+        for (var i = 0; i < state.dex.sbd.sellOrders.length;i++){
+          if (state.dex.sbd.sellOrders[i].txid == txid){
+            console.log(state.dex.sbd.sellOrders[i].txid)
+            addr = state.dex.sbd.sellOrders[i]
+            reciever = state.dex.sbd.sellOrders[i].from
+          }
+        }
+      }
+      if (addr){
         var escrowTimer = {}
         var agents = []
         var i = 0
@@ -1583,14 +1616,81 @@ function startApp() {
           agents.push(state.queue[agent])
           i++;
         }
-        if (agents[0] != username && agents[0] != state.dex.steem.sellOrders[addr].from){agents.push(agents[0])}
-        else if (agents[1] != username && agents[1] != state.dex.steem.sellOrders[addr].from){agents.push(agents[1])}
+        if (agents[0] != username && agents[0] != addr.from){agents.push(agents[0])}
+        else if (agents[1] != username && agents[1] != addr.from){agents.push(agents[1])}
         else {agents.push(agents[2])}
         let now = new Date();
           escrowTimer.ratifyIn = now.setHours(now.getHours()+1);
           escrowTimer.ratifyUTC = new Date(escrowTimer.ratifyIn);
           escrowTimer.ratifyString = escrowTimer.ratifyUTC.toISOString().slice(0,-5);
-          escrowTimer.expiryIn = now.setDate(now.getDate()+3);
+          escrowTimer.expiryIn = now.setDate(now.getDate()+1);
+          escrowTimer.expiryUTC = new Date(escrowTimer.expiryIn);
+          escrowTimer.expiryString = escrowTimer.expiryUTC.toISOString().slice(0,-5);
+        var eidi = txid
+        var formatter
+        if (type == ' STEEM'){
+          steemAmount = (addr.steem/1000).toFixed(3) + type
+          sbdAmount = '0.000 SBD'
+        } else if (type == ' SBD'){
+          sbdAmount = (addr.sbd/1000).toFixed(3) + type
+          steemAmount = '0.000 STEEM'
+        }
+        formatter = formatter.toFixed(3)
+        let eid = parseInt('0x' + (bs58.decode(eidi.substring(6,10))).toString('hex')) //escrow_id from DLUXQmxxxx<this
+        let params = {
+            from: username,
+            to: addr.from,
+            sbd_amount: sbdAmount,
+            steem_amount: steemAmount,
+            escrow_id: eid,
+            agent: agents[3],
+            fee: '0.000 STEEM',
+            ratification_deadline: escrowTimer.ratifyString,
+            escrow_expiration: escrowTimer.expiryString,
+            json_meta: JSON.stringify({
+              contract: txid
+          })
+        }
+        console.log(params)
+        NodeOps.push([[0,0],'escrow_transfer',['escrow_transfer', params]]);
+      }
+    } else if (split[0] === 'dex-place-bid'){ //dex-place-bid 1000(dlux) 100(type) steem(/sbd | type)
+      console.log('Placing bid...')
+      var dlux = split[1], amount = split[2], type = split[3], steemAmount, sbdAmount
+      //amount is steem by millisteems 1000 = 1.000 steem
+      if (type == 'sbd'){
+        type = ' SBD'
+      } else {
+        type = ' STEEM'
+      }
+      if (type == ' STEEM'){
+        steemAmount = (amount/1000).toFixed(3) + type
+        sbdAmount = '0.000 SBD'
+      } else if (type == ' SBD'){
+        sbdAmount = (amount/1000).toFixed(3) + type
+        steemAmount = '0.000 STEEM'
+      }
+      if (addr >= 0){
+        var escrowTimer = {}
+        var agents = []
+        var i = 0
+        for (var agent in state.queue){
+          if(agents.length == 1){break}
+          if(state.balances[state.queue[agent]] > dlux && state.queue[agent] != username){
+            agents.push(state.queue[agent])
+          }
+        }
+        for (var agent in state.queue){
+          if(agents.length == 1){break}
+          if(state.queue[agent] != agents[0] && state.queue[agent] != username){
+            agents.push(state.queue[agent])
+          }
+        }
+        let now = new Date();
+          escrowTimer.ratifyIn = now.setHours(now.getHours()+72);
+          escrowTimer.ratifyUTC = new Date(escrowTimer.ratifyIn);
+          escrowTimer.ratifyString = escrowTimer.ratifyUTC.toISOString().slice(0,-5);
+          escrowTimer.expiryIn = now.setDate(now.getDate()+5);
           escrowTimer.expiryUTC = new Date(escrowTimer.expiryIn);
           escrowTimer.expiryString = escrowTimer.expiryUTC.toISOString().slice(0,-5);
         var eidi = txid
@@ -1599,18 +1699,51 @@ function startApp() {
         let eid = parseInt('0x' + (bs58.decode(eidi.substring(6,10))).toString('hex')) //escrow_id from DLUXQmxxxx<this
         let params = {
             from: username,
-            to: state.dex.steem.sellOrders[addr].from,
-            sbd_amount: '0.000 SBD',
-            steem_amount: formatter + ' STEEM',
+            to: agents[0],
+            sbd_amount: sbdAmount,
+            steem_amount: steemAmount,
             escrow_id: eid,
-            agent: agents[3],
+            agent: agents[1],
             fee: '0.000 STEEM',
             ratification_deadline: escrowTimer.ratifyString,
             escrow_expiration: escrowTimer.expiryString,
-            json_meta: JSON.stringify({contract: txid, rate: state.dex.steem.sellOrders[addr].rate, partial: true})
+            json_meta: JSON.stringify({dextx:{dlux}})
         }
         console.log(params)
         NodeOps.push([[0,0],'escrow_transfer',['escrow_transfer', params]]);
+      }
+    } else if (split[0] === 'dex-buy-bid'){ //dex-buy-bid DLUXQmxxxx
+      var txid = split[1], type = '', addr = '', reciever = ''
+      console.log(`Buying ${txid}`)
+      for (var i = 0; i < state.dex.steem.buyOrders.length;i++){
+        if (state.dex.steem.buyOrders[i].txid == txid){
+          console.log(state.dex.steem.buyOrders[i].txid)
+          addr = state.dex.steem.buyOrders[i]
+          reciever = state.dex.steem.buyOrders[i].from
+          type = ' STEEM'
+        }
+      }
+      if(!addr){
+        type = ' SBD'
+        for (var i = 0; i < state.dex.sbd.buyOrders.length;i++){
+          if (state.dex.sbd.buyOrders[i].txid == txid){
+            console.log(state.dex.sbd.buyOrders[i].txid)
+            addr = state.dex.sbd.buyOrders[i]
+            reciever = state.dex.sbd.buyOrders[i].from
+          }
+        }
+      }
+      if (addr){
+        broadcast = 2
+        transactor.json(username, active, `dex_buy`, {
+          contract: txid,
+          to: addr.from,
+
+        }, function(err, result) {
+          if(err) {
+            console.error(err);
+          }
+        })
       }
     } else if (split[0] === 'power-up'){
       console.log('Sending Power Up request...')
@@ -1968,6 +2101,7 @@ function runNFT(n, e, b, d, a, c){//nft, ececutor, blocknumber, dluxcoin, assets
       case 0: //Custom assign 3 agents and que
         assignAgents(n, e, b, d, a, c)
         o = [true,false,0,[0,1]]
+        return o
         break;
       case 1: //Auction
         if (d > n.bal && c == 0 && !a){
@@ -1975,7 +2109,7 @@ function runNFT(n, e, b, d, a, c){//nft, ececutor, blocknumber, dluxcoin, assets
           p.memo = `${e} outbid ${n.lastExecutor[0]} with ${d} for ${n.self}`
           p.withdraw = [n.lastExecutor[0], n.bal]
           p.assetBenifactors[0][0][0] = e
-          p.benifactors[0][0].d = d
+          p.benifactors[0][0][0].d = d
           p.bal = d
           p.incrementer++
           p.deposits[e] = d
@@ -1986,17 +2120,36 @@ function runNFT(n, e, b, d, a, c){//nft, ececutor, blocknumber, dluxcoin, assets
         return o
         break;
       case 2: //simple equity
-        if (d > n.bal && c == 0 && !a){
+        if (d > 0 && c == 0 && !a){
           p.lastExecutor = [e,b]
-          p.memo = `${e} sent ${d}`
-          p.withdraw = [n.lastExecutor[0], n.bal]
-          p.assetBenifactors[0][0][0] = e
-          p.benifactors[0][0].d = d
-          p.bal = d
+          p.benifactors[0][0].push({u: e, d: d})
+          p.bal = n.bal + d
           p.incrementer++
-          p.deposits[e] = d
+          if (p.deposits[e]){p.deposits[e] += d}
+          else {p.deposits[e] = d}
           f.append(2)
-          f.append(4)
+          o = [true,p,1,f]
+        } else {o = [false,false,0,[0]]}
+        return o
+        break;
+      case 3: //place simple bet code 0 and code 1 for two way
+        if (d > 0 && c == 0 && !a){
+          p.lastExecutor = [e,b]
+          p.benifactors[0][0].push({u: e, d: d})
+          p.bal = n.bal + d
+          p.incrementer++
+          if (p.deposits[e]){p.deposits[e] += d}
+          else {p.deposits[e] = d}
+          f.append(2)
+          o = [true,p,1,f]
+        } else if (d > 0 && c == 1 && !a){
+          p.lastExecutor = [e,b]
+          p.benifactors[0][1].push({u: e, d: d})
+          p.bal = n.bal + d
+          p.incrementer++
+          if (p.deposits[e]){p.deposits[e] += d}
+          else {p.deposits[e] = d}
+          f.append(2)
           o = [true,p,1,f]
         } else {o = [false,false,0,[0]]}
         return o
@@ -2009,9 +2162,9 @@ function runNFT(n, e, b, d, a, c){//nft, ececutor, blocknumber, dluxcoin, assets
 
 function assignAgents(n, e, b, d, a, c){
   state.exes.push({id:n.self,n,e,b,d,a,c,op:[]})
-  state.exeq.push([state.utils.agentCycler(), n.self,b])
-  state.exeq.push([state.utils.agentCycler(), n.self,b])
-  state.exeq.push([state.utils.agentCycler(), n.self,b])
+  state.exeq.push([state.utils.agentCycler(), n.self,b,e])
+  state.exeq.push([state.utils.agentCycler(), n.self,b,e])
+  state.exeq.push([state.utils.agentCycler(), n.self,b,e])
 }
 
 function checkNFT(nft, proposal, executor, bal, assets){
