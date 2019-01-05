@@ -7,8 +7,8 @@ const IPFS = require('ipfs-api');
 const ipfs = new IPFS({ host: 'ipfs.infura.io', port: 5001, protocol: 'https'});
 const args = require('minimist')(process.argv.slice(2));
 const express = require('express')
+const steemClient = require('steem')
 //const RSS = require('rss-generator');
-
 // Attempts to get the hash of that state file.
 
 const crypto = require('crypto')
@@ -21,7 +21,7 @@ function hashThis(data) {
   const multihash = bs58.encode(combined)
   return multihash.toString()
 }
-
+var pa = []
 
 const Unixfs = require('ipfs-unixfs')
 const {DAGNode} = require('ipld-dag-pb')
@@ -57,10 +57,11 @@ const port = ENV.PORT || 3000;
 const active = ENV.active || '';
 var escrow = false
 var broadcast = 1
-const username = ENV.ACCOUNT || 'disregardfiat';
+const username = ENV.ACCOUNT || '';
+const wif = steemClient.auth.toWif(username, active, 'active')
 const NODEDOMAIN = ENV.DOMAIN
 const BIDRATE = ENV.BIDRATE
-const engineCrank = ENV.STARTER || 'QmdFzrQygYhGf2vXucuakGqVYfgc9jDTcFNnaK6DpNyo5f'
+const engineCrank = ENV.STARTER || 'QmUg9z2V3NDwwsrT4h5mGMy2yvE4Fa51wxhbA6GfYq5EnY'
 const resteemAccount = 'dlux-io';
 var startingBlock = 29140530;
 var current, dsteem
@@ -512,7 +513,6 @@ console.log(`Attempting to start from IPFS save state ${engineCrank}`);
 function startApp() {
   processor = steemState(client, steem, startingBlock, 10, prefix, streamMode);
 
-
   processor.on('send', function(json, from) {
     //check json.memo to contracts for resolution
     if (json.memo){
@@ -537,6 +537,33 @@ function startApp() {
       console.log(current + `Invalid send operation from ${from}`)
     }
   });
+
+  processor.on(username, function(json, from) {
+    if (from == username){
+      switch (json.exe) {
+        case 'schedule':
+          pa.push([
+            json.id,
+            json.blockrule,
+            json.op,
+            json.params
+            ])
+          break;
+        case 'cancel':
+          for(var i = 0;i<pa.length;i++){
+            if(json.id == pa[i][0]){
+              pa.splice(i,1)
+              break;
+            }
+          }
+          break;
+        default:
+
+      }
+
+    }
+  });
+
   processor.on('power_up', function(json, from) {
     var amount = parseInt(json.amount)
     if(typeof amount == 'number' && amount >= 0 && state.balances[from] && state.balances[from] >= amount) {
@@ -852,12 +879,13 @@ function startApp() {
   processor.onOperation('escrow_transfer', function(json,from){//grab posts to reward
     var op, dextx, contract, isAgent, isDAgent
     try {
-      dextx = json.json_meta.dlux_dex
-      contract = state.contracts[json.to][dextx.contract]
-      isAgent = state.markets.node[json.agent].escrow
-      isDAgent = state.markets.node[json.to].escrow
+      dextx = json.json_meta.dextx
+      contract = state.contracts[json.to][json.json_meta.contract]
+      isAgent = state.markets.node[json.agent]
+      isDAgent = state.markets.node[json.to]
     } catch(e) {}
     if (isAgent && isDAgent && dextx){//two escrow agents to fascilitate open ended transfer with out estblishing steem/sbd bank //expiration times??
+
       var txid = 'DLUX' + hashThis(from + current)
       var auths = [[json.agent,
         [
@@ -896,7 +924,7 @@ function startApp() {
             "steem_amount": json.steem_amount
           }
         ]]
-      if(json.steem_amount && dextx.dlux && typeof dextx.dlux === 'number') {
+      if(parseFloat(json.steem_amount) > 0) {
         console.log(current + `@${json.from} signed a ${json.steem_amount.amount} STEEM buy order`)
         state.dex.steem.buyOrders.push({txid, from: json.from, steem: json.steem_amount.amount, sbd: 0, amount: dextx.dlux , rate:parseInt((dextx.dlux)*10000/json.steem_amount.amount), block:current, escrow_id:json.escrow_id, agent:json.agent, fee:json.fee.amount, partial:false, auths, reject})
         if (state.contracts[json.from]){
@@ -904,7 +932,7 @@ function startApp() {
         } else {
           state.contracts[json.from] = {txid, from: json.from, steem: json.steem_amount.amount, sbd: 0, amount: dextx.dlux , rate:parseInt((dextx.dlux)*10000/json.steem_amount.amount), block:current, escrow_id:json.escrow_id, agent:json.agent, fee:json.fee.amount, partial:false, auths, reject}
         }
-      } else if (json.sbd_amount && dextx.dlux && typeof dextx.dlux === 'number'){
+      } else if (parseFloat(json.sbd_amount) > 0){
         console.log(current + `@${json.from} signed a ${json.sbd_amount.amount} SBD buy order`)
         state.dex.sbd.buyOrders.push({txid, from: json.from, steem: 0, sbd: json.sbd_amount.amount, amount: dextx.dlux , rate:parseInt((dextx.dlux)*10000/json.sbd_amount.amount), block:current, escrow_id:json.escrow_id, agent:json.agent, fee:json.fee.amount, partial:false, auths, reject})
         if (state.contracts[json.from]){
@@ -1335,16 +1363,23 @@ function startApp() {
       console.log(current + `Signing: ${plasma.hashLastIBlock}`)
       if(processor.isStreaming()){ipfsSaveState(num, blockState);}
     }
-    if(processor.isStreaming() && active){
-      var found = NaN
+    for(var p = 0;p < pa.length;p++){ //automate some tasks
+      var r = eval(pa[p][1])
+      if(r){
+        NodeOps.push([[0,0],pa[p][2],[pa[p][2],pa[p][3]]])
+      }
+    }
+    if(active){
+      var found = -1
       if(broadcast){broadcast--}
       while (!broadcast){
         for (var i = 0; i < state.escrow.length; i++){
           if (state.escrow[i][0] == username){
             for (var j = 0; j < NodeOps.length;j++){
-              if(NodeOps[j][2] == state.escrow[i][1]){found = j}
+              if(NodeOps[j][2] == state.escrow[i][1][1]){found = j}
             }
-            if (found == NaN){NodeOps.push([0, 'escrow-queue', state.escrow[i][1]]);}
+            if (found == -1){
+              NodeOps.push([[0,0], state.escrow[i][1][0], state.escrow[i][1][1]]);}
             break;
           }
         }
@@ -1359,43 +1394,99 @@ function startApp() {
             }
             if (chunk){
               op = runCustomNFT(chunk.n, chunk.e, chunk.b, chunk.d, chunk.a, chunk.c)
-              NodeOps.push([0,`nft_op`,chunk.id,op[0],op[2],op[1]])
+              NodeOps.push([[0,0],`nft_op`,chunk.id,op[0],op[2],op[1]])
             }
             break;
           }
         }
-        var task = NaN
+        var task = -1
         if(NodeOps.length > 0){
           for (var i = 0; i < NodeOps.length;i++){
-            if (NodeOps[i][0] == 0){
+            if (NodeOps[i][0][0] == 0 && task == -1){
               task = i
-              break;
+              NodeOps[i][0][0] = 45
+            } else if (NodeOps[i][0][0] != 0){
+              NodeOps[i][0][0]--
             }
           }
         }
         if (task >= 0){
           switch (NodeOps[task][1]) {
-            case 'escrow-transfer':
-              NodeOps[task][0]++
-              dsteem.broadcast(NodeOps[task][2], steem.PrivateKey.fromLogin(username, active, 'active')).then(function(result){
-                console.log(current + `: Broadcast ${NodeOps[task][2][0]} for ${NodeOps[task][2][1].json_meta.contract} @ block ${result.block_num}`)
-                NodeOps.splice(task,1)
-              }, function(error) {
-                console.error(error)
-                NodeOps.push(NodeOps.splice(task,1))
-                broadcast=1
+            case 'escrow_transfer':
+              steemClient.broadcast.escrowTransfer(
+                active,
+                NodeOps[task][2].from,
+                NodeOps[task][2].to,
+                NodeOps[task][2].agent,
+                NodeOps[task][2].escrow_id,
+                NodeOps[task][2].sbd_amount,
+                NodeOps[task][2].steem_amount,
+                NodeOps[task][2].fee,
+                NodeOps[task][2].ratification_deadline,
+                NodeOps[task][2].escrow_expiration,
+                NodeOps[task][2].json_meta,
+                function(err, result) {
+                  if(err){
+                    console.error(err)
+                    noi(task)
+                    broadcast=1
+                  } else {
+                    console.log(`#Broadcast ${result} for ${NodeOps[task][2].json_meta.contract} @ block ${result.block_num}`)
+                    NodeOps.splice(task,1)
+                  }
               })
               break;
-            case 'escrow-queue':
-              dsteem.broadcast(NodeOps[task][2], steem.PrivateKey.fromLogin(username, active, 'active')).then(function(result){
-                console.log(current + `Signed dlux escrow`)
-              }, function(error) {
-                console.error(error)
+            case 'escrow_approve':
+              console.log('trying to sign', NodeOps[task][2])
+                steemClient.broadcast.escrowApprove(
+                  active,
+                  NodeOps[task][2].from,
+                  NodeOps[task][2].to,
+                  NodeOps[task][2].agent,
+                  NodeOps[task][2].who,
+                  NodeOps[task][2].escrow_id,
+                  NodeOps[task][2].approve,
+                  function(err, result) {
+                    if(err){
+                      console.error(err)
+                      broadcast=1
+                      noi(task)
+                    } else {
+                      console.log(`#Broadcast ${result} for ${NodeOps[task][2].json_meta.contract} @ block ${result.block_num}`)
+                      NodeOps.splice(task,1)
+                    }
+                })
+                break;
+            case 'send':
+              transactor.json(username, active, 'send', {
+                to: NodeOps[task][2].to,
+                amount: NodeOps[task][2].amount
+              }, function(err, result) {
+                if(err) {
+                  console.error(err);
+                  noi(task)
+                } else {
+                  NodeOps.splice(task,1)
+                }
               })
-              broadcast = 1
+              break;
+            case 'transfer':
+              steem.broadcast.transfer(
+                active,
+                NodeOps[task][2].from,
+                NodeOps[task][2].to,
+                NodeOps[task][2].amount,
+                NodeOps[task][2].memo,
+                function(err, result) {
+                  if(err) {
+                    console.error(err);
+                    noi(task)
+                  } else {
+                    NodeOps.splice(task,1)
+                  }
+              });
               break;
             case 'nft_op':
-              NodeOps[task][0]++
               transactor.json(username, active, 'nft_op', {
                 nft: NodeOps[task][2],
                 completed: NodeOps[task][3],
@@ -1403,8 +1494,8 @@ function startApp() {
                 proposal: NodeOps[task][5]
               }, function(err, result) {
                 if(err) {
+                  noi(task)
                   console.error(err);
-                  NodeOps.push(NodeOps.splice(task,1))
                 } else {
                   NodeOps.splice(task,1)
                   broadcast=1
@@ -1445,7 +1536,6 @@ function startApp() {
           broadcast = 2
         }
       })
-      console.log(user, 'has', balance, 'tokens')
     } else if(split[0] === 'send') {
       console.log('Sending tokens...')
       var to = split[1];
@@ -1475,21 +1565,22 @@ function startApp() {
         }
       })
     } else if (split[0] === 'dex-buy-ask-steem'){ //dex-sell 1000(dlux) 100(type) steem(/sbd | type)
-      console.log('Creating Escrow tx')
+      console.log('Creating Escrow tx...')
       var txid = split[1], amount = split[2], addr = ''
       //amount is steem by millisteems 1000 = 1.000 steem
       for (var i = 0; i < state.dex.steem.sellOrders.length;i++){
-        if (state.dex.steem.sellOrders[i].txid = txid){
+        if (state.dex.steem.sellOrders[i].txid == txid){
+          console.log(state.dex.steem.sellOrders[i].txid)
           addr = i;break;
         }
       }
-      if (addr){
+      if (addr >= 0){
         var escrowTimer = {}
         var agents = []
         var i = 0
-        for (var agent in state.agents){
+        for (var agent in state.queue){
           if(i == 3){break}
-          agents.push(agent)
+          agents.push(state.queue[agent])
           i++;
         }
         if (agents[0] != username && agents[0] != state.dex.steem.sellOrders[addr].from){agents.push(agents[0])}
@@ -1498,26 +1589,28 @@ function startApp() {
         let now = new Date();
           escrowTimer.ratifyIn = now.setHours(now.getHours()+1);
           escrowTimer.ratifyUTC = new Date(escrowTimer.ratifyIn);
-          escrowTimer.ratifyString = escrowTimer.ratifyBy.toISOString();
+          escrowTimer.ratifyString = escrowTimer.ratifyUTC.toISOString().slice(0,-5);
           escrowTimer.expiryIn = now.setDate(now.getDate()+3);
           escrowTimer.expiryUTC = new Date(escrowTimer.expiryIn);
-          escrowTimer.expiryString = escrowTimer.expiryUTC.toISOString();
+          escrowTimer.expiryString = escrowTimer.expiryUTC.toISOString().slice(0,-5);
         var eidi = txid
-        let eid = parseInt(bs58.decode(eidi.splice(6,4))) //escrow_id from DLUXQmxxxx<this number
+        var formatter = amount/1000
+        formatter = formatter.toFixed(3)
+        let eid = parseInt('0x' + (bs58.decode(eidi.substring(6,10))).toString('hex')) //escrow_id from DLUXQmxxxx<this
         let params = {
             from: username,
             to: state.dex.steem.sellOrders[addr].from,
             sbd_amount: '0.000 SBD',
-            steem_amount: amount/1000 + ' STEEM',
+            steem_amount: formatter + ' STEEM',
             escrow_id: eid,
-            agent: agents[4],
+            agent: agents[3],
             fee: '0.000 STEEM',
             ratification_deadline: escrowTimer.ratifyString,
             escrow_expiration: escrowTimer.expiryString,
             json_meta: JSON.stringify({contract: txid, rate: state.dex.steem.sellOrders[addr].rate, partial: true})
         }
         console.log(params)
-        NodeOps.push([0,'escrow-transfer',['escrow_transfer', params]]);
+        NodeOps.push([[0,0],'escrow_transfer',['escrow_transfer', params]]);
       }
     } else if (split[0] === 'power-up'){
       console.log('Sending Power Up request...')
@@ -1878,8 +1971,24 @@ function runNFT(n, e, b, d, a, c){//nft, ececutor, blocknumber, dluxcoin, assets
         break;
       case 1: //Auction
         if (d > n.bal && c == 0 && !a){
-          p.lastExecutor = [e,b]
+          p.lastExecutor.push([e,b,c])
           p.memo = `${e} outbid ${n.lastExecutor[0]} with ${d} for ${n.self}`
+          p.withdraw = [n.lastExecutor[0], n.bal]
+          p.assetBenifactors[0][0][0] = e
+          p.benifactors[0][0].d = d
+          p.bal = d
+          p.incrementer++
+          p.deposits[e] = d
+          f.append(2)
+          f.append(4)
+          o = [true,p,1,f]
+        } else {o = [false,false,0,[0]]}
+        return o
+        break;
+      case 2: //simple equity
+        if (d > n.bal && c == 0 && !a){
+          p.lastExecutor = [e,b]
+          p.memo = `${e} sent ${d}`
           p.withdraw = [n.lastExecutor[0], n.bal]
           p.assetBenifactors[0][0][0] = e
           p.benifactors[0][0].d = d
@@ -1986,5 +2095,10 @@ function sortBuyArray (array, key) {
 function sortSellArray (array, key) {
   return array.sort(function(a,b) { return a[key] + b[key];});
 }
-
-//})
+function noi(t){ //node ops incrementer and cleaner... 3 retries and out
+  NodeOps[t][0][0] = 5
+  NodeOps[t][0][1]++
+  if (NodeOps[t][0][1]>3){
+    NodeOps.splice(t,1)
+  }
+}
