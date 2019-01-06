@@ -285,7 +285,7 @@ api.get('/report/:un', (req, res, next) => {
   let un = req.params.un
   let report = state.markets.node[un].report || ''
   res.setHeader('Content-Type', 'application/json');//needs memoKey to test more
-  res.send(JSON.stringify({[un]: report, node: username, hash: state.state.hashLastIBlock, VERSION, realtime: current}, null, 3))
+  res.send(JSON.stringify({[un]: report, node: username, hash: state.stats.hashLastIBlock, VERSION, realtime: current}, null, 3))
 });
 api.get('/private/:un/:pl', (req, res, next) => {
   let un = req.params.un
