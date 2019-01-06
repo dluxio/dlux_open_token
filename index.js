@@ -52,7 +52,7 @@ var processor;
 
 var pa = []
 var Private = {
-  tier:[['disregardfiat']],
+  tier:[['disregardfiat','caramaeplays']],
   models:[],
   banned: [],
   content:{
@@ -60,7 +60,7 @@ var Private = {
       self: 'test',
       level:0,
       title:'Welcome',
-      body:'You have properly configured your keys'
+      body:'You have access!'
     },
   },
   utils:{
@@ -125,7 +125,7 @@ var Private = {
       var json = ''
       var result = {}
       var accessLevel = Private.utils.accessLevel(name)
-      if (accessLevel){
+      if (accessLevel >= 0){
         try {
           json = Private.content[content]
         } catch(e){error += ' 404: Content not found'}
@@ -293,7 +293,8 @@ api.get('/private/:un/:pl', (req, res, next) => {
   res.setHeader('Content-Type', 'application/json');//needs memoKey to test more
   Private.utils.getContent(pl, un).then(value => {
     Private.utils.sealer(value.body,un).then(enc => {
-      res.send(JSON.stringify({[pl]: value, enc, node: username, VERSION, realtime: current}, null, 3))
+      value.body = enc
+      res.send(JSON.stringify({[pl]: value, node: username, VERSION, realtime: current}, null, 3))
     })
   });
 });
