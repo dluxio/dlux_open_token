@@ -298,6 +298,27 @@ api.get('/private/:un/:pl', (req, res, next) => {
     })
   });
 });
+api.get('/private/list', (req, res, next) => {
+  res.setHeader('Content-Type', 'application/json');//needs memoKey to test more
+  var value = Private.content
+  for (var item in value){
+    delete value[item].body
+  }
+  res.send(JSON.stringify({list: value, node: username, VERSION, realtime: current}, null, 3))
+});
+api.get('/private/list/:un', (req, res, next) => {
+  let un = req.params.un
+  let al = Private.utils.accessLevel(un)
+  res.setHeader('Content-Type', 'application/json');//needs memoKey to test more
+  var value = Private.content
+  for (var item in value){
+    delete value[item].body
+    if (item.level > al){
+      delete value[item]
+    }
+  }
+  res.send(JSON.stringify({list: value, node: username, VERSION, realtime: current}, null, 3))
+});
 
 //api.listen(port, () => console.log(`DLUX token API listening on port ${port}!\nAvailible commands:\n/@username =>Balance\n/stats\n/markets`))
 http.listen(port, function(){
@@ -637,12 +658,11 @@ var plasma = {}
 var NodeOps = []
 
 const transactor = steemTransact(client, steem, prefix);
-var selector = 'dlux-io'
+var selector = 'caramaeplays'
 if (username == selector){selector = 'disregardfiat'}
 
 fetch(`${state.markets.node[selector].domain}/report/${username}`)
   .then(function(response) {
-    if (response)
     return response.json();
   })
   .then(function(myJson) {
