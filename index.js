@@ -21,7 +21,195 @@ function hashThis(data) {
   const multihash = bs58.encode(combined)
   return multihash.toString()
 }
+
+const VERSION = 'v0.0.2a'
+const api = express()
+var http = require('http').Server(api);
+const ENV = process.env;
+const port = ENV.PORT || 3000;
+//const io = require('socket.io')(http)
+
+const username = ENV.ACCOUNT || '';
+const active = ENV.active || '';
+const memoKey = ENV.memo || '';
+const engineCrank = ENV.STARTER || 'QmfUD2D9ea1wAHanVGeNEiFrCYzgDKe1vgyKiyHeLPrBZy'
+var escrow = false
+var broadcast = 1
+const wif = steemClient.auth.toWif(username, active, 'active')
+const NODEDOMAIN = ENV.DOMAIN
+const BIDRATE = ENV.BIDRATE
+const resteemAccount = 'dlux-io';
+var startingBlock = 29180000;
+var current, dsteem
+
+
+const prefix = 'dlux_test_';
+const streamMode = args.mode || 'irreversible';
+console.log("Streaming using mode", streamMode);
+const clientURL = ENV.APIURL || 'https://api.steemit.com'
+var client = new steem.Client(clientURL);
+var processor;
+
 var pa = []
+var Private = {
+  tier:[['disregardfiat','caramaeplays']],
+  models:[],
+  banned: [],
+  content:{
+    test:{
+      self: 'test',
+      level:0,
+      title:'Welcome',
+      body:'You have access!'
+    },
+  },
+  utils:{
+    save: function(){
+      const priv = Buffer.from(JSON.stringify([num, state]))
+      ipfs.add(priv, (err, IpFsHash) => {
+        if (!err){
+          plasma.privHash = IpFsHash[0].hash
+          console.log(current + `Saved: Private state ${IpFsHash[0].hash}`)
+        } else {
+          console.log({cycle}, 'IPFS Error', err)
+        }
+      })
+    },
+    addModel: function(num, tier, dlux){
+      Private.models.push([num,tier,dlux])
+      Private.utils.save()
+    },
+    deleteModel: function(num, tier, dlux){
+      for (var i = 0; i < Private.models.length;i++){
+        if (Private.models[i] == [num,tier,dlux]){Private.models.splice(i,1);break;}
+      }
+      Private.utils.save()
+    },
+    addContent: function(content){
+      var decoded = Private.utils.unsealer(content.body)
+      Private.content[content.self] = content
+      Private.utils.save()
+    },
+    deleteContent: function(content){
+      delete Private.content[content]
+      Private.utils.save()
+    },
+    setContentLevel: function(content, level){
+      try{
+        Private.content[content].level = level
+        Private.utils.save()
+      } catch (e){
+        console.log(e)
+      }
+    },
+    ban: function(name){
+      if (Private.banned.indexOf(name) == -1){
+        Private.banned.push(name)
+        var i = Private.utils.accessLevel(name)
+        if(i >= 0){
+          Private.tier[i].splice(Private.tier[i].indexOf(name),1)
+        }
+        Private.utils.save()
+      }
+    },
+    unban: function(name){
+      var i = Private.banned.indexOf(name)
+      if (i>=0){
+        Private.banned.splice(i,1)
+      }
+      Private.utils.save()
+    },
+    getContent: function(content, name){
+      return new Promise((resolve, reject) => {
+      var error = ''
+      var json = ''
+      var result = {}
+      var accessLevel = Private.utils.accessLevel(name)
+      if (accessLevel >= 0){
+        try {
+          json = Private.content[content]
+        } catch(e){error += ' 404: Content not found'}
+          if (json.level <= accessLevel){
+            result.level = json.level
+            result.title = json.title
+            result.body = Private.utils.unsealer(json.body)
+          } else {error += ` @${name} doesn't have access`}
+      } else {error += ` @${name} doesn't have access`}
+      if(error){
+        result.title = error
+      }
+      resolve(result)
+    })
+    },
+    cleaner: function(num){
+      for (var i = 0; i < Private.tier.length;i++){
+        for (var j = 0; j < Private.tier[i].length;j++){
+          if (Private.tier[i][j][0] <= num){Private.tier[i].splice(j,1)}
+        }
+      }
+    },
+    assignLevel: function(name, level, until){
+      var error = '', current = ''
+      if (level < Private.tier.length){
+        try {
+          current = Private.utils.accessLevel(name)
+        } catch(e){if(e){error = 'Not Found'}}
+        if(current){
+          for(var i = 0; i < Private.tier[current].length;i++){
+            if(Private.tier[current][i][0] == name){Private.tier[current][i].splice(i,1);break;}
+          }
+        }
+        if(Private.banned.indexOf(name) == -1){
+          Private.tier[level].push([name,until])
+          Private.utils.save()
+        }
+      }
+    },
+    addAccessLevel: function(){Private.tier.push([]);Private.utils.save();},
+    removeAccesLevel: function(tier){
+      if (Private.tier[tier].length > 1){
+        for (var i = 0; i < Private.tier[tier].length;i++){
+          if(tier == 0){
+            Private.tier[tier + 1].push(Private.tier[tier][i])
+          } else {
+            Private.tier[tier - 1].push(Private.tier[tier][i])
+          }
+        }
+      }
+      Private.tier.splice(tier,1)
+      Private.utils.save();
+    },
+    accessLevel: function(name){
+      var level = ''
+      for (var i = 0; i < Private.tier.length;i++){
+        for (var j = 0; j < Private.tier[i].length;j++){
+          if (Private.tier[i][j][0] == name){level = i;break;}
+        }
+      }
+      return level
+    },
+    sealer: function(md, to){
+      return new Promise((resolve, reject) => {
+        steemClient.api.getAccounts([to], (err, result) => {
+          if (err) {
+            console.log(err)
+            reject()
+          }
+          if (result.length === 0) {
+            reject()
+            console.log('No Such User')
+          }
+          var encrypted = steemClient.memo.encode(memoKey, result[0].memo_key, `#` + md);
+          resolve(encrypted)
+        });
+      });
+    },
+    unsealer: function(enc){
+      var decoded = steemClient.memo.decode(memoKey, enc)
+      return decoded
+    }
+  }
+}
 
 const Unixfs = require('ipfs-unixfs')
 const {DAGNode} = require('ipld-dag-pb')
@@ -47,33 +235,6 @@ function cycleipfs(num){
   //ipfs = new IPFS({ host: state.gateways[num], port: 5001, protocol: 'https' });
 }
 
-const VERSION = 'v0.0.2a'
-const api = express()
-var http = require('http').Server(api);
-//const io = require('socket.io')(http)
-
-const ENV = process.env;
-const port = ENV.PORT || 3000;
-const active = ENV.active || '';
-var escrow = false
-var broadcast = 1
-const username = ENV.ACCOUNT || '';
-const wif = steemClient.auth.toWif(username, active, 'active')
-const NODEDOMAIN = ENV.DOMAIN
-const BIDRATE = ENV.BIDRATE
-const engineCrank = ENV.STARTER || ''
-const resteemAccount = 'dlux-io';
-var startingBlock = 29180000;
-var current, dsteem
-
-
-const prefix = 'dlux_test_';
-const streamMode = args.mode || 'irreversible';
-console.log("Streaming using mode", streamMode);
-const clientURL = ENV.APIURL || 'https://api.steemit.com'
-var client = new steem.Client(clientURL);
-var processor;
-
 if (active) {
   escrow = true
   dsteem = new steem.Client('https://api.steemit.com')
@@ -88,8 +249,9 @@ api.get('/@:username', (req, res, next) => {
   let username = req.params.username
   let bal = state.balances[username] || 0
   let pb = state.pow[username] || 0
+  let lp = state.pow.n[username] || 0
   res.setHeader('Content-Type', 'application/json');
-  res.send(JSON.stringify({balance: bal, poweredUp: pb}, null, 3))
+  res.send(JSON.stringify({balance: bal, poweredUp: pb, powerBeared: lp}, null, 3))
 });
 api.get('/stats', (req, res, next) => {
   res.setHeader('Content-Type', 'application/json');
@@ -119,6 +281,24 @@ api.get('/dex', (req, res, next) => {
   res.setHeader('Content-Type', 'application/json');
   res.send(JSON.stringify({markets: state.dex, node: username, VERSION, realtime: current}, null, 3))
 });
+api.get('/report/:un', (req, res, next) => {
+  let un = req.params.un
+  let report = state.markets.node[un].report || ''
+  res.setHeader('Content-Type', 'application/json');//needs memoKey to test more
+  res.send(JSON.stringify({[un]: report, node: username, hash: state.state.hashLastIBlock, VERSION, realtime: current}, null, 3))
+});
+api.get('/private/:un/:pl', (req, res, next) => {
+  let un = req.params.un
+  let pl = req.params.pl
+  res.setHeader('Content-Type', 'application/json');//needs memoKey to test more
+  Private.utils.getContent(pl, un).then(value => {
+    Private.utils.sealer(value.body,un).then(enc => {
+      value.body = enc
+      res.send(JSON.stringify({[pl]: value, node: username, VERSION, realtime: current}, null, 3))
+    })
+  });
+});
+
 //api.listen(port, () => console.log(`DLUX token API listening on port ${port}!\nAvailible commands:\n/@username =>Balance\n/stats\n/markets`))
 http.listen(port, function(){
   console.log(`DLUX token API listening on port ${port}`);
@@ -457,9 +637,42 @@ var plasma = {}
 var NodeOps = []
 
 const transactor = steemTransact(client, steem, prefix);
-if (engineCrank){
-console.log(`Attempting to start from IPFS save state ${engineCrank}`);
-  ipfs.cat(engineCrank, (err, file) => {
+var selector = 'dlux-io'
+if (username == selector){selector = 'disregardfiat'}
+
+fetch(`${state.markets.node[selector].domain}/report/${username}`)
+  .then(function(response) {
+    if (response)
+    return response.json();
+  })
+  .then(function(myJson) {
+    try{
+      if(myJson[username].stash){
+        ipfs.cat(myJson[username].stash, (err, file) => {
+          if (!err){
+            var data = JSON.parse(file);
+            Private = data;
+            startWith(myJson[username].hash)
+            console.log(`Starting from ${myJson[username].hash}\nPrivate encrypted data recovered`)
+          } else {
+            startWith(myJson.hash);
+            console.log(`Starting from ${myJson.hash}`)
+          }
+        });
+      } else {
+        startWith(myJson.hash);
+        console.log(`Starting from ${myJson.hash}`)
+      }
+    } catch (e) {
+      startWith(engineCrank);
+      console.log(`Starting from ${myJson.hash}`)
+    }
+  }).catch(error => {startWith(engineCrank);console.log(`Starting from ${myJson.hash}`)});
+
+
+function startWith (sh){
+console.log(`Attempting to start from IPFS save state ${sh}`);
+  ipfs.cat(sh, (err, file) => {
     if (!err){
       var data = JSON.parse(file);
       startingBlock = data[0]
@@ -467,12 +680,9 @@ console.log(`Attempting to start from IPFS save state ${engineCrank}`);
       startApp();
     } else {
       startApp();
-      console.log(`${engineCrank} failed to load, Replaying from genesis.\nYou may want to set the env var STARTHASH\nFind it at any token API such as token.dlux.io`)
+      console.log(`${sh} failed to load, Replaying from genesis.\nYou may want to set the env var STARTHASH\nFind it at any token API such as token.dlux.io`)
     }
   });
-} else {
-  console.log(`Replaying from ${startingBlock}`)
-  startApp();
 }
 
 
@@ -495,7 +705,14 @@ function startApp() {
       if(state.balances[json.to] === undefined) {
         state.balances[json.to] = 0;
       }
-
+      if (json.to == username && Private.models.length > 0){
+        for (var i = 0;i < Private.models.length;i++){
+          if (json.amount == Private.models[i][2] && json.tier == Private.models[i][1]){
+            Private.utils.assignLevel(from, json.tier, current + Private.models[i][0] )
+            break;
+          }
+        }
+      }
       state.balances[json.to] += json.amount;
       state.balances[from] -= json.amount;
       console.log(current + `Send occurred from ${from} to ${json.to} of ${json.amount}DLUX`)
@@ -723,6 +940,66 @@ function startApp() {
         state.pow.n[from] -= state.contracts[json.nftid].pow
       }
     } else {console.log(error)}
+  });
+
+  processor.on('custom_cms_' + username + '_add', function(json, from) {//json.to valid contract or random name json.nftid valid contract beared
+    if (from == username){
+      Private.utils.addContent(json.content)
+    }
+  });
+
+  processor.on('custom_cms_' + username + '_set_level', function(json, from) {//json.to valid contract or random name json.nftid valid contract beared
+    if (from == username){
+      Private.utils.setContentLevel(json.content, json.level)
+    }
+  });
+
+  processor.on('custom_cms_' + username + '_delete', function(json, from) {//json.to valid contract or random name json.nftid valid contract beared
+    if (from == username){
+      Private.utils.deleteContent(json.content)
+    }
+  });
+
+  processor.on('custom_cms_' + username + '_tier_add', function(json, from) {//json.to valid contract or random name json.nftid valid contract beared
+    if (from == username){
+      Private.utils.addAccessLevel()
+    }
+  });
+
+  processor.on('custom_cms_' + username + '_tier_delete', function(json, from) {//json.to valid contract or random name json.nftid valid contract beared
+    if (from == username){
+      Private.utils.removeAccessLevel(json.tier)
+    }
+  });
+
+  processor.on('custom_cms_' + username + '_model_add', function(json, from) {//json.to valid contract or random name json.nftid valid contract beared
+    if (from == username){
+      Private.utils.addModel(json.num,json.tier, json.dlux)
+    }
+  });
+
+  processor.on('custom_cms_' + username + '_model_delete', function(json, from) {//json.to valid contract or random name json.nftid valid contract beared
+    if (from == username){
+      Private.utils.deleteModel(json.num,json.tier, json.dlux)
+    }
+  });
+
+  processor.on('custom_cms_' + username + '_add_user', function(json, from) {//json.to valid contract or random name json.nftid valid contract beared
+    if (from == username){
+      Private.utils.assignLevel(json.name, json.tier, json.expires)
+    }
+  });
+
+  processor.on('custom_cms_' + username + '_ban_user', function(json, from) {//json.to valid contract or random name json.nftid valid contract beared
+    if (from == username){
+      Private.utils.ban(json.name)
+    }
+  });
+
+  processor.on('custom_cms_' + username + '_unban_user', function(json, from) {//json.to valid contract or random name json.nftid valid contract beared
+    if (from == username){
+      Private.utils.unban(json.name)
+    }
   });
 
   processor.on('delete_nft', function(json, from) {
@@ -1547,7 +1824,9 @@ function startApp() {
             case 'send':
               transactor.json(username, active, 'send', {
                 to: NodeOps[task][2].to,
-                amount: NodeOps[task][2].amount
+                amount: NodeOps[task][2].amount,
+                memo: NodeOps[task][2].memo,
+                tier: NodeOps[task][2].tier
               }, function(err, result) {
                 if(err) {
                   console.error(err);
@@ -2095,8 +2374,7 @@ function dao(num) {
       delete state.contracts[contract]
     }
   }
-  //orders
-
+  Private.utils.cleaner()
 }
 
 function report(num) {
@@ -2132,7 +2410,8 @@ function report(num) {
         hash: plasma.hashLastIBlock,
         block: plasma.hashBlock,
         version: VERSION,
-        escrow: escrow
+        escrow: escrow,
+        stash: plasma.privHash
       }, function(err, result) {
         if(err) {
           console.error(err, `\nMost likely your ACCOUNT and KEY variables are not set!`);
