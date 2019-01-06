@@ -52,6 +52,7 @@ var processor;
 
 var pa = []
 var Private = {
+  pubKeys: {},
   tier:[['disregardfiat','caramaeplays']],
   models:[],
   banned: [],
@@ -129,11 +130,11 @@ var Private = {
         try {
           json = Private.content[content]
         } catch(e){error += ' 404: Content not found'}
-          if (json.level <= accessLevel){
+          if (json && json.level <= accessLevel){
             result.level = json.level
             result.title = json.title
             result.body = Private.utils.unsealer(json.body)
-          } else {error += ` @${name} doesn't have access`}
+          } else {error += ` @${name} doesn't have access?`}
       } else {error += ` @${name} doesn't have access`}
       if(error){
         result.title = error
@@ -188,20 +189,31 @@ var Private = {
       }
       return level
     },
+    upKey: function(name, key){
+      if (Private.pubKeys[name]){
+        Private.pubKeys[name] = key
+      }
+    },
     sealer: function(md, to){
       return new Promise((resolve, reject) => {
-        steemClient.api.getAccounts([to], (err, result) => {
-          if (err) {
-            console.log(err)
-            reject()
-          }
-          if (result.length === 0) {
-            reject()
-            console.log('No Such User')
-          }
-          var encrypted = steemClient.memo.encode(memoKey, result[0].memo_key, `#` + md);
+        if(!Private.pubKeys[to]){
+          steemClient.api.getAccounts([to], (err, result) => {
+            if (err) {
+              console.log(err)
+              reject()
+            }
+            if (result.length === 0) {
+              reject()
+              console.log('No Such User')
+            }
+            Private.pubKeys[to] = result[0].memo_key
+            var encrypted = steemClient.memo.encode(memoKey, Private.pubKeys[to], `#` + md);
+            resolve(encrypted)
+          });
+        } else {
+          var encrypted = steemClient.memo.encode(memoKey, Private.pubKeys[to], `#` + md);
           resolve(encrypted)
-        });
+        }
       });
     },
     unsealer: function(enc){
@@ -281,6 +293,21 @@ api.get('/dex', (req, res, next) => {
   res.setHeader('Content-Type', 'application/json');
   res.send(JSON.stringify({markets: state.dex, node: username, VERSION, realtime: current}, null, 3))
 });
+api.get('/priv/list/:un', (req, res, next) => {
+  let un = req.params.un
+  res.setHeader('Content-Type', 'application/json');//needs memoKey to test more
+  Private.utils.sealer(null, un).then(meh => {
+    let al = Private.utils.accessLevel(un)
+    var value = Private.content
+    for (var item in value){
+      value[item].body = steemClient.memo.encode(memoKey, Private.pubKeys[un], "#" + value[item].body)
+      if (item.level > al){
+        delete value[item]
+      }
+    }
+    res.send(JSON.stringify({list: value, access_level: al, node: username, VERSION, realtime: current}, null, 3))
+  });
+});
 api.get('/report/:un', (req, res, next) => {
   let un = req.params.un
   let report = state.markets.node[un].report || ''
@@ -298,28 +325,6 @@ api.get('/private/:un/:pl', (req, res, next) => {
     })
   });
 });
-api.get('/private/list', (req, res, next) => {
-  res.setHeader('Content-Type', 'application/json');//needs memoKey to test more
-  var value = Private.content
-  for (var item in value){
-    delete value[item].body
-  }
-  res.send(JSON.stringify({list: value, node: username, VERSION, realtime: current}, null, 3))
-});
-api.get('/private/list/:un', (req, res, next) => {
-  let un = req.params.un
-  let al = Private.utils.accessLevel(un)
-  res.setHeader('Content-Type', 'application/json');//needs memoKey to test more
-  var value = Private.content
-  for (var item in value){
-    delete value[item].body
-    if (item.level > al){
-      delete value[item]
-    }
-  }
-  res.send(JSON.stringify({list: value, node: username, VERSION, realtime: current}, null, 3))
-});
-
 //api.listen(port, () => console.log(`DLUX token API listening on port ${port}!\nAvailible commands:\n/@username =>Balance\n/stats\n/markets`))
 http.listen(port, function(){
   console.log(`DLUX token API listening on port ${port}`);
@@ -1695,6 +1700,10 @@ function startApp() {
       }
       console.log(current + `${json.delegator} has removed delegation to @dlux-io`)
     }
+  });
+
+  processor.onOperation('account_update', function(json,from){//grab posts to reward
+    Private.utils.upKey(json.account, json.memo_key)
   });
 
   processor.onBlock(function(num, block) {
