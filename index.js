@@ -494,26 +494,28 @@ fetch(`${state.markets.node[selector].domain}/markets`)
     return response.json();
   })
   .then(function(myJson) {
-    console.log(myJson)
       if(myJson.markets.node[username]){
-        if (myJson.markets.node[username].stash){
-          ipfs.cat(myJson.markets.node[username].stash, (err, file) => {
+        if (myJson.markets.node[username].report.stash){
+          ipfs.cat(myJson.markets.node[username].report.stash, (err, file) => {
             if (!err){
               var data = JSON.parse(file);
               Private = data;
-              startWith(myJson.markets.node[username].hash)
-              console.log(`Starting from ${myJson[username].hash}\nPrivate encrypted data recovered`)
+              startWith(myJson.markets.node[username].report.hash)
+              console.log(`Starting from ${myJson.markets.node[username].report.hash}\nPrivate encrypted data recovered`)
             } else {
               startWith(myJson.stats.hashLastIBlock);
               console.log(`Lost Stash... Abandoning and starting from ${myJson.stats.hashLastIBlock}`)
             }
           });
+        } else {
+          startWith(myJson.stats.hashLastIBlock);
+          console.log(`No Private data found\nStarting from ${myJson.stats.hashLastIBlock}`)
         }
       } else {
         startWith(myJson.stats.hashLastIBlock);
         console.log(`Starting from ${myJson.hash}`)
       }
-  }).catch(error => {startWith(engineCrank);console.log(`Starting from ${myJson.hash}`)});
+  }).catch(error => {startWith(engineCrank);console.log(`Starting from ${myJson.stats.hashLastIBlock}`)});
 
 
 function startWith (sh){
