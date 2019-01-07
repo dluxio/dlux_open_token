@@ -487,7 +487,7 @@ var NodeOps = []
 
 const transactor = steemTransact(client, steem, prefix);
 var selector = 'caramaeplays'
-if (username == selector){selector = 'disregardfiat'}
+if (username == selector){selector = 'dlux-io'}
 
 fetch(`${state.markets.node[selector].domain}/markets`)
   .then(function(response) {
@@ -527,7 +527,7 @@ console.log(`Attempting to start from IPFS save state ${sh}`);
       state = data[1];
       startApp();
     } else {
-      startApp();
+      startWith (engineCrank)
       console.log(`${sh} failed to load, Replaying from genesis.\nYou may want to set the env var STARTHASH\nFind it at any token API such as token.dlux.io`)
     }
   });
