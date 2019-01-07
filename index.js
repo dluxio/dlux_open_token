@@ -1735,6 +1735,17 @@ function startApp() {
 
   processor.onStreamingStart(function() {
     console.log("At real time.")
+    if (!state.markets.node[username].domain && NODEDOMAIN){
+      transactor.json(username, active, 'node_add', {
+        domain: NODEDOMAIN,
+        bidRate: BIDRATE,
+        escrow
+      }, function(err, result) {
+        if(err) {
+          console.error(err);
+        }
+      })
+    }
   });
 
   processor.start();
@@ -2086,21 +2097,23 @@ function check() { //do this maybe cycle 5, gives 15 secs to be streaming behind
       self: self,
       agreement: false,
     }
-    var domain = state.markets.node[self].domain
-    if (domain.slice(-1) == '/') {
-      domain = domain.substring(0, domain.length - 1)
-    }
-    fetch(`${domain}/stats`)
-      .then(function(response) {
-        //console.log(response)
-        return response.json();
-      })
-      .then(function(myJson) {
-        //console.log(JSON.stringify(myJson));
-        if (state.stats.tokenSupply === myJson.stats.tokenSupply){
-          plasma.markets.nodes[myJson.node].agreement = true
-        }
-      });
+    if (state.markets.node[self].domain){
+      var domain = state.markets.node[self].domain
+      if (domain.slice(-1) == '/') {
+        domain = domain.substring(0, domain.length - 1)
+      }
+      fetch(`${domain}/stats`)
+        .then(function(response) {
+          //console.log(response)
+          return response.json();
+        })
+        .then(function(myJson) {
+          //console.log(JSON.stringify(myJson));
+          if (state.stats.tokenSupply === myJson.stats.tokenSupply){
+            plasma.markets.nodes[myJson.node].agreement = true
+          }
+        });
+      }
     }
 }
 
