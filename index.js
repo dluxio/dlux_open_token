@@ -120,7 +120,7 @@ api.get('/runners', (req, res, next) => {
 });
 api.get('/markets', (req, res, next) => {
   res.setHeader('Content-Type', 'application/json');
-  res.send(JSON.stringify({markets: state.markets, node: username, VERSION, realtime: current}, null, 3))
+  res.send(JSON.stringify({markets: state.markets, stats: state.stats, node: username, VERSION, realtime: current}, null, 3))
 });
 api.get('/dex', (req, res, next) => {
   res.setHeader('Content-Type', 'application/json');
@@ -489,32 +489,30 @@ const transactor = steemTransact(client, steem, prefix);
 var selector = 'caramaeplays'
 if (username == selector){selector = 'disregardfiat'}
 
-fetch(`${state.markets.node[selector].domain}/report/${username}`)
+fetch(`${state.markets.node[selector].domain}/markets`)
   .then(function(response) {
     return response.json();
   })
   .then(function(myJson) {
-    try{
-      if(myJson[username].stash){
-        ipfs.cat(myJson[username].stash, (err, file) => {
-          if (!err){
-            var data = JSON.parse(file);
-            Private = data;
-            startWith(myJson[username].hash)
-            console.log(`Starting from ${myJson[username].hash}\nPrivate encrypted data recovered`)
-          } else {
-            startWith(myJson.hash);
-            console.log(`Starting from ${myJson.hash}`)
-          }
-        });
+    console.log(myJson)
+      if(myJson.markets.node[username]){
+        if (myJson.markets.node[username].stash){
+          ipfs.cat(myJson.markets.node[username].stash, (err, file) => {
+            if (!err){
+              var data = JSON.parse(file);
+              Private = data;
+              startWith(myJson.markets.node[username].hash)
+              console.log(`Starting from ${myJson[username].hash}\nPrivate encrypted data recovered`)
+            } else {
+              startWith(myJson.stats.hashLastIBlock);
+              console.log(`Lost Stash... Abandoning and starting from ${myJson.stats.hashLastIBlock}`)
+            }
+          });
+        }
       } else {
-        startWith(myJson.hash);
+        startWith(myJson.stats.hashLastIBlock);
         console.log(`Starting from ${myJson.hash}`)
       }
-    } catch (e) {
-      startWith(engineCrank);
-      console.log(`Starting from ${myJson.hash}`)
-    }
   }).catch(error => {startWith(engineCrank);console.log(`Starting from ${myJson.hash}`)});
 
 
