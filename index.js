@@ -81,7 +81,11 @@ if (active && NODEDOMAIN) {
   escrow = true
   dsteem = new steem.Client('https://api.steemit.com')
 }
-
+api.use(function(req, res, next) {
+  res.header("Access-Control-Allow-Origin", "*");
+  res.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept");
+  next();
+});
 api.get('/', (req, res, next) => {
   res.setHeader('Content-Type', 'application/json')
   res.send(JSON.stringify({stats: state.stats, node: username, VERSION, realtime: current}, null, 3))
