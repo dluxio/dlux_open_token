@@ -1,3 +1,9 @@
+const ENV = process.env;
+const username = ENV.account || '';
+const active = ENV.active || '';
+const memoKey = ENV.memo || '';
+const NODEDOMAIN = ENV.domain || ''
+const engineCrank = ENV.startingHash || ''
 const steem = require('dsteem');
 const steemState = require('steem-state');
 const steemTransact = require('steem-transact');
@@ -8,6 +14,7 @@ const ipfs = new IPFS({ host: 'ipfs.infura.io', port: 5001, protocol: 'https'});
 const args = require('minimist')(process.argv.slice(2));
 const express = require('express')
 const steemClient = require('steem')
+const fs = require('fs');
 //const RSS = require('rss-generator');
 // Attempts to get the hash of that state file.
 
@@ -25,24 +32,18 @@ function hashThis(data) {
 const VERSION = 'v0.0.2a'
 const api = express()
 var http = require('http').Server(api);
-const ENV = process.env;
-const port = ENV.PORT || 3000;
 //const io = require('socket.io')(http)
-
-const username = ENV.ACCOUNT || '';
-const active = ENV.active || '';
-const memoKey = ENV.memo || '';
-const engineCrank = ENV.STARTER || 'QmfUD2D9ea1wAHanVGeNEiFrCYzgDKe1vgyKiyHeLPrBZy'
+const port = ENV.PORT || 3000;
 var escrow = false
 var broadcast = 1
 const wif = steemClient.auth.toWif(username, active, 'active')
-const NODEDOMAIN = ENV.DOMAIN
 const BIDRATE = ENV.BIDRATE
 const resteemAccount = 'dlux-io';
 var startingBlock = 29180000;
-var current, dsteem
-
-
+var current, dsteem, testString
+try {
+  testString = steemClient.memo.encode(memoKey, Private.pubKeys[username], "#You have protected access") || "CMS system has not been set up."
+} catch(e){testString="CMS system has not been set up. "}
 const prefix = 'dlux_test_';
 const streamMode = args.mode || 'irreversible';
 console.log("Streaming using mode", streamMode);
@@ -51,177 +52,6 @@ var client = new steem.Client(clientURL);
 var processor;
 
 var pa = []
-var Private = {
-  pubKeys: {},
-  tier:[['disregardfiat','caramaeplays']],
-  models:[],
-  banned: [],
-  content:{
-    test:{
-      self: 'test',
-      level:0,
-      title:'Welcome',
-      body:'You have access!'
-    },
-  },
-  utils:{
-    save: function(){
-      const priv = Buffer.from(JSON.stringify([num, state]))
-      ipfs.add(priv, (err, IpFsHash) => {
-        if (!err){
-          plasma.privHash = IpFsHash[0].hash
-          console.log(current + `Saved: Private state ${IpFsHash[0].hash}`)
-        } else {
-          console.log({cycle}, 'IPFS Error', err)
-        }
-      })
-    },
-    addModel: function(num, tier, dlux){
-      Private.models.push([num,tier,dlux])
-      Private.utils.save()
-    },
-    deleteModel: function(num, tier, dlux){
-      for (var i = 0; i < Private.models.length;i++){
-        if (Private.models[i] == [num,tier,dlux]){Private.models.splice(i,1);break;}
-      }
-      Private.utils.save()
-    },
-    addContent: function(content){
-      var decoded = Private.utils.unsealer(content.body)
-      Private.content[content.self] = content
-      Private.utils.save()
-    },
-    deleteContent: function(content){
-      delete Private.content[content]
-      Private.utils.save()
-    },
-    setContentLevel: function(content, level){
-      try{
-        Private.content[content].level = level
-        Private.utils.save()
-      } catch (e){
-        console.log(e)
-      }
-    },
-    ban: function(name){
-      if (Private.banned.indexOf(name) == -1){
-        Private.banned.push(name)
-        var i = Private.utils.accessLevel(name)
-        if(i >= 0){
-          Private.tier[i].splice(Private.tier[i].indexOf(name),1)
-        }
-        Private.utils.save()
-      }
-    },
-    unban: function(name){
-      var i = Private.banned.indexOf(name)
-      if (i>=0){
-        Private.banned.splice(i,1)
-      }
-      Private.utils.save()
-    },
-    getContent: function(content, name){
-      return new Promise((resolve, reject) => {
-      var error = ''
-      var json = ''
-      var result = {}
-      var accessLevel = Private.utils.accessLevel(name)
-      if (accessLevel >= 0){
-        try {
-          json = Private.content[content]
-        } catch(e){error += ' 404: Content not found'}
-          if (json && json.level <= accessLevel){
-            result.level = json.level
-            result.title = json.title
-            result.body = Private.utils.unsealer(json.body)
-          } else {error += ` @${name} doesn't have access?`}
-      } else {error += ` @${name} doesn't have access`}
-      if(error){
-        result.title = error
-      }
-      resolve(result)
-    })
-    },
-    cleaner: function(num){
-      for (var i = 0; i < Private.tier.length;i++){
-        for (var j = 0; j < Private.tier[i].length;j++){
-          if (Private.tier[i][j][0] <= num){Private.tier[i].splice(j,1)}
-        }
-      }
-    },
-    assignLevel: function(name, level, until){
-      var error = '', current = ''
-      if (level < Private.tier.length){
-        try {
-          current = Private.utils.accessLevel(name)
-        } catch(e){if(e){error = 'Not Found'}}
-        if(current){
-          for(var i = 0; i < Private.tier[current].length;i++){
-            if(Private.tier[current][i][0] == name){Private.tier[current][i].splice(i,1);break;}
-          }
-        }
-        if(Private.banned.indexOf(name) == -1){
-          Private.tier[level].push([name,until])
-          Private.utils.save()
-        }
-      }
-    },
-    addAccessLevel: function(){Private.tier.push([]);Private.utils.save();},
-    removeAccesLevel: function(tier){
-      if (Private.tier[tier].length > 1){
-        for (var i = 0; i < Private.tier[tier].length;i++){
-          if(tier == 0){
-            Private.tier[tier + 1].push(Private.tier[tier][i])
-          } else {
-            Private.tier[tier - 1].push(Private.tier[tier][i])
-          }
-        }
-      }
-      Private.tier.splice(tier,1)
-      Private.utils.save();
-    },
-    accessLevel: function(name){
-      var level = ''
-      for (var i = 0; i < Private.tier.length;i++){
-        for (var j = 0; j < Private.tier[i].length;j++){
-          if (Private.tier[i][j][0] == name){level = i;break;}
-        }
-      }
-      return level
-    },
-    upKey: function(name, key){
-      if (Private.pubKeys[name]){
-        Private.pubKeys[name] = key
-      }
-    },
-    sealer: function(md, to){
-      return new Promise((resolve, reject) => {
-        if(!Private.pubKeys[to]){
-          steemClient.api.getAccounts([to], (err, result) => {
-            if (err) {
-              console.log(err)
-              reject()
-            }
-            if (result.length === 0) {
-              reject()
-              console.log('No Such User')
-            }
-            Private.pubKeys[to] = result[0].memo_key
-            var encrypted = steemClient.memo.encode(memoKey, Private.pubKeys[to], `#` + md);
-            resolve(encrypted)
-          });
-        } else {
-          var encrypted = steemClient.memo.encode(memoKey, Private.pubKeys[to], `#` + md);
-          resolve(encrypted)
-        }
-      });
-    },
-    unsealer: function(enc){
-      var decoded = steemClient.memo.decode(memoKey, enc)
-      return decoded
-    }
-  }
-}
 
 const Unixfs = require('ipfs-unixfs')
 const {DAGNode} = require('ipld-dag-pb')
@@ -247,10 +77,9 @@ function cycleipfs(num){
   //ipfs = new IPFS({ host: state.gateways[num], port: 5001, protocol: 'https' });
 }
 
-if (active) {
+if (active && NODEDOMAIN) {
   escrow = true
   dsteem = new steem.Client('https://api.steemit.com')
-
 }
 
 api.get('/', (req, res, next) => {
@@ -296,17 +125,7 @@ api.get('/dex', (req, res, next) => {
 api.get('/priv/list/:un', (req, res, next) => {
   let un = req.params.un
   res.setHeader('Content-Type', 'application/json');//needs memoKey to test more
-  Private.utils.sealer(null, un).then(meh => {
-    let al = Private.utils.accessLevel(un)
-    var value = Private.content
-    for (var item in value){
-      value[item].body = steemClient.memo.encode(memoKey, Private.pubKeys[un], "#" + value[item].body)
-      if (item.level > al){
-        delete value[item]
-      }
-    }
-    res.send(JSON.stringify({list: value, access_level: al, node: username, VERSION, realtime: current}, null, 3))
-  });
+  res.send(JSON.stringify({list: Private.utils.getAllContent(un), access_level: Privte.utils.accessLevel(un), node: username, VERSION, realtime: current}, null, 3))
 });
 api.get('/report/:un', (req, res, next) => {
   let un = req.params.un
@@ -746,7 +565,7 @@ function startApp() {
     }
   });
 
-  processor.on(username, function(json, from) {
+  processor.on(username, function(json, from) { //redesign for private stash
     if (from == username){
       switch (json.exe) {
         case 'schedule':
@@ -1929,6 +1748,7 @@ function startApp() {
           console.error(err);
         } else {
           broadcast = 2
+          console.log(`Signing off...`)
         }
       })
     } else if(split[0] === 'send') {
@@ -2141,6 +1961,100 @@ function startApp() {
           console.error(err);
         }
       })
+    } else if(split[0] === 'ban') {
+      var name = split[1]
+      transactor.json(username, active, 'custom_cms_' + username + '_ban_user', {
+        name
+      }, function(err, result) {
+        if(err) {
+          console.error(err);
+        }
+      })
+    } else if(split[0] === 'unban') {
+      var name = split[1]
+      transactor.json(username, active, 'custom_cms_' + username + '_unban_user', {
+        name
+      }, function(err, result) {
+        if(err) {
+          console.error(err);
+        }
+      })
+    } else if(split[0] === 'add-user') {
+      let name = split[1], tier =split[2], expires = split[3]
+      transactor.json(username, active, 'custom_cms_' + username + '_add_user', {
+        name, tier, expires
+      }, function(err, result) {
+        if(err) {
+          console.error(err);
+        }
+      })
+    } else if(split[0] === 'add-model') {
+      let num = split[1], tier =split[2], dlux = split[3]
+      transactor.json(username, active, 'custom_cms_' + username + '_model_add', {
+        num, tier, dlux
+      }, function(err, result) {
+        if(err) {
+          console.error(err);
+        }
+      })
+    } else if(split[0] === 'delete-model') {
+      let num = split[1], tier =split[2], dlux = split[3]
+      transactor.json(username, active, 'custom_cms_' + username + '_model_delete', {
+        num, tier, dlux
+      }, function(err, result) {
+        if(err) {
+          console.error(err);
+        }
+      })
+    } else if(split[0] === 'add-tier') {
+      transactor.json(username, active, 'custom_cms_' + username + '_tier_add', {
+      }, function(err, result) {
+        if(err) {
+          console.error(err);
+        }
+      })
+    } else if(split[0] === 'delete-tier') {
+      let tier = split[1]
+      transactor.json(username, active, 'custom_cms_' + username + '_tier_delete', {
+        tier
+      }, function(err, result) {
+        if(err) {
+          console.error(err);
+        }
+      })
+    } else if(split[0] === 'delete') {
+      let content = split[1]
+      transactor.json(username, active, 'custom_cms_' + username + '_delete', {
+        content
+      }, function(err, result) {
+        if(err) {
+          console.error(err);
+        }
+      })
+    } else if(split[0] === 'set-level') {
+      let content = split[1], level = split[2]
+      transactor.json(username, active, 'custom_cms_' + username + '_set_level', {
+        content, level
+      }, function(err, result) {
+        if(err) {
+          console.error(err);
+        }
+      })
+    } else if(split[0] === 'add') {
+      let file = split[1]
+      var json = fs.readFileSync(`./${file}`, 'utf8');
+      var temp = JSON.parse(json);
+      if (temp.self && temp.level && temp.title && temp.body && memoKey){
+        var content = {self:temp.self, level: temp.level, title: temp.title, body: temp.body}
+        if (content.level > 0){content.body = Private.utils.sealer(content.body, username)}
+        transactor.json(username, active, 'custom_cms_' + username + '_add', {
+          content
+        }, function(err, result) {
+          if(err) {
+            console.error(err);
+          }
+        })
+      }
     } else if(split[0] === 'exit') {
       //announce offline
       exit();
@@ -2719,5 +2633,220 @@ function noi(t){ //node ops incrementer and cleaner... 3 retries and out
   NodeOps[t][0][1]++
   if (NodeOps[t][0][1]>3){
     NodeOps.splice(t,1)
+  }
+}
+
+var Private = {
+  pubKeys: {},
+  tier:[['disregardfiat','caramaeplays']],
+  models:[],
+  banned: [],
+  content:{
+    test:{
+      self: 'test',
+      level:0,
+      title:'Encryption Check 1',
+      body:'Your memo key is configured!'
+    },
+    test_enc:{
+      self: 'test_enc',
+      level: 1,
+      title:'Encryption Check 2',
+      body: testString
+    },
+  },
+  utils:{
+    save: function(){
+      const priv = Buffer.from(JSON.stringify([num, state]))
+      ipfs.add(priv, (err, IpFsHash) => {
+        if (!err){
+          plasma.privHash = IpFsHash[0].hash
+          console.log(current + `Saved: Private state ${IpFsHash[0].hash}`)
+        } else {
+          console.log({cycle}, 'IPFS Error', err)
+        }
+      })
+    },
+    addModel: function(num, tier, dlux){
+      Private.models.push([num,tier,dlux])
+      Private.utils.save()
+    },
+    deleteModel: function(num, tier, dlux){
+      for (var i = 0; i < Private.models.length;i++){
+        if (Private.models[i] == [num,tier,dlux]){Private.models.splice(i,1);break;}
+      }
+      Private.utils.save()
+    },
+    addContent: function(content){
+      Private.content[content.self] = content
+      Private.utils.save()
+    },
+    deleteContent: function(content){
+      delete Private.content[content]
+      Private.utils.save()
+    },
+    setContentLevel: function(content, level){
+      try{
+        if (level == 0 && Private.content[content].level > 0){
+          Private.content[content].body = steemClient.memo.decode(memoKey, Private.content[content].body)
+        } else if (level > 0 && Private.content[content].level == 0) {
+          Private.content[content].body = steemClient.memo.encode(memoKey, Private.pubKeys[username], "#" + Private.content[content].body)
+        }
+        Private.content[content].level = level
+        Private.utils.save()
+      } catch (e){
+        console.log(e)
+      }
+    },
+    ban: function(name){
+      if (Private.banned.indexOf(name) == -1){
+        Private.banned.push(name)
+        var i = Private.utils.accessLevel(name)
+        if(i >= 0){
+          Private.tier[i].splice(Private.tier[i].indexOf(name),1)
+        }
+        Private.utils.save()
+      }
+    },
+    unban: function(name){
+      var i = Private.banned.indexOf(name)
+      if (i>=0){
+        Private.banned.splice(i,1)
+      }
+      Private.utils.save()
+    },
+    getContent: function(content, name){
+      return new Promise((resolve, reject) => {
+      var error = ''
+      var json = ''
+      var result = {}
+      var accessLevel = Private.utils.accessLevel(name)
+      if (accessLevel >= 0){
+        try {
+          json = Private.content[content]
+        } catch(e){error += ' 404: Content not found'}
+        if (json && json.level <= accessLevel){
+          result.level = json.level
+          result.title = json.title
+          result.body = Private.utils.unsealer(json.body)
+        } else {error += ` @${name} doesn't have access?`}
+      } else {error += ` @${name} doesn't have access`}
+      if(error){
+        result.title = error
+      }
+      resolve(result)
+    })
+    },
+    getAllContent: function(name){
+      return new Promise((resolve, reject) => {
+        if(!Private.pubKeys[name]){
+          Private.utils.sealer(null, name).then(meh => {
+            let al = Private.utils.accessLevel(name)
+            var value = Private.content
+            for (var item in value){
+              if (value[item].level > al){
+                delete value[item]
+              } else if (value[item].level > 0){
+                value[item].body = steemClient.memo.decode(memoKey, value[item].body)
+              }
+              value[item].body = steemClient.memo.encode(memoKey, Private.pubKeys[name], "#" + value[item].body)
+            }
+            resolve(value)
+          });
+        } else {
+          let al = Private.utils.accessLevel(un)
+          var value = Private.content
+          for (var item in value){
+            if (value[item].level > al){
+              delete value[item]
+            } else if (value[item].level > 0){
+              value[item].body = steemClient.memo.encode(memoKey, Private.pubKeys[un], "#" + value[item].body)
+            }
+          }
+          resolve(value)
+        }
+      })
+    },
+    cleaner: function(num){
+      for (var i = 0; i < Private.tier.length;i++){
+        for (var j = 0; j < Private.tier[i].length;j++){
+          if (Private.tier[i][j][0] <= num){Private.tier[i].splice(j,1)}
+        }
+      }
+    },
+    assignLevel: function(name, level, until){
+      var error = '', current = ''
+      if (level < Private.tier.length){
+        try {
+          current = Private.utils.accessLevel(name)
+        } catch(e){if(e){error = 'Not Found'}}
+        if(current){
+          for(var i = 0; i < Private.tier[current].length;i++){
+            if(Private.tier[current][i][0] == name){Private.tier[current][i].splice(i,1);break;}
+          }
+        }
+        if(Private.banned.indexOf(name) == -1){
+          Private.tier[level].push([name,until])
+          Private.utils.save()
+        }
+      }
+    },
+    addAccessLevel: function(){Private.tier.push([]);Private.utils.save();},
+    removeAccesLevel: function(tier){
+      tier -= 1
+      if (Private.tier[tier].length > 0){
+        for (var i = 0; i < Private.tier[tier].length;i++){
+          if(tier == 0){
+            Private.tier[tier + 1].push(Private.tier[tier][i])
+          } else {
+            Private.tier[tier - 1].push(Private.tier[tier][i])
+          }
+        }
+      }
+      if(tier >= 0){
+        Private.tier.splice(tier,1)
+        Private.utils.save();
+      }
+    },
+    accessLevel: function(name){
+      var level = 0
+      for (var i = 0; i < Private.tier.length;i++){
+        for (var j = 0; j < Private.tier[i].length;j++){
+          if (Private.tier[i][j][0] == name){level = i + 1;break;}
+        }
+      }
+      return level
+    },
+    upKey: function(name, key){
+      if (Private.pubKeys[name]){
+        Private.pubKeys[name] = key
+      }
+    },
+    sealer: function(md, to){
+      return new Promise((resolve, reject) => {
+        if(!Private.pubKeys[to]){
+          steemClient.api.getAccounts([to], (err, result) => {
+            if (err) {
+              console.log(err)
+              reject()
+            }
+            if (result.length === 0) {
+              reject()
+              console.log('No Such User')
+            }
+            Private.pubKeys[to] = result[0].memo_key
+            var encrypted = steemClient.memo.encode(memoKey, Private.pubKeys[to], `#` + md);
+            resolve(encrypted)
+          });
+        } else {
+          var encrypted = steemClient.memo.encode(memoKey, Private.pubKeys[to], `#` + md);
+          resolve(encrypted)
+        }
+      });
+    },
+    unsealer: function(enc){
+      var decoded = steemClient.memo.decode(memoKey, enc)
+      return decoded
+    }
   }
 }
