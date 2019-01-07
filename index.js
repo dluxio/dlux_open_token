@@ -81,11 +81,15 @@ if (active && NODEDOMAIN) {
   escrow = true
   dsteem = new steem.Client('https://api.steemit.com')
 }
-api.use(function(req, res, next) {
-  res.header("Access-Control-Allow-Origin", "*");
-  res.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept");
-  next();
-});
+const allowCrossDomain = function(req, res, next) {
+    res.header('Access-Control-Allow-Origin', "*");
+    res.header('Access-Control-Allow-Methods', 'GET');
+    res.header('Access-Control-Allow-Headers', 'Content-Type');
+    next();
+};
+
+api.use(allowCrossDomain);
+
 api.get('/', (req, res, next) => {
   res.setHeader('Content-Type', 'application/json')
   res.send(JSON.stringify({stats: state.stats, node: username, VERSION, realtime: current}, null, 3))
@@ -129,7 +133,7 @@ api.get('/dex', (req, res, next) => {
 api.get('/priv/list/:un', (req, res, next) => {
   let un = req.params.un
   res.setHeader('Content-Type', 'application/json');//needs memoKey to test more
-  res.send(JSON.stringify({list: Private.utils.getAllContent(un), access_level: Privte.utils.accessLevel(un), node: username, VERSION, realtime: current}, null, 3))
+  res.send(JSON.stringify({list: Utils.getAllContent(un), access_level: Privte.utils.accessLevel(un), node: username, VERSION, realtime: current}, null, 3))
 });
 api.get('/report/:un', (req, res, next) => {
   let un = req.params.un
@@ -141,8 +145,8 @@ api.get('/private/:un/:pl', (req, res, next) => {
   let un = req.params.un
   let pl = req.params.pl
   res.setHeader('Content-Type', 'application/json');//needs memoKey to test more
-  Private.utils.getContent(pl, un).then(value => {
-    Private.utils.sealer(value.body,un).then(enc => {
+  Utils.getContent(pl, un).then(value => {
+    Utils.sealer(value.body,un).then(enc => {
       value.body = enc
       res.send(JSON.stringify({[pl]: value, node: username, VERSION, realtime: current}, null, 3))
     })
@@ -152,6 +156,19 @@ api.get('/private/:un/:pl', (req, res, next) => {
 http.listen(port, function(){
   console.log(`DLUX token API listening on port ${port}`);
 });
+var utils = {
+  chronoSort: function (){state.chrono.sort(function(a, b){return a.block - b.block});},
+  agentCycler: function (){var x=state.queue.shift();state.queue.push(x);return x},
+  cleanExeq: function (id){
+    for (var i = 0; i < state.exeq.length;i++){
+      if (state.exeq[i][1] == id) {
+        state.exeq.splice(i,1)
+        i--;
+      }
+    }
+  }
+}
+
 var state = {
   limbo: {},
   listeners: [],
@@ -233,18 +250,6 @@ var state = {
   queue: ['dlux-io'],
   escrow: [],
   bannedNodes: [],
-  utils:{
-    chronoSort: function (){state.chrono.sort(function(a, b){return a.block - b.block});},
-    agentCycler: function (){var x=state.queue.shift();state.queue.push(x);return x},
-    cleanExeq: function (id){
-      for (var i = 0; i < state.exeq.length;i++){
-        if (state.exeq[i][1] == id) {
-          state.exeq.splice(i,1)
-          i--;
-        }
-      }
-    }
-  },
   agents: {
     'dlux-io':{
       self:'dlux-io',
@@ -556,7 +561,7 @@ function startApp() {
       if (json.to == username && Private.models.length > 0){
         for (var i = 0;i < Private.models.length;i++){
           if (json.amount == Private.models[i][2] && json.tier == Private.models[i][1]){
-            Private.utils.assignLevel(from, json.tier, current + Private.models[i][0] )
+            Utils.assignLevel(from, json.tier, current + Private.models[i][0] )
             break;
           }
         }
@@ -621,7 +626,7 @@ function startApp() {
         if (i==12){weekly += odd}
         state.chrono.push({block: parseInt(current+(200000 * (i+1))), op:'power_down', amount: weekly, by: from})
       }
-      state.utils.chronoSort()
+      utils.chronoSort()
       console.log(current + `Power down occurred by ${from} of ${amount} DLUX`)
     } else {
       console.log(current + `Invalid power up operation from ${from}`)
@@ -792,61 +797,61 @@ function startApp() {
 
   processor.on('custom_cms_' + username + '_add', function(json, from) {//json.to valid contract or random name json.nftid valid contract beared
     if (from == username){
-      Private.utils.addContent(json.content)
+      Utils.addContent(json.content)
     }
   });
 
   processor.on('custom_cms_' + username + '_set_level', function(json, from) {//json.to valid contract or random name json.nftid valid contract beared
     if (from == username){
-      Private.utils.setContentLevel(json.content, json.level)
+      Utils.setContentLevel(json.content, json.level)
     }
   });
 
   processor.on('custom_cms_' + username + '_delete', function(json, from) {//json.to valid contract or random name json.nftid valid contract beared
     if (from == username){
-      Private.utils.deleteContent(json.content)
+      Utils.deleteContent(json.content)
     }
   });
 
   processor.on('custom_cms_' + username + '_tier_add', function(json, from) {//json.to valid contract or random name json.nftid valid contract beared
     if (from == username){
-      Private.utils.addAccessLevel()
+      Utils.addAccessLevel()
     }
   });
 
   processor.on('custom_cms_' + username + '_tier_delete', function(json, from) {//json.to valid contract or random name json.nftid valid contract beared
     if (from == username){
-      Private.utils.removeAccessLevel(json.tier)
+      Utils.removeAccessLevel(json.tier)
     }
   });
 
   processor.on('custom_cms_' + username + '_model_add', function(json, from) {//json.to valid contract or random name json.nftid valid contract beared
     if (from == username){
-      Private.utils.addModel(json.num,json.tier, json.dlux)
+      Utils.addModel(json.num,json.tier, json.dlux)
     }
   });
 
   processor.on('custom_cms_' + username + '_model_delete', function(json, from) {//json.to valid contract or random name json.nftid valid contract beared
     if (from == username){
-      Private.utils.deleteModel(json.num,json.tier, json.dlux)
+      Utils.deleteModel(json.num,json.tier, json.dlux)
     }
   });
 
   processor.on('custom_cms_' + username + '_add_user', function(json, from) {//json.to valid contract or random name json.nftid valid contract beared
     if (from == username){
-      Private.utils.assignLevel(json.name, json.tier, json.expires)
+      Utils.assignLevel(json.name, json.tier, json.expires)
     }
   });
 
   processor.on('custom_cms_' + username + '_ban_user', function(json, from) {//json.to valid contract or random name json.nftid valid contract beared
     if (from == username){
-      Private.utils.ban(json.name)
+      Utils.ban(json.name)
     }
   });
 
   processor.on('custom_cms_' + username + '_unban_user', function(json, from) {//json.to valid contract or random name json.nftid valid contract beared
     if (from == username){
-      Private.utils.unban(json.name)
+      Utils.unban(json.name)
     }
   });
 
@@ -889,19 +894,19 @@ function startApp() {
           if (state.exes[j].op[0].proposal == state.exes[j].op[1].proposal){
             state.contracts[json.nftid] = json.proposal
             state.exe.splice(j,1)
-            state.utils.cleanExeq(json.nftid)
+            utils.cleanExeq(json.nftid)
             console.log(current + `${json.nftid} updated`)
           }
         } else if (auth == 'updated' && state.exes[j].op.length == 3){
           if (state.exes[j].op[0].proposal == state.exes[j].op[2].proposal){
             state.contracts[json.nftid] = json.proposal
             state.exe.splice(j,1)
-            state.utils.cleanExeq(json.nftid)
+            utils.cleanExeq(json.nftid)
             console.log(current + `${json.nftid} updated`)
           } else if (state.exes[j].op[1].proposal == state.exes[j].op[2].proposal){
             state.contracts[json.nftid] = json.proposal
             state.exe.splice(j,1)
-            state.utils.cleanExeq(json.nftid)
+            utils.cleanExeq(json.nftid)
             console.log(current + `${json.nftid} updated`)
           }
         }
@@ -910,17 +915,17 @@ function startApp() {
       if (state.exes[j].op[0].proposal == json.proposal && current > 50 + state.exes[j].b){
         state.contracts[json.nftid] = json.proposal
         state.exe.splice(j,1)
-        state.utils.cleanExeq(json.nftid)
+        utils.cleanExeq(json.nftid)
         console.log(current + `${json.nftid} updated`)
       } else if (state.exes[j].op[1].proposal == json.proposal && current > 50 + state.exes[j].b){
         state.contracts[json.nftid] = json.proposal
         state.exe.splice(j,1)
-        state.utils.cleanExeq(json.nftid)
+        utils.cleanExeq(json.nftid)
         console.log(current + `${json.nftid} updated`)
       } else if (state.exes[j].op[2].proposal == json.proposal && current > 50 + state.exes[j].b){
         state.contracts[json.nftid] = json.proposal
         state.exe.splice(j,1)
-        state.utils.cleanExeq(json.nftid)
+        utils.cleanExeq(json.nftid)
         console.log(current + `${json.nftid} updated`)
       }
     }
@@ -1447,7 +1452,7 @@ function startApp() {
       if (filter[i].account == 'dlux-io' && filter[i].weight > 999){
         state.posts.push({author:json.author, permlink: json.permlink})
         state.chrono.push({block:parseInt(current+300000), op:'post_reward', author: json.author, permlink: json.permlink})
-        state.utils.chronoSort()
+        utils.chronoSort()
         console.log(current + `Added ${json.author}/${json.permlink} to dlux rewardable content`)
       }
     }
@@ -1526,7 +1531,7 @@ function startApp() {
   });
 
   processor.onOperation('account_update', function(json,from){//grab posts to reward
-    Private.utils.upKey(json.account, json.memo_key)
+    Utils.upKey(json.account, json.memo_key)
   });
 
   processor.onBlock(function(num, block) {
@@ -2050,7 +2055,7 @@ function startApp() {
       var temp = JSON.parse(json);
       if (temp.self && temp.level && temp.title && temp.body && memoKey){
         var content = {self:temp.self, level: temp.level, title: temp.title, body: temp.body}
-        if (content.level > 0){content.body = Private.utils.sealer(content.body, username)}
+        if (content.level > 0){content.body = Utils.sealer(content.body, username)}
         transactor.json(username, active, 'custom_cms_' + username + '_add', {
           content
         }, function(err, result) {
@@ -2321,7 +2326,7 @@ function dao(num) {
       delete state.contracts[contract]
     }
   }
-  Private.utils.cleaner()
+  Utils.cleaner()
 }
 
 function report(num) {
@@ -2546,9 +2551,9 @@ function runNFT(n, e, b, d, a, c){//nft, ececutor, blocknumber, dluxcoin, assets
 
 function assignAgents(n, e, b, d, a, c){
   state.exes.push({id:n.self,n,e,b,d,a,c,op:[]})
-  state.exeq.push([state.utils.agentCycler(), n.self,b,e])
-  state.exeq.push([state.utils.agentCycler(), n.self,b,e])
-  state.exeq.push([state.utils.agentCycler(), n.self,b,e])
+  state.exeq.push([utils.agentCycler(), n.self,b,e])
+  state.exeq.push([utils.agentCycler(), n.self,b,e])
+  state.exeq.push([utils.agentCycler(), n.self,b,e])
 }
 
 function checkNFT(nft, proposal, executor, bal, assets){
@@ -2658,199 +2663,199 @@ var Private = {
       title:'Encryption Check 2',
       body: testString
     },
-  },
-  utils:{
-    save: function(){
-      const priv = Buffer.from(JSON.stringify([num, state]))
-      ipfs.add(priv, (err, IpFsHash) => {
-        if (!err){
-          plasma.privHash = IpFsHash[0].hash
-          console.log(current + `Saved: Private state ${IpFsHash[0].hash}`)
-        } else {
-          console.log({cycle}, 'IPFS Error', err)
-        }
-      })
-    },
-    addModel: function(num, tier, dlux){
-      Private.models.push([num,tier,dlux])
-      Private.utils.save()
-    },
-    deleteModel: function(num, tier, dlux){
-      for (var i = 0; i < Private.models.length;i++){
-        if (Private.models[i] == [num,tier,dlux]){Private.models.splice(i,1);break;}
+  }
+}
+var Utils = {
+  save: function(){
+    const priv = Buffer.from(JSON.stringify([num, state]))
+    ipfs.add(priv, (err, IpFsHash) => {
+      if (!err){
+        plasma.privHash = IpFsHash[0].hash
+        console.log(current + `Saved: Private state ${IpFsHash[0].hash}`)
+      } else {
+        console.log({cycle}, 'IPFS Error', err)
       }
-      Private.utils.save()
-    },
-    addContent: function(content){
-      Private.content[content.self] = content
-      Private.utils.save()
-    },
-    deleteContent: function(content){
-      delete Private.content[content]
-      Private.utils.save()
-    },
-    setContentLevel: function(content, level){
-      try{
-        if (level == 0 && Private.content[content].level > 0){
-          Private.content[content].body = steemClient.memo.decode(memoKey, Private.content[content].body)
-        } else if (level > 0 && Private.content[content].level == 0) {
-          Private.content[content].body = steemClient.memo.encode(memoKey, Private.pubKeys[username], "#" + Private.content[content].body)
-        }
-        Private.content[content].level = level
-        Private.utils.save()
-      } catch (e){
-        console.log(e)
-      }
-    },
-    ban: function(name){
-      if (Private.banned.indexOf(name) == -1){
-        Private.banned.push(name)
-        var i = Private.utils.accessLevel(name)
-        if(i >= 0){
-          Private.tier[i].splice(Private.tier[i].indexOf(name),1)
-        }
-        Private.utils.save()
-      }
-    },
-    unban: function(name){
-      var i = Private.banned.indexOf(name)
-      if (i>=0){
-        Private.banned.splice(i,1)
-      }
-      Private.utils.save()
-    },
-    getContent: function(content, name){
-      return new Promise((resolve, reject) => {
-      var error = ''
-      var json = ''
-      var result = {}
-      var accessLevel = Private.utils.accessLevel(name)
-      if (accessLevel >= 0){
-        try {
-          json = Private.content[content]
-        } catch(e){error += ' 404: Content not found'}
-        if (json && json.level <= accessLevel){
-          result.level = json.level
-          result.title = json.title
-          result.body = Private.utils.unsealer(json.body)
-        } else {error += ` @${name} doesn't have access?`}
-      } else {error += ` @${name} doesn't have access`}
-      if(error){
-        result.title = error
-      }
-      resolve(result)
     })
-    },
-    getAllContent: function(name){
-      return new Promise((resolve, reject) => {
-        if(!Private.pubKeys[name]){
-          Private.utils.sealer(null, name).then(meh => {
-            let al = Private.utils.accessLevel(name)
-            var value = Private.content
-            for (var item in value){
-              if (value[item].level > al){
-                delete value[item]
-              } else if (value[item].level > 0){
-                value[item].body = steemClient.memo.decode(memoKey, value[item].body)
-              }
-              value[item].body = steemClient.memo.encode(memoKey, Private.pubKeys[name], "#" + value[item].body)
-            }
-            resolve(value)
-          });
-        } else {
-          let al = Private.utils.accessLevel(un)
+  },
+  addModel: function(num, tier, dlux){
+    Private.models.push([num,tier,dlux])
+    Utils.save()
+  },
+  deleteModel: function(num, tier, dlux){
+    for (var i = 0; i < Private.models.length;i++){
+      if (Private.models[i] == [num,tier,dlux]){Private.models.splice(i,1);break;}
+    }
+    Utils.save()
+  },
+  addContent: function(content){
+    Private.content[content.self] = content
+    Utils.save()
+  },
+  deleteContent: function(content){
+    delete Private.content[content]
+    Utils.save()
+  },
+  setContentLevel: function(content, level){
+    try{
+      if (level == 0 && Private.content[content].level > 0){
+        Private.content[content].body = steemClient.memo.decode(memoKey, Private.content[content].body)
+      } else if (level > 0 && Private.content[content].level == 0) {
+        Private.content[content].body = steemClient.memo.encode(memoKey, Private.pubKeys[username], "#" + Private.content[content].body)
+      }
+      Private.content[content].level = level
+      Utils.save()
+    } catch (e){
+      console.log(e)
+    }
+  },
+  ban: function(name){
+    if (Private.banned.indexOf(name) == -1){
+      Private.banned.push(name)
+      var i = Utils.accessLevel(name)
+      if(i >= 0){
+        Private.tier[i].splice(Private.tier[i].indexOf(name),1)
+      }
+      Utils.save()
+    }
+  },
+  unban: function(name){
+    var i = Private.banned.indexOf(name)
+    if (i>=0){
+      Private.banned.splice(i,1)
+    }
+    Utils.save()
+  },
+  getContent: function(content, name){
+    return new Promise((resolve, reject) => {
+    var error = ''
+    var json = ''
+    var result = {}
+    var accessLevel = Utils.accessLevel(name)
+    if (accessLevel >= 0){
+      try {
+        json = Private.content[content]
+      } catch(e){error += ' 404: Content not found'}
+      if (json && json.level <= accessLevel){
+        result.level = json.level
+        result.title = json.title
+        result.body = Utils.unsealer(json.body)
+      } else {error += ` @${name} doesn't have access?`}
+    } else {error += ` @${name} doesn't have access`}
+    if(error){
+      result.title = error
+    }
+    resolve(result)
+  })
+  },
+  getAllContent: function(name){
+    return new Promise((resolve, reject) => {
+      if(!Private.pubKeys[name]){
+        Utils.sealer(null, name).then(meh => {
+          let al = Utils.accessLevel(name)
           var value = Private.content
           for (var item in value){
             if (value[item].level > al){
               delete value[item]
             } else if (value[item].level > 0){
-              value[item].body = steemClient.memo.encode(memoKey, Private.pubKeys[un], "#" + value[item].body)
+              value[item].body = steemClient.memo.decode(memoKey, value[item].body)
             }
+            value[item].body = steemClient.memo.encode(memoKey, Private.pubKeys[name], "#" + value[item].body)
           }
           resolve(value)
-        }
-      })
-    },
-    cleaner: function(num){
-      for (var i = 0; i < Private.tier.length;i++){
-        for (var j = 0; j < Private.tier[i].length;j++){
-          if (Private.tier[i][j][0] <= num){Private.tier[i].splice(j,1)}
-        }
-      }
-    },
-    assignLevel: function(name, level, until){
-      var error = '', current = ''
-      if (level < Private.tier.length){
-        try {
-          current = Private.utils.accessLevel(name)
-        } catch(e){if(e){error = 'Not Found'}}
-        if(current){
-          for(var i = 0; i < Private.tier[current].length;i++){
-            if(Private.tier[current][i][0] == name){Private.tier[current][i].splice(i,1);break;}
+        });
+      } else {
+        let al = Utils.accessLevel(un)
+        var value = Private.content
+        for (var item in value){
+          if (value[item].level > al){
+            delete value[item]
+          } else if (value[item].level > 0){
+            value[item].body = steemClient.memo.encode(memoKey, Private.pubKeys[un], "#" + value[item].body)
           }
         }
-        if(Private.banned.indexOf(name) == -1){
-          Private.tier[level].push([name,until])
-          Private.utils.save()
+        resolve(value)
+      }
+    })
+  },
+  cleaner: function(num){
+    for (var i = 0; i < Private.tier.length;i++){
+      for (var j = 0; j < Private.tier[i].length;j++){
+        if (Private.tier[i][j][0] <= num){Private.tier[i].splice(j,1)}
+      }
+    }
+  },
+  assignLevel: function(name, level, until){
+    var error = '', current = ''
+    if (level < Private.tier.length){
+      try {
+        current = Utils.accessLevel(name)
+      } catch(e){if(e){error = 'Not Found'}}
+      if(current){
+        for(var i = 0; i < Private.tier[current].length;i++){
+          if(Private.tier[current][i][0] == name){Private.tier[current][i].splice(i,1);break;}
         }
       }
-    },
-    addAccessLevel: function(){Private.tier.push([]);Private.utils.save();},
-    removeAccesLevel: function(tier){
-      tier -= 1
-      if (Private.tier[tier].length > 0){
-        for (var i = 0; i < Private.tier[tier].length;i++){
-          if(tier == 0){
-            Private.tier[tier + 1].push(Private.tier[tier][i])
-          } else {
-            Private.tier[tier - 1].push(Private.tier[tier][i])
-          }
-        }
+      if(Private.banned.indexOf(name) == -1){
+        Private.tier[level].push([name,until])
+        Utils.save()
       }
-      if(tier >= 0){
-        Private.tier.splice(tier,1)
-        Private.utils.save();
-      }
-    },
-    accessLevel: function(name){
-      var level = 0
-      for (var i = 0; i < Private.tier.length;i++){
-        for (var j = 0; j < Private.tier[i].length;j++){
-          if (Private.tier[i][j][0] == name){level = i + 1;break;}
-        }
-      }
-      return level
-    },
-    upKey: function(name, key){
-      if (Private.pubKeys[name]){
-        Private.pubKeys[name] = key
-      }
-    },
-    sealer: function(md, to){
-      return new Promise((resolve, reject) => {
-        if(!Private.pubKeys[to]){
-          steemClient.api.getAccounts([to], (err, result) => {
-            if (err) {
-              console.log(err)
-              reject()
-            }
-            if (result.length === 0) {
-              reject()
-              console.log('No Such User')
-            }
-            Private.pubKeys[to] = result[0].memo_key
-            var encrypted = steemClient.memo.encode(memoKey, Private.pubKeys[to], `#` + md);
-            resolve(encrypted)
-          });
+    }
+  },
+  addAccessLevel: function(){Private.tier.push([]);Utils.save();},
+  removeAccesLevel: function(tier){
+    tier -= 1
+    if (Private.tier[tier].length > 0){
+      for (var i = 0; i < Private.tier[tier].length;i++){
+        if(tier == 0){
+          Private.tier[tier + 1].push(Private.tier[tier][i])
         } else {
+          Private.tier[tier - 1].push(Private.tier[tier][i])
+        }
+      }
+    }
+    if(tier >= 0){
+      Private.tier.splice(tier,1)
+      Utils.save();
+    }
+  },
+  accessLevel: function(name){
+    var level = 0
+    for (var i = 0; i < Private.tier.length;i++){
+      for (var j = 0; j < Private.tier[i].length;j++){
+        if (Private.tier[i][j][0] == name){level = i + 1;break;}
+      }
+    }
+    return level
+  },
+  upKey: function(name, key){
+    if (Private.pubKeys[name]){
+      Private.pubKeys[name] = key
+    }
+  },
+  sealer: function(md, to){
+    return new Promise((resolve, reject) => {
+      if(!Private.pubKeys[to]){
+        steemClient.api.getAccounts([to], (err, result) => {
+          if (err) {
+            console.log(err)
+            reject()
+          }
+          if (result.length === 0) {
+            reject()
+            console.log('No Such User')
+          }
+          Private.pubKeys[to] = result[0].memo_key
           var encrypted = steemClient.memo.encode(memoKey, Private.pubKeys[to], `#` + md);
           resolve(encrypted)
-        }
-      });
-    },
-    unsealer: function(enc){
-      var decoded = steemClient.memo.decode(memoKey, enc)
-      return decoded
-    }
+        });
+      } else {
+        var encrypted = steemClient.memo.encode(memoKey, Private.pubKeys[to], `#` + md);
+        resolve(encrypted)
+      }
+    });
+  },
+  unsealer: function(enc){
+    var decoded = steemClient.memo.decode(memoKey, enc)
+    return decoded
   }
 }
