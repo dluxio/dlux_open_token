@@ -561,7 +561,7 @@ function startApp() {
       if (json.to == username && Private.models.length > 0){
         for (var i = 0;i < Private.models.length;i++){
           if (json.amount == Private.models[i][2] && json.tier == Private.models[i][1]){
-            Utils.assignLevel(from, json.tier, current + Private.models[i][0] )
+            Utils.assignLevel(from, json.tier, processor.getCurrentBlockNumber() + Private.models[i][0] )
             break;
           }
         }
@@ -624,7 +624,7 @@ function startApp() {
       var odd = parseInt(amount % 13), weekly = parseInt(amount / 13)
       for (var i = 0;i<13;i++){
         if (i==12){weekly += odd}
-        state.chrono.push({block: parseInt(current+(200000 * (i+1))), op:'power_down', amount: weekly, by: from})//fix current!!!
+        state.chrono.push({block: parseInt(processor.getCurrentBlockNumber()+(200000 * (i+1))), op:'power_down', amount: weekly, by: from})//fix current!!!
       }
       utils.chronoSort()
       console.log(current + `:Power down occurred by ${from} of ${amount} DLUX`)
@@ -659,11 +659,11 @@ function startApp() {
   });
 
   processor.on('create_nft', function(json, from) {
-    var self = 'DLUX' + hashThis(from + current), error = '', actions = [0]//fix current with block num
+    var self = 'DLUX' + hashThis(from + processor.getCurrentBlockNumber()), error = '', actions = [0]//fix current with block num
 
     var nft = {
       self,
-      block: current,//fix current with blocknum
+      block: processor.getCurrentBlockNumber(),//fix current with blocknum
       creator: from,
       bearers: [from],
       owners: [{[from]:1}],
@@ -693,10 +693,10 @@ function startApp() {
       votes: [],
       benifactors: [[{u:from,d:json.nft.bal || 0}],[]],
       assetBenifactors: [[],[]],
-      lastExecutor: [from, current],
+      lastExecutor: [from, processor.getCurrentBlockNumber()],
       listener: [],// to set up custom pulls from steem stream, for instance json sm gifts
-      matures: current,
-      expires: current + 100000,
+      matures: processor.getCurrentBlockNumber(),
+      expires: processor.getCurrentBlockNumber() + 100000,
     }
     if(json.nft.pow){
       if(state.pow[from]){
@@ -738,7 +738,7 @@ function startApp() {
     nft.icon = json.nft.icon  || ''
     nft.stack = json.nft.stack  || []
     //nft.listener = json.nft.listener || []
-    if (json.nft.expires > current){ //fix current
+    if (json.nft.expires > processor.getCurrentBlockNumber()){ //fix current
       nft.expires = json.nft.expires
     }
     if (json.nft.matures && json.nft.matures < json.nft.expires){
@@ -1735,7 +1735,7 @@ function startApp() {
 
   processor.onStreamingStart(function() {
     console.log("At real time.")
-    if (!state.markets.node[username].domain && NODEDOMAIN){
+    if (state.markets.node[username]){if(!state.markets.node[username].domain && NODEDOMAIN){
       transactor.json(username, active, 'node_add', {
         domain: NODEDOMAIN,
         bidRate: BIDRATE,
@@ -1745,7 +1745,7 @@ function startApp() {
           console.error(err);
         }
       })
-    }
+    }}
   });
 
   processor.start();
