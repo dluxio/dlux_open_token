@@ -1411,7 +1411,7 @@ function startApp() {
       }
       console.log(current + `:@${from}'s report has been processed`)
     } else {
-      if (from === username && NODEDOMAIN && BIDRATE) {
+      if (from === username && NODEDOMAIN) {
         console.log(current + `:This node posted a spurious report and in now attempting to register`)
         transactor.json(username, active, 'node_add', {
           domain: NODEDOMAIN,
@@ -2103,7 +2103,7 @@ function check() { //do this maybe cycle 5, gives 15 secs to be streaming behind
       self: self,
       agreement: false,
     }
-    if (state.markets.node[self].domain){
+    if (state.markets.node[self].domain && state.markets.node[self].domain == NODEDOMAIN){
       var domain = state.markets.node[self].domain
       if (domain.slice(-1) == '/') {
         domain = domain.substring(0, domain.length - 1)
