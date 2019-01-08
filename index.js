@@ -81,14 +81,6 @@ if (active && NODEDOMAIN) {
   escrow = true
   dsteem = new steem.Client('https://api.steemit.com')
 }
-const allowCrossDomain = function(req, res, next) {
-    res.header('Access-Control-Allow-Origin', "*");
-    res.header('Access-Control-Allow-Methods', 'GET');
-    res.header('Access-Control-Allow-Headers', 'Content-Type');
-    next();
-};
-
-api.use(allowCrossDomain);
 
 api.get('/', (req, res, next) => {
   res.setHeader('Content-Type', 'application/json')
@@ -96,9 +88,22 @@ api.get('/', (req, res, next) => {
 });
 api.get('/@:username', (req, res, next) => {
   let username = req.params.username
-  let bal = state.balances[username] || 0
-  let pb = state.pow[username] || 0
-  let lp = state.pow.n[username] || 0
+  var bal, pb, lp, lb
+  try {
+    bal = state.balances[username] || 0
+  } catch(e){
+    bal = 0
+  }
+  try {
+    pb = state.pow[username] || 0
+  } catch(e){
+    pb = 0
+  }
+  try {
+    lp = state.pow.n[username] || 0
+  } catch(e){
+    lp = 0
+  }
   res.setHeader('Content-Type', 'application/json');
   res.send(JSON.stringify({balance: bal, poweredUp: pb, powerBeared: lp}, null, 3))
 });
@@ -231,6 +236,7 @@ var state = {
     rovill: 137550227
   },
   pow: {
+    n:{},
     t: 37300000000,
     disregardfiat: 1000000000,
     markegiles: 1000000000,
