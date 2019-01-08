@@ -561,16 +561,16 @@ function startApp() {
       if (json.to == username && Private.models.length > 0){
         for (var i = 0;i < Private.models.length;i++){
           if (json.amount == Private.models[i][2] && json.tier == Private.models[i][1]){
-            Utils.assignLevel(from, json.tier, current + Private.models[i][0] )
+            Utils.assignLevel(from, json.tier, processor.getCurrentBlockNumber() + Private.models[i][0] )
             break;
           }
         }
       }
       state.balances[json.to] += json.amount;
       state.balances[from] -= json.amount;
-      console.log(current + `Send occurred from ${from} to ${json.to} of ${json.amount}DLUX`)
+      console.log(current + `:Send occurred from ${from} to ${json.to} of ${json.amount}DLUX`)
     } else {
-      console.log(current + `Invalid send operation from ${from}`)
+      console.log(current + `:Invalid send operation from ${from}`)
     }
   });
 
@@ -612,9 +612,9 @@ function startApp() {
         state.pow.t += amount
         state.balances[from] -= amount
       }
-      console.log(current + `Power up occurred by ${from} of ${json.amount} DLUX`)
+      console.log(current + `:Power up occurred by ${from} of ${json.amount} DLUX`)
     } else {
-      console.log(current + `Invalid power up operation from ${from}`)
+      console.log(current + `:Invalid power up operation from ${from}`)
     }
   });
 
@@ -624,12 +624,12 @@ function startApp() {
       var odd = parseInt(amount % 13), weekly = parseInt(amount / 13)
       for (var i = 0;i<13;i++){
         if (i==12){weekly += odd}
-        state.chrono.push({block: parseInt(current+(200000 * (i+1))), op:'power_down', amount: weekly, by: from})
+        state.chrono.push({block: parseInt(processor.getCurrentBlockNumber()+(200000 * (i+1))), op:'power_down', amount: weekly, by: from})//fix current!!!
       }
       utils.chronoSort()
-      console.log(current + `Power down occurred by ${from} of ${amount} DLUX`)
+      console.log(current + `:Power down occurred by ${from} of ${amount} DLUX`)
     } else {
-      console.log(current + `Invalid power up operation from ${from}`)
+      console.log(current + `:Invalid power up operation from ${from}`)
     }
   });
 
@@ -650,20 +650,20 @@ function startApp() {
           state.rolling[from] -= parseInt(10000 * state.rolling[from] / 100000)
         }
         } else {
-          console.log(current + `${from} tried to vote for an unknown post`)
+          console.log(current + `:${from} tried to vote for an unknown post`)
         }
       }
     } else {
-      console.log(current + `${from} doesn't have the dlux power to vote`)
+      console.log(current + `:${from} doesn't have the dlux power to vote`)
     }
   });
 
   processor.on('create_nft', function(json, from) {
-    var self = 'DLUX' + hashThis(from + current), error = '', actions = [0]
+    var self = 'DLUX' + hashThis(from + processor.getCurrentBlockNumber()), error = '', actions = [0]//fix current with block num
 
     var nft = {
       self,
-      block: current,
+      block: processor.getCurrentBlockNumber(),//fix current with blocknum
       creator: from,
       bearers: [from],
       owners: [{[from]:1}],
@@ -693,10 +693,10 @@ function startApp() {
       votes: [],
       benifactors: [[{u:from,d:json.nft.bal || 0}],[]],
       assetBenifactors: [[],[]],
-      lastExecutor: [from, current],
+      lastExecutor: [from, processor.getCurrentBlockNumber()],
       listener: [],// to set up custom pulls from steem stream, for instance json sm gifts
-      matures: current,
-      expires: current + 100000,
+      matures: processor.getCurrentBlockNumber(),
+      expires: processor.getCurrentBlockNumber() + 100000,
     }
     if(json.nft.pow){
       if(state.pow[from]){
@@ -738,7 +738,7 @@ function startApp() {
     nft.icon = json.nft.icon  || ''
     nft.stack = json.nft.stack  || []
     //nft.listener = json.nft.listener || []
-    if (json.nft.expires > current){
+    if (json.nft.expires > processor.getCurrentBlockNumber()){ //fix current
       nft.expires = json.nft.expires
     }
     if (json.nft.matures && json.nft.matures < json.nft.expires){
@@ -861,13 +861,13 @@ function startApp() {
         for (var i = 0;i<state.contracts[from].length;i++){
           if (state.contracts[from][i][0]==json.nftid){
             state.contracts[from].splice(i,1)
-            console.log(current + `${from} deleted an NFT`)
+            console.log(current + `:${from} deleted an NFT`)
             e=0
             break;
           }
         }
     }
-    if (e){console.log(current + `${from} tried to delete an NFT that wasn't theirs`)}
+    if (e){console.log(current + `:${from} tried to delete an NFT that wasn't theirs`)}
   });
 
   processor.on('nft_op', function(json, from) {
@@ -895,19 +895,19 @@ function startApp() {
             state.contracts[json.nftid] = json.proposal
             state.exe.splice(j,1)
             utils.cleanExeq(json.nftid)
-            console.log(current + `${json.nftid} updated`)
+            console.log(current + `:${json.nftid} updated`)
           }
         } else if (auth == 'updated' && state.exes[j].op.length == 3){
           if (state.exes[j].op[0].proposal == state.exes[j].op[2].proposal){
             state.contracts[json.nftid] = json.proposal
             state.exe.splice(j,1)
             utils.cleanExeq(json.nftid)
-            console.log(current + `${json.nftid} updated`)
+            console.log(current + `:${json.nftid} updated`)
           } else if (state.exes[j].op[1].proposal == state.exes[j].op[2].proposal){
             state.contracts[json.nftid] = json.proposal
             state.exe.splice(j,1)
             utils.cleanExeq(json.nftid)
-            console.log(current + `${json.nftid} updated`)
+            console.log(current + `:${json.nftid} updated`)
           }
         }
       }
@@ -916,17 +916,17 @@ function startApp() {
         state.contracts[json.nftid] = json.proposal
         state.exe.splice(j,1)
         utils.cleanExeq(json.nftid)
-        console.log(current + `${json.nftid} updated`)
+        console.log(current + `:${json.nftid} updated`)
       } else if (state.exes[j].op[1].proposal == json.proposal && current > 50 + state.exes[j].b){
         state.contracts[json.nftid] = json.proposal
         state.exe.splice(j,1)
         utils.cleanExeq(json.nftid)
-        console.log(current + `${json.nftid} updated`)
+        console.log(current + `:${json.nftid} updated`)
       } else if (state.exes[j].op[2].proposal == json.proposal && current > 50 + state.exes[j].b){
         state.contracts[json.nftid] = json.proposal
         state.exe.splice(j,1)
         utils.cleanExeq(json.nftid)
-        console.log(current + `${json.nftid} updated`)
+        console.log(current + `:${json.nftid} updated`)
       }
     }
   });
@@ -955,7 +955,7 @@ function startApp() {
         if (state.balances[found.auths[0][1][1].to] > found.amount){
           state.balances[found.auths[0][1][1].to] -= found.amount
           state.contracts[json.to][json.contract].escrow = found.amount
-          console.log(current + `${from} sold ${state.contracts[json.to][json.contract].amount} DLUX`)
+          console.log(current + `:${from} sold ${state.contracts[json.to][json.contract].amount} DLUX`)
           state.balances[from] -= found.amount
           state.balances[found.from] += found.amount
           state.escrow.push(found.auths[0])
@@ -1019,8 +1019,8 @@ function startApp() {
         state.contracts[from] = {[txid]:state.dex.steem.sellOrders[state.dex.steem.sellOrders.length -1]}
       }
       sortSellArray (state.dex.steem.sellOrders, 'rate')
-      console.log(current + `@${from} has placed order ${txid} to sell ${json.dlux} for ${json.steem} STEEM`)
-    } else {console.log(current + `@${from} tried to place an order to sell ${json.dlux} for ${json.steem} STEEM`)}
+      console.log(current + `:@${from} has placed order ${txid} to sell ${json.dlux} for ${json.steem} STEEM`)
+    } else {console.log(current + `:@${from} tried to place an order to sell ${json.dlux} for ${json.steem} STEEM`)}
   });
 
   processor.on('dex_sbd_sell', function(json, from) {
@@ -1035,7 +1035,7 @@ function startApp() {
         state.contracts[from] = {[txid]:state.dex.sbd.sellOrders[state.dex.sbd.sellOrders.length -1]}
       }
       sortSellArray (state.dex.sbd.sellOrders, 'rate')
-      console.log(current + `@${from} has placed an order to sell ${json.dlux} for ${json.sbd} SBD`)
+      console.log(current + `:@${from} has placed an order to sell ${json.dlux} for ${json.sbd} SBD`)
     }
   });
 
@@ -1055,7 +1055,7 @@ function startApp() {
         state.dex.sbd.buyOrders.splice(i,1)
       }
     }
-    console.log(current + `${from} has canceled ${i} orders and recouped ${t} DLUX`)
+    console.log(current + `:${from} has canceled ${i} orders and recouped ${t} DLUX`)
   });
 
   processor.on('dex_clear_sells', function(json, from) {
@@ -1078,7 +1078,7 @@ function startApp() {
         i++
       }
     }
-    console.log(current + `${from} has canceled ${i} orders and recouped ${t} DLUX`)
+    console.log(current + `:${from} has canceled ${i} orders and recouped ${t} DLUX`)
   });
 
   processor.onOperation('escrow_transfer', function(json,from){//grab posts to reward
@@ -1130,7 +1130,7 @@ function startApp() {
           }
         ]]
       if(parseFloat(json.steem_amount) > 0) {
-        console.log(current + `@${json.from} signed a ${json.steem_amount.amount} STEEM buy order`)
+        console.log(current + `:@${json.from} signed a ${json.steem_amount.amount} STEEM buy order`)
         state.dex.steem.buyOrders.push({txid, from: json.from, steem: json.steem_amount.amount, sbd: 0, amount: dextx.dlux , rate:parseInt((dextx.dlux)*10000/json.steem_amount.amount), block:current, escrow_id:json.escrow_id, agent:json.agent, fee:json.fee.amount, partial:false, auths, reject})
         if (state.contracts[json.from]){
           state.contracts[json.from][txid] = {txid, from: json.from, steem: json.steem_amount.amount, sbd: 0, amount: dextx.dlux , rate:parseInt((dextx.dlux)*10000/json.steem_amount.amount), block:current, escrow_id:json.escrow_id, agent:json.agent, fee:json.fee.amount, partial:false, auths, reject}
@@ -1138,7 +1138,7 @@ function startApp() {
           state.contracts[json.from] = {txid, from: json.from, steem: json.steem_amount.amount, sbd: 0, amount: dextx.dlux , rate:parseInt((dextx.dlux)*10000/json.steem_amount.amount), block:current, escrow_id:json.escrow_id, agent:json.agent, fee:json.fee.amount, partial:false, auths, reject}
         }
       } else if (parseFloat(json.sbd_amount) > 0){
-        console.log(current + `@${json.from} signed a ${json.sbd_amount.amount} SBD buy order`)
+        console.log(current + `:@${json.from} signed a ${json.sbd_amount.amount} SBD buy order`)
         state.dex.sbd.buyOrders.push({txid, from: json.from, steem: 0, sbd: json.sbd_amount.amount, amount: dextx.dlux , rate:parseInt((dextx.dlux)*10000/json.sbd_amount.amount), block:current, escrow_id:json.escrow_id, agent:json.agent, fee:json.fee.amount, partial:false, auths, reject})
         if (state.contracts[json.from]){
           state.contracts[json.from][txid] = {txid, from: json.from, steem: 0, sbd: json.sbd_amount.amount, amount: dextx.dlux , rate:parseInt((dextx.dlux)*10000/json.sbd_amount.amount), block:current, escrow_id:json.escrow_id, agent:json.agent, fee:json.fee.amount, partial:false, auths, reject}
@@ -1334,13 +1334,12 @@ function startApp() {
           contracts: 0,
           escrows: 0,
           lastGood: 0,
-          report: {},
-          escrow: z
+          report: {},         escrow: z
         }
       }
-      console.log(current + `@${from} has bid the steem-state node ${json.domain} at ${json.bidRate}`)
+      console.log(current + `:@${from} has bid the steem-state node ${json.domain} at ${json.bidRate}`)
     } else {
-      console.log(current + `Invalid steem-state node operation from ${from}`)
+      console.log(current + `:Invalid steem-state node operation from ${from}`)
     }
   });
 
@@ -1358,28 +1357,28 @@ function startApp() {
     }
     delete state.markets.node[from].domain
     delete state.markets.node[from].bidRate
-    console.log(current + `@${from} has signed off their dlux node`)
+    console.log(current + `:@${from} has signed off their dlux node`)
   });
 
   processor.on('set_delegation_reward', function(json, from) {
     if (from == 'dlux-io' && typeof json.rate === 'number' && json.rate < 2001 && json.rate >= 0) {
       state.stats.delegationRate = json.rate
     }
-    console.log(current + `@dlux-io has updated their delegation reward rate`)
+    console.log(current + `:@dlux-io has updated their delegation reward rate`)
   });
 
   processor.on('set_resteem_reward', function(json, from) {
     if (from == 'dlux-io' && typeof json.reward === 'number' && json.reward < 10001 && json.reward >= 0) {
       state.stats.resteemRewad = json.reward
     }
-    console.log(current + `@dlux-io has updated their delegation reward rate`)
+    console.log(current + `:@dlux-io has updated their delegation reward rate`)
   });
 
   processor.on('expire_post', function(json, from) {
     if (from == 'dlux-io' && typeof json.permlink === 'string') {
       state.expired.push(json.permlink)
     }
-    console.log(current + `@dlux-io has expired rewards on ${json.permlink}`)
+    console.log(current + `:@dlux-io has expired rewards on ${json.permlink}`)
   });
 
   processor.on('report', function(json, from) {
@@ -1404,10 +1403,10 @@ function startApp() {
       } else {
         state.queue.push(from)
       }
-      console.log(current + `@${from}'s report has been processed`)
+      console.log(current + `:@${from}'s report has been processed`)
     } else {
       if (from === username && NODEDOMAIN && BIDRATE) {
-        console.log(current + `This node posted a spurious report and in now attempting to register`)
+        console.log(current + `:This node posted a spurious report and in now attempting to register`)
         transactor.json(username, active, 'node_add', {
           domain: NODEDOMAIN,
           bidRate: BIDRATE,
@@ -1418,9 +1417,9 @@ function startApp() {
           }
         })
       } else if (from === username) {
-        console.log(current + `This node has posted a spurious report\nPlease configure your DOAMAIN and BIDRATE env variables`)
+        console.log(current + `:This node has posted a spurious report\nPlease configure your DOAMAIN and BIDRATE env variables`)
       } else {
-      console.log(current + `@${from} has posted a spurious report`)
+      console.log(current + `:@${from} has posted a spurious report`)
     }
     }
   });
@@ -1435,7 +1434,7 @@ function startApp() {
         if(valid && state.balances.rm > state.stats.resteemReward){
           state.balances[from] += state.stats.resteemReward;
           state.balances.rm -= state.stats.resteemReward;
-          console.log(current + `Resteem reward of ${state.stats.resteemReward} given to ${from}`);
+          console.log(current + `:Resteem reward of ${state.stats.resteemReward} given to ${from}`);
         }
       }
     }
@@ -1453,7 +1452,7 @@ function startApp() {
         state.posts.push({author:json.author, permlink: json.permlink})
         state.chrono.push({block:parseInt(current+300000), op:'post_reward', author: json.author, permlink: json.permlink})
         utils.chronoSort()
-        console.log(current + `Added ${json.author}/${json.permlink} to dlux rewardable content`)
+        console.log(current + `:Added ${json.author}/${json.permlink} to dlux rewardable content`)
       }
     }
   });
@@ -1494,7 +1493,7 @@ function startApp() {
       const weight = parseInt((Math.sqrt(1 - Math.pow(icoEntry/(30240), 2))/2 + 0.5)*1000000)
       const amount = parseInt(parseFloat(json.amount) * 1000)
       state.ico.push({[json.from]:(weight * amount)})
-      console.log(current + `${json.from} bid in DLUX auction with ${json.amount} with a ${weight} multiple`)
+      console.log(current + `:${json.from} bid in DLUX auction with ${json.amount} with a ${weight} multiple`)
     } else if(json.to == 'dlux-io' && json.memo.substr(0,7) == 'DLUX_DEX'){
       const amount = parseInt(parseFloat(json.amount) * 1000)
       const rate = parseInt(json.memo)
@@ -1518,7 +1517,7 @@ function startApp() {
         }
       }
         state.delegations.push({delegator:json.delegator,vests})
-        console.log(current + `${json.delegator} has delegated ${vests} vests to @dlux-io`)
+        console.log(current + `:${json.delegator} has delegated ${vests} vests to @dlux-io`)
     } else if (json.delegatee == 'dlux-io' && !vests){
       for (var i = 0; i < state.delegations.length;i++){
         if (state.delegations[i].delegator == json.delegator){
@@ -1526,7 +1525,7 @@ function startApp() {
           break;
         }
       }
-      console.log(current + `${json.delegator} has removed delegation to @dlux-io`)
+      console.log(current + `:${json.delegator} has removed delegation to @dlux-io`)
     }
   });
 
@@ -1544,7 +1543,7 @@ function startApp() {
             state.balances[state.chrono[0].by] += state.chrono[0].amount
             state.pow[state.chrono[0].by] -= state.chrono[0].amount
             state.pow.t -= state.chrono[0].amount
-            console.log(current + `${state.chrono[0].by} powered down ${state.chrono[0].amount} DLUX`)
+            console.log(current + `:${state.chrono[0].by} powered down ${state.chrono[0].amount} DLUX`)
             state.chrono.shift();
             break;
           case 'post_reward':
@@ -1553,7 +1552,7 @@ function startApp() {
               w += post.voters[node].weight
             }
             state.br.push({op:dao_content, post, totalWeight: w})
-            console.log(current + `${post.author}/${post.permlink} voting expired and queued for payout`)
+            console.log(current + `:${post.author}/${post.permlink} voting expired and queued for payout`)
             state.chrono.shift();
             break;
           default:
@@ -1566,10 +1565,10 @@ function startApp() {
         console.log('At block', num, 'with', result.head_block_number-num, `left until real-time. DAO @ ${(num - 20000) % 30240}`)
       });
     }
-    if(num % 100 === 5 && processor.isStreaming() && state.markets.node[username].domain) {
+    if(num % 100 === 5 && processor.isStreaming()) {
       check(num);
     }
-    if(num % 100 === 50 && processor.isStreaming() && state.markets.node[username].domain) {
+    if(num % 100 === 50 && processor.isStreaming()) {
       report(num);
       broadcast = 2
     }
@@ -1581,7 +1580,7 @@ function startApp() {
       const blockState = Buffer.from(JSON.stringify([num, state]))
       plasma.hashBlock = num
       plasma.hashLastIBlock = hashThis(blockState)
-      console.log(current + `Signing: ${plasma.hashLastIBlock}`)
+      console.log(current + `:Signing: ${plasma.hashLastIBlock}`)
       if(processor.isStreaming()){ipfsSaveState(num, blockState);}
     }
     for(var p = 0;p < pa.length;p++){ //automate some tasks
@@ -1736,6 +1735,17 @@ function startApp() {
 
   processor.onStreamingStart(function() {
     console.log("At real time.")
+    if (state.markets.node[username]){if(!state.markets.node[username].domain && NODEDOMAIN){
+      transactor.json(username, active, 'node_add', {
+        domain: NODEDOMAIN,
+        bidRate: BIDRATE,
+        escrow
+      }, function(err, result) {
+        if(err) {
+          console.error(err);
+        }
+      })
+    }}
   });
 
   processor.start();
@@ -2087,21 +2097,23 @@ function check() { //do this maybe cycle 5, gives 15 secs to be streaming behind
       self: self,
       agreement: false,
     }
-    var domain = state.markets.node[self].domain
-    if (domain.slice(-1) == '/') {
-      domain = domain.substring(0, domain.length - 1)
-    }
-    fetch(`${domain}/stats`)
-      .then(function(response) {
-        //console.log(response)
-        return response.json();
-      })
-      .then(function(myJson) {
-        //console.log(JSON.stringify(myJson));
-        if (state.stats.tokenSupply === myJson.stats.tokenSupply){
-          plasma.markets.nodes[myJson.node].agreement = true
-        }
-      });
+    if (state.markets.node[self].domain){
+      var domain = state.markets.node[self].domain
+      if (domain.slice(-1) == '/') {
+        domain = domain.substring(0, domain.length - 1)
+      }
+      fetch(`${domain}/stats`)
+        .then(function(response) {
+          //console.log(response)
+          return response.json();
+        })
+        .then(function(myJson) {
+          //console.log(JSON.stringify(myJson));
+          if (state.stats.tokenSupply === myJson.stats.tokenSupply){
+            plasma.markets.nodes[myJson.node].agreement = true
+          }
+        });
+      }
     }
 }
 
@@ -2207,7 +2219,7 @@ function dao(num) {
   }
   state.stats.marketingRate = parseInt(b/i)
   state.stats.nodeRate = parseInt(j/i)
-  console.log(current + `DAO Accounting In Progress:\n${t} has been generated today\n${state.stats.marketingRate} is the marketing rate.\n${state.stats.nodeRate} is the node rate.`)
+  console.log(current + `:DAO Accounting In Progress:\n${t} has been generated today\n${state.stats.marketingRate} is the marketing rate.\n${state.stats.nodeRate} is the node rate.`)
   state.balances.rn += parseInt(t* parseInt(state.stats.nodeRate)/10000)
 
   state.balances.ra = parseInt(state.balances.ra) - parseInt(t* parseInt(state.stats.nodeRate)/10000)
@@ -2215,7 +2227,7 @@ function dao(num) {
   if(state.balances.rm > 1000000000){state.balances.rc += state.balances.rm - 1000000000;state.balances.rm = 1000000000}
   state.balances.ra = parseInt(state.balances.ra) - parseInt(t*state.stats.marketingRate/10000)
   i=0,j=0
-  console.log(current + `${state.balances.rm} is availible in the marketing account\n${state.balances.rn} DLUX set asside to distribute to nodes`)
+  console.log(current + `:${state.balances.rm} is availible in the marketing account\n${state.balances.rn} DLUX set asside to distribute to nodes`)
   for (var node in state.markets.node){ //tally the wins
     j = j + parseInt(state.markets.node[node].wins)
   }
@@ -2225,14 +2237,14 @@ function dao(num) {
     if(state.balances[node]){state.balances[node] += i}
     else {state.balances[node] = i}
     state.balances.rn -= i
-    console.log(current + `@${node} awarded ${i} DLUX for ${state.markets.node[node].wins} credited transaction(s)`)
+    console.log(current + `:@${node} awarded ${i} DLUX for ${state.markets.node[node].wins} credited transaction(s)`)
     state.markets.node[node].wins = 0
   }
   state.balances.rd += parseInt(t*state.stats.delegationRate/10000) // 10% to delegators
   state.balances.ra -= parseInt(t*state.stats.delegationRate/10000)
   b=state.balances.rd
   j=0
-  console.log(current + `${b} DLUX to distribute to @dlux-io delegators`)
+  console.log(current + `:${b} DLUX to distribute to @dlux-io delegators`)
   for (i = 0; i<state.delegations.length;i++){ //count vests
     j += state.delegations[i].vests
   }
@@ -2243,7 +2255,7 @@ function dao(num) {
     }
     state.balances[state.delegations[i].delegator] += k
     state.balances.rd -= k
-    console.log(current + `${k} DLUX awarded to ${state.delegations[i].delegator} for ${state.delegations[i].vests} VESTS`)
+    console.log(current + `:${k} DLUX awarded to ${state.delegations[i].delegator} for ${state.delegations[i].vests} VESTS`)
   }
   if(num < 31288131){
   var dailyICODistrobution = 312500000, y=0
@@ -2257,10 +2269,10 @@ function dao(num) {
       if (!state.balances[node]){state.balances[node] = 0}
       state.balances[node] += parseInt(state.ico[i][node]/y*312500000)
       dailyICODistrobution -= parseInt(state.ico[i][node]/y*312500000)
-      console.log(current + `${node} awarded  ${parseInt(state.ico[i][node]/y*312500000)} DLUX for ICO auction`)
+      console.log(current + `:${node} awarded  ${parseInt(state.ico[i][node]/y*312500000)} DLUX for ICO auction`)
       if (i == state.ico.length - 1){
         state.balances[node] += dailyICODistrobution
-        console.log(current + `${node} given  ${dailyICODistrobution} remainder`)
+        console.log(current + `:${node} given  ${dailyICODistrobution} remainder`)
       }
     }
   }
@@ -2280,7 +2292,7 @@ function dao(num) {
       state.balances.rc -= parseInt(state.br[i].post.voters[j].weight/q * 3)
       state.balances[state.br[i].post.voters[j].from] += parseInt(state.br[i].post.voters[j].weight/q * 3)
       state.balances.rc -= parseInt(state.br[i].post.voters[j].weight * 2/q * 3)
-      console.log(current + `${state.br[i].post.voters[j].from} awarded ${parseInt(state.br[i].post.voters[j].weight * 2 /q * 3)} for ${state.br[i].post.author}/${state.br[i].post.permlink}`)
+      console.log(current + `:${state.br[i].post.voters[j].from} awarded ${parseInt(state.br[i].post.voters[j].weight * 2 /q * 3)} for ${state.br[i].post.author}/${state.br[i].post.permlink}`)
     }
   }
   state.br = []
@@ -2333,10 +2345,9 @@ function report(num) {
   agreements = {}
   if (plasma.markets) {
     for (var node in plasma.markets.nodes){
-      var self = plasma.markets.nodes[node].self;
-      if (plasma.markets.nodes[self].agreement){
-        agreements[self] = {
-          node: self,
+      if (plasma.markets.nodes[node].agreement){
+        agreements[node] = {
+          node,
           agreement: true
         }
       }
@@ -2368,7 +2379,7 @@ function report(num) {
         if(err) {
           console.error(err, `\nMost likely your ACCOUNT and KEY variables are not set!`);
         } else {
-          console.log(current + `Sent State report and published ${plasma.hashLastIBlock} for ${plasma.hashBlock}`)
+          console.log(current + `:Sent State report and published ${plasma.hashLastIBlock} for ${plasma.hashBlock}`)
         }
     })//sum plasma and post a transaction
   }
@@ -2619,7 +2630,7 @@ function ipfsSaveState(blocknum, hashable) {
   ipfs.add(hashable, (err, IpFsHash) => {
     if (!err){
       plasma.hashLastIBlock = IpFsHash[0].hash
-      console.log(current + `Saved:  ${IpFsHash[0].hash}`)
+      console.log(current + `:Saved:  ${IpFsHash[0].hash}`)
     } else {
       console.log({cycle}, 'IPFS Error', err)
       cycleipfs(cycle++)
@@ -2671,31 +2682,26 @@ var Utils = {
     ipfs.add(priv, (err, IpFsHash) => {
       if (!err){
         plasma.privHash = IpFsHash[0].hash
-        console.log(current + `Saved: Private state ${IpFsHash[0].hash}`)
+        console.log(current + `:Saved: Private state ${IpFsHash[0].hash}`)
       } else {
         console.log({cycle}, 'IPFS Error', err)
       }
     })
-  },
-  addModel: function(num, tier, dlux){
+  }, addModel: function(num, tier, dlux){
     Private.models.push([num,tier,dlux])
     Utils.save()
-  },
-  deleteModel: function(num, tier, dlux){
+  }, deleteModel: function(num, tier, dlux){
     for (var i = 0; i < Private.models.length;i++){
       if (Private.models[i] == [num,tier,dlux]){Private.models.splice(i,1);break;}
     }
     Utils.save()
-  },
-  addContent: function(content){
+  }, addContent: function(content){
     Private.content[content.self] = content
     Utils.save()
-  },
-  deleteContent: function(content){
+  }, deleteContent: function(content){
     delete Private.content[content]
     Utils.save()
-  },
-  setContentLevel: function(content, level){
+  }, setContentLevel: function(content, level){
     try{
       if (level == 0 && Private.content[content].level > 0){
         Private.content[content].body = steemClient.memo.decode(memoKey, Private.content[content].body)
@@ -2707,8 +2713,7 @@ var Utils = {
     } catch (e){
       console.log(e)
     }
-  },
-  ban: function(name){
+  }, ban: function(name){
     if (Private.banned.indexOf(name) == -1){
       Private.banned.push(name)
       var i = Utils.accessLevel(name)
@@ -2717,15 +2722,13 @@ var Utils = {
       }
       Utils.save()
     }
-  },
-  unban: function(name){
+  }, unban: function(name){
     var i = Private.banned.indexOf(name)
     if (i>=0){
       Private.banned.splice(i,1)
     }
     Utils.save()
-  },
-  getContent: function(content, name){
+  }, getContent: function(content, name){
     return new Promise((resolve, reject) => {
     var error = ''
     var json = ''
@@ -2746,8 +2749,7 @@ var Utils = {
     }
     resolve(result)
   })
-  },
-  getAllContent: function(name){
+  }, getAllContent: function(name){
     return new Promise((resolve, reject) => {
       if(!Private.pubKeys[name]){
         Utils.sealer(null, name).then(meh => {
@@ -2776,15 +2778,13 @@ var Utils = {
         resolve(value)
       }
     })
-  },
-  cleaner: function(num){
+  }, cleaner: function(num){
     for (var i = 0; i < Private.tier.length;i++){
       for (var j = 0; j < Private.tier[i].length;j++){
         if (Private.tier[i][j][0] <= num){Private.tier[i].splice(j,1)}
       }
     }
-  },
-  assignLevel: function(name, level, until){
+  }, assignLevel: function(name, level, until){
     var error = '', current = ''
     if (level < Private.tier.length){
       try {
@@ -2817,8 +2817,7 @@ var Utils = {
       Private.tier.splice(tier,1)
       Utils.save();
     }
-  },
-  accessLevel: function(name){
+  }, accessLevel: function(name){
     var level = 0
     for (var i = 0; i < Private.tier.length;i++){
       for (var j = 0; j < Private.tier[i].length;j++){
@@ -2826,13 +2825,11 @@ var Utils = {
       }
     }
     return level
-  },
-  upKey: function(name, key){
+  }, upKey: function(name, key){
     if (Private.pubKeys[name]){
       Private.pubKeys[name] = key
     }
-  },
-  sealer: function(md, to){
+  }, sealer: function(md, to){
     return new Promise((resolve, reject) => {
       if(!Private.pubKeys[to]){
         steemClient.api.getAccounts([to], (err, result) => {
@@ -2853,8 +2850,7 @@ var Utils = {
         resolve(encrypted)
       }
     });
-  },
-  unsealer: function(enc){
+  }, unsealer: function(enc){
     var decoded = steemClient.memo.decode(memoKey, enc)
     return decoded
   }
