@@ -531,10 +531,10 @@ fetch(`${state.markets.node[selector].domain}/markets`)
           startWith(myJson.markets.node[selector].report.hash)//myJson.stats.hashLastIBlock);
         }
       } else {
-        console.log(`Starting from ${myJson.hash}`)
+        console.log(`Starting from ${myJson.markets.node[selector].report}`)
         startWith(myJson.markets.node[selector].report.hash);
       }
-  }).catch(error => {console.log(`Starting 'startingHash': ${myJson.markets.node[selector].report.hash}`);startWith(myJson.markets.node[selector].hash);});
+  }).catch(error => {console.log(error, `\nStarting 'startingHash': ${config.engineCrank}`);startWith(config.engineCrank);});
 
 
 function startWith (sh){
@@ -1372,6 +1372,8 @@ function startApp() {
     }
     delete state.markets.node[from].domain
     delete state.markets.node[from].bidRate
+    delete state.markets.node[from].marketingRate
+    state.markets.node[from].escrow = false
     console.log(current + `:@${from} has signed off their dlux node`)
   });
 
@@ -2150,15 +2152,12 @@ function tally(num) {//tally state before save and next report
       votes: 0
     } //build a dataset to count
   }
-  for (var node in tally.agreements.runners) { //cycle through this data
-      if (tally.agreements.runners[node].report.agreements[node].agreement == true){ //only count what nodes believe are true
-        tally.agreements.votes++ //total votes
-        for (var subnode in tally.agreements.runners[node].report.agreements){
-          if(tally.agreements.runners[node].report.agreements[subnode].agreement == true && tally.agreements.tally[subnode]){
-            tally.agreements.tally[subnode].votes++
-          }
-        }
+  for (var node in tally.agreements.runners) {
+    for (var subnode in tally.agreements.runners[node].report.agreements){
+      if(tally.agreements.runners[node].report.agreements[subnode].agreement == true && tally.agreements.tally[subnode]){
+        tally.agreements.tally[subnode].votes++
       }
+    }
   }
   var l = 0
   var consensus
@@ -2166,6 +2165,29 @@ function tally(num) {//tally state before save and next report
       l++
     if (tally.agreements.tally[node].votes / tally.agreements.votes >= 2 / 3) {
       consensus = tally.agreements.runners[node].report.hash
+      if (consensus != plasma.hashLastIBlock && node != config.username  && processor.isStreaming()) {
+        var errors = ['failed Consensus']
+        if (VERSION != state.markets.node[node].report.version){console.log(current + `:Abandoning ${plasma.hashLastABlock} because ${errors[0]}`)}
+        const blockState = Buffer.from(JSON.stringify([num, state]))
+        plasma.hashBlock = num
+        plasma.hashLastABlock = hashThis(blockState)
+        console.log(current + `:Abandoning ${plasma.hashLastABlock} because ${errors[0]}`)
+        var abd = asyncIpfsSaveState(num, blockState)
+        abd.then(function(value) {
+            transactor.json(config.username, config.active, 'error_CF', {
+              errors: JSON.stringify([errors]),
+              reject: value
+            }, function(err, result) {
+              if(err) {
+                console.error(err, `\nMost likely your 'active' and 'account' variables are not set!`);
+                startWith(consensus)
+              } else {
+                console.log(current + `: Published error report and attempting to restart from consensus ${consensus}`)
+                startWith(consensus)
+              }
+          })
+        });
+      }
     } else if(state.markets.node[node].report.hash !== state.stats.hashLastIBlock && l > 1) {
       delete state.runners[node]
       console.log('uh-oh:' + node +' scored '+ tally.agreements.tally[node].votes + '/' + tally.agreements.votes)
@@ -2192,7 +2214,7 @@ function tally(num) {//tally state before save and next report
       delete tally.election[node]
     }
     for (var node in tally.election){
-      if (tally.election[node].report.hash !== state.stats.hashLastIBlock){
+      if (tally.election[node].report.hash !== state.stats.hashLastIBlock && state.stats.hashLastIBlock){
         delete tally.election[node]
       }
     }
@@ -2225,8 +2247,8 @@ function dao(num) {
   var i=0,j=0,b=0,t=0
   t = parseInt(state.balances.ra)
   for (var node in state.runners){ //node rate
-    b = parseInt(b) + parseInt(state.markets.node[node].marketingRate )
-    j = parseInt(j) + parseInt(state.markets.node[node].bidRate)
+    b = parseInt(b) + parseInt(state.markets.node[node].marketingRate ) || 1
+    j = parseInt(j) + parseInt(state.markets.node[node].bidRate) || 1
     i++
     console.log(b,j,i)
   }
@@ -2361,7 +2383,12 @@ function dao(num) {
 }
 
 function report(num) {
-  agreements = {}
+  agreements = {
+    [config.username] : {
+      node: config.username,
+      agreement: true
+    }
+  }
   if (plasma.markets) {
     for (var node in plasma.markets.nodes){
       if (plasma.markets.nodes[node].agreement){
@@ -2670,6 +2697,25 @@ function ipfsSaveState(blocknum, hashable) {
         return;
       }
     }
+  })
+};
+
+function asyncIpfsSaveState(blocknum, hashable) {
+  return new Promise((resolve, reject) => {
+    ipfs.add(hashable, (err, IpFsHash) => {
+      if (!err){
+        resolve(IpFsHash[0].hash)
+        console.log(current + `:Saved:  ${IpFsHash[0].hash}`)
+      } else {
+        resolve('Failed to save state.')
+        console.log({cycle}, 'IPFS Error', err)
+        cycleipfs(cycle++)
+        if (cycle >= 25){
+          cycle = 0;
+          return;
+        }
+      }
+    })
   })
 };
 
