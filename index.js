@@ -2169,7 +2169,7 @@ function tally(num) {//tally state before save and next report
       l++
     if (tally.agreements.tally[node].votes / tally.agreements.votes >= 2 / 3) {
       consensus = tally.agreements.runners[node].report.hash
-      if (consensus != plasma.hashLastIBlock && node != config.username) {
+      if (consensus != plasma.hashLastIBlock && node != config.username  && processor.isStreaming()) {
         var errors = ['failed Consensus']
         if (VERSION != state.markets.node[node].report.version){console.log(current + `:Abandoning ${plasma.hashLastABlock} because ${errors[0]}`)}
         const blockState = Buffer.from(JSON.stringify([num, state]))
