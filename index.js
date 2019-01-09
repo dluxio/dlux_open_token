@@ -1,9 +1,3 @@
-const ENV = process.env;
-const username = ENV.account || '';
-const active = ENV.active || '';
-const memoKey = ENV.memo || '';
-const NODEDOMAIN = ENV.domain || ''
-const engineCrank = ENV.startingHash || ''
 const steem = require('dsteem');
 const steemState = require('steem-state');
 const steemTransact = require('steem-transact');
@@ -15,6 +9,7 @@ const args = require('minimist')(process.argv.slice(2));
 const express = require('express')
 const steemClient = require('steem')
 const fs = require('fs');
+const config = require('./config');
 //const RSS = require('rss-generator');
 // Attempts to get the hash of that state file.
 
@@ -33,22 +28,19 @@ const VERSION = 'v0.0.2a'
 const api = express()
 var http = require('http').Server(api);
 //const io = require('socket.io')(http)
-const port = ENV.PORT || 3000;
 var escrow = false
 var broadcast = 1
-const wif = steemClient.auth.toWif(username, active, 'active')
-const BIDRATE = ENV.BIDRATE
+const wif = steemClient.auth.toWif(config.username, config.active, 'active')
 const resteemAccount = 'dlux-io';
 var startingBlock = 29180000;
 var current, dsteem, testString
 try {
-  testString = steemClient.memo.encode(memoKey, Private.pubKeys[username], "#You have protected access") || "CMS system has not been set up."
+  testString = steemClient.memo.encode(config.memoKey, Private.pubKeys[config.username], "#You have protected access") || "CMS system has not been set up."
 } catch(e){testString="CMS system has not been set up. "}
 const prefix = 'dlux_test_';
 const streamMode = args.mode || 'irreversible';
 console.log("Streaming using mode", streamMode);
-const clientURL = ENV.APIURL || 'https://api.steemit.com'
-var client = new steem.Client(clientURL);
+var client = new steem.Client(config.clientURL);
 var processor;
 
 var pa = []
@@ -77,30 +69,30 @@ function cycleipfs(num){
   //ipfs = new IPFS({ host: state.gateways[num], port: 5001, protocol: 'https' });
 }
 
-if (active && NODEDOMAIN) {
+if (config.active && config.NODEDOMAIN) {
   escrow = true
   dsteem = new steem.Client('https://api.steemit.com')
 }
 
 api.get('/', (req, res, next) => {
   res.setHeader('Content-Type', 'application/json')
-  res.send(JSON.stringify({stats: state.stats, node: username, VERSION, realtime: current}, null, 3))
+  res.send(JSON.stringify({stats: state.stats, node: config.username, VERSION, realtime: current}, null, 3))
 });
-api.get('/@:username', (req, res, next) => {
-  let username = req.params.username
+api.get('/@:un', (req, res, next) => {
+  let un = req.params.un
   var bal, pb, lp, lb
   try {
-    bal = state.balances[username] || 0
+    bal = state.balances[un] || 0
   } catch(e){
     bal = 0
   }
   try {
-    pb = state.pow[username] || 0
+    pb = state.pow[un] || 0
   } catch(e){
     pb = 0
   }
   try {
-    lp = state.pow.n[username] || 0
+    lp = state.pow.n[un] || 0
   } catch(e){
     lp = 0
   }
@@ -109,11 +101,11 @@ api.get('/@:username', (req, res, next) => {
 });
 api.get('/stats', (req, res, next) => {
   res.setHeader('Content-Type', 'application/json');
-  res.send(JSON.stringify({stats: state.stats, node: username, VERSION, realtime: current}, null, 3))
+  res.send(JSON.stringify({stats: state.stats, node: config.username, VERSION, realtime: current}, null, 3))
 });
 api.get('/state', (req, res, next) => {
   res.setHeader('Content-Type', 'application/json');
-  res.send(JSON.stringify({state: state, node: username, VERSION, realtime: current}, null, 3))
+  res.send(JSON.stringify({state: state, node: config.username, VERSION, realtime: current}, null, 3))
 });
 api.get('/pending', (req, res, next) => {
   res.setHeader('Content-Type', 'application/json');
@@ -121,48 +113,64 @@ api.get('/pending', (req, res, next) => {
 });
 api.get('force', (req, res, next) => {
   res.setHeader('Content-Type', 'application/json');
-  res.send(JSON.stringify({stats: state, node: username, VERSION, realtime: current}, null, 3))
+  res.send(JSON.stringify({stats: state, node: config.username, VERSION, realtime: current}, null, 3))
 });
 api.get('/runners', (req, res, next) => {
   res.setHeader('Content-Type', 'application/json');
-  res.send(JSON.stringify({stats: state.runners, node: username, VERSION, realtime: current}, null, 3))
+  res.send(JSON.stringify({stats: state.runners, node: config.username, VERSION, realtime: current}, null, 3))
 });
 api.get('/markets', (req, res, next) => {
   res.setHeader('Content-Type', 'application/json');
-  res.send(JSON.stringify({markets: state.markets, stats: state.stats, node: username, VERSION, realtime: current}, null, 3))
+  res.send(JSON.stringify({markets: state.markets, stats: state.stats, node: config.username, VERSION, realtime: current}, null, 3))
 });
 api.get('/dex', (req, res, next) => {
   res.setHeader('Content-Type', 'application/json');
-  res.send(JSON.stringify({markets: state.dex, node: username, VERSION, realtime: current}, null, 3))
+  res.send(JSON.stringify({markets: state.dex, node: config.username, VERSION, realtime: current}, null, 3))
 });
 api.get('/priv/list/:un', (req, res, next) => {
   let un = req.params.un
-  res.setHeader('Content-Type', 'application/json');//needs memoKey to test more
-  res.send(JSON.stringify({list: Utils.getAllContent(un), access_level: Privte.utils.accessLevel(un), node: username, VERSION, realtime: current}, null, 3))
+  res.setHeader('Content-Type', 'application/json');
+  res.send(JSON.stringify({list: Utils.getAllContent(un), access_level: Privte.utils.accessLevel(un), node: config.username, VERSION, realtime: current}, null, 3))
 });
 api.get('/report/:un', (req, res, next) => {
   let un = req.params.un
   let report = state.markets.node[un].report || ''
-  res.setHeader('Content-Type', 'application/json');//needs memoKey to test more
-  res.send(JSON.stringify({[un]: report, node: username, hash: state.stats.hashLastIBlock, VERSION, realtime: current}, null, 3))
+  res.setHeader('Content-Type', 'application/json');
+  res.send(JSON.stringify({[un]: report, node: config.username, hash: state.stats.hashLastIBlock, VERSION, realtime: current}, null, 3))
 });
 api.get('/private/:un/:pl', (req, res, next) => {
   let un = req.params.un
   let pl = req.params.pl
-  res.setHeader('Content-Type', 'application/json');//needs memoKey to test more
+  res.setHeader('Content-Type', 'application/json');
   Utils.getContent(pl, un).then(value => {
     Utils.sealer(value.body,un).then(enc => {
       value.body = enc
-      res.send(JSON.stringify({[pl]: value, node: username, VERSION, realtime: current}, null, 3))
+      res.send(JSON.stringify({[pl]: value, node: config.username, VERSION, realtime: current}, null, 3))
     })
   });
 });
 //api.listen(port, () => console.log(`DLUX token API listening on port ${port}!\nAvailible commands:\n/@username =>Balance\n/stats\n/markets`))
-http.listen(port, function(){
-  console.log(`DLUX token API listening on port ${port}`);
+http.listen(config.port, function(){
+  console.log(`DLUX token API listening on port ${config.port}`);
 });
 var utils = {
   chronoSort: function (){state.chrono.sort(function(a, b){return a.block - b.block});},
+  cleaner: function(num, prune){
+    for (var node in state.markets.node){
+      if (state.markets.node[node].report.block < num - prune || 28800){
+        if (state.markets.node[node].report.stash && state.markets.node[node].report.stash.length < 255 && typeof state.markets.node[node].report.stash.length === 'string'){
+          var temp = {
+            stash: state.markets.node[node].report.stash,
+            hash: state.markets.node[node].report.hash
+          }
+          delete state.markets.node[node].report
+          state.markets.node[node].report = temp
+        } else {
+          delete state.markets.node[node].report
+        }
+      }
+    }
+  },
   agentCycler: function (){var x=state.queue.shift();state.queue.push(x);return x},
   cleanExeq: function (id){
     for (var i = 0; i < state.exeq.length;i++){
@@ -497,36 +505,36 @@ var plasma = {}
 var NodeOps = []
 
 const transactor = steemTransact(client, steem, prefix);
-var selector = 'caramaeplays'
-if (username == selector){selector = 'dlux-io'}
+var selector = 'dlux-io'
+if (config.username == selector){selector = 'markegiles'}
 
 fetch(`${state.markets.node[selector].domain}/markets`)
   .then(function(response) {
     return response.json();
   })
   .then(function(myJson) {
-      if(myJson.markets.node[username]){
-        if (myJson.markets.node[username].report.stash){
-          ipfs.cat(myJson.markets.node[username].report.stash, (err, file) => {
+      if(myJson.markets.node[config.username]){
+        if (myJson.markets.node[config.username].report.stash){
+          ipfs.cat(myJson.markets.node[config.username].report.stash, (err, file) => {
             if (!err){
               var data = JSON.parse(file);
               Private = data;
-              startWith(myJson.markets.node[username].report.hash)
-              console.log(`Starting from ${myJson.markets.node[username].report.hash}\nPrivate encrypted data recovered`)
+              console.log(`Starting from ${myJson.markets.node[config.username].report.hash}\nPrivate encrypted data recovered`)
+              startWith(myJson.markets.node[config.username].report.hash)
             } else {
-              startWith(myJson.stats.hashLastIBlock);
-              console.log(`Lost Stash... Abandoning and starting from ${myJson.stats.hashLastIBlock}`)
+              console.log(`Lost Stash... Abandoning and starting from ${myJson.stats.hashLastIBlock}`) //maybe a recovery fall thru?
+              startWith(myJson.markets.node[selector].report.hash);
             }
           });
         } else {
-          startWith(myJson.stats.hashLastIBlock);
           console.log(`No Private data found\nStarting from ${myJson.stats.hashLastIBlock}`)
+          startWith(myJson.markets.node[selector].report.hash)//myJson.stats.hashLastIBlock);
         }
       } else {
-        startWith(myJson.stats.hashLastIBlock);
         console.log(`Starting from ${myJson.hash}`)
+        startWith(myJson.markets.node[selector].report.hash);
       }
-  }).catch(error => {startWith(engineCrank);console.log(`Starting from ${myJson.stats.hashLastIBlock}`)});
+  }).catch(error => {console.log(`Starting 'startingHash': ${myJson.markets.node[selector].report.hash}`);startWith(myJson.markets.node[selector].hash);});
 
 
 function startWith (sh){
@@ -538,7 +546,7 @@ console.log(`Attempting to start from IPFS save state ${sh}`);
       state = data[1];
       startApp();
     } else {
-      startWith (engineCrank)
+      startWith (config.engineCrank)
       console.log(`${sh} failed to load, Replaying from genesis.\nYou may want to set the env var STARTHASH\nFind it at any token API such as token.dlux.io`)
     }
   });
@@ -564,7 +572,7 @@ function startApp() {
       if(state.balances[json.to] === undefined) {
         state.balances[json.to] = 0;
       }
-      if (json.to == username && Private.models.length > 0){
+      if (json.to == config.username && Private.models.length > 0){
         for (var i = 0;i < Private.models.length;i++){
           if (json.amount == Private.models[i][2] && json.tier == Private.models[i][1]){
             Utils.assignLevel(from, json.tier, processor.getCurrentBlockNumber() + Private.models[i][0] )
@@ -580,8 +588,8 @@ function startApp() {
     }
   });
 
-  processor.on(username, function(json, from) { //redesign for private stash
-    if (from == username){
+  processor.on(config.username, function(json, from) { //redesign for private stash
+    if (from == config.username){
       switch (json.exe) {
         case 'schedule':
           pa.push([
@@ -686,6 +694,7 @@ function startApp() {
         'b':'04',//
       },//0 destroy,
       authed: ['user'],
+      pubKey: '', //private key on physical item. sumbitter hashes private key to their steem name, easy to verify at network level
       weight: 1,//for multisig authed change on expires?? A always requires 2 if distributed
       behavior: -1,// -1 fail to depositors, -(2 + n) release to [n]table, 0 custom, 1 auction, 2 simple equity deposit, 3 simple bet(code 0/1),
       rule: '',//SP bearer inst // equity loan / auction with raffle / fair bet /
@@ -801,62 +810,62 @@ function startApp() {
     } else {console.log(error)}
   });
 
-  processor.on('custom_cms_' + username + '_add', function(json, from) {//json.to valid contract or random name json.nftid valid contract beared
-    if (from == username){
+  processor.on('custom_cms_' + config.username + '_add', function(json, from) {//json.to valid contract or random name json.nftid valid contract beared
+    if (from == config.username){
       Utils.addContent(json.content)
     }
   });
 
-  processor.on('custom_cms_' + username + '_set_level', function(json, from) {//json.to valid contract or random name json.nftid valid contract beared
-    if (from == username){
+  processor.on('custom_cms_' + config.username + '_set_level', function(json, from) {//json.to valid contract or random name json.nftid valid contract beared
+    if (from == config.username){
       Utils.setContentLevel(json.content, json.level)
     }
   });
 
-  processor.on('custom_cms_' + username + '_delete', function(json, from) {//json.to valid contract or random name json.nftid valid contract beared
-    if (from == username){
+  processor.on('custom_cms_' + config.username + '_delete', function(json, from) {//json.to valid contract or random name json.nftid valid contract beared
+    if (from == config.username){
       Utils.deleteContent(json.content)
     }
   });
 
-  processor.on('custom_cms_' + username + '_tier_add', function(json, from) {//json.to valid contract or random name json.nftid valid contract beared
-    if (from == username){
+  processor.on('custom_cms_' + config.username + '_tier_add', function(json, from) {//json.to valid contract or random name json.nftid valid contract beared
+    if (from == config.username){
       Utils.addAccessLevel()
     }
   });
 
-  processor.on('custom_cms_' + username + '_tier_delete', function(json, from) {//json.to valid contract or random name json.nftid valid contract beared
-    if (from == username){
+  processor.on('custom_cms_' + config.username + '_tier_delete', function(json, from) {//json.to valid contract or random name json.nftid valid contract beared
+    if (from == config.username){
       Utils.removeAccessLevel(json.tier)
     }
   });
 
-  processor.on('custom_cms_' + username + '_model_add', function(json, from) {//json.to valid contract or random name json.nftid valid contract beared
-    if (from == username){
+  processor.on('custom_cms_' + config.username + '_model_add', function(json, from) {//json.to valid contract or random name json.nftid valid contract beared
+    if (from == config.username){
       Utils.addModel(json.num,json.tier, json.dlux)
     }
   });
 
-  processor.on('custom_cms_' + username + '_model_delete', function(json, from) {//json.to valid contract or random name json.nftid valid contract beared
-    if (from == username){
+  processor.on('custom_cms_' + config.username + '_model_delete', function(json, from) {//json.to valid contract or random name json.nftid valid contract beared
+    if (from == config.username){
       Utils.deleteModel(json.num,json.tier, json.dlux)
     }
   });
 
-  processor.on('custom_cms_' + username + '_add_user', function(json, from) {//json.to valid contract or random name json.nftid valid contract beared
-    if (from == username){
+  processor.on('custom_cms_' + config.username + '_add_user', function(json, from) {//json.to valid contract or random name json.nftid valid contract beared
+    if (from == config.username){
       Utils.assignLevel(json.name, json.tier, json.expires)
     }
   });
 
-  processor.on('custom_cms_' + username + '_ban_user', function(json, from) {//json.to valid contract or random name json.nftid valid contract beared
-    if (from == username){
+  processor.on('custom_cms_' + config.username + '_ban_user', function(json, from) {//json.to valid contract or random name json.nftid valid contract beared
+    if (from == config.username){
       Utils.ban(json.name)
     }
   });
 
-  processor.on('custom_cms_' + username + '_unban_user', function(json, from) {//json.to valid contract or random name json.nftid valid contract beared
-    if (from == username){
+  processor.on('custom_cms_' + config.username + '_unban_user', function(json, from) {//json.to valid contract or random name json.nftid valid contract beared
+    if (from == config.username){
       Utils.unban(json.name)
     }
   });
@@ -1317,10 +1326,10 @@ function startApp() {
     if(json.domain && typeof json.domain === 'string') {
       var z = false
       if(json.escrow == true){z = true}
-      var int = parseInt(json.bidRate)
+      var int = parseInt(json.bidRate) || 0
       if (int < 1) {int = 1000}
       if (int > 1000) {int = 1000}
-      var t = parseInt(json.marketingRate)
+      var t = parseInt(json.marketingRate) || 0
       if (t < 1) {int = 2000}
       if (t > 2000) {int = 2000}
       if (state.markets.node[from]){
@@ -1411,18 +1420,18 @@ function startApp() {
       }
       console.log(current + `:@${from}'s report has been processed`)
     } else {
-      if (from === username && NODEDOMAIN) {
+      if (from === config.username && config.NODEDOMAIN) {
         console.log(current + `:This node posted a spurious report and in now attempting to register`)
-        transactor.json(username, active, 'node_add', {
-          domain: NODEDOMAIN,
-          bidRate: BIDRATE,
+        transactor.json(config.username, config.active, 'node_add', {
+          domain: config.NODEDOMAIN,
+          bidRate: config.bidRate,
           escrow
         }, function(err, result) {
           if(err) {
             console.error(err);
           }
         })
-      } else if (from === username) {
+      } else if (from === config.username) {
         console.log(current + `:This node has posted a spurious report\nPlease configure your DOAMAIN and BIDRATE env variables`)
       } else {
       console.log(current + `:@${from} has posted a spurious report`)
@@ -1595,12 +1604,12 @@ function startApp() {
         NodeOps.push([[0,0],pa[p][2],[pa[p][2],pa[p][3]]])
       }
     }
-    if(active){
+    if(config.active){
       var found = -1
       if(broadcast){broadcast--}
       while (!broadcast){
         for (var i = 0; i < state.escrow.length; i++){
-          if (state.escrow[i][0] == username){
+          if (state.escrow[i][0] == config.username){
             for (var j = 0; j < NodeOps.length;j++){
               if(NodeOps[j][2] == state.escrow[i][1][1]){found = j}
             }
@@ -1610,7 +1619,7 @@ function startApp() {
           }
         }
         for (var i = 0; i < state.exeq.length; i++){
-          if (state.exeq[i][0] == username){
+          if (state.exeq[i][0] == config.username){
             var chunk = null, op = null;
             for (var j = 0; j < state.exes.length;j++){
               if (state.exes[j].id = state.exeq[i][1]){
@@ -1619,7 +1628,7 @@ function startApp() {
               }
             }
             if (chunk){
-              op = runCustomNFT(chunk.n, chunk.e, chunk.b, chunk.d, chunk.a, chunk.c)
+              op = runCustomNFT(chunk.n, chunk.e, chunk.b, chunk.d, chunk.a, chunk.c, chunk,k)
               NodeOps.push([[0,0],`nft_op`,chunk.id,op[0],op[2],op[1]])
             }
             break;
@@ -1640,7 +1649,7 @@ function startApp() {
           switch (NodeOps[task][1]) {
             case 'escrow_transfer':
               steemClient.broadcast.escrowTransfer(
-                active,
+                config.active,
                 NodeOps[task][2].from,
                 NodeOps[task][2].to,
                 NodeOps[task][2].agent,
@@ -1684,7 +1693,7 @@ function startApp() {
                 })
                 break;
             case 'send':
-              transactor.json(username, active, 'send', {
+              transactor.json(config.username, config.active, 'send', {
                 to: NodeOps[task][2].to,
                 amount: NodeOps[task][2].amount,
                 memo: NodeOps[task][2].memo,
@@ -1700,7 +1709,7 @@ function startApp() {
               break;
             case 'transfer':
               steem.broadcast.transfer(
-                active,
+                config.active,
                 NodeOps[task][2].from,
                 NodeOps[task][2].to,
                 NodeOps[task][2].amount,
@@ -1715,7 +1724,7 @@ function startApp() {
               });
               break;
             case 'nft_op':
-              transactor.json(username, active, 'nft_op', {
+              transactor.json(config.username, config.active, 'nft_op', {
                 nft: NodeOps[task][2],
                 completed: NodeOps[task][3],
                 runtime: NodeOps[task][4],
@@ -1741,10 +1750,10 @@ function startApp() {
 
   processor.onStreamingStart(function() {
     console.log("At real time.")
-    if (state.markets.node[username]){if(!state.markets.node[username].domain && NODEDOMAIN){
-      transactor.json(username, active, 'node_add', {
-        domain: NODEDOMAIN,
-        bidRate: BIDRATE,
+    if (state.markets.node[config.username]){if(!state.markets.node[config.username].domain && config.NODEDOMAIN){
+      transactor.json(config.username, config.active, 'node_add', {
+        domain: config.NODEDOMAIN,
+        bidRate: config.bidRate,
         escrow
       }, function(err, result) {
         if(err) {
@@ -1767,7 +1776,7 @@ function startApp() {
       }
       console.log(user, 'has', balance, 'tokens')
     } else if(split[0] === 'sign-off') {
-      transactor.json(username, active, `node_delete`, {
+      transactor.json(config.username, config.active, `node_delete`, {
       }, function(err, result) {
         if(err) {
           console.error(err);
@@ -1782,7 +1791,7 @@ function startApp() {
 
       var amount = parseInt(split[2]);
       broadcast = 2
-      transactor.json(username, active, 'send', {
+      transactor.json(config.username, config.active, 'send', {
         to: to,
         amount: amount
       }, function(err, result) {
@@ -1795,7 +1804,7 @@ function startApp() {
       var dlux = split[1], amount = split[2], type = 'steem', partial = false;
       if (split[3] == 'sbd'){type='sbd'}
       broadcast = 2
-      transactor.json(username, active, `dex_${type}_sell`, {
+      transactor.json(config.username, config.active, `dex_${type}_sell`, {
         dlux,
         [type]: amount,
         partial
@@ -1835,8 +1844,8 @@ function startApp() {
           agents.push(state.queue[agent])
           i++;
         }
-        if (agents[0] != username && agents[0] != addr.from){agents.push(agents[0])}
-        else if (agents[1] != username && agents[1] != addr.from){agents.push(agents[1])}
+        if (agents[0] != config.username && agents[0] != addr.from){agents.push(agents[0])}
+        else if (agents[1] != config.username && agents[1] != addr.from){agents.push(agents[1])}
         else {agents.push(agents[2])}
         let now = new Date();
           escrowTimer.ratifyIn = now.setHours(now.getHours()+1);
@@ -1857,7 +1866,7 @@ function startApp() {
         formatter = formatter.toFixed(3)
         let eid = parseInt('0x' + (bs58.decode(eidi.substring(6,10))).toString('hex')) //escrow_id from DLUXQmxxxx<this
         let params = {
-            from: username,
+            from: config.username,
             to: addr.from,
             sbd_amount: sbdAmount,
             steem_amount: steemAmount,
@@ -1895,13 +1904,13 @@ function startApp() {
         var i = 0
         for (var agent in state.queue){
           if(agents.length == 1){break}
-          if(state.balances[state.queue[agent]] > dlux && state.queue[agent] != username){
+          if(state.balances[state.queue[agent]] > dlux && state.queue[agent] != config.username){
             agents.push(state.queue[agent])
           }
         }
         for (var agent in state.queue){
           if(agents.length == 1){break}
-          if(state.queue[agent] != agents[0] && state.queue[agent] != username){
+          if(state.queue[agent] != agents[0] && state.queue[agent] != config.username){
             agents.push(state.queue[agent])
           }
         }
@@ -1917,7 +1926,7 @@ function startApp() {
         formatter = formatter.toFixed(3)
         let eid = parseInt('0x' + (bs58.decode(eidi.substring(6,10))).toString('hex')) //escrow_id from DLUXQmxxxx<this
         let params = {
-            from: username,
+            from: config.username,
             to: agents[0],
             sbd_amount: sbdAmount,
             steem_amount: steemAmount,
@@ -1954,7 +1963,7 @@ function startApp() {
       }
       if (addr){
         broadcast = 2
-        transactor.json(username, active, `dex_buy`, {
+        transactor.json(config.username, config.active, `dex_buy`, {
           contract: txid,
           to: addr.from,
 
@@ -1968,7 +1977,7 @@ function startApp() {
       console.log('Sending Power Up request...')
       var amount = parseInt(split[1])
       broadcast = 2
-      transactor.json(username, active, `power_up`, {
+      transactor.json(config.username, config.active, `power_up`, {
         amount
       }, function(err, result) {
         if(err) {
@@ -1979,7 +1988,7 @@ function startApp() {
       console.log('Scheduling Power Down...')
       var amount = split[1]
       broadcast = 2
-      transactor.json(username, active, `power_down`, {
+      transactor.json(config.username, config.active, `power_down`, {
         amount
       }, function(err, result) {
         if(err) {
@@ -1988,7 +1997,7 @@ function startApp() {
       })
     } else if(split[0] === 'ban') {
       var name = split[1]
-      transactor.json(username, active, 'custom_cms_' + username + '_ban_user', {
+      transactor.json(config.username, config.active, 'custom_cms_' + config.username + '_ban_user', {
         name
       }, function(err, result) {
         if(err) {
@@ -1997,7 +2006,7 @@ function startApp() {
       })
     } else if(split[0] === 'unban') {
       var name = split[1]
-      transactor.json(username, active, 'custom_cms_' + username + '_unban_user', {
+      transactor.json(config.username, config.active, 'custom_cms_' + config.username + '_unban_user', {
         name
       }, function(err, result) {
         if(err) {
@@ -2006,7 +2015,7 @@ function startApp() {
       })
     } else if(split[0] === 'add-user') {
       let name = split[1], tier =split[2], expires = split[3]
-      transactor.json(username, active, 'custom_cms_' + username + '_add_user', {
+      transactor.json(config.username, config.active, 'custom_cms_' + config.username + '_add_user', {
         name, tier, expires
       }, function(err, result) {
         if(err) {
@@ -2015,7 +2024,7 @@ function startApp() {
       })
     } else if(split[0] === 'add-model') {
       let num = split[1], tier =split[2], dlux = split[3]
-      transactor.json(username, active, 'custom_cms_' + username + '_model_add', {
+      transactor.json(config.username, config.active, 'custom_cms_' + config.username + '_model_add', {
         num, tier, dlux
       }, function(err, result) {
         if(err) {
@@ -2024,7 +2033,7 @@ function startApp() {
       })
     } else if(split[0] === 'delete-model') {
       let num = split[1], tier =split[2], dlux = split[3]
-      transactor.json(username, active, 'custom_cms_' + username + '_model_delete', {
+      transactor.json(config.username, config.active, 'custom_cms_' + config.username + '_model_delete', {
         num, tier, dlux
       }, function(err, result) {
         if(err) {
@@ -2032,7 +2041,7 @@ function startApp() {
         }
       })
     } else if(split[0] === 'add-tier') {
-      transactor.json(username, active, 'custom_cms_' + username + '_tier_add', {
+      transactor.json(config.username, config.active, 'custom_cms_' + config.username + '_tier_add', {
       }, function(err, result) {
         if(err) {
           console.error(err);
@@ -2040,7 +2049,7 @@ function startApp() {
       })
     } else if(split[0] === 'delete-tier') {
       let tier = split[1]
-      transactor.json(username, active, 'custom_cms_' + username + '_tier_delete', {
+      transactor.json(config.username, config.active, 'custom_cms_' + config.username + '_tier_delete', {
         tier
       }, function(err, result) {
         if(err) {
@@ -2049,7 +2058,7 @@ function startApp() {
       })
     } else if(split[0] === 'delete') {
       let content = split[1]
-      transactor.json(username, active, 'custom_cms_' + username + '_delete', {
+      transactor.json(config.username, config.active, 'custom_cms_' + config.username + '_delete', {
         content
       }, function(err, result) {
         if(err) {
@@ -2058,7 +2067,7 @@ function startApp() {
       })
     } else if(split[0] === 'set-level') {
       let content = split[1], level = split[2]
-      transactor.json(username, active, 'custom_cms_' + username + '_set_level', {
+      transactor.json(config.username, config.active, 'custom_cms_' + config.username + '_set_level', {
         content, level
       }, function(err, result) {
         if(err) {
@@ -2069,10 +2078,10 @@ function startApp() {
       let file = split[1]
       var json = fs.readFileSync(`./${file}`, 'utf8');
       var temp = JSON.parse(json);
-      if (temp.self && temp.level && temp.title && temp.body && memoKey){
+      if (temp.self && temp.level && temp.title && temp.body && config.memoKey){
         var content = {self:temp.self, level: temp.level, title: temp.title, body: temp.body}
-        if (content.level > 0){content.body = Utils.sealer(content.body, username)}
-        transactor.json(username, active, 'custom_cms_' + username + '_add', {
+        if (content.level > 0){content.body = Utils.sealer(content.body, config.username)}
+        transactor.json(config.username, config.active, 'custom_cms_' + config.username + '_add', {
           content
         }, function(err, result) {
           if(err) {
@@ -2103,7 +2112,7 @@ function check() { //do this maybe cycle 5, gives 15 secs to be streaming behind
       self: self,
       agreement: false,
     }
-    if (state.markets.node[self].domain && state.markets.node[self].domain == NODEDOMAIN){
+    if (state.markets.node[self].domain && state.markets.node[self].domain == config.NODEDOMAIN){
       var domain = state.markets.node[self].domain
       if (domain.slice(-1) == '/') {
         domain = domain.substring(0, domain.length - 1)
@@ -2157,9 +2166,12 @@ function tally(num) {//tally state before save and next report
       l++
     if (tally.agreements.tally[node].votes / tally.agreements.votes >= 2 / 3) {
       consensus = tally.agreements.runners[node].report.hash
-    } else if(state.markets.node[node].report.hash !== state.stats.hashLastIBlock) {
+    } else if(state.markets.node[node].report.hash !== state.stats.hashLastIBlock && l > 1) {
       delete state.runners[node]
       console.log('uh-oh:' + node +' scored '+ tally.agreements.tally[node].votes + '/' + tally.agreements.votes)
+    } else if(state.markets.node[node].report.hash !== state.stats.hashLastIBlock && l == 0) {
+
+      console.log(`uh-oh: only @${node} is running blocks`)
     }
   }
   state.stats.lastBlock = state.stats.hashLastIBlock
@@ -2344,6 +2356,7 @@ function dao(num) {
       delete state.contracts[contract]
     }
   }
+  //utils.cleaner(num)
   Utils.cleaner()
 }
 
@@ -2374,7 +2387,7 @@ function report(num) {
         }
       }
     }
-    transactor.json(username, active, 'report', {
+    transactor.json(config.username, config.active, 'report', {
         agreements: agreements,
         hash: plasma.hashLastIBlock,
         block: plasma.hashBlock,
@@ -2391,7 +2404,7 @@ function report(num) {
   }
 }
 
-function runCustomNFT(contract, executor, blocknum, bal, assets, code){//assets [fee,[name,dlux],[contract],[]]
+function runCustomNFT(contract, executor, blocknum, bal, assets, code, key){//assets [fee,[name,dlux],[contract],[]]
   var timedOut = false, done = false, milliseconds = Date.now()
   var valid = true
   const original = contract
@@ -2491,7 +2504,7 @@ function processNFT(o,n){
 
 }
 
-function runNFT(n, e, b, d, a, c){//nft, ececutor, blocknumber, dluxcoin, assets, code
+function runNFT(n, e, b, d, a, c, k){//nft, ececutor, blocknumber, dluxcoin, assets, code, key
   var o, p = n, f = [0] //output, proposal, finalActions
   switch (n.behavior) {
       case 0: //Custom assign 3 agents and que
@@ -2557,6 +2570,18 @@ function runNFT(n, e, b, d, a, c){//nft, ececutor, blocknumber, dluxcoin, assets
           else {p.deposits[e] = d}
           f.append(2)
           o = [true,p,0,f]
+        } else {o = [false,false,0,[0]]}
+        return o
+        break;
+      case 4: //bearer transfer, useful for physical goods and location based experience
+        var auth
+        if (k){auth = steemClient.memo.decode(n.pubKey, k)}
+        if (auth == e){ // '#' + e? uses the private key to encypt the user name of the sender
+          auth=true//set to expire if purchased...
+        } else {auth=false}
+        if (auth){
+          //check price and balance
+          //disperse
         } else {o = [false,false,0,[0]]}
         return o
         break;
@@ -2710,9 +2735,9 @@ var Utils = {
   }, setContentLevel: function(content, level){
     try{
       if (level == 0 && Private.content[content].level > 0){
-        Private.content[content].body = steemClient.memo.decode(memoKey, Private.content[content].body)
+        Private.content[content].body = steemClient.memo.decode(config.memoKey, Private.content[content].body)
       } else if (level > 0 && Private.content[content].level == 0) {
-        Private.content[content].body = steemClient.memo.encode(memoKey, Private.pubKeys[username], "#" + Private.content[content].body)
+        Private.content[content].body = steemClient.memo.encode(config.memoKey, Private.pubKeys[config.username], "#" + Private.content[content].body)
       }
       Private.content[content].level = level
       Utils.save()
@@ -2765,9 +2790,9 @@ var Utils = {
             if (value[item].level > al){
               delete value[item]
             } else if (value[item].level > 0){
-              value[item].body = steemClient.memo.decode(memoKey, value[item].body)
+              value[item].body = steemClient.memo.decode(config.memoKey, value[item].body)
             }
-            value[item].body = steemClient.memo.encode(memoKey, Private.pubKeys[name], "#" + value[item].body)
+            value[item].body = steemClient.memo.encode(config.memoKey, Private.pubKeys[name], "#" + value[item].body)
           }
           resolve(value)
         });
@@ -2778,7 +2803,7 @@ var Utils = {
           if (value[item].level > al){
             delete value[item]
           } else if (value[item].level > 0){
-            value[item].body = steemClient.memo.encode(memoKey, Private.pubKeys[un], "#" + value[item].body)
+            value[item].body = steemClient.memo.encode(config.memoKey, Private.pubKeys[un], "#" + value[item].body)
           }
         }
         resolve(value)
@@ -2848,16 +2873,16 @@ var Utils = {
             console.log('No Such User')
           }
           Private.pubKeys[to] = result[0].memo_key
-          var encrypted = steemClient.memo.encode(memoKey, Private.pubKeys[to], `#` + md);
+          var encrypted = steemClient.memo.encode(config.memoKey, Private.pubKeys[to], `#` + md);
           resolve(encrypted)
         });
       } else {
-        var encrypted = steemClient.memo.encode(memoKey, Private.pubKeys[to], `#` + md);
+        var encrypted = steemClient.memo.encode(config.memoKey, Private.pubKeys[to], `#` + md);
         resolve(encrypted)
       }
     });
   }, unsealer: function(enc){
-    var decoded = steemClient.memo.decode(memoKey, enc)
+    var decoded = steemClient.memo.decode(config.memoKey, enc)
     return decoded
   }
 }
