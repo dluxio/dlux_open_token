@@ -513,7 +513,6 @@ fetch(`${state.markets.node[selector].domain}/markets`)
     return response.json();
   })
   .then(function(myJson) {
-    console.log(myJson)
       if(myJson.markets.node[config.username]){
         if (myJson.markets.node[config.username].report.stash){
           ipfs.cat(myJson.markets.node[config.username].report.stash, (err, file) => {
@@ -2153,15 +2152,12 @@ function tally(num) {//tally state before save and next report
       votes: 0
     } //build a dataset to count
   }
-  for (var node in tally.agreements.runners) { //cycle through this data
-      if (tally.agreements.runners[node].report.agreements[node].agreement == true){ //only count what nodes believe are true
-        tally.agreements.votes++ //total votes
-        for (var subnode in tally.agreements.runners[node].report.agreements){
-          if(tally.agreements.runners[node].report.agreements[subnode].agreement == true && tally.agreements.tally[subnode]){
-            tally.agreements.tally[subnode].votes++
-          }
-        }
+  for (var node in tally.agreements.runners) {
+    for (var subnode in tally.agreements.runners[node].report.agreements){
+      if(tally.agreements.runners[node].report.agreements[subnode].agreement == true && tally.agreements.tally[subnode]){
+        tally.agreements.tally[subnode].votes++
       }
+    }
   }
   var l = 0
   var consensus
@@ -2218,7 +2214,7 @@ function tally(num) {//tally state before save and next report
       delete tally.election[node]
     }
     for (var node in tally.election){
-      if (tally.election[node].report.hash !== state.stats.hashLastIBlock){
+      if (tally.election[node].report.hash !== state.stats.hashLastIBlock && state.stats.hashLastIBlock){
         delete tally.election[node]
       }
     }
