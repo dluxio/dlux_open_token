@@ -131,7 +131,10 @@ api.get('/dex', (req, res, next) => {
 api.get('/priv/list/:un', (req, res, next) => {
   let un = req.params.un
   res.setHeader('Content-Type', 'application/json');
-  res.send(JSON.stringify({list: Utils.getAllContent(un), access_level: Privte.utils.accessLevel(un), node: config.username, VERSION, realtime: current}, null, 3))
+  var lists = Utils.getAllContent(un)
+  lists.then(function(list){
+    res.send(JSON.stringify({list, access_level: Utils.accessLevel(un), node: config.username, VERSION, realtime: current}, null, 3))
+  });
 });
 api.get('/report/:un', (req, res, next) => {
   let un = req.params.un
@@ -2844,14 +2847,15 @@ var Utils = {
           resolve(value)
         });
       } else {
-        let al = Utils.accessLevel(un)
+        let al = Utils.accessLevel(name)
         var value = Private.content
         for (var item in value){
           if (value[item].level > al){
             delete value[item]
           } else if (value[item].level > 0){
-            value[item].body = steemClient.memo.encode(config.memoKey, Private.pubKeys[un], "#" + value[item].body)
+            value[item].body = steemClient.memo.decode(config.memoKey, value[item].body)
           }
+          value[item].body = steemClient.memo.encode(config.memoKey, Private.pubKeys[name], "#" + value[item].body)
         }
         resolve(value)
       }
@@ -2899,7 +2903,7 @@ var Utils = {
     var level = 0
     for (var i = 0; i < Private.tier.length;i++){
       for (var j = 0; j < Private.tier[i].length;j++){
-        if (Private.tier[i][j][0] == name){level = i + 1;break;}
+        if (Private.tier[i][j] == name){level = i + 1;break;}
       }
     }
     return level
