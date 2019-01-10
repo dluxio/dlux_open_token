@@ -7,6 +7,7 @@ const IPFS = require('ipfs-api');
 const ipfs = new IPFS({ host: 'ipfs.infura.io', port: 5001, protocol: 'https'});
 const args = require('minimist')(process.argv.slice(2));
 const express = require('express')
+const cors = require('cors')
 const steemClient = require('steem')
 const fs = require('fs');
 const config = require('./config');
@@ -73,7 +74,7 @@ if (config.active && config.NODEDOMAIN) {
   escrow = true
   dsteem = new steem.Client('https://api.steemit.com')
 }
-
+api.use(cors())
 api.get('/', (req, res, next) => {
   res.setHeader('Content-Type', 'application/json')
   res.send(JSON.stringify({stats: state.stats, node: config.username, VERSION, realtime: current}, null, 3))
@@ -2192,10 +2193,10 @@ function tally(num) {//tally state before save and next report
       delete state.runners[node]
       console.log('uh-oh:' + node +' scored '+ tally.agreements.tally[node].votes + '/' + tally.agreements.votes)
     } else if(state.markets.node[node].report.hash !== state.stats.hashLastIBlock && l == 0) {
-
       console.log(`uh-oh: only @${node} is running blocks`)
     }
   }
+  console.log(consensus)
   state.stats.lastBlock = state.stats.hashLastIBlock
   state.stats.hashLastIBlock = consensus
   for (var node in state.markets.node) {
