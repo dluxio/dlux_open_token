@@ -29,7 +29,7 @@
     "safe-eval": "^0.4.1",
     "socket.io": "^2.2.0",
     "steem": "^0.7.3",
-    "steem-state": "^1.3.2",
+    "steem-state": "^1.2.0",
     "steem-transact": "^1.0.2"
   }
 }
