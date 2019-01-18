@@ -7,6 +7,7 @@ const IPFS = require('ipfs-api');
 const ipfs = new IPFS({ host: 'ipfs.infura.io', port: 5001, protocol: 'https'});
 const args = require('minimist')(process.argv.slice(2));
 const express = require('express')
+const cors = require('cors')
 const steemClient = require('steem')
 const fs = require('fs');
 const config = require('./config');
@@ -32,11 +33,9 @@ var escrow = false
 var broadcast = 1
 const wif = steemClient.auth.toWif(config.username, config.active, 'active')
 const resteemAccount = 'dlux-io';
-var startingBlock = 29180000;
+var startingBlock = 27417440;
 var current, dsteem, testString
-try {
-  testString = steemClient.memo.encode(config.memoKey, Private.pubKeys[config.username], "#You have protected access") || "CMS system has not been set up."
-} catch(e){testString="CMS system has not been set up. "}
+
 const prefix = 'dlux_test_';
 const streamMode = args.mode || 'irreversible';
 console.log("Streaming using mode", streamMode);
@@ -73,7 +72,7 @@ if (config.active && config.NODEDOMAIN) {
   escrow = true
   dsteem = new steem.Client('https://api.steemit.com')
 }
-
+api.use(cors())
 api.get('/', (req, res, next) => {
   res.setHeader('Content-Type', 'application/json')
   res.send(JSON.stringify({stats: state.stats, node: config.username, VERSION, realtime: current}, null, 3))
@@ -130,7 +129,10 @@ api.get('/dex', (req, res, next) => {
 api.get('/priv/list/:un', (req, res, next) => {
   let un = req.params.un
   res.setHeader('Content-Type', 'application/json');
-  res.send(JSON.stringify({list: Utils.getAllContent(un), access_level: Privte.utils.accessLevel(un), node: config.username, VERSION, realtime: current}, null, 3))
+  var lists = Utils.getAllContent(un)
+  lists.then(function(list){
+    res.send(JSON.stringify({list, access_level: Utils.accessLevel(un), node: config.username, VERSION, realtime: current}, null, 3))
+  });
 });
 api.get('/report/:un', (req, res, next) => {
   let un = req.params.un
@@ -195,64 +197,62 @@ var state = {
     rr: 0, //reward_relays for relays
     rn: 0, //reward_nodes
     rm: 0, //reward_marketing
-    'dlux-io': 4000000,//ish
-    shredz7: 100000000,
-    disregardfiat: 290171349,
-    eastmael: 2642016222,
+    'kellie.leigh': 30000000,
+    surfyogi: 12000000,
+    sunlakeslady: 3000000,
+    bitduck86: 2000000,
+    'a1-shroom-spores': 500000,
+    vasqus: 2000000,
+    'phteven.withap':2000000,
+    'cowboys.angel':5000000,
+    'paint.baller':7500000,
+    'dlux-io': 695853800,
+    disregardfiat: 15425214,
+    eastmael: 276552795,
     elgeko: 1541678003,
     gabbagallery: 154048506,
-    cryptoandzen: 8369556042,
-    markegiles: 265289344,
-    whatsup: 354120048,
+    cryptoandzen: 7731461225,
+    markegiles: 157036698,
+    whatsup: 184906229,
     'd-pend': 115971555,
     flash07: 14835383,
     onealfa: 330684833,
-    kriptonik: 3104373601,
+    kriptonik: 2868000247,
     gabbynhice: 68813922,
-    ackza: 15274875,
+    ackza: 17334875,
     pangoli: 240608640,
     fyrstikken: 2876970756,
     angelveselinov: 13871442,
-    michelios: 765105426,
-    masterthematrix: 300536624,
-    taskmaster4450: 156782489,
-    direwolf: 1457368339,
+    michelios: 118797566,
+    masterthematrix: 70619222,
+    taskmaster4450: 303228702,
+    direwolf: 1291537014,
     jznsamuel: 117465501,
-    'bobby.madagascar': 696447002,
+    'bobby.madagascar': 78082320,
     itstime: 251729602,
-    igster: 134001604,
+    igster: 122859022,
     deybacsi: 1414164,
-    protegeaa: 404618025,
+    protegeaa: 379470491,
     gattino: 53820121,
     mannacurrency: 23483466,
     seareader1: 58685485,
     pocketrocket: 11454529,
-    preparedwombat: 297184599,
+    preparedwombat: 114403698,
     jasnusface: 228763194,
-    nataboo: 228763194,
+    nataboo: 13324208,
     j85063: 9932060,
-    'b-s': 285971204,
-    theycallmedan: 257417213,
-    tkept260: 1867087764,
-    runicar: 230367193,
-    lanmower: 46531849,
-    acidyo: 246416131,
-    tarazkp: 576249052,
-    juvyjabian: 471523821,
-    stackin: 18253402,
-    dera123: 151322740,
-    rovill: 137550227
+    'b-s': 14695693
   },
   pow: {
     n:{},
-    t: 37300000000,
-    disregardfiat: 1000000000,
-    markegiles: 1000000000,
-    shredz7: 100000000,
-    'a1-shroom-spores': 100000000,
-    caramaeplays: 100000000,
-    'dlux-io': 5000000000,
-    'robotolux':30000000000
+    t: 49300000000,
+    disregardfiat: 1000000000, //cofounder
+    markegiles: 1000000000, //cofounder
+    shredz7: 100000000, //contributor
+    'a1-shroom-spores': 100000000, //contributor
+    caramaeplays: 100000000,  //incubator
+    'dlux-io': 35000000000, // 5M community initiatives + 30M bank
+    'robotolux':42000000000 //40M auction 2M delegators
   },
   rolling: {},
   nft: {},
@@ -312,51 +312,38 @@ var state = {
     interestRate: 2100000,
     nodeRate: 1000,
     IPFSRate: 2000,
-    relayRate: 1000,
     budgetRate: 2000,
     maxBudget: 1000000000,
     savingsRate: 1000,
     marketingRate: 1000,
     resteemReward: 10000,
     delegationRate: 1000,
-    currationRate: 2500,
-    exchangeRate: {
-      steemDlux: '',
-      btcDlux: '',
-      ethDlux: '',
-      usdDlux: ''
-    }
+    currationRate: 2500
   },
   dex: {
     steem: {
       tick: '',
       buyOrders: [],
-      sellOrders: []
+      sellOrders: [],
+      his: [],
+      days: [],
+      weeks: [],
+      months: []
     },
     sbd: {
       tick: '',
       buyOrders: [],
-      sellOrders: []
-    },
-    eth: {
-      tick: '',
-      buyOrders: [],
-      sellOrders: []
-    },
-    btc: {
-      tick: '',
-      buyOrders: [],
-      sellOrders: []
+      sellOrders: [],
+      his: [],
+      days: [],
+      weeks: [],
+      months: []
     }
   },
   runners: {
     'dlux-io': {
       self: 'dlux-io',
       domain: 'https://token.dlux.io'
-    },
-    'disregardfiat': {
-      self: 'disregardfiat',
-      domain: 'https://dlux-token-peer.herokuapp.com'
     }
   },
   markets: {
@@ -397,7 +384,6 @@ var state = {
       },
       'disregardfiat': {
         self: 'disregardfiat',
-        domain: 'https://dlux-token-peer.herokuapp.com',
         bidRate: 2000,
         marketingRate: 2000,
         attempts: 10000,
@@ -431,7 +417,6 @@ var state = {
         },
       'markegiles': {
         self: 'markegiles',
-        domain: 'https://dlux-token-markegiles.herokuapp.com',
         bidRate: 2000,
         marketingRate: 2000,
         attempts: 10000,
@@ -465,7 +450,6 @@ var state = {
       },
       'caramaeplays': {
         self: 'caramaeplays',
-        domain: 'https://dlux-token-caramaeplays.herokuapp.com',
         bidRate: 2000,
         marketingRate: 2000,
         attempts: 10000,
@@ -538,6 +522,7 @@ fetch(`${state.markets.node[selector].domain}/markets`)
 
 
 function startWith (sh){
+  if (sh){
 console.log(`Attempting to start from IPFS save state ${sh}`);
   ipfs.cat(sh, (err, file) => {
     if (!err){
@@ -550,6 +535,7 @@ console.log(`Attempting to start from IPFS save state ${sh}`);
       console.log(`${sh} failed to load, Replaying from genesis.\nYou may want to set the env var STARTHASH\nFind it at any token API such as token.dlux.io`)
     }
   });
+} else { startApp()}
 }
 
 
@@ -588,6 +574,8 @@ function startApp() {
     }
   });
 
+
+/* Custom node software */
   processor.on(config.username, function(json, from) { //redesign for private stash
     if (from == config.username){
       switch (json.exe) {
@@ -614,6 +602,7 @@ function startApp() {
     }
   });
 
+// power up tokens
   processor.on('power_up', function(json, from) {
     var amount = parseInt(json.amount)
     if(typeof amount == 'number' && amount >= 0 && state.balances[from] && state.balances[from] >= amount) {
@@ -632,6 +621,7 @@ function startApp() {
     }
   });
 
+// power down tokens
   processor.on('power_down', function(json, from) {
     var amount = parseInt(json.amount)
     if(typeof amount == 'number' && amount >= 0 && state.pow[from] && state.pow[from] >= amount) {
@@ -647,6 +637,7 @@ function startApp() {
     }
   });
 
+// vote on content
   processor.on('vote_content', function(json, from) {
     if(state.pow[from] >= 1){
       for (var i = 0;i <state.posts.length;i++){
@@ -672,6 +663,8 @@ function startApp() {
     }
   });
 
+
+//create nft
   processor.on('create_nft', function(json, from) {
     var self = 'DLUX' + hashThis(from + processor.getCurrentBlockNumber()), error = '', actions = [0]//fix current with block num
 
@@ -685,19 +678,18 @@ function startApp() {
       bal: 0,
       pow: 0,
       fee: 0,
-      pool: 0,
       deposits: {},
-      auths: { //planned
-        '*':'23',//'*' anyone,'s' authedArray, 'specific', 'a' agent, 'b' bearer, 'c' creator
-        'a':'012346789',//permissions 1 continue, 2 deposit, 3 complex deposit, 4 withdraw, 5 withdraw pow
-        'c':'5',//6 release table 0, 7 release table 1, 8 transfer, 9 change to assets, 10 change of expiration
-        'b':'04',//
-      },//0 destroy,
+      auths: { //planned, nft
+        //'*':[2,3],//'*' anyone,'s' authedArray, 'specific', 'a' agent, 'b' bearer, 'c' creator
+        //'a':[0,1,2,3,4,6,7,8,9],//permissions 1 continue, 2 deposit, 3 complex deposit, 4 withdraw, 5 withdraw pow
+        //'c':[5],//6 release table 0, 7 release table 1, 8 transfer, 9 change to assets, 10 change of expiration
+        //'b':[0,4],//
+      },//0 destroy?
       authed: ['user'],
       pubKey: '', //private key on physical item. sumbitter hashes private key to their steem name, easy to verify at network level
       weight: 1,//for multisig authed change on expires?? A always requires 2 if distributed
-      behavior: -1,// -1 fail to depositors, -(2 + n) release to [n]table, 0 custom, 1 auction, 2 simple equity deposit, 3 simple bet(code 0/1),
-      rule: '',//SP bearer inst // equity loan / auction with raffle / fair bet /
+      behavior: -1,// -1 fail to depositors, -(2 + n) release to [n]table, 0 custom, 1 auction, 2 simple equity deposit, 3 simple bet(code 0/1), 4 key purchase, 5 ad, 6 quest
+      rule: '',//SP bearer inst // equity loan / auction with raffle / fair bet / 6 quest rule: [['keyPub','code',[0,1,2,'preReq'],[dlux, asset > asset n],complete, 'clue'],...]
       memo: '',
       icon: '',//ipfs address
       withdraw: [],
@@ -706,6 +698,9 @@ function startApp() {
       incrementer: 0,
       stack: [],
       votes: [],
+      icon: '',
+      api: '',
+      ipfsItem: '',
       benifactors: [[{u:from,d:json.nft.bal || 0}],[]],
       assetBenifactors: [[],[]],
       lastExecutor: [from, processor.getCurrentBlockNumber()],
@@ -777,6 +772,7 @@ function startApp() {
       console.log(error)
     }
   });
+
 
   processor.on('transfer_nft', function(json, from) {//json.to valid contract or random name json.nftid valid contract beared
     var bearer = '', error = '', to = '', i = 0, c = 0
@@ -946,6 +942,8 @@ function startApp() {
     }
   });
 
+
+//dex transactions
   processor.on('dex_buy', function(json, from) {
     var found = ''
     try {
@@ -1321,7 +1319,6 @@ function startApp() {
     }
   });
 
-
   processor.on('node_add', function(json, from) {
     if(json.domain && typeof json.domain === 'string') {
       var z = false
@@ -1384,6 +1381,7 @@ function startApp() {
     console.log(current + `:@dlux-io has updated their delegation reward rate`)
   });
 
+/* - Not happy with these
   processor.on('set_resteem_reward', function(json, from) {
     if (from == 'dlux-io' && typeof json.reward === 'number' && json.reward < 10001 && json.reward >= 0) {
       state.stats.resteemRewad = json.reward
@@ -1397,7 +1395,7 @@ function startApp() {
     }
     console.log(current + `:@dlux-io has expired rewards on ${json.permlink}`)
   });
-
+*/
   processor.on('report', function(json, from) {
     var cfrom, domain, found = NaN
     try {
@@ -1440,7 +1438,7 @@ function startApp() {
     }
     }
   });
-
+/*
   processor.onNoPrefix('follow', function(json, from) {  // Follow id includes both follow and resteem.
     if(json[0] === 'reblog') {
       if(json[1].author === resteemAccount && state.balances[from] !== undefined && state.balances[from] > 0) {
@@ -1456,7 +1454,7 @@ function startApp() {
       }
     }
   });
-
+*/
 
   processor.onOperation('comment_options', function(json,from){//grab posts to reward
     try{
@@ -1482,6 +1480,7 @@ function startApp() {
   });
 
   processor.onOperation('transfer', function(json){//ICO calculate
+    /* for sending to NFTs - not gonna happen this way
     var contract = ''
     if(json.memo.substr(0,6) == 'DLUXQm') {
       var txid = json.memo.split(' ')[0]
@@ -1505,22 +1504,13 @@ function startApp() {
         }
       }
     }
+    */
     if (json.to == 'robotolux' && json.amount.split(' ')[1] == 'STEEM' && current < 31288131) {
       const icoEntry = (current - 20000) % 30240
       const weight = parseInt((Math.sqrt(1 - Math.pow(icoEntry/(30240), 2))/2 + 0.5)*1000000)
       const amount = parseInt(parseFloat(json.amount) * 1000)
       state.ico.push({[json.from]:(weight * amount)})
       console.log(current + `:${json.from} bid in DLUX auction with ${json.amount} with a ${weight} multiple`)
-    } else if(json.to == 'dlux-io' && json.memo.substr(0,7) == 'DLUX_DEX'){
-      const amount = parseInt(parseFloat(json.amount) * 1000)
-      const rate = parseInt(json.memo)
-      if (json.amount.split(' ')[1] == 'STEEM') { //rate = how many dlux to purchase for the amount paid
-        state.dex.steem.buyOrders.push({from: json.from, buying: rate, amount: amount, [rate]:amount, rate:parseFloat(rate/amount).toFixed(6)})
-        sortBuyArray(state.dex.steem.buyOrders, 'rate')
-      } else {
-        state.dex.sbd.buyOrders.push({from: json.from, buying: rate, amount: amount, [rate]:amount, rate:parseFloat(rate/amount).toFixed(6)})
-        sortBuyArray(state.dex.sbd.buyOrders, 'rate')
-      }
     }
   });
 
@@ -1552,6 +1542,8 @@ function startApp() {
 
   processor.onBlock(function(num, block) {
     current = num
+
+    //* // virtual ops
     chronoProcess = true
     while (chronoProcess){
         if (state.chrono[0] && state.chrono[0].block == num){
@@ -1577,6 +1569,7 @@ function startApp() {
         }
       } else {chronoProcess = false}
     }
+//*
     if(num % 100 === 0 && !processor.isStreaming()) {
       client.database.getDynamicGlobalProperties().then(function(result) {
         console.log('At block', num, 'with', result.head_block_number-num, `left until real-time. DAO @ ${(num - 20000) % 30240}`)
@@ -1606,6 +1599,7 @@ function startApp() {
         NodeOps.push([[0,0],pa[p][2],[pa[p][2],pa[p][3]]])
       }
     }
+    //*
     if(config.active){
       var found = -1
       if(broadcast){broadcast--}
@@ -1748,6 +1742,7 @@ function startApp() {
         if(broadcast == 0 ){broadcast=1}
       }
     }
+    //*/
   });
 
   processor.onStreamingStart(function() {
@@ -1801,7 +1796,8 @@ function startApp() {
           console.error(err);
         }
       })
-    } else if (split[0] === 'dex-place-ask'){ //dex-place-ask 1000(dlux) 100(type) steem(/sbd | type)
+    } //*
+    else if (split[0] === 'dex-place-ask'){ //dex-place-ask 1000(dlux) 100(type) steem(/sbd | type)
       console.log('Creating DEX Contract...')
       var dlux = split[1], amount = split[2], type = 'steem', partial = false;
       if (split[3] == 'sbd'){type='sbd'}
@@ -2091,7 +2087,8 @@ function startApp() {
           }
         })
       }
-    } else if(split[0] === 'exit') {
+    } //*/
+    else if(split[0] === 'exit') {
       //announce offline
       exit();
     } else if(split[0] === 'state') {
@@ -2192,10 +2189,10 @@ function tally(num) {//tally state before save and next report
       delete state.runners[node]
       console.log('uh-oh:' + node +' scored '+ tally.agreements.tally[node].votes + '/' + tally.agreements.votes)
     } else if(state.markets.node[node].report.hash !== state.stats.hashLastIBlock && l == 0) {
-
       console.log(`uh-oh: only @${node} is running blocks`)
     }
   }
+  console.log(consensus)
   state.stats.lastBlock = state.stats.hashLastIBlock
   state.stats.hashLastIBlock = consensus
   for (var node in state.markets.node) {
@@ -2238,9 +2235,11 @@ function tally(num) {//tally state before save and next report
     state.markets.node[node].wins++
   }
   //count agreements and make the runners list, update market rate for node services
-  var mint = parseInt(state.stats.tokenSupply/state.stats.interestRate)
-  state.stats.tokenSupply += mint
-  state.balances.ra += mint
+  if (num > 30000000){
+    var mint = parseInt(state.stats.tokenSupply/state.stats.interestRate)
+    state.stats.tokenSupply += mint
+    state.balances.ra += mint
+  }
 }
 
 function dao(num) {
@@ -2438,19 +2437,19 @@ function runCustomNFT(contract, executor, blocknum, bal, assets, code, key){//as
   const nftJSON = JSON.stringify(contract)
   const assetsJSON = JSON.stringify(assets)
   const timer =  computeTimer(assets[0] || 0)
-  var info = `function (){var nft=${nftJSON},executor=${executor},blocknum=${blocknum},dlux=${bal},assets=${assets},code=${code};`
+  var info = `function (){var nft=${nftJSON},executor=${executor},blocknum=${blocknum},dlux=${bal},assets=${assets},code=${code},key=${key};`
   while (!timedOut || !done){
     setTimeout(function(){timedOut = true}, timer)
     var proposal = safeEval(`${info}${nft.rule}}`)
     milliseconds = Date.now() - milliseconds
     done = true
   }
-  proposal = checkNFT(original, proposal, executor, bal, assets)
+  proposal = checkNFT(original, proposal, executor, bal, assets, key)
   return [done,proposal,milliseconds]
 }
 
 function expireNFT(n){
-  var o, p = n, f = [0];
+  var o, p = JSON.parse(JSON.stringify(n)), f = [0];
   if(n.stack.length == 0){
     p.behavior = -2
     p.expires++
@@ -2464,75 +2463,79 @@ function expireNFT(n){
 }
 
 function processNFT(o,n){
-  if(o[2] > 25){
-    if (parseInt(o[2]/25) < n.pool){
-      n.pool -= parseInt(o[2]/25)
-      state.balances.rn += parseInt(o[2]/25)
-    } else {
-      o[1].behavior = -1
-    }
-  }
-  if(o[3].length < 2 || !o[0] || o[1].behavior < 0){ //process to disolve
-    if(o[1].behavior == -3){ //release to table 1
-      for (var name in o[1].assetBenifactors[1]){
-        for (var i = 0;i < o[1].assetBenifactors[1][name].length;i++){
-          state.contracts[o[1].assetBenifactors[1][name][i]].bearers.push(name)
-          if (state.contracts[o[1].assetBenifactors[1][name][i]].pow > 0){
-            state.pow[state.contracts[o[1].assetBenifactors[1][name][i]].bearers[-2]] -= state.contracts[o[1].assetBenifactors[1][name][i]].pow
-            state.pow[state.contracts[o[1].assetBenifactors[1][name][i]].bearers[-1]] += state.contracts[o[1].assetBenifactors[1][name][i]].pow
-          }
-        }
-      }
-      for (var i = 0; i < o[1].benifactors[1].length;i++){
-        if (state.balances[o[1].benifactors[1][i].u] === undefined){state.balances[o[1].benifactors[1][i].u] = 0}
-        state.balances[o[1].benifactors[1][i].u] += o[1].benifactors[1][i].d
-      }
-      if (state.balances[o[1].creator] === undefined){state.balances[o[1].creator] = 0}
-      state.balances[o[1].creator] += o[1].pool
-      if (state.pow[o[1].creator] === undefined){state.pow[o[1].creator] = 0}
-      state.pow[creator] += o[1].pow
-      delete state.contracts[o[1].self]
-    } else if (o[1].behavior == -2){ //release to table 0
-      for (var name in o[1].assetBenifactors[0]){
-        for (var i = 0;i < o[1].assetBenifactors[0][name].length;i++){
-          state.contracts[o[1].assetBenifactors[0][name][i]].bearers.push(name)
-          if (state.contracts[o[1].assetBenifactors[0][name][i]].pow > 0){
-            state.pow[state.contracts[o[1].assetBenifactors[0][name][i]].bearers[-2]] -= state.contracts[o[1].assetBenifactors[0][name][i]].pow
-            state.pow[state.contracts[o[1].assetBenifactors[0][name][i]].bearers[-1]] += state.contracts[o[1].assetBenifactors[0][name][i]].pow
-          }
-        }
-      }
-      for (var i = 0; i < o[1].benifactors[0].length;i++){
-        if (state.balances[o[1].benifactors[0][i].u] === undefined){state.balances[o[1].benifactors[0][i].u] = 0}
-        state.balances[o[1].benifactors[0][i].u] += o[1].benifactors[0][i].d
-      }
-      if (state.balances[o[1].creator] === undefined){state.balances[o[1].creator] = 0}
-      state.balances[o[1].creator] += o[1].pool
-      if (state.pow[o[1].creator] === undefined){state.pow[o[1].creator] = 0}
-      state.pow[creator] += o[1].pow
-      delete state.contracts[o[1].self]
-    } else { //release to depositers
-      for ( var user in n.deposits) {
-        if (state.balances[user] === undefined){state.balances[user] = 0}
-        state.balances[user] += n.deposits[user]
-      }
-      if(n.pow){
-        if (state.pow[n.creator] === undefined){state.pow[n.creator] = 0}
-        state.pow[creator] += n.pow
-      }
-      if (state.balances[creator] === undefined){state.balances[creator] = 0}
-      state.balances[creator] += n.pool
-      delete state.contracts[o[1].self]
-    }
-  } else { //process updates
-
-  }
-
 
 }
 
-function runNFT(n, e, b, d, a, c, k){//nft, ececutor, blocknumber, dluxcoin, assets, code, key
-  var o, p = n, f = [0] //output, proposal, finalActions
+/*
+if(o[2] > 25){
+  if (parseInt(o[2]/25) < n.pool){
+    n.pool -= parseInt(o[2]/25)
+    state.balances.rn += parseInt(o[2]/25)
+  } else {
+    o[1].behavior = -1
+  }
+}
+if(o[3].length < 2 || !o[0] || o[1].behavior < 0){ //process to disolve
+  if(o[1].behavior == -3){ //release to table 1
+    for (var name in o[1].assetBenifactors[1]){
+      for (var i = 0;i < o[1].assetBenifactors[1][name].length;i++){
+        state.contracts[o[1].assetBenifactors[1][name][i]].bearers.push(name)
+        if (state.contracts[o[1].assetBenifactors[1][name][i]].pow > 0){
+          state.pow[state.contracts[o[1].assetBenifactors[1][name][i]].bearers[-2]] -= state.contracts[o[1].assetBenifactors[1][name][i]].pow
+          state.pow[state.contracts[o[1].assetBenifactors[1][name][i]].bearers[-1]] += state.contracts[o[1].assetBenifactors[1][name][i]].pow
+        }
+      }
+    }
+    for (var i = 0; i < o[1].benifactors[1].length;i++){
+      if (state.balances[o[1].benifactors[1][i].u] === undefined){state.balances[o[1].benifactors[1][i].u] = 0}
+      state.balances[o[1].benifactors[1][i].u] += o[1].benifactors[1][i].d
+    }
+    if (state.balances[o[1].creator] === undefined){state.balances[o[1].creator] = 0}
+    state.balances[o[1].creator] += o[1].pool
+    if (state.pow[o[1].creator] === undefined){state.pow[o[1].creator] = 0}
+    state.pow[creator] += o[1].pow
+    delete state.contracts[o[1].self]
+  } else if (o[1].behavior == -2){ //release to table 0
+    for (var name in o[1].assetBenifactors[0]){
+      for (var i = 0;i < o[1].assetBenifactors[0][name].length;i++){
+        state.contracts[o[1].assetBenifactors[0][name][i]].bearers.push(name)
+        if (state.contracts[o[1].assetBenifactors[0][name][i]].pow > 0){
+          state.pow[state.contracts[o[1].assetBenifactors[0][name][i]].bearers[-2]] -= state.contracts[o[1].assetBenifactors[0][name][i]].pow
+          state.pow[state.contracts[o[1].assetBenifactors[0][name][i]].bearers[-1]] += state.contracts[o[1].assetBenifactors[0][name][i]].pow
+        }
+      }
+    }
+    for (var i = 0; i < o[1].benifactors[0].length;i++){
+      if (state.balances[o[1].benifactors[0][i].u] === undefined){state.balances[o[1].benifactors[0][i].u] = 0}
+      state.balances[o[1].benifactors[0][i].u] += o[1].benifactors[0][i].d
+    }
+    if (state.balances[o[1].creator] === undefined){state.balances[o[1].creator] = 0}
+    state.balances[o[1].creator] += o[1].pool
+    if (state.pow[o[1].creator] === undefined){state.pow[o[1].creator] = 0}
+    state.pow[creator] += o[1].pow
+    delete state.contracts[o[1].self]
+  } else { //release to depositers
+    for ( var user in n.deposits) {
+      if (state.balances[user] === undefined){state.balances[user] = 0}
+      state.balances[user] += n.deposits[user]
+    }
+    if(n.pow){
+      if (state.pow[n.creator] === undefined){state.pow[n.creator] = 0}
+      state.pow[creator] += n.pow
+    }
+    if (state.balances[creator] === undefined){state.balances[creator] = 0}
+    state.balances[creator] += n.pool
+    delete state.contracts[o[1].self]
+  }
+} else { //process updates
+
+}
+
+
+*/
+
+function runNFT(n, e, b, d, a, c, k){//nft, executor, blocknumber, dluxcoin, assets, code, key
+  var o, p = JSON.parse(JSON.stringify(n)), f = [0] //output, proposal, finalActions
   switch (n.behavior) {
       case 0: //Custom assign 3 agents and que
         if (state.balances[e] >= d){
@@ -2549,7 +2552,7 @@ function runNFT(n, e, b, d, a, c, k){//nft, ececutor, blocknumber, dluxcoin, ass
           state.balances[e] -= d
           p.lastExecutor.push([e,b,c])
           p.memo = `${e} outbid ${n.lastExecutor[0]} with ${d} for ${n.self}`
-          p.withdraw = [n.lastExecutor[0], n.bal]
+          p.withdraw.push([n.lastExecutor[0], n.bal])
           p.assetBenifactors[0][0][0] = e
           p.benifactors[0][0][0].d = d
           p.bal = d
@@ -2612,6 +2615,41 @@ function runNFT(n, e, b, d, a, c, k){//nft, ececutor, blocknumber, dluxcoin, ass
         } else {o = [false,false,0,[0]]}
         return o
         break;
+      case 5:
+        // pays out contract fee to code enterer... useful for ads
+        break;
+      case 6:// "quest" nft, executor, blocknumber, dluxcoin, assets, code, key
+        var preReqs = 0, auth = '', l = 1 //l checks if already complete
+          if(n.bearer[-1] == e){
+            preReqs = n.rule[c][2].length
+            if (n.rule[c][1][4] == false){l = 0}
+            if (n.rule[c][0]){
+              auth = steemClient.memo.decode(n.rule[c][0], k)
+              if (auth == e){
+                for (var j = 0; j < n.rule[c][2].length;j++){
+                  if (n.rule[j][4] == true) {preReqs--} //checks complete , counts down list
+                }
+              }
+            } else {
+              auth = e
+              for (var j = 0; j < n.rule[i][2].length;j++){
+                if (n.rule[j][4] == true) {preReqs--} //checks complete , counts down list
+              }
+            }
+          }
+        if (!preReqs  && auth == e && !l){
+          p.rule[c][1][4] = true
+          if (n.rule[c][1][3] && p.rule[c][1][3] > p.bal){
+            p.bal = p.bal - p.rule[c][1][3]
+            p.withdraw.push([e,p.rule[c][1][3]])
+            f.append(4)
+          }
+          p.incrementer++
+          p.lastExecutor.push([e,b,c])
+        } else {o = [false,false,0,[0]]}
+        o = [true,p,0,f]
+        return o
+        break;
       default:
         o = [false,false,0,[0]]
   }
@@ -2666,11 +2704,11 @@ function checkNFT(nft, proposal, executor, bal, assets){
 
 function computeTimer(fee){
   if (fee == 0){
-    return 10
-  } else if (fee < 20) {
-    return fee * 25
+    return false
+  } else if (fee < 30000) {
+    return parseInt(fee/(parseInt(state.stats.nodeRate/100)+1)) + 1
   } else {
-    return 500
+    return 3000
   }
 }
 
@@ -2733,8 +2771,11 @@ function noi(t){ //node ops incrementer and cleaner... 3 retries and out
   }
 }
 
+
+//encryption check will not work for your username!!!
 var Private = {
-  pubKeys: {},
+  pubKeys: {caramaeplays:'STM75b5FoQxzJLFuTJCkp9s4GmS41qBgZte7iuV6VZP133FT4MNU6',
+disregardfiat:'STM6phwq25EG8S2PifKgs3riH2d1gF868v9TTKF5cXxWscvrBaegz'},
   tier:[['disregardfiat','caramaeplays']],
   models:[],
   banned: [],
@@ -2749,7 +2790,7 @@ var Private = {
       self: 'test_enc',
       level: 1,
       title:'Encryption Check 2',
-      body: testString
+      body: '#FA4KAVwEYmumHgs1wAyfdXyUPc4YZ2rbRZrDMcnur5ebdTJDLwcGWhc5ZckJ5xSs4vKVtLbtvLAvjmAzJ5q5ayRwQgXp6hbr5b7yaAWgTVRLR3DcTaFzDCMUwhVwTqLxN'
     },
   }
 }
@@ -2783,7 +2824,7 @@ var Utils = {
       if (level == 0 && Private.content[content].level > 0){
         Private.content[content].body = steemClient.memo.decode(config.memoKey, Private.content[content].body)
       } else if (level > 0 && Private.content[content].level == 0) {
-        Private.content[content].body = steemClient.memo.encode(config.memoKey, Private.pubKeys[config.username], "#" + Private.content[content].body)
+        Private.content[content].body = steemClient.memo.encode(config.memoKey, Private.pubKeys[config.username], Private.content[content].body)
       }
       Private.content[content].level = level
       Utils.save()
@@ -2831,28 +2872,40 @@ var Utils = {
       if(!Private.pubKeys[name]){
         Utils.sealer(null, name).then(meh => {
           let al = Utils.accessLevel(name)
-          var value = Private.content
-          for (var item in value){
-            if (value[item].level > al){
-              delete value[item]
-            } else if (value[item].level > 0){
-              value[item].body = steemClient.memo.decode(config.memoKey, value[item].body)
+          var value = Private
+          for (var item in value.content){
+            if (value.content[item].level > al){
+              delete value.content[item]
+            } else if (value.content[item].level > 0){
+              value.content[item].body = steemClient.memo.decode(config.memoKey, value.content[item].body)
             }
-            value[item].body = steemClient.memo.encode(config.memoKey, Private.pubKeys[name], "#" + value[item].body)
+            value.content[item].body = steemClient.memo.encode(config.memoKey, Private.pubKeys[name], value.content[item].body)
           }
-          resolve(value)
+          resolve(value.content)
         });
       } else {
-        let al = Utils.accessLevel(un)
-        var value = Private.content
-        for (var item in value){
-          if (value[item].level > al){
-            delete value[item]
-          } else if (value[item].level > 0){
-            value[item].body = steemClient.memo.encode(config.memoKey, Private.pubKeys[un], "#" + value[item].body)
+        let al = Utils.accessLevel(name)
+        var value = {}
+        for (var item in Private.content){
+          if (Private.content[item].level > al){
+          } else if (Private.content[item].level > 0){
+            value[item] = {
+              body: steemClient.memo.decode(config.memoKey, (Private.content[item].body)),
+              title: Private.content[item].title,
+              level: Private.content[item].level,
+              self: Private.content[item].self
+            }
+          } else {
+            value[item] = {
+              body: Private.content[item].body,
+              title: Private.content[item].title,
+              level: Private.content[item].level,
+              self: Private.content[item].self
+            }
           }
+          value[item].body = steemClient.memo.encode(config.memoKey, Private.pubKeys[name], value[item].body)
         }
-        resolve(value)
+      resolve(value)
       }
     })
   }, cleaner: function(num){
@@ -2898,7 +2951,7 @@ var Utils = {
     var level = 0
     for (var i = 0; i < Private.tier.length;i++){
       for (var j = 0; j < Private.tier[i].length;j++){
-        if (Private.tier[i][j][0] == name){level = i + 1;break;}
+        if (Private.tier[i][j] == name){level = i + 1;break;}
       }
     }
     return level
