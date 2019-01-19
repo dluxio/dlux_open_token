@@ -33,7 +33,7 @@ var escrow = false
 var broadcast = 1
 const wif = steemClient.auth.toWif(config.username, config.active, 'active')
 const resteemAccount = 'dlux-io';
-var startingBlock = 29583228;
+var startingBlock = 	29565257;
 var current, dsteem, testString
 
 const prefix = 'dlux_dex_';
