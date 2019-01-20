@@ -10,10 +10,11 @@ const port = ENV.PORT || 3000;
 const clientURL = ENV.APIURL || 'https://api.steemit.com'
 
 
-const engineCrank = ENV.startingHash || ''
+const engineCrank = ENV.startingHash || 'QmVZrDcxgufKUKRLHBDwWWCED2uxntY8jqdXt9FUy7mfnT'
+const acm = ENV.account_creator || true //account creation market
 
 let config = {
-    username,active,memoKey, NODEDOMAIN, bidRate, engineCrank, port, clientURL
+    username,active,memoKey, NODEDOMAIN, bidRate, engineCrank, port, clientURL, acm
 };
 
 module.exports = config;

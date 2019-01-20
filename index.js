@@ -336,7 +336,24 @@ var state = {
     marketingRate: 1000,
     resteemReward: 10000,
     delegationRate: 1000,
-    currationRate: 2500
+    currationRate: 2500,
+    am:{
+      pool: 16,
+      cost: 10000,
+      surgeCost: 10000,
+      dailyPool: 3,
+      surgePool: 3,
+      createdR: [0,0,0,0,0],
+      claimedR: [0,0,0,0,0],
+      costR: [10000,10000,10000,10000,10000],
+    },
+    accountMarket: {
+      'dlux-io': {
+        claimed: 16,
+        created: 0,
+        createdToday: 0,
+      }
+    }
   },
   dex: {
     steem: {
@@ -383,21 +400,9 @@ var state = {
               node:	"dlux-io",
               agreement:	true
             },
-            disregardfiat: {
-              node:	"disregardfiat",
-              agreement:	true
-            },
-            markegiles:	{
-              node:	"markegiles",
-              agreement: true
-            },
-            caramaeplays: {
-              node:	"caramaeplays",
-              agreement: true
-            },
           },
-          hash: "QmTfmV2qQbvH7k26JmdBFBiqATfL8PL1vQJiVaojc8TLjV",
-          block:	28611600
+          hash: "",
+          block:	0
           }
       }
     }
@@ -438,7 +443,9 @@ fetch(`${state.markets.node[selector].domain}/markets`)
         startWith(myJson.markets.node[selector].report.hash);
       }
   }).catch(error => {console.log(error, `\nStarting 'startingHash': ${config.engineCrank}`);startWith(config.engineCrank);});
+*/
 
+startWith(config.engineCrank)
 
 function startWith (sh){
   if (sh){
@@ -457,8 +464,7 @@ console.log(`Attempting to start from IPFS save state ${sh}`);
 } else { startApp()}
 }
 
-*/
-startApp()
+
 function startApp() {
   processor = steemState(client, steem, startingBlock, 10, prefix, streamMode);
 
@@ -1505,6 +1511,12 @@ function startApp() {
     if((num - 20000) % 30240  === 0) { //time for daily magic
       dao(num);
     }
+    if(num % 100 === 0 && processor.isStreaming()) {
+      client.database.getAccounts([config.username]).then(function(result) {
+        var account = result[0]
+
+      });
+    }
     if(num % 100 === 0) {
       tally(num);
       const blockState = Buffer.from(JSON.stringify([num, state]))
@@ -1624,7 +1636,7 @@ function startApp() {
               })
               break;
             case 'transfer':
-              steem.broadcast.transfer(
+              steemClient.broadcast.transfer(
                 config.active,
                 NodeOps[task][2].from,
                 NodeOps[task][2].to,
@@ -1654,6 +1666,65 @@ function startApp() {
                   broadcast=1
                 }
               })
+              break;
+            case 'claim_account':
+              steemClient.broadcast.sendOperations(
+                [
+                  "claim_account",
+                  {
+                    "fee": {
+                      "amount": "0",
+                      "precision": 3,
+                      "nai": "@@000000021"
+                    },
+                    "creator": config.username,
+                    "extensions": []
+                  }
+                ], config.active,
+                function(err, result) {
+                  if(err) {
+                    console.error(err);
+                    noi(task)
+                  } else {
+                    NodeOps.splice(task,1)
+                  }
+              });
+              break;
+            case 'create_claimed_account':
+              steemClient.broadcast.sendOperations(
+                [
+                  "create_claimed_account",
+                  {
+                    "creator": config.username,
+                    "new_account_name": NodeOps[task][2].un,
+                    "owner": {
+                      "weight_threshold": 1,
+                      "account_auths": [],
+                      "key_auths": [[NodeOps[task][2].po, 1]],
+                    },
+                    "active": {
+                      "weight_threshold": 1,
+                      "account_auths": [],
+                      "key_auths": [[NodeOps[task][2].pa, 1]],
+                    },
+                    "posting": {
+                      "weight_threshold": 1,
+                      "account_auths": [],
+                      "key_auths": [[NodeOps[task][2].pp, 1]],
+                    },
+                    "memo_key": NodeOps[task][2].pm,
+                    "json_metadata": "",
+                    "extensions": []
+                  }
+                ], config.active,
+                function(err, result) {
+                  if(err) {
+                    console.error(err);
+                    noi(task)
+                  } else {
+                    NodeOps.splice(task,1)
+                  }
+              });
               break;
             default:
 
