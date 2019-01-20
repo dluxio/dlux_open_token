@@ -24,7 +24,7 @@ function hashThis(data) {
   const multihash = bs58.encode(combined)
   return multihash.toString()
 }
-
+const testing = true
 const VERSION = 'v0.0.2a'
 const api = express()
 var http = require('http').Server(api);
@@ -33,10 +33,10 @@ var escrow = false
 var broadcast = 1
 const wif = steemClient.auth.toWif(config.username, config.active, 'active')
 const resteemAccount = 'dlux-io';
-var startingBlock = 27417440;
+var startingBlock = 	29565257;
 var current, dsteem, testString
 
-const prefix = 'dlux_test_';
+const prefix = 'dlux_dex_';
 const streamMode = args.mode || 'irreversible';
 console.log("Streaming using mode", streamMode);
 var client = new steem.Client(config.clientURL);
@@ -99,8 +99,12 @@ api.get('/@:un', (req, res, next) => {
   res.send(JSON.stringify({balance: bal, poweredUp: pb, powerBeared: lp}, null, 3))
 });
 api.get('/stats', (req, res, next) => {
+  var totalLiquid = 0, totalPower = state.pow.t, totalNFT = 0
+  for(var bal in state.balances){
+    totalLiquid += state.balances[bal]
+  }
   res.setHeader('Content-Type', 'application/json');
-  res.send(JSON.stringify({stats: state.stats, node: config.username, VERSION, realtime: current}, null, 3))
+  res.send(JSON.stringify({stats: state.stats, totalLiquid, totalPower, totalNFT, totalcheck: (totalLiquid+totalPower+totalNFT), node: config.username, VERSION, realtime: current}, null, 3))
 });
 api.get('/state', (req, res, next) => {
   res.setHeader('Content-Type', 'application/json');
@@ -201,58 +205,70 @@ var state = {
     surfyogi: 12000000,
     sunlakeslady: 3000000,
     bitduck86: 2000000,
-    'a1-shroom-spores': 500000,
+    'a1-shroom-spores': 366930893,
     vasqus: 2000000,
     'phteven.withap':2000000,
     'cowboys.angel':5000000,
     'paint.baller':7500000,
-    'dlux-io': 695853800,
-    disregardfiat: 15425214,
-    eastmael: 276552795,
+    'dlux-io': 1076534619,
+    disregardfiat: 609782131,
+    eastmael: 2642016252,
     elgeko: 1541678003,
     gabbagallery: 154048506,
-    cryptoandzen: 7731461225,
-    markegiles: 157036698,
-    whatsup: 184906229,
+    cryptoandzen: 9678522360,
+    markegiles: 351607424,
+    whatsup: 354120054,
     'd-pend': 115971555,
     flash07: 14835383,
     onealfa: 330684833,
-    kriptonik: 2868000247,
-    gabbynhice: 68813922,
+    kriptonik: 3781392824,
+    gabbynhice: 98966309,
     ackza: 17334875,
-    pangoli: 240608640,
+    pangoli: 337242993,
     fyrstikken: 2876970756,
     angelveselinov: 13871442,
-    michelios: 118797566,
-    masterthematrix: 70619222,
+    michelios: 765105346,
+    masterthematrix: 300536260,
     taskmaster4450: 303228702,
-    direwolf: 1291537014,
+    direwolf: 1457368336,
     jznsamuel: 117465501,
-    'bobby.madagascar': 78082320,
+    'bobby.madagascar': 851326728,
     itstime: 251729602,
-    igster: 122859022,
+    igster: 327224585,
     deybacsi: 1414164,
-    protegeaa: 379470491,
+    protegeaa: 404618037,
     gattino: 53820121,
     mannacurrency: 23483466,
     seareader1: 58685485,
     pocketrocket: 11454529,
-    preparedwombat: 114403698,
+    preparedwombat: 297184552,
     jasnusface: 228763194,
     nataboo: 13324208,
     j85063: 9932060,
-    'b-s': 14695693
+    'b-s': 285971198,
+    theycallmedan:	257417202,
+    tkept260:	2084821208,
+    runicar:	230367158,
+    acidyo:	3322027278,
+    lanmower:	46531833,
+    tarazkp:	1595993135,
+    juvyjabian:	471523822,
+    stackin:	18253398,
+    dera123:	180762943,
+    rovill:	137550256,
+    tracilin:	4501508255,
+    doon:	164596226,
   },
   pow: {
     n:{},
-    t: 49300000000,
+    t: 56800000000,
     disregardfiat: 1000000000, //cofounder
     markegiles: 1000000000, //cofounder
     shredz7: 100000000, //contributor
     'a1-shroom-spores': 100000000, //contributor
     caramaeplays: 100000000,  //incubator
     'dlux-io': 35000000000, // 5M community initiatives + 30M bank
-    'robotolux':42000000000 //40M auction 2M delegators
+    'robotolux':19500000000 //17.5M auction 2M delegators
   },
   rolling: {},
   nft: {},
@@ -272,10 +288,7 @@ var state = {
     }
   },
   expired: [
-    'permlinks',
-    'permlinks'
   ],
-
   contracts: {},
   posts: [],
   delegations: [
@@ -285,21 +298,26 @@ var state = {
     {delegator:'bobby.madagascar',vests:403000000000},
     {delegator:'bryan-imhoff',vests:202000000000},
     {delegator:'bubke',vests:1009000000000},
+    {delegator:'dera123',vests:100000000000},
     {delegator:'direwolf',vests:21000000000},
     {delegator:'disregardfiat',vests:20000000000},
     {delegator:'east.autovote',vests:24000000000},
     {delegator:'eastmael',vests:202000000000},
+    {delegator:'elementm',vests:201000000000},
     {delegator:'flash07',vests:20000000000},
     {delegator:'igster',vests:202000000000},
     {delegator:'j85063',vests:202000000000},
     {delegator:'jznsamuel',vests:202000000000},
+    {delegator:'kriptonik',vests:201000000000},
+    {delegator:'masterthematrix',vests:301000000000},
     {delegator:'michelios',vests:3579000000000},
     {delegator:'okean123',vests:50000000000},
-    {delegator:'organduo',vests:1007000000000},
     {delegator:'preparedwombat',vests:202000000000},
     {delegator:'protegeaa',vests:2017000000000},
     {delegator:'shellyduncan',vests:404000000000},
     {delegator:'snubbermike',vests:2019000000000},
+    {delegator:'superlotto',vests:251000000000},
+    {delegator:'tarazkp',vests:1206000000000},
     {delegator:'taskmaster4450',vests:202000000000},
     {delegator:'whatsup',vests:1009000000000},
   ],
@@ -318,7 +336,24 @@ var state = {
     marketingRate: 1000,
     resteemReward: 10000,
     delegationRate: 1000,
-    currationRate: 2500
+    currationRate: 2500,
+    am:{
+      pool: 16,
+      cost: 10000,
+      surgeCost: 10000,
+      dailyPool: 3,
+      surgePool: 3,
+      createdR: [0,0,0,0,0],
+      claimedR: [0,0,0,0,0],
+      costR: [10000,10000,10000,10000,10000],
+    },
+    accountMarket: {
+      'dlux-io': {
+        claimed: 16,
+        created: 0,
+        createdToday: 0,
+      }
+    }
   },
   dex: {
     steem: {
@@ -365,121 +400,10 @@ var state = {
               node:	"dlux-io",
               agreement:	true
             },
-            disregardfiat: {
-              node:	"disregardfiat",
-              agreement:	true
-            },
-            markegiles:	{
-              node:	"markegiles",
-              agreement: true
-            },
-            caramaeplays: {
-              node:	"caramaeplays",
-              agreement: true
-            },
           },
-          hash: "QmTfmV2qQbvH7k26JmdBFBiqATfL8PL1vQJiVaojc8TLjV",
-          block:	28611600
+          hash: "",
+          block:	0
           }
-      },
-      'disregardfiat': {
-        self: 'disregardfiat',
-        bidRate: 2000,
-        marketingRate: 2000,
-        attempts: 10000,
-        yays: 10000,
-        wins: 10000,
-        contracts: 0,
-        lastGood: 0,
-        transfers: 0,
-        report: {
-          agreements:{
-            'dlux-io': {
-              node:	"dlux-io",
-              agreement:	true
-            },
-            disregardfiat: {
-              node:	"disregardfiat",
-              agreement:	true
-            },
-            markegiles:	{
-              node:	"markegiles",
-              agreement: true
-            },
-            caramaeplays: {
-              node:	"caramaeplays",
-              agreement: true
-            },
-          },
-          hash: "QmTfmV2qQbvH7k26JmdBFBiqATfL8PL1vQJiVaojc8TLjV",
-          block:	28611600
-          }
-        },
-      'markegiles': {
-        self: 'markegiles',
-        bidRate: 2000,
-        marketingRate: 2000,
-        attempts: 10000,
-        yays: 10000,
-        wins: 10000,
-        contracts: 0,
-        lastGood: 0,
-        transfers: 0,
-        report: {
-          agreements:{
-            'dlux-io': {
-              node:	"dlux-io",
-              agreement:	true
-            },
-            disregardfiat: {
-              node:	"disregardfiat",
-              agreement:	true
-            },
-            markegiles:	{
-              node:	"markegiles",
-              agreement: true
-            },
-            caramaeplays: {
-              node:	"caramaeplays",
-              agreement: true
-            },
-          },
-          hash:	"QmTfmV2qQbvH7k26JmdBFBiqATfL8PL1vQJiVaojc8TLjV",
-          block:	28611600
-        }
-      },
-      'caramaeplays': {
-        self: 'caramaeplays',
-        bidRate: 2000,
-        marketingRate: 2000,
-        attempts: 10000,
-        yays: 10000,
-        wins: 10000,
-        contracts: 0,
-        lastGood: 0,
-        transfers: 0,
-        report: {
-          agreements:{
-            'dlux-io': {
-              node:	"dlux-io",
-              agreement:	true
-            },
-            disregardfiat: {
-              node:	"disregardfiat",
-              agreement:	true
-            },
-            markegiles:	{
-              node:	"markegiles",
-              agreement: true
-            },
-            caramaeplays: {
-              node:	"caramaeplays",
-              agreement: true
-            },
-          },
-        hash:	"QmTfmV2qQbvH7k26JmdBFBiqATfL8PL1vQJiVaojc8TLjV",
-        block:	28611600
-        }
       }
     }
   }
@@ -491,7 +415,7 @@ var NodeOps = []
 const transactor = steemTransact(client, steem, prefix);
 var selector = 'dlux-io'
 if (config.username == selector){selector = 'markegiles'}
-
+/*
 fetch(`${state.markets.node[selector].domain}/markets`)
   .then(function(response) {
     return response.json();
@@ -519,7 +443,9 @@ fetch(`${state.markets.node[selector].domain}/markets`)
         startWith(myJson.markets.node[selector].report.hash);
       }
   }).catch(error => {console.log(error, `\nStarting 'startingHash': ${config.engineCrank}`);startWith(config.engineCrank);});
+*/
 
+startWith(config.engineCrank)
 
 function startWith (sh){
   if (sh){
@@ -712,8 +638,8 @@ function startApp() {
       if(state.pow[from]){
         if (state.pow[from] > json.nft.pow){
           actions.append(2)
-        } else {error += 'Insufficient POW to create NFT'}
-      } else {error += 'Insufficient POW to create NFT'}
+        } else {error += ':Insufficient POW to create NFT:'}
+      } else {error += ':Insufficient POW to create NFT:'}
     }
     nft.pow = json.nft.pow || 0
     if(json.nft.bal){
@@ -721,8 +647,8 @@ function startApp() {
         if (state.balances[from] > json.nft.pow){
           actions.append(1)
           nft.deposits = {[from]:json.nft.bal}
-        } else {error += 'Insufficient DLUX to create NFT'}
-      } else {error += 'Insufficient DLUX to create NFT'}
+        } else {error += ':Insufficient DLUX to create NFT:'}
+      } else {error += ':Insufficient DLUX to create NFT:'}
     }
     nft.bal = json.nft.bal || 0
     if(json.nft.pool){
@@ -731,12 +657,12 @@ function startApp() {
           actions.append(1)
           if(json.nft.fee > 0 && json.nft.fee < 25){nft.fee = json.nft.fee}
           else {if(json.nft.behavior > 1){nft.fee = 0}else{nft.fee=1}}
-        } else {error += 'Insufficient DLUX to create NFT'}
-      } else {error += 'Insufficient DLUX to create NFT'}
+        } else {error += ':Insufficient DLUX to create NFT:'}
+      } else {error += ':Insufficient DLUX to create NFT:'}
     }
-    nft.pool = json.nft.pool || 0
-    if (nft.fee && !nft.pool){error = 'Insuffiecient Fee Pool'}
-    if (json.nft.behavior >= 0 && json.nft.behavior < 5) {//cases for contracts
+    nft.fee = json.nft.fee || 0
+    if (!nft.fee){error += ':Insuffiecient Fee:'}
+    if (json.nft.behavior >= 0 && json.nft.behavior < 7) {//cases for contracts
       nft.behavior = json.nft.behavior
     }
     if(nft.behavior == -1){error += 'Contract Behavior not Understood'}
@@ -748,9 +674,9 @@ function startApp() {
     nft.icon = json.nft.icon  || ''
     nft.stack = json.nft.stack  || []
     //nft.listener = json.nft.listener || []
-    if (json.nft.expires > processor.getCurrentBlockNumber()){ //fix current
+    if (json.nft.expires > processor.getCurrentBlockNumber()){
       nft.expires = json.nft.expires
-    }
+    } else {error += ':NFT Expires in past:'}
     if (json.nft.matures && json.nft.matures < json.nft.expires){
       nft.matures = json.nft.matures
     }
@@ -1585,6 +1511,12 @@ function startApp() {
     if((num - 20000) % 30240  === 0) { //time for daily magic
       dao(num);
     }
+    if(num % 100 === 0 && processor.isStreaming()) {
+      client.database.getAccounts([config.username]).then(function(result) {
+        var account = result[0]
+
+      });
+    }
     if(num % 100 === 0) {
       tally(num);
       const blockState = Buffer.from(JSON.stringify([num, state]))
@@ -1704,7 +1636,7 @@ function startApp() {
               })
               break;
             case 'transfer':
-              steem.broadcast.transfer(
+              steemClient.broadcast.transfer(
                 config.active,
                 NodeOps[task][2].from,
                 NodeOps[task][2].to,
@@ -1734,6 +1666,65 @@ function startApp() {
                   broadcast=1
                 }
               })
+              break;
+            case 'claim_account':
+              steemClient.broadcast.sendOperations(
+                [
+                  "claim_account",
+                  {
+                    "fee": {
+                      "amount": "0",
+                      "precision": 3,
+                      "nai": "@@000000021"
+                    },
+                    "creator": config.username,
+                    "extensions": []
+                  }
+                ], config.active,
+                function(err, result) {
+                  if(err) {
+                    console.error(err);
+                    noi(task)
+                  } else {
+                    NodeOps.splice(task,1)
+                  }
+              });
+              break;
+            case 'create_claimed_account':
+              steemClient.broadcast.sendOperations(
+                [
+                  "create_claimed_account",
+                  {
+                    "creator": config.username,
+                    "new_account_name": NodeOps[task][2].un,
+                    "owner": {
+                      "weight_threshold": 1,
+                      "account_auths": [],
+                      "key_auths": [[NodeOps[task][2].po, 1]],
+                    },
+                    "active": {
+                      "weight_threshold": 1,
+                      "account_auths": [],
+                      "key_auths": [[NodeOps[task][2].pa, 1]],
+                    },
+                    "posting": {
+                      "weight_threshold": 1,
+                      "account_auths": [],
+                      "key_auths": [[NodeOps[task][2].pp, 1]],
+                    },
+                    "memo_key": NodeOps[task][2].pm,
+                    "json_metadata": "",
+                    "extensions": []
+                  }
+                ], config.active,
+                function(err, result) {
+                  if(err) {
+                    console.error(err);
+                    noi(task)
+                  } else {
+                    NodeOps.splice(task,1)
+                  }
+              });
               break;
             default:
 
@@ -2162,7 +2153,7 @@ function tally(num) {//tally state before save and next report
       l++
     if (tally.agreements.tally[node].votes / tally.agreements.votes >= 2 / 3) {
       consensus = tally.agreements.runners[node].report.hash
-      if (consensus != plasma.hashLastIBlock && node != config.username  && processor.isStreaming()) {
+      if (!testing && consensus != plasma.hashLastIBlock && node != config.username  && processor.isStreaming()) {
         var errors = ['failed Consensus']
         if (VERSION != state.markets.node[node].report.version){console.log(current + `:Abandoning ${plasma.hashLastABlock} because ${errors[0]}`)}
         const blockState = Buffer.from(JSON.stringify([num, state]))
