@@ -1272,7 +1272,8 @@ function startApp() {
           contracts: 0,
           escrows: 0,
           lastGood: 0,
-          report: {},         escrow: z
+          report: {},
+          escrow: z
         }
       }
       console.log(current + `:@${from} has bid the steem-state node ${json.domain} at ${json.bidRate}`)
