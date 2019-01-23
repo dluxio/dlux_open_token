@@ -44,12 +44,12 @@ This software is meant to be run as a public API for dlux token data.
 While it runs it verifies other nodes are operating correctly and confirms this by posting a customJson transaction to steem. 288 messages will be required per day per node operator.
 
 Deploy from heroku and set ENV variables with a steem name and posting key.
-* `ACCOUNT`  dlux-io
+* `account`  dlux-io
 * `active` active posting key (will run escrow transactions for rewards)
 * `posting` posting, can participate in network
 * `DOMAIN` https://token.dlux.io
 * `BIDRATE` 1 to 10000 which is average
-* `STARTING` A hash from a recent block gets you up to speed in no time
+* `startingHash ` A hash from a recent block gets you up to speed in no time
 
 Once your node is running post a custom json transaction with these details registering your node.
 ```
