@@ -11,6 +11,7 @@ const cors = require('cors')
 const steemClient = require('steem')
 const fs = require('fs');
 const config = require('./config');
+const rtrades = require('./rtrades');
 //const RSS = require('rss-generator');
 // Attempts to get the hash of that state file.
 
@@ -569,11 +570,57 @@ var state = {
    }
 var plasma = {}
 var NodeOps = []
-
+var rtradesToken = ''
 const transactor = steemTransact(client, steem, prefix);
 var selector = 'dlux-io'
-if (config.username == selector){selector = 'markegiles'}
-/*
+if (config.username == selector){selector = 'disregardfiat'}
+if (config.rta && config.rtp){
+  rtrades.jwt = rtrades.handleLogin(config.rta, config.rtp)
+  rtrades.jwt.then(setTimeout(function refreshToken(){
+    let data = new FormData();
+    let xhr = new XMLHttpRequest();
+    xhr.withCredentials = false;
+
+    xhr.addEventListener("readystatechange", function () {
+    if (xhr.readyState === 4) {
+        let result = JSON.parse(xhr.responseText);
+        if (result.code === 200) {
+          console.log('reset token')
+          setTimeout(function refreshToken(){
+            let data = new FormData();
+            let xhr = new XMLHttpRequest();
+            xhr.withCredentials = false;
+
+            xhr.addEventListener("readystatechange", function () {
+            if (xhr.readyState === 4) {
+                let result = JSON.parse(xhr.responseText);
+                if (result.code === 200) {
+                  console.log('reset token')
+                }
+                else {
+                  console.log('failed to reset token')
+                }
+            }
+        }.bind(this));
+
+        xhr.open("GET", "https://dev.api.temporal.cloud/v2/auth/refresh");
+        xhr.setRequestHeader("Cache-Control", "no-cache");
+        xhr.setRequestHeader("Authorization", "Bearer " + Session.get('token'));
+        xhr.send(data);
+          }, 82800000)
+        }
+        else {
+          console.log('failed to reset token')
+        }
+    }
+}.bind(this));
+
+xhr.open("GET", "https://dev.api.temporal.cloud/v2/auth/refresh");
+xhr.setRequestHeader("Cache-Control", "no-cache");
+xhr.setRequestHeader("Authorization", "Bearer " + Session.get('token'));
+xhr.send(data);
+  }, 82800000))
+}
 fetch(`${state.markets.node[selector].domain}/markets`)
   .then(function(response) {
     return response.json();
@@ -601,7 +648,7 @@ fetch(`${state.markets.node[selector].domain}/markets`)
         startWith(myJson.markets.node[selector].report.hash);
       }
   }).catch(error => {console.log(error, `\nStarting 'startingHash': ${config.engineCrank}`);startWith(config.engineCrank);});
-*/
+
 startApp();
 
 //startWith(config.engineCrank)
@@ -1553,6 +1600,7 @@ function startApp() {
         state.posts.push({author:json.author, permlink: json.permlink})
         state.chrono.push({block:parseInt(current+300000), op:'post_reward', author: json.author, permlink: json.permlink})
         utils.chronoSort()
+        rtrades.chenkNpin(json.customJSON.assets)
         console.log(current + `:Added ${json.author}/${json.permlink} to dlux rewardable content`)
       }
     }
