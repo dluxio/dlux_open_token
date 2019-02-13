@@ -10,6 +10,7 @@ const express = require('express')
 const cors = require('cors')
 const steemClient = require('steem')
 const fs = require('fs');
+const XMLHttpRequest = require("xmlhttprequest").XMLHttpRequest
 const config = require('./config');
 const rtrades = require('./rtrades');
 //const RSS = require('rss-generator');
@@ -568,15 +569,17 @@ var state = {
          }
       }
    }
-var plasma = {}
+var plasma = {},jwt
 var NodeOps = []
 var rtradesToken = ''
 const transactor = steemTransact(client, steem, prefix);
 var selector = 'dlux-io'
 if (config.username == selector){selector = 'caramaeplays'}
 if (config.rta && config.rtp){
-  rtrades.jwt = rtrades.handleLogin(config.rta, config.rtp)
-  rtrades.jwt.then(setTimeout(function refreshToken(){
+  jwt = rtrades.handleLogin(config.rta, config.rtp)
+  jwt.then(function (value){
+    rtrades.setJWT(value)})
+  .then(setTimeout(function refreshToken(){
     let data = new FormData();
     let xhr = new XMLHttpRequest();
     xhr.withCredentials = false;
@@ -1598,8 +1601,10 @@ function startApp() {
         state.posts.push({author:json.author, permlink: json.permlink})
         state.chrono.push({block:parseInt(current+300000), op:'post_reward', author: json.author, permlink: json.permlink})
         utils.chronoSort()
-        rtrades.chenkNpin(json.customJSON.assets)
-        console.log(current + `:Added ${json.author}/${json.permlink} to dlux rewardable content`)
+        client.database.call('get_content', [json.author, json.permlink]).then(result => {
+          rtrades.checkNpin(JSON.parse(result.json_metadata).assets)
+        });
+      console.log(current + `:Added ${json.author}/${json.permlink} to dlux rewardable content`)
       }
     }
   });
