@@ -621,6 +621,7 @@ xhr.setRequestHeader("Authorization", "Bearer " + Session.get('token'));
 xhr.send(data);
   }, 82800000))
 }
+
 fetch(`${state.markets.node[selector].domain}/markets`)
   .then(function(response) {
     return response.json();
@@ -636,21 +637,18 @@ fetch(`${state.markets.node[selector].domain}/markets`)
               startWith(myJson.markets.node[config.username].report.hash)
             } else {
               console.log(`Lost Stash... Abandoning and starting from ${myJson.stats.hashLastIBlock}`) //maybe a recovery fall thru?
-              startWith(myJson.markets.node[selector].report.hash);
+              startWith(config.engineCrank || myJson.markets.node[selector].report.hash);
             }
           });
         } else {
           console.log(`No Private data found\nStarting from ${myJson.stats.hashLastIBlock}`)
-          startWith(myJson.markets.node[selector].report.hash)//myJson.stats.hashLastIBlock);
+          startWith(config.engineCrank || myJson.markets.node[selector].report.hash)//myJson.stats.hashLastIBlock);
         }
       } else {
         console.log(`Starting from ${myJson.markets.node[selector].report}`)
-        startWith(myJson.markets.node[selector].report.hash);
+        startWith(config.engineCrank || myJson.markets.node[selector].report.hash);
       }
   }).catch(error => {console.log(error, `\nStarting 'startingHash': ${config.engineCrank}`);startWith(config.engineCrank);});
-
-startApp();
-
 //startWith(config.engineCrank)
 
 function startWith (sh){
