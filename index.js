@@ -573,7 +573,7 @@ var NodeOps = []
 var rtradesToken = ''
 const transactor = steemTransact(client, steem, prefix);
 var selector = 'dlux-io'
-if (config.username == selector){selector = 'disregardfiat'}
+if (config.username == selector){selector = 'caramaeplays'}
 if (config.rta && config.rtp){
   rtrades.jwt = rtrades.handleLogin(config.rta, config.rtp)
   rtrades.jwt.then(setTimeout(function refreshToken(){
