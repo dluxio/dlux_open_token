@@ -1,5 +1,9 @@
+
+const XMLHttpRequest = require("xmlhttprequest").XMLHttpRequest
+var FormData = require('form-data');
 module.exports = {
   jwt: '',
+  setJWT: function (jwt){module.exports.jwt=jwt;console.log(jwt)},
   handleLogin: function (username, password){
 return new Promise((resolve, reject) => {
         fetch('https://dev.api.temporal.cloud/v2/auth/login', {
@@ -26,19 +30,15 @@ return new Promise((resolve, reject) => {
 });
     },
 
-handlePinFile: function (ipfsHash, holdTime){
+handlePinFile: function (ipfsHash){
   return new Promise((resolve, reject) => {
     let data = new FormData();
-    data.append("hold_time", holdTime);
 
     let xhr = new XMLHttpRequest();
     xhr.withCredentials = false;
-
     xhr.addEventListener("readystatechange", function () {
-
         if (xhr.readyState === 4) {
             let result = JSON.parse(xhr.responseText);
-
             if (result.code === 200) {
               resolve(result)
             }
@@ -51,13 +51,14 @@ handlePinFile: function (ipfsHash, holdTime){
 
     xhr.open("POST", "https://dev.api.temporal.cloud/v2/ipfs/public/pin/" + ipfsHash);
     xhr.setRequestHeader("Cache-Control", "no-cache");
-    xhr.setRequestHeader("Authorization", "Bearer " + rtrades.jwt);
-    xhr.send(data);
+    xhr.setRequestHeader("Authorization", "Bearer " + module.exports.jwt);
+    xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded')
+    xhr.send('hold_time=6');
   })
 },
 handleObject: function (hash){
   return new Promise((resolve, reject) => {
-    let xhr_stat = new XMLHttpRequest();
+    var xhr_stat = new XMLHttpRequest();
     xhr_stat.withCredentials = false;
 
     xhr_stat.addEventListener("readystatechange", function () {
@@ -65,7 +66,6 @@ handleObject: function (hash){
         if (xhr_stat.readyState === 4) {
 
             let result = JSON.parse(xhr_stat.responseText);
-
             if (result.code === 200) {
                 resolve(result)
             } else {
@@ -76,30 +76,35 @@ handleObject: function (hash){
 
     xhr_stat.open("GET", "https://dev.api.temporal.cloud/v2/ipfs/public/stat/" + hash);
     xhr_stat.setRequestHeader("Cache-Control", "no-cache");
-    xhr_stat.setRequestHeader("Authorization", "Bearer " + rtrades.jwt);
+    xhr_stat.setRequestHeader("Authorization", "Bearer " + module.exports.jwt);
     xhr_stat.send();
   });
 },
 checkNpin: function (assets){
   var totalBytes = 0
-  var hashes = []
+  var hashesP = []
   var pins = []
+  var hashes = []
   for (var i = 0; i < assets.length; i++){
     if(assets[i].pin){
+      hashesP.push(module.exports.handleObject(assets[i].hash))
       hashes.push(assets[i].hash)
     }
   }
-  Promise.all(hashes).then(function(values) {
-  for (var i = 0;i < values.length;i++){
-    console.log(values[i])
-    totalBytes += values[i].cumulativeSize
-  }
-  if(totalBytes < 134217728){
-    for (var i = 0; i < hashes.length; i++){
-      pins.push(this.handlePinFile(hashes[i],12))
+  Promise.all(hashesP).then(function(values) {
+    for (var i = 0;i < values.length;i++){
+      totalBytes += values[i].response.CumulativeSize
     }
-    Promise.all(pins).then(function(yays) {console.log('pinned hashes')})
-  } else {console.log('Pin request too large!')}
-});
+    if(totalBytes < 134217728){
+      for (var i = 0; i < hashes.length; i++){
+        pins.push(module.exports.handlePinFile(hashes[i]))
+      }
+      Promise.all(pins).then(function(result) {console.log(result,'pinned hashes')})
+      .catch(function(error){console.log('BAD',error)})
+    } else {console.log('Pin request too large:'+totalBytes)}
+  })
+  .catch(function(error){
+    console.log(error)
+  })
 }
 }
