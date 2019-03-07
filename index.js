@@ -35,10 +35,10 @@ var escrow = false
 var broadcast = 1
 const wif = steemClient.auth.toWif(config.username, config.active, 'active')
 const resteemAccount = 'dlux-io';
-var startingBlock = 	30078703;
+var startingBlock = 	26450000;
 var current, dsteem, testString
 
-const prefix = 'dlux_dex_';
+const prefix = 'dluxT_';
 const streamMode = args.mode || 'irreversible';
 console.log("Streaming using mode", streamMode);
 var client = new steem.Client(config.clientURL);
@@ -74,6 +74,19 @@ if (config.active && config.NODEDOMAIN) {
   escrow = true
   dsteem = new steem.Client('https://api.steemit.com')
 }
+var https_redirect = function(req, res, next) {
+    if (process.env.NODE_ENV === 'production') {
+        if (req.headers['x-forwarded-proto'] != 'https') {
+            return res.redirect('https://' + req.headers.host + req.url);
+        } else {
+            return next();
+        }
+    } else {
+        return next();
+    }
+};
+
+api.use(https_redirect);
 api.use(cors())
 api.get('/', (req, res, next) => {
   res.setHeader('Content-Type', 'application/json')
@@ -194,99 +207,72 @@ var state = {
       "limbo": {},
       "listeners": [],
       "balances": {
-         "ra": 95272,
+         "ra": 0,
          "rb": 0,
-         "rc": 8631086,
-         "rd": 12,
+         "rc": 0,
+         "rd": 0,
          "re": 0,
          "ri": 0,
          "rr": 0,
          "rn": 0,
-         "rm": 3738753,
-         "kellie.leigh": 30000000,
+         "rm": 0,
+         "kellie.leigh": 50000000,
          "surfyogi": 12000000,
          "sunlakeslady": 3000000,
          "bitduck86": 2000000,
-         "a1-shroom-spores": 793035145,
+         "a1-shroom-spores": 50000000,
          "vasqus": 2000000,
          "phteven.withap": 2000000,
          "cowboys.angel": 5000000,
          "paint.baller": 7500000,
-         "dlux-io": 1080273372,
-         "disregardfiat": 501427556,
-         "eastmael": 2642067598,
-         "elgeko": 1541678003,
-         "gabbagallery": 154048506,
-         "cryptoandzen": 10157026243,
-         "markegiles": 351607424,
-         "whatsup": 354376534,
-         "d-pend": 115971555,
-         "flash07": 14840466,
-         "onealfa": 330684833,
-         "kriptonik": 4063299320,
-         "gabbynhice": 98966309,
-         "ackza": 17386221,
-         "pangoli": 337242993,
-         "fyrstikken": 2876970756,
-         "angelveselinov": 13871442,
-         "michelios": 856805715,
-         "masterthematrix": 300612770,
-         "taskmaster4450": 303280048,
-         "direwolf": 1457373672,
-         "jznsamuel": 117516847,
-         "bobby.madagascar": 985922658,
-         "itstime": 251729602,
-         "igster": 327275931,
-         "deybacsi": 1414164,
-         "protegeaa": 405130745,
-         "gattino": 53820121,
-         "mannacurrency": 23483466,
-         "seareader1": 58685485,
-         "pocketrocket": 11454529,
-         "preparedwombat": 297235898,
-         "janusface": 228763194,
-         "nataboo": 13324208,
-         "j85063": 9983406,
-         "b-s": 286012122,
-         "theycallmedan": 257417202,
-         "tkept260": 2084821208,
-         "runicar": 525329219,
-         "acidyo": 3322027278,
-         "lanmower": 46531833,
-         "tarazkp": 1596299692,
-         "juvyjabian": 471523822,
-         "stackin": 18253398,
-         "dera123": 180788361,
-         "rovill": 137550256,
-         "tracilin": 6244199715,
-         "doon": 164596226,
-         "caramaeplays": 3738753,
-         "blockcryptochain": 5083,
-         "bryan-imhoff": 51346,
-         "bubke": 256480,
-         "east.autovote": 0,
-         "elementm": 51091,
-         "okean123": 12708,
-         "shellyduncan": 102693,
-         "snubbermike": 513216,
-         "superlotto": 63801,
-         "chrismgiles": 1195687392,
-         "kenny-crane": 491970096,
-         "altrosa": 25514,
-         "inconceivable": 0,
-         "shredz7": 124343141,
-         "dlux-highway": 159457866
+         "dlux-io": 1000000000,
+         "disregardfiat": 154252,
+         "eastmael": 2765528,
+         "elgeko": 15416780,
+         "gabbagallery": 15404885,
+         "cryptoandzen": 77314612,
+         "markegiles": 1570367,
+         "whatsup": 1849062,
+         "d-pend": 1159715,
+         "flash07": 148354,
+         "onealfa": 3306848,
+         "kriptonik": 28680002,
+         "gabbynhice": 688139,
+         "ackza":  152749,
+         "pangoli": 2406086,
+         "fyrstikken": 28769708,
+         "angelveselinov": 138714,
+         "michelios": 1187976,
+         "masterthematrix": 1706192,
+         "taskmaster4450": 3032287,
+         "direwolf": 12915370,
+         "jznsamuel": 1174655,
+         "bobby.madagascar": 780823,
+         "itstime": 2517296,
+         "igster": 1228590,
+         "deybacsi": 14142,
+         "protegeaa": 3794705,
+         "gattino": 538201,
+         "mannacurrency": 234835,
+         "seareader1": 586855,
+         "pocketrocket": 114545,
+         "preparedwombat": 1144037,
+         "janusface": 2287632,
+         "nataboo": 133242,
+         "j85063": 99321,
+         "b-s": 146957,
+
       },
       "pow": {
          "n": {},
-         "t": 51487500000,
+         "t": 0,
          "disregardfiat": 1000000000,
          "markegiles": 1000000000,
          "shredz7": 100000000,
          "a1-shroom-spores": 100000000,
          "caramaeplays": 100000000,
-         "dlux-io": 35000000000,
-         "robotolux": 14187500000
+         "dlux-io": 6000000000,
+         "robotolux": 400000000
       },
       "rolling": {},
       "nft": {},
@@ -312,118 +298,6 @@ var state = {
       "contracts": {},
       "posts": [],
       "delegations": [
-         {
-            "delegator": "ackza",
-            "vests": 202000000000
-         },
-         {
-            "delegator": "b-s",
-            "vests": 161000000000
-         },
-         {
-            "delegator": "blockcryptochain",
-            "vests": 20000000000
-         },
-         {
-            "delegator": "bobby.madagascar",
-            "vests": 403000000000
-         },
-         {
-            "delegator": "bryan-imhoff",
-            "vests": 202000000000
-         },
-         {
-            "delegator": "bubke",
-            "vests": 1009000000000
-         },
-         {
-            "delegator": "dera123",
-            "vests": 100000000000
-         },
-         {
-            "delegator": "direwolf",
-            "vests": 21000000000
-         },
-         {
-            "delegator": "disregardfiat",
-            "vests": 20000000000
-         },
-         {
-            "delegator": "eastmael",
-            "vests": 202000000000
-         },
-         {
-            "delegator": "elementm",
-            "vests": 201000000000
-         },
-         {
-            "delegator": "flash07",
-            "vests": 20000000000
-         },
-         {
-            "delegator": "igster",
-            "vests": 202000000000
-         },
-         {
-            "delegator": "j85063",
-            "vests": 202000000000
-         },
-         {
-            "delegator": "jznsamuel",
-            "vests": 202000000000
-         },
-         {
-            "delegator": "kriptonik",
-            "vests": 201000000000
-         },
-         {
-            "delegator": "masterthematrix",
-            "vests": 301000000000
-         },
-         {
-            "delegator": "michelios",
-            "vests": 3579000000000
-         },
-         {
-            "delegator": "okean123",
-            "vests": 50000000000
-         },
-         {
-            "delegator": "preparedwombat",
-            "vests": 202000000000
-         },
-         {
-            "delegator": "protegeaa",
-            "vests": 2017000000000
-         },
-         {
-            "delegator": "shellyduncan",
-            "vests": 404000000000
-         },
-         {
-            "delegator": "snubbermike",
-            "vests": 2019000000000
-         },
-         {
-            "delegator": "superlotto",
-            "vests": 251000000000
-         },
-         {
-            "delegator": "tarazkp",
-            "vests": 1206000000000
-         },
-         {
-            "delegator": "taskmaster4450",
-            "vests": 202000000000
-         },
-         {
-            "delegator": "whatsup",
-            "vests": 1009000000000
-         },
-         {
-            "delegator": "altrosa",
-            "vests": 100378661751
-         }
       ],
       "ico": [],
       "br": [],
@@ -576,55 +450,9 @@ const transactor = steemTransact(client, steem, prefix);
 var selector = 'dlux-io'
 if (config.username == selector){selector = 'caramaeplays'}
 if (config.rta && config.rtp){
-  jwt = rtrades.handleLogin(config.rta, config.rtp)
-  jwt.then(function (value){
-    rtrades.setJWT(value)})
-  .then(setTimeout(function refreshToken(){
-    let data = new FormData();
-    let xhr = new XMLHttpRequest();
-    xhr.withCredentials = false;
-
-    xhr.addEventListener("readystatechange", function () {
-    if (xhr.readyState === 4) {
-        let result = JSON.parse(xhr.responseText);
-        if (result.code === 200) {
-          console.log('reset token')
-          setTimeout(function refreshToken(){
-            let data = new FormData();
-            let xhr = new XMLHttpRequest();
-            xhr.withCredentials = false;
-
-            xhr.addEventListener("readystatechange", function () {
-            if (xhr.readyState === 4) {
-                let result = JSON.parse(xhr.responseText);
-                if (result.code === 200) {
-                  console.log('reset token')
-                }
-                else {
-                  console.log('failed to reset token')
-                }
-            }
-        }.bind(this));
-
-        xhr.open("GET", "https://dev.api.temporal.cloud/v2/auth/refresh");
-        xhr.setRequestHeader("Cache-Control", "no-cache");
-        xhr.setRequestHeader("Authorization", "Bearer " + Session.get('token'));
-        xhr.send(data);
-          }, 82800000)
-        }
-        else {
-          console.log('failed to reset token')
-        }
-    }
-}.bind(this));
-
-xhr.open("GET", "https://dev.api.temporal.cloud/v2/auth/refresh");
-xhr.setRequestHeader("Cache-Control", "no-cache");
-xhr.setRequestHeader("Authorization", "Bearer " + Session.get('token'));
-xhr.send(data);
-  }, 82800000))
+  rtrades.handleLogin(config.rta, config.rtp)
 }
-
+/*
 fetch(`${state.markets.node[selector].domain}/markets`)
   .then(function(response) {
     return response.json();
@@ -653,7 +481,8 @@ fetch(`${state.markets.node[selector].domain}/markets`)
       }
   }).catch(error => {console.log(error, `\nStarting 'startingHash': ${config.engineCrank}`);startWith(config.engineCrank);});
 //startWith(config.engineCrank)
-
+*/
+startApp()
 function startWith (sh){
   if (sh){
 console.log(`Attempting to start from IPFS save state ${sh}`);
@@ -706,7 +535,6 @@ function startApp() {
       console.log(current + `:Invalid send operation from ${from}`)
     }
   });
-
 
 /* Custom node software */
   processor.on(config.username, function(json, from) { //redesign for private stash
@@ -1642,7 +1470,7 @@ function startApp() {
       }
     }
     */
-    if (json.to == 'robotolux' && json.amount.split(' ')[1] == 'STEEM' && current < 31288131) {
+    if (json.to == 'robotolux' && json.amount.split(' ')[1] == 'STEEM' && current < 31288131 && current > 27417440) {
       const icoEntry = (current - 20000) % 30240
       const weight = parseInt((Math.sqrt(1 - Math.pow(icoEntry/(30240), 2))/2 + 0.5)*1000000)
       const amount = parseInt(parseFloat(json.amount) * 1000)
@@ -1719,7 +1547,7 @@ function startApp() {
       report(num);
       broadcast = 2
     }
-    if((num - 20000) % 30240  === 0) { //time for daily magic
+    if((num - 20000) % 30240  === 0 && num > 27417440) { //time for daily magic
       dao(num);
     }
     if(num % 100 === 0 && processor.isStreaming()) {
@@ -1734,7 +1562,14 @@ function startApp() {
       plasma.hashBlock = num
       plasma.hashLastIBlock = hashThis(blockState)
       console.log(current + `:Signing: ${plasma.hashLastIBlock}`)
-      if(processor.isStreaming()){ipfsSaveState(num, blockState);}
+      ipfsSaveState(num, blockState)
+    }
+    if(num % 10000 === 0 && num < 30900000) {
+      const blockState = Buffer.from(JSON.stringify([num, state]))
+      plasma.hashBlock = num
+      plasma.hashLastIBlock = hashThis(blockState)
+      console.log(current + `:Signing: ${plasma.hashLastIBlock}`)
+      report(num)
     }
     for(var p = 0;p < pa.length;p++){ //automate some tasks
       var r = eval(pa[p][1])
@@ -2499,7 +2334,7 @@ function dao(num) {
     console.log(current + `:${k} DLUX awarded to ${state.delegations[i].delegator} for ${state.delegations[i].vests} VESTS`)
   }
   if(num < 31288131){
-  var dailyICODistrobution = 312500000, y=0
+  var dailyICODistrobution = 3125000, y=0
   for(i=0;i<state.ico.length;i++){
     for (var node in state.ico[i]){
       y += state.ico[i][node]
@@ -2508,9 +2343,9 @@ function dao(num) {
   for(i=0;i<state.ico.length;i++){
     for (var node in state.ico[i]){
       if (!state.balances[node]){state.balances[node] = 0}
-      state.balances[node] += parseInt(state.ico[i][node]/y*312500000)
-      dailyICODistrobution -= parseInt(state.ico[i][node]/y*312500000)
-      console.log(current + `:${node} awarded  ${parseInt(state.ico[i][node]/y*312500000)} DLUX for ICO auction`)
+      state.balances[node] += parseInt(state.ico[i][node]/y*3125000)
+      dailyICODistrobution -= parseInt(state.ico[i][node]/y*3125000)
+      console.log(current + `:${node} awarded  ${parseInt(state.ico[i][node]/y*3125000)} DLUX for ICO auction`)
       if (i == state.ico.length - 1){
         state.balances[node] += dailyICODistrobution
         console.log(current + `:${node} given  ${dailyICODistrobution} remainder`)
@@ -2518,8 +2353,8 @@ function dao(num) {
     }
   }
   state.ico = []
-  state.pow.robotolux -= 312500000
-  state.pow.t -= 312500000
+  state.pow.robotolux -= 3125000
+  state.pow.t -= 3125000
   }
   state.balances.rc = state.balances.ra
   state.balances.ra = 0

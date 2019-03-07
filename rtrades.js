@@ -3,9 +3,11 @@ const XMLHttpRequest = require("xmlhttprequest").XMLHttpRequest
 var FormData = require('form-data');
 module.exports = {
   jwt: '',
-  setJWT: function (jwt){module.exports.jwt=jwt;console.log(jwt)},
+  un: '',
+  up: '',
+  tries: 0,
+  setJWT: function (jwt){module.exports.jwt=jwt},
   handleLogin: function (username, password){
-return new Promise((resolve, reject) => {
         fetch('https://dev.api.temporal.cloud/v2/auth/login', {
             method: 'POST',
             headers: {
@@ -23,11 +25,11 @@ return new Promise((resolve, reject) => {
         })
             .then(response => {
                 if (response.expire) {
-                    resolve(response.token)
+                    module.exports.jwt = response.token,
+                    module.exports.up = password.toString(),
+                    module.exports.un = username.toString()
                 }
-                return reject(response)
             })
-});
     },
 
 handlePinFile: function (ipfsHash){
@@ -99,8 +101,21 @@ checkNpin: function (assets){
       for (var i = 0; i < hashes.length; i++){
         pins.push(module.exports.handlePinFile(hashes[i]))
       }
-      Promise.all(pins).then(function(result) {console.log(result,'pinned hashes')})
-      .catch(function(error){console.log('BAD',error)})
+      Promise.all(pins).then(function(result) {
+        module.exports.tries = 0
+        console.log(result,'pinned hashes')
+      })
+      .catch(function(error){
+        if (error) {
+            module.exports.tries++
+            rtrades.handleLogin(module.exports.un, module.exports.up)
+            if (module.exports.tires < 3){
+              module.exports.checkNpin(assets)
+            }
+        } else {
+        console.log('BAD',error)
+      }
+    })
     } else {console.log('Pin request too large:'+totalBytes)}
   })
   .catch(function(error){
