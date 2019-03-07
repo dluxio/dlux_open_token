@@ -13,7 +13,7 @@ const port = ENV.PORT || 3000;
 const clientURL = ENV.APIURL || 'https://api.steemit.com'
 
 
-const engineCrank = ENV.startingHash || 'QmRu7ubNKa3At2agbUN5bmTRmHnEneA2ZVKjRZyBjD6rCK'
+const engineCrank = ENV.startingHash || ''
 const acm = ENV.account_creator || true //account creation market
 
 let config = {
