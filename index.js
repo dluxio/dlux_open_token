@@ -2,7 +2,7 @@ const steem = require('dsteem');
 const steemState = require('steem-state');
 const steemTransact = require('steem-transact');
 const readline = require('readline');
-const safeEval = require('safe-eval')
+const safeEval = require('safe-eval');
 const IPFS = require('ipfs-api');
 const ipfs = new IPFS({ host: 'ipfs.infura.io', port: 5001, protocol: 'https'});
 const args = require('minimist')(process.argv.slice(2));
@@ -35,7 +35,7 @@ var escrow = false
 var broadcast = 1
 const wif = steemClient.auth.toWif(config.username, config.active, 'active')
 const resteemAccount = 'dlux-io';
-var startingBlock = 	26450000;
+var startingBlock = 	29868324;
 var current, dsteem, testString
 
 const prefix = 'dluxT_';
@@ -220,48 +220,75 @@ var state = {
          "surfyogi": 12000000,
          "sunlakeslady": 3000000,
          "bitduck86": 2000000,
-         "a1-shroom-spores": 50000000,
+         "a1-shroom-spores": 53743281,
          "vasqus": 2000000,
          "phteven.withap": 2000000,
          "cowboys.angel": 5000000,
          "paint.baller": 7500000,
          "dlux-io": 1000000000,
-         "disregardfiat": 154252,
-         "eastmael": 2765528,
+         "disregardfiat": 6964226,
+         "eastmael": 26420155,
          "elgeko": 15416780,
          "gabbagallery": 15404885,
-         "cryptoandzen": 77314612,
-         "markegiles": 1570367,
-         "whatsup": 1849062,
+         "cryptoandzen": 100650942,
+         "markegiles": 3516083,
+         "whatsup": 3541200,
          "d-pend": 1159715,
          "flash07": 148354,
          "onealfa": 3306848,
-         "kriptonik": 28680002,
-         "gabbynhice": 688139,
-         "ackza":  152749,
-         "pangoli": 2406086,
+         "kriptonik": 40286652,
+         "gabbynhice": 989665,
+         "ackza": 152749,
+         "pangoli": 3372429,
          "fyrstikken": 28769708,
          "angelveselinov": 138714,
-         "michelios": 1187976,
-         "masterthematrix": 1706192,
+         "michelios": 7651058,
+         "masterthematrix": 4005361,
          "taskmaster4450": 3032287,
-         "direwolf": 12915370,
+         "direwolf": 14573684,
          "jznsamuel": 1174655,
-         "bobby.madagascar": 780823,
+         "bobby.madagascar": 9394727,
          "itstime": 2517296,
-         "igster": 1228590,
+         "igster": 3272244,
          "deybacsi": 14142,
-         "protegeaa": 3794705,
+         "protegeaa": 4046180,
          "gattino": 538201,
          "mannacurrency": 234835,
          "seareader1": 586855,
          "pocketrocket": 114545,
-         "preparedwombat": 1144037,
+         "preparedwombat": 2971847,
          "janusface": 2287632,
          "nataboo": 133242,
          "j85063": 99321,
-         "b-s": 146957,
-
+         "b-s": 2859714,
+         "caramaeplays": 0,
+         "inconceivable": 0,
+         "bubke": 0,
+         "okean123": 0,
+         "blockcryptochain": 0,
+         "bryan-imhoff": 0,
+         "shellyduncan": 0,
+         "east.autovote": 0,
+         "snubbermike": 0,
+         "flauwy": 0,
+         "theycallmedan": 2574172,
+         "tkept260": 20848216,
+         "runicar": 5253291,
+         "acidyo": 33220275,
+         "lanmower": 465318,
+         "tarazkp": 15959937,
+         "juvyjabian": 4715237,
+         "stackin": 182536,
+         "organduo": 0,
+         "dera123": 1807628,
+         "rovill": 1375502,
+         "tracilin": 55389999,
+         "elementm": 0,
+         "doon": 1645964,
+         "superlotto": 0,
+         "chrismgiles": 4840476,
+         "kenny-crane": 4919699,
+         "altrosa": 0
       },
       "pow": {
          "n": {},
@@ -272,7 +299,7 @@ var state = {
          "a1-shroom-spores": 100000000,
          "caramaeplays": 100000000,
          "dlux-io": 6000000000,
-         "robotolux": 400000000
+         "robotolux": 146875000
       },
       "rolling": {},
       "nft": {},
@@ -298,8 +325,120 @@ var state = {
       "contracts": {},
       "posts": [],
       "delegations": [
+         {
+            "delegator": "igster",
+            "vests": 201881548529
+         },
+         {
+            "delegator": "flash07",
+            "vests": 20187819550
+         },
+         {
+            "delegator": "taskmaster4450",
+            "vests": 201876824153
+         },
+         {
+            "delegator": "preparedwombat",
+            "vests": 201875204241
+         },
+         {
+            "delegator": "bubke",
+            "vests": 1009371232275
+         },
+         {
+            "delegator": "j85063",
+            "vests": 201870966828
+         },
+         {
+            "delegator": "okean123",
+            "vests": 50466716897
+         },
+         {
+            "delegator": "blockcryptochain",
+            "vests": 20186584362
+         },
+         {
+            "delegator": "bryan-imhoff",
+            "vests": 201863439020
+         },
+         {
+            "delegator": "shellyduncan",
+            "vests": 403722947171
+         },
+         {
+            "delegator": "eastmael",
+            "vests": 201857400580
+         },
+         {
+            "delegator": "snubbermike",
+            "vests": 2018571511345
+         },
+         {
+            "delegator": "whatsup",
+            "vests": 1009279586126
+         },
+         {
+            "delegator": "jznsamuel",
+            "vests": 201798905991
+         },
+         {
+            "delegator": "protegeaa",
+            "vests": 2016919336599
+         },
+         {
+            "delegator": "bobby.madagascar",
+            "vests": 403299221414
+         },
+         {
+            "delegator": "b-s",
+            "vests": 161191024962
+         },
+         {
+            "delegator": "direwolf",
+            "vests": 20616896980
+         },
+         {
+            "delegator": "michelios",
+            "vests": 3578755623131
+         },
+         {
+            "delegator": "disregardfiat",
+            "vests": 20115916810
+         },
+         {
+            "delegator": "tarazkp",
+            "vests": 1205958434476
+         },
+         {
+            "delegator": "masterthematrix",
+            "vests": 301484502951
+         },
+         {
+            "delegator": "elementm",
+            "vests": 200972274760
+         },
+         {
+            "delegator": "kriptonik",
+            "vests": 200952516306
+         },
+         {
+            "delegator": "dera123",
+            "vests": 100454469051
+         },
+         {
+            "delegator": "superlotto",
+            "vests": 251119699919
+         },
+         {
+            "delegator": "altrosa",
+            "vests": 100378661751
+         }
       ],
-      "ico": [],
+      "ico": [
+         {
+            "shredz7": 5131994868
+         }
+      ],
       "br": [],
       "stats": {
          "hashLastIBlock": "QmT7pUY7S3K42bj6wKwqNva1LzMX82gyAqr7143fng33QZ",
