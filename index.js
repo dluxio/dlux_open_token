@@ -35,7 +35,7 @@ var escrow = false
 var broadcast = 1
 const wif = steemClient.auth.toWif(config.username, config.active, 'active')
 const resteemAccount = 'dlux-io';
-var startingBlock = 	29868324;
+var startingBlock = 	30989390;
 var current, dsteem, testString
 
 const prefix = 'dluxT_';
@@ -212,7 +212,7 @@ var state = {
          "rc": 0,
          "rd": 0,
          "re": 0,
-         "ri": 0,
+         "ri": 1000000000,
          "rr": 0,
          "rn": 0,
          "rm": 0,
@@ -220,90 +220,104 @@ var state = {
          "surfyogi": 12000000,
          "sunlakeslady": 3000000,
          "bitduck86": 2000000,
-         "a1-shroom-spores": 53743281,
+         "a1-shroom-spores": 55884388,
          "vasqus": 2000000,
          "phteven.withap": 2000000,
          "cowboys.angel": 5000000,
          "paint.baller": 7500000,
          "dlux-io": 1000000000,
-         "disregardfiat": 6964226,
-         "eastmael": 26420155,
+         "disregardfiat": 7022969,
+         "eastmael": 27009780,
          "elgeko": 15416780,
          "gabbagallery": 15404885,
-         "cryptoandzen": 100650942,
-         "markegiles": 3516083,
-         "whatsup": 3541200,
+         "cryptoandzen": 109258596,
+         "markegiles": 10897455,
+         "whatsup": 6489365,
          "d-pend": 1159715,
-         "flash07": 148354,
+         "flash07": 207307,
          "onealfa": 3306848,
-         "kriptonik": 40286652,
+         "kriptonik": 41755015,
          "gabbynhice": 989665,
          "ackza": 152749,
          "pangoli": 3372429,
          "fyrstikken": 28769708,
          "angelveselinov": 138714,
-         "michelios": 7651058,
-         "masterthematrix": 4005361,
-         "taskmaster4450": 3032287,
-         "direwolf": 14573684,
-         "jznsamuel": 1174655,
-         "bobby.madagascar": 9394727,
+         "michelios": 19012759,
+         "masterthematrix": 4886001,
+         "taskmaster4450": 3621969,
+         "direwolf": 14633890,
+         "jznsamuel": 1764111,
+         "bobby.madagascar": 12913512,
          "itstime": 2517296,
-         "igster": 3272244,
+         "igster": 3501352,
          "deybacsi": 14142,
-         "protegeaa": 4046180,
+         "protegeaa": 9937735,
          "gattino": 538201,
          "mannacurrency": 234835,
          "seareader1": 586855,
          "pocketrocket": 114545,
-         "preparedwombat": 2971847,
+         "preparedwombat": 3561520,
          "janusface": 2287632,
          "nataboo": 133242,
-         "j85063": 99321,
-         "b-s": 2859714,
+         "j85063": 688987,
+         "b-s": 3330548,
          "caramaeplays": 0,
          "inconceivable": 0,
-         "bubke": 0,
-         "okean123": 0,
-         "blockcryptochain": 0,
-         "bryan-imhoff": 0,
-         "shellyduncan": 0,
+         "bubke": 2948435,
+         "okean123": 147402,
+         "blockcryptochain": 58948,
+         "bryan-imhoff": 589638,
+         "shellyduncan": 1179290,
          "east.autovote": 0,
-         "snubbermike": 0,
+         "snubbermike": 3977499,
          "flauwy": 0,
          "theycallmedan": 2574172,
-         "tkept260": 20848216,
+         "tkept260": 22206524,
          "runicar": 5253291,
          "acidyo": 33220275,
          "lanmower": 465318,
-         "tarazkp": 15959937,
+         "tarazkp": 19482614,
          "juvyjabian": 4715237,
          "stackin": 182536,
          "organduo": 0,
-         "dera123": 1807628,
+         "dera123": 2101047,
          "rovill": 1375502,
-         "tracilin": 55389999,
-         "elementm": 0,
+         "tracilin": 94677378,
+         "elementm": 587042,
          "doon": 1645964,
-         "superlotto": 0,
-         "chrismgiles": 4840476,
-         "kenny-crane": 4919699,
-         "altrosa": 0
+         "superlotto": 733524,
+         "chrismgiles": 51311995,
+         "kenny-crane": 5066074,
+         "altrosa": 293199,
+         "shredz7": 1943431,
+         "dlux-highway": 1594578,
+         "dlux-sm": 791577,
+         "theb0red1": 1235753,
+         "onthewayout": 4837358,
+         "syedumair": 1054188,
+         "austindro": 6328417,
+         "kohost": 1101498,
+         "yasu24": 2735,
+         "novacadian": 171503,
+         "alexvanaken": 9541,
+         "nekomuneca":6000000,
+         "suzanoslin":6000000
       },
       "pow": {
          "n": {},
-         "t": 0,
+         "t": 8300000000,
          "disregardfiat": 1000000000,
          "markegiles": 1000000000,
          "shredz7": 100000000,
          "a1-shroom-spores": 100000000,
          "caramaeplays": 100000000,
          "dlux-io": 6000000000,
-         "robotolux": 146875000
+         "robotolux": 0
       },
       "rolling": {},
       "nft": {},
-      "chrono": [],
+      "chrono": [
+      ],
       "pending": [],
       "exeq": [],
       "exes": [],
@@ -323,12 +337,17 @@ var state = {
       },
       "expired": [],
       "contracts": {},
-      "posts": [],
-      "delegations": [
+      "posts": [
          {
-            "delegator": "igster",
-            "vests": 201881548529
+            "author": "dlux-io",
+            "permlink": "ignition"
          },
+         {
+            "author": "markegiles",
+            "permlink": "dlux-vr-tutorial-sm-test"
+         }
+      ],
+      "delegations": [
          {
             "delegator": "flash07",
             "vests": 20187819550
@@ -370,10 +389,6 @@ var state = {
             "vests": 201857400580
          },
          {
-            "delegator": "snubbermike",
-            "vests": 2018571511345
-         },
-         {
             "delegator": "whatsup",
             "vests": 1009279586126
          },
@@ -384,10 +399,6 @@ var state = {
          {
             "delegator": "protegeaa",
             "vests": 2016919336599
-         },
-         {
-            "delegator": "bobby.madagascar",
-            "vests": 403299221414
          },
          {
             "delegator": "b-s",
@@ -432,28 +443,58 @@ var state = {
          {
             "delegator": "altrosa",
             "vests": 100378661751
-         }
-      ],
-      "ico": [
+         },
          {
-            "shredz7": 5131994868
+            "delegator": "theb0red1",
+            "vests": 501429386073
+         },
+         {
+            "delegator": "onthewayout",
+            "vests": 2005640925153
+         },
+         {
+            "delegator": "syedumair",
+            "vests": 300845301398
+         },
+         {
+            "delegator": "a1-shroom-spores",
+            "vests": 170000000000
+         },
+         {
+            "delegator": "yasu24",
+            "vests": 2004134932
+         },
+         {
+            "delegator": "novacadian",
+            "vests": 200343431865
+         },
+         {
+            "delegator": "bobby.madagascar",
+            "vests": 2003043486
+         },
+         {
+            "delegator": "alexvanaken",
+            "vests": 100122414561
          }
       ],
+      "ico": [],
       "br": [],
       "stats": {
          "hashLastIBlock": "QmT7pUY7S3K42bj6wKwqNva1LzMX82gyAqr7143fng33QZ",
          "lastBlock": "QmT7pUY7S3K42bj6wKwqNva1LzMX82gyAqr7143fng33QZ",
-         "tokenSupply": 100037482811,
+         "tokenSupply": 2780878983 + 8300000000,
          "interestRate": 2100000,
          "nodeRate": 2000,
          "IPFSRate": 2000,
          "budgetRate": 2000,
          "maxBudget": 1000000000,
          "savingsRate": 1000,
-         "marketingRate": 1000,
+         "marketingRate": 2000,
          "resteemReward": 10000,
-         "delegationRate": 1000,
-         "currationRate": 2500
+         "delegationRate": 2000,
+         "currationRate": 2000,
+         "icoPrice": 220,
+         "outOnBlock": 0
       },
       "dex": {
          "steem": {
@@ -490,11 +531,11 @@ var state = {
             "dlux-io": {
                "self": "dlux-io",
                "domain": "https://token.dlux.io",
-               "bidRate": 2000,
-               "marketingRate": 2000,
-               "attempts": 15140,
+               "bidRate": 2500,
+               "marketingRate": 2500,
+               "attempts": 26350,
                "yays": 10404,
-               "wins": 2,
+               "wins": 36,
                "contracts": 0,
                "lastGood": 29606500,
                "transfers": 0,
@@ -510,8 +551,8 @@ var state = {
                         "agreement": false
                      }
                   },
-                  "hash": "QmZWKQjMiEgkYCeUGaSF9Y9PnboqRLQMaF4H1fdN4uC5iN",
-                  "block": 30078600,
+                  "hash": "QmPwRPbQon7ch8V1ccMnXGJDdJrKBZ5nwvJoc1mpN8W9EQ",
+                  "block": 30989200,
                   "version": "v0.0.2a",
                   "escrow": false
                }
@@ -519,14 +560,14 @@ var state = {
             "caramaeplays": {
                "domain": "https://dlux-token-caramaeplays.herokuapp.com",
                "self": "caramaeplays",
-               "bidRate": 2000,
-               "marketingRate": 0,
-               "attempts": 4945,
-               "yays": 4915,
-               "wins": 2,
+               "bidRate": 2500,
+               "marketingRate": 2500,
+               "attempts": 16155,
+               "yays": 16125,
+               "wins": 36,
                "contracts": 0,
                "escrows": 0,
-               "lastGood": 30078700,
+               "lastGood": 30989300,
                "report": {
                   "agreements": {
                      "caramaeplays": {
@@ -549,9 +590,9 @@ var state = {
             "inconceivable": {
                "domain": "https://mica-bobcat.glitch.me",
                "self": "inconceivable",
-               "bidRate": 2000,
-               "marketingRate": 0,
-               "attempts": 2372,
+               "bidRate": 2500,
+               "marketingRate": 2500,
+               "attempts": 13582,
                "yays": 0,
                "wins": 0,
                "contracts": 0,
@@ -621,7 +662,7 @@ fetch(`${state.markets.node[selector].domain}/markets`)
   }).catch(error => {console.log(error, `\nStarting 'startingHash': ${config.engineCrank}`);startWith(config.engineCrank);});
 //startWith(config.engineCrank)
 */
-startApp()
+startWith(config.engineCrank)
 function startWith (sh){
   if (sh){
 console.log(`Attempting to start from IPFS save state ${sh}`);
@@ -1609,12 +1650,26 @@ function startApp() {
       }
     }
     */
-    if (json.to == 'robotolux' && json.amount.split(' ')[1] == 'STEEM' && current < 31288131 && current > 27417440) {
+    if (json.to == 'robotolux' && json.amount.split(' ')[1] == 'STEEM'){
+      if (!state.balances[json.from])state.balances[json.from]=0
       const icoEntry = (current - 20000) % 30240
-      const weight = parseInt((Math.sqrt(1 - Math.pow(icoEntry/(30240), 2))/2 + 0.5)*1000000)
       const amount = parseInt(parseFloat(json.amount) * 1000)
-      state.ico.push({[json.from]:(weight * amount)})
-      console.log(current + `:${json.from} bid in DLUX auction with ${json.amount} with a ${weight} multiple`)
+      var purchase
+      if(!state.stats.outOnBlock){
+        purchase = parseInt(amount / state.stats.icoPrice * 1000)
+        if (purchase < state.balances.ri){
+          state.balances.ri -= purchase
+          state.balances[json.from] += purchase
+        } else {
+          state.balances[json.from] = state.balances.ri
+          const left = purchase - state.balances.ri
+          state.ico.push({[json.from]:(parseInt(amount*left/purchase))})
+          state.stats.outOnBlock = current
+        }
+      } else {
+        state.ico.push({[json.from]:(amount)})
+        console.log(current + `:${json.from} bid in DLUX auction with ${json.amount}`)
+      }
     }
   });
 
@@ -2411,7 +2466,7 @@ function tally(num) {//tally state before save and next report
     state.markets.node[node].wins++
   }
   //count agreements and make the runners list, update market rate for node services
-  if (num > 30000000){
+  if (num > 30900000){
     var mint = parseInt(state.stats.tokenSupply/state.stats.interestRate)
     state.stats.tokenSupply += mint
     state.balances.ra += mint
@@ -2434,7 +2489,7 @@ function dao(num) {
   }
   state.stats.marketingRate = parseInt(b/i)
   state.stats.nodeRate = parseInt(j/i)
-  console.log(current + `:DAO Accounting In Progress:\n${t} has been generated today\n${state.stats.marketingRate} is the marketing rate.\n${state.stats.nodeRate} is the node rate.`)
+  console.log(num + `:DAO Accounting In Progress:\n${t} has been generated today\n${state.stats.marketingRate} is the marketing rate.\n${state.stats.nodeRate} is the node rate.`)
   state.balances.rn += parseInt(t* parseInt(state.stats.nodeRate)/10000)
 
   state.balances.ra = parseInt(state.balances.ra) - parseInt(t* parseInt(state.stats.nodeRate)/10000)
@@ -2442,7 +2497,7 @@ function dao(num) {
   if(state.balances.rm > 1000000000){state.balances.rc += state.balances.rm - 1000000000;state.balances.rm = 1000000000}
   state.balances.ra = parseInt(state.balances.ra) - parseInt(t*state.stats.marketingRate/10000)
   i=0,j=0
-  console.log(current + `:${state.balances.rm} is availible in the marketing account\n${state.balances.rn} DLUX set asside to distribute to nodes`)
+  console.log(num + `:${state.balances.rm} is availible in the marketing account\n${state.balances.rn} DLUX set asside to distribute to nodes`)
   for (var node in state.markets.node){ //tally the wins
     j = j + parseInt(state.markets.node[node].wins)
   }
@@ -2472,6 +2527,47 @@ function dao(num) {
     state.balances.rd -= k
     console.log(current + `:${k} DLUX awarded to ${state.delegations[i].delegator} for ${state.delegations[i].vests} VESTS`)
   }
+  if (state.balances.ri < 100000000 && state.stats.tokenSupply < 100000000000){
+    if (state.balances.ri == 0){
+      state.stats.tokenSupply += 100000000
+      state.balances.ri = 100000000
+      const ago = num - state.stats.outOnBlock
+      if (ago !== num) {
+          state.balances.rl = parseInt(ago/30240 * 50000000)
+          state.balances.ri = 100000000 - parseInt(ago/30240 * 50000000)
+          state.state.icoPrice = state.state.icoPrice * (1 +(ago/30240)/2 )
+        }
+      } else {
+      var left = state.balances.ri
+      state.stats.tokenSupply += 100000000 - left
+      state.balances.ri = 100000000
+      state.state.icoPrice = state.state.icoPrice - (left / 1000000000)
+      if(state.state.icoPrice < 220)state.state.icoPrice=220
+    }
+  }
+  if (state.balances.rl){
+    var dailyICODistrobution = state.balances.rl, y=0
+    for(i=0;i<state.ico.length;i++){
+      for (var node in state.ico[i]){
+        y += state.ico[i][node]
+      }
+    }
+    for(i=0;i<state.ico.length;i++){
+      for (var node in state.ico[i]){
+        if (!state.balances[node]){state.balances[node] = 0}
+        state.balances[node] += parseInt(state.ico[i][node]/y*state.balances.rl)
+        dailyICODistrobution -= parseInt(state.ico[i][node]/y*state.balances.rl)
+        console.log(current + `:${node} awarded  ${parseInt(state.ico[i][node]/y*state.balances.rl)} DLUX for ICO auction`)
+        if (i == state.ico.length - 1){
+          state.balances[node] += dailyICODistrobution
+          console.log(current + `:${node} given  ${dailyICODistrobution} remainder`)
+        }
+      }
+    }
+    state.balances.rl = 0
+    state.ico = []
+  }
+  /*
   if(num < 31288131){
   var dailyICODistrobution = 3125000, y=0
   for(i=0;i<state.ico.length;i++){
@@ -2495,6 +2591,8 @@ function dao(num) {
   state.pow.robotolux -= 3125000
   state.pow.t -= 3125000
   }
+  */
+
   state.balances.rc = state.balances.ra
   state.balances.ra = 0
   var q = 0, r = state.balances.rc
