@@ -13,6 +13,7 @@ const fs = require('fs');
 const XMLHttpRequest = require("xmlhttprequest").XMLHttpRequest
 const config = require('./config');
 const rtrades = require('./rtrades');
+var state = require('./state');
 //const RSS = require('rss-generator');
 // Attempts to get the hash of that state file.
 
@@ -35,7 +36,7 @@ var escrow = false
 var broadcast = 1
 const wif = steemClient.auth.toWif(config.username, config.active, 'active')
 const resteemAccount = 'dlux-io';
-var startingBlock = 	30989390;
+var startingBlock = 	31818500;
 var current, dsteem, testString
 
 const prefix = 'dluxT_';
@@ -203,426 +204,6 @@ var utils = {
   }
 }
 
-var state = {
-      "limbo": {},
-      "listeners": [],
-      "balances": {
-         "ra": 0,
-         "rb": 0,
-         "rc": 0,
-         "rd": 0,
-         "re": 0,
-         "ri": 1000000000,
-         "rr": 0,
-         "rn": 0,
-         "rm": 0,
-         "kellie.leigh": 50000000,
-         "surfyogi": 12000000,
-         "sunlakeslady": 3000000,
-         "bitduck86": 2000000,
-         "a1-shroom-spores": 55884388,
-         "vasqus": 2000000,
-         "phteven.withap": 2000000,
-         "cowboys.angel": 5000000,
-         "paint.baller": 7500000,
-         "dlux-io": 1000000000,
-         "disregardfiat": 7022969,
-         "eastmael": 27009780,
-         "elgeko": 15416780,
-         "gabbagallery": 15404885,
-         "cryptoandzen": 109258596,
-         "markegiles": 10897455,
-         "whatsup": 6489365,
-         "d-pend": 1159715,
-         "flash07": 207307,
-         "onealfa": 3306848,
-         "kriptonik": 41755015,
-         "gabbynhice": 989665,
-         "ackza": 152749,
-         "pangoli": 3372429,
-         "fyrstikken": 28769708,
-         "angelveselinov": 138714,
-         "michelios": 19012759,
-         "masterthematrix": 4886001,
-         "taskmaster4450": 3621969,
-         "direwolf": 14633890,
-         "jznsamuel": 1764111,
-         "bobby.madagascar": 12913512,
-         "itstime": 2517296,
-         "igster": 3501352,
-         "deybacsi": 14142,
-         "protegeaa": 9937735,
-         "gattino": 538201,
-         "mannacurrency": 234835,
-         "seareader1": 586855,
-         "pocketrocket": 114545,
-         "preparedwombat": 3561520,
-         "janusface": 2287632,
-         "nataboo": 133242,
-         "j85063": 688987,
-         "b-s": 3330548,
-         "caramaeplays": 0,
-         "inconceivable": 0,
-         "bubke": 2948435,
-         "okean123": 147402,
-         "blockcryptochain": 58948,
-         "bryan-imhoff": 589638,
-         "shellyduncan": 1179290,
-         "east.autovote": 0,
-         "snubbermike": 3977499,
-         "flauwy": 0,
-         "theycallmedan": 2574172,
-         "tkept260": 22206524,
-         "runicar": 5253291,
-         "acidyo": 33220275,
-         "lanmower": 465318,
-         "tarazkp": 19482614,
-         "juvyjabian": 4715237,
-         "stackin": 182536,
-         "organduo": 0,
-         "dera123": 2101047,
-         "rovill": 1375502,
-         "tracilin": 94677378,
-         "elementm": 587042,
-         "doon": 1645964,
-         "superlotto": 733524,
-         "chrismgiles": 51311995,
-         "kenny-crane": 5066074,
-         "altrosa": 293199,
-         "shredz7": 1943431,
-         "dlux-highway": 1594578,
-         "dlux-sm": 791577,
-         "theb0red1": 1235753,
-         "onthewayout": 4837358,
-         "syedumair": 1054188,
-         "austindro": 6328417,
-         "kohost": 1101498,
-         "yasu24": 2735,
-         "novacadian": 171503,
-         "alexvanaken": 9541,
-         "nekomuneca":6000000,
-         "suzanoslin":6000000
-      },
-      "pow": {
-         "n": {},
-         "t": 8300000000,
-         "disregardfiat": 1000000000,
-         "markegiles": 1000000000,
-         "shredz7": 100000000,
-         "a1-shroom-spores": 100000000,
-         "caramaeplays": 100000000,
-         "dlux-io": 6000000000,
-         "robotolux": 0
-      },
-      "rolling": {},
-      "nft": {},
-      "chrono": [
-      ],
-      "pending": [],
-      "exeq": [],
-      "exes": [],
-      "queue": [
-         "caramaeplays",
-         "inconceivable",
-         "dlux-io"
-      ],
-      "escrow": [],
-      "bannedNodes": [],
-      "agents": {
-         "dlux-io": {
-            "self": "dlux-io",
-            "queue": [],
-            "online": true
-         }
-      },
-      "expired": [],
-      "contracts": {},
-      "posts": [
-         {
-            "author": "dlux-io",
-            "permlink": "ignition"
-         },
-         {
-            "author": "markegiles",
-            "permlink": "dlux-vr-tutorial-sm-test"
-         }
-      ],
-      "delegations": [
-         {
-            "delegator": "flash07",
-            "vests": 20187819550
-         },
-         {
-            "delegator": "taskmaster4450",
-            "vests": 201876824153
-         },
-         {
-            "delegator": "preparedwombat",
-            "vests": 201875204241
-         },
-         {
-            "delegator": "bubke",
-            "vests": 1009371232275
-         },
-         {
-            "delegator": "j85063",
-            "vests": 201870966828
-         },
-         {
-            "delegator": "okean123",
-            "vests": 50466716897
-         },
-         {
-            "delegator": "blockcryptochain",
-            "vests": 20186584362
-         },
-         {
-            "delegator": "bryan-imhoff",
-            "vests": 201863439020
-         },
-         {
-            "delegator": "shellyduncan",
-            "vests": 403722947171
-         },
-         {
-            "delegator": "eastmael",
-            "vests": 201857400580
-         },
-         {
-            "delegator": "whatsup",
-            "vests": 1009279586126
-         },
-         {
-            "delegator": "jznsamuel",
-            "vests": 201798905991
-         },
-         {
-            "delegator": "protegeaa",
-            "vests": 2016919336599
-         },
-         {
-            "delegator": "b-s",
-            "vests": 161191024962
-         },
-         {
-            "delegator": "direwolf",
-            "vests": 20616896980
-         },
-         {
-            "delegator": "michelios",
-            "vests": 3578755623131
-         },
-         {
-            "delegator": "disregardfiat",
-            "vests": 20115916810
-         },
-         {
-            "delegator": "tarazkp",
-            "vests": 1205958434476
-         },
-         {
-            "delegator": "masterthematrix",
-            "vests": 301484502951
-         },
-         {
-            "delegator": "elementm",
-            "vests": 200972274760
-         },
-         {
-            "delegator": "kriptonik",
-            "vests": 200952516306
-         },
-         {
-            "delegator": "dera123",
-            "vests": 100454469051
-         },
-         {
-            "delegator": "superlotto",
-            "vests": 251119699919
-         },
-         {
-            "delegator": "altrosa",
-            "vests": 100378661751
-         },
-         {
-            "delegator": "theb0red1",
-            "vests": 501429386073
-         },
-         {
-            "delegator": "onthewayout",
-            "vests": 2005640925153
-         },
-         {
-            "delegator": "syedumair",
-            "vests": 300845301398
-         },
-         {
-            "delegator": "a1-shroom-spores",
-            "vests": 170000000000
-         },
-         {
-            "delegator": "yasu24",
-            "vests": 2004134932
-         },
-         {
-            "delegator": "novacadian",
-            "vests": 200343431865
-         },
-         {
-            "delegator": "bobby.madagascar",
-            "vests": 2003043486
-         },
-         {
-            "delegator": "alexvanaken",
-            "vests": 100122414561
-         }
-      ],
-      "ico": [],
-      "br": [],
-      "stats": {
-         "hashLastIBlock": "QmT7pUY7S3K42bj6wKwqNva1LzMX82gyAqr7143fng33QZ",
-         "lastBlock": "QmT7pUY7S3K42bj6wKwqNva1LzMX82gyAqr7143fng33QZ",
-         "tokenSupply": 2780878983 + 8300000000,
-         "interestRate": 2100000,
-         "nodeRate": 2000,
-         "IPFSRate": 2000,
-         "budgetRate": 2000,
-         "maxBudget": 1000000000,
-         "savingsRate": 1000,
-         "marketingRate": 2000,
-         "resteemReward": 10000,
-         "delegationRate": 2000,
-         "currationRate": 2000,
-         "icoPrice": 220,
-         "outOnBlock": 0
-      },
-      "dex": {
-         "steem": {
-            "tick": "",
-            "buyOrders": [],
-            "sellOrders": [],
-            "his": [],
-            "days": [],
-            "weeks": [],
-            "months": []
-         },
-         "sbd": {
-            "tick": "",
-            "buyOrders": [],
-            "sellOrders": [],
-            "his": [],
-            "days": [],
-            "weeks": [],
-            "months": []
-         }
-      },
-      "runners": {
-         "dlux-io": {
-            "self": "dlux-io",
-            "domain": "https://token.dlux.io"
-         },
-         "caramaeplays": {
-            "self": "caramaeplays",
-            "domain": "https://dlux-token-caramaeplays.herokuapp.com"
-         }
-      },
-      "markets": {
-         "node": {
-            "dlux-io": {
-               "self": "dlux-io",
-               "domain": "https://token.dlux.io",
-               "bidRate": 2500,
-               "marketingRate": 2500,
-               "attempts": 26350,
-               "yays": 10404,
-               "wins": 36,
-               "contracts": 0,
-               "lastGood": 29606500,
-               "transfers": 0,
-               "report": {
-                  "agreements": {
-                     "dlux-io": {
-                        "node": "dlux-io",
-                        "agreement": true,
-                        "top": true
-                     },
-                     "caramaeplays": {
-                        "node": "caramaeplays",
-                        "agreement": false
-                     }
-                  },
-                  "hash": "QmPwRPbQon7ch8V1ccMnXGJDdJrKBZ5nwvJoc1mpN8W9EQ",
-                  "block": 30989200,
-                  "version": "v0.0.2a",
-                  "escrow": false
-               }
-            },
-            "caramaeplays": {
-               "domain": "https://dlux-token-caramaeplays.herokuapp.com",
-               "self": "caramaeplays",
-               "bidRate": 2500,
-               "marketingRate": 2500,
-               "attempts": 16155,
-               "yays": 16125,
-               "wins": 36,
-               "contracts": 0,
-               "escrows": 0,
-               "lastGood": 30989300,
-               "report": {
-                  "agreements": {
-                     "caramaeplays": {
-                        "node": "caramaeplays",
-                        "agreement": true,
-                        "top": true
-                     },
-                     "dlux-io": {
-                        "node": "dlux-io",
-                        "agreement": false
-                     }
-                  },
-                  "hash": "QmT7pUY7S3K42bj6wKwqNva1LzMX82gyAqr7143fng33QZ",
-                  "block": 29708700,
-                  "version": "v0.0.2a",
-                  "escrow": true
-               },
-               "escrow": true
-            },
-            "inconceivable": {
-               "domain": "https://mica-bobcat.glitch.me",
-               "self": "inconceivable",
-               "bidRate": 2500,
-               "marketingRate": 2500,
-               "attempts": 13582,
-               "yays": 0,
-               "wins": 0,
-               "contracts": 0,
-               "escrows": 0,
-               "lastGood": 0,
-               "report": {
-                  "agreements": {
-                     "inconceivable": {
-                        "node": "inconceivable",
-                        "agreement": true
-                     },
-                     "dlux-io": {
-                        "node": "dlux-io",
-                        "agreement": false
-                     },
-                     "caramaeplays": {
-                        "node": "caramaeplays",
-                        "agreement": false
-                     }
-                  },
-                  "hash": "QmPqp4HQsRT7FjyTDcynBZ2mES9i9fpPXtxVYYwDmgqPzr",
-                  "block": 29947300,
-                  "version": "v0.0.2a",
-                  "escrow": true
-               },
-               "escrow": true
-            }
-         }
-      }
-   }
 var plasma = {},jwt
 var NodeOps = []
 var rtradesToken = ''
@@ -1162,7 +743,7 @@ function startApp() {
 
   processor.on('dex_steem_sell', function(json, from) {
     var buyAmount = parseInt(json.steem)
-    if (json.dlux <= state.balances[from]){
+    if (json.dlux <= state.balances[from] &&  typeof buyAmount == 'number' ){
       var txid = 'DLUX' + hashThis(from + current)
       state.dex.steem.sellOrders.push({txid, from: from, steem: buyAmount, sbd: 0, amount: parseInt(json.dlux), rate:parseInt((json.dlux)/(buyAmount)), block:current, partial: json.partial || true})
       state.balances[from] -= json.dlux
@@ -1178,8 +759,8 @@ function startApp() {
   });
 
   processor.on('dex_sbd_sell', function(json, from) {
-    var buyAmount = parseInt(parseFloat(json.sbd) * 1000)
-    if (json.dlux <= state.balances[from]){
+    var buyAmount = parseInt(json.sbd)
+    if (json.dlux <= state.balances[from] &&  typeof buyAmount == 'number' ){
       var txid = 'DLUX' + hashThis(from + current)
       state.dex.sbd.sellOrders.push({txid, from: from, steem: 0, sbd: buyAmount, amount: json.dlux, rate:parseInt((json.dlux)/(buyAmount)), block:current, partial: json.partial || true})
       state.balances[from] -= json.dlux
@@ -1209,7 +790,7 @@ function startApp() {
         state.dex.sbd.buyOrders.splice(i,1)
       }
     }
-    console.log(current + `:${from} has canceled ${i} orders and recouped ${t} DLUX`)
+    console.log(current + `:${from} has canceled ${l} orders and recouped ${t} DLUX`)
   });
 
   processor.on('dex_clear_sells', function(json, from) {
