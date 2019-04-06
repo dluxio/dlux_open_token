@@ -2068,7 +2068,7 @@ function startApp() {
                     sbdAmount = (addr.sbd / 1000).toFixed(3) + type
                     steemAmount = '0.000 STEEM'
                 }
-                let eid = parseInt('0x' + (bs58.decode(eidi.substring(6, 10))).toString('hex')) //escrow_id from DLUXQmxxxx<this
+                let eid = processor.getCurrentBlockNumber() //escrow_id from DLUXQmxxxx<this
                 let params = {
                     from: config.username,
                     to: addr.from,
@@ -2137,7 +2137,7 @@ function startApp() {
                 var eidi = txid
                 var formatter = amount / 1000
                 formatter = formatter.toFixed(3)
-                let eid = parseInt('0x' + (bs58.decode(eidi.substring(6, 10))).toString('hex')) //escrow_id from DLUXQmxxxx<this
+                let eid =  processor.getCurrentBlockNumber()
                 let params = {
                     from: config.username,
                     to: agents[0],
