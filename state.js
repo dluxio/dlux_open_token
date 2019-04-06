@@ -125,7 +125,6 @@ let state = {
   "exeq": [],
   "exes": [],
   "queue": [
-    "caramaeplays",
     "inconceivable",
     "dlux-io",
     "markegiles",
