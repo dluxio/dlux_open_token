@@ -1333,7 +1333,7 @@ function startApp() {
                 break;
             }
         }
-        if (!found) {
+        if (found) {
             for (var i = 0; i < state.pending.length; i++) {
                 if (state.pending[i][0] == json.to && state.pending[i][1][1].escrow_id == json.escrow_id) {
                     state.pending.splice(i, 1)
