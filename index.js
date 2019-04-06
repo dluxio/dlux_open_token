@@ -1436,7 +1436,7 @@ function startApp() {
                       broadcast=1
                       noi(task)
                     } else {
-                      console.log(`#Broadcast ${result} for ${NodeOps[task][2].json_meta.contract} @ block ${result.block_num}`)
+                      console.log(`#Broadcast ${result} for ${NodeOps[task][2]} @ block ${result.block_num}`)
                       NodeOps.splice(task,1)
                     }
                 })
