@@ -209,7 +209,7 @@ var NodeOps = []
 var rtradesToken = ''
 const transactor = steemTransact(client, steem, prefix);
 var selector = 'dlux-io'
-if (config.username == selector){selector = 'caramaeplays'}
+if (config.username == selector){selector = 'disregardfiat'}
 if (config.rta && config.rtp){
   rtrades.handleLogin(config.rta, config.rtp)
 }
@@ -1137,7 +1137,7 @@ function startApp() {
         }
       }
       if (found >= 0){
-        state.queue.push(state.queue.splice(found,1)[0])
+        state.queue.unshift(state.queue.splice(found,1)[0])
       } else {
         state.queue.push(from)
       }
@@ -1398,24 +1398,24 @@ function startApp() {
           switch (NodeOps[task][1]) {
             case 'escrow_transfer':
               steemClient.broadcast.escrowTransfer(
-                wif,
-                NodeOps[task][2].from,
-                NodeOps[task][2].to,
-                NodeOps[task][2].agent,
-                NodeOps[task][2].escrow_id,
-                NodeOps[task][2].sbd_amount,
-                NodeOps[task][2].steem_amount,
-                NodeOps[task][2].fee,
-                NodeOps[task][2].ratification_deadline,
-                NodeOps[task][2].escrow_expiration,
-                NodeOps[task][2].json_meta,
+                config.active,
+                NodeOps[task][2][1].from,
+                NodeOps[task][2][1].to,
+                NodeOps[task][2][1].agent,
+                NodeOps[task][2][1].escrow_id,
+                NodeOps[task][2][1].sbd_amount,
+                NodeOps[task][2][1].steem_amount,
+                NodeOps[task][2][1].fee,
+                NodeOps[task][2][1].ratification_deadline,
+                NodeOps[task][2][1].escrow_expiration,
+                NodeOps[task][2][1].json_meta,
                 function(err, result) {
                   if(err){
                     console.error(err)
                     noi(task)
                     broadcast=1
                   } else {
-                    console.log(`#Broadcast ${result} for ${NodeOps[task][2].json_meta.contract} @ block ${result.block_num}`)
+                    console.log(`#Broadcast ${result} for ${NodeOps[task][2][1].json_meta.contract} @ block ${result.block_num}`)
                     NodeOps.splice(task,1)
                   }
               })
@@ -1423,7 +1423,7 @@ function startApp() {
             case 'escrow_approve':
               console.log('trying to sign', NodeOps[task][2])
                 steemClient.broadcast.escrowApprove(
-                  wif,
+                  config.active,
                   NodeOps[task][2].from,
                   NodeOps[task][2].to,
                   NodeOps[task][2].agent,
@@ -1665,7 +1665,6 @@ function startApp() {
           escrowTimer.expiryUTC = new Date(escrowTimer.expiryIn);
           escrowTimer.expiryString = escrowTimer.expiryUTC.toISOString().slice(0,-5);
         var eidi = txid
-        var formatter
         if (type == ' STEEM'){
           steemAmount = (addr.steem/1000).toFixed(3) + type
           sbdAmount = '0.000 SBD'
@@ -1673,7 +1672,6 @@ function startApp() {
           sbdAmount = (addr.sbd/1000).toFixed(3) + type
           steemAmount = '0.000 STEEM'
         }
-        formatter = formatter.toFixed(3)
         let eid = parseInt('0x' + (bs58.decode(eidi.substring(6,10))).toString('hex')) //escrow_id from DLUXQmxxxx<this
         let params = {
             from: config.username,
