@@ -1424,12 +1424,12 @@ function startApp() {
               console.log('trying to sign', NodeOps[task][2])
                 steemClient.broadcast.escrowApprove(
                   config.active,
-                  NodeOps[task][2][1].from,
-                  NodeOps[task][2][1].to,
-                  NodeOps[task][2][1].agent,
-                  NodeOps[task][2][1].who,
-                  NodeOps[task][2][1].escrow_id,
-                  NodeOps[task][2][1].approve,
+                  NodeOps[task][2].from,
+                  NodeOps[task][2].to,
+                  NodeOps[task][2].agent,
+                  NodeOps[task][2].who,
+                  NodeOps[task][2].escrow_id,
+                  NodeOps[task][2].approve,
                   function(err, result) {
                     if(err){
                       console.error(err)
