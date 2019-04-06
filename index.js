@@ -1817,7 +1817,7 @@ function startApp() {
           switch (NodeOps[task][1]) {
             case 'escrow_transfer':
               steemClient.broadcast.escrowTransfer(
-                config.active,
+                wif,
                 NodeOps[task][2].from,
                 NodeOps[task][2].to,
                 NodeOps[task][2].agent,
@@ -1877,7 +1877,7 @@ function startApp() {
               break;
             case 'transfer':
               steemClient.broadcast.transfer(
-                config.active,
+                wif,
                 NodeOps[task][2].from,
                 NodeOps[task][2].to,
                 NodeOps[task][2].amount,
@@ -1920,7 +1920,7 @@ function startApp() {
                     "creator": config.username,
                     "extensions": []
                   }
-                ], config.active,
+                ], wif,
                 function(err, result) {
                   if(err) {
                     console.error(err);
@@ -1956,7 +1956,7 @@ function startApp() {
                     "json_metadata": "",
                     "extensions": []
                   }
-                ], config.active,
+                ], wif,
                 function(err, result) {
                   if(err) {
                     console.error(err);
