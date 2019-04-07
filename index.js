@@ -1036,8 +1036,9 @@ function startApp() {
             isAgent = state.markets.node[json.agent]
             isDAgent = state.markets.node[json.to]
         } catch (e) {}
-        if (contract && isAgent) { //{txid, from: from, buying: buyAmount, amount: json.dlux, [json.dlux]:buyAmount, rate:parseFloat((json.dlux)/(buyAmount)).toFixed(6), block:current, partial: json.partial || true
-            if (contract.steem == json.steem_amount.amount && contract.sbd == json.sbd_amount.amount) {
+        console.log(json)
+        if (contract) { //{txid, from: from, buying: buyAmount, amount: json.dlux, [json.dlux]:buyAmount, rate:parseFloat((json.dlux)/(buyAmount)).toFixed(6), block:current, partial: json.partial || true
+            if (contract.steem == parseInt(json.steem_amount)*1000 && contract.sbd == parseInt(json.sbd_amount)*1000) {
                 state.balances[json.from] += contract.amount
                 if (contract.steem) {
                     for (var i = 0; i < state.dex.steem.sellOrders.length; i++) {
@@ -1293,7 +1294,7 @@ function startApp() {
                     }
                 }
             }
-        } else if (isAgent) {
+        } /* else if (isAgent) {
             state.escrow.push([json.agent,
                 [
                     "escrow_approve",
@@ -1308,6 +1309,7 @@ function startApp() {
                 ]
             ])
         }
+        */
     });
 
     processor.onOperation('escrow_approve', function(json) {
