@@ -1350,10 +1350,12 @@ function startApp() {
     processor.onOperation('escrow_approve', function(json) {
         var found = 0
         for (var i = 0; i < state.escrow.length; i++) {
-            if (state.escrow[i][0] == json.agent || state.escrow[i][0] == json.to && state.escrow[i][1][1].escrow_id == json.escrow_id) {
+            if (state.escrow[i][0] == json.who && state.escrow[i][1][1].escrow_id == json.escrow_id && state.escrow[i][1][1].approve == json.approve) {
+              console.log(`Agent ${json.who} did the thing`)
                 state.escrow.splice(i, 1)
                 found = 1
-                state.markets.node[json.agent].wins++
+                state.markets.node[json.who].wins++
+                /*
                 state.pending.push([json.to,
                     [
                         "escrow_approve",
@@ -1366,10 +1368,12 @@ function startApp() {
                             "approve": true
                         }
                     ],
-                current])
+                processor.getCurrentBlockNumber()])
+                */
                 break;
             }
         }
+        /*
         if (found) {
             for (var i = 0; i < state.pending.length; i++) {
                 if (state.pending[i][0] == json.to && state.pending[i][1][1].escrow_id == json.escrow_id) {
@@ -1379,6 +1383,7 @@ function startApp() {
                 }
             }
         }
+        */
         if (json.to == json.who && state.contracts[json.to]){
           for (var contract in state.contracts[json.to]){
             if(state.contracts[json.to][contract][1].escrow_id = json.escrow_id){
