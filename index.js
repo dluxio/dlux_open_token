@@ -1039,12 +1039,16 @@ function startApp() {
         console.log(json,contract)
         if (contract) { //{txid, from: from, buying: buyAmount, amount: json.dlux, [json.dlux]:buyAmount, rate:parseFloat((json.dlux)/(buyAmount)).toFixed(6), block:current, partial: json.partial || true
             if (contract.steem == parseInt(parseFloat(json.steem_amount)*1000) && contract.sbd == parseInt(parseFloat(json.sbd_amount)*1000)) {
-              console.log('score!')
                 state.balances[json.from] += contract.amount
                 if (contract.steem) {
                     for (var i = 0; i < state.dex.steem.sellOrders.length; i++) {
                         if (state.dex.steem.sellOrders[i].txid == contract.txid) {
                             state.dex.steem.tick = contract.rate
+                            state.dex.steem.his.unshift({
+                              rate:contract.rate,
+                              block:processor.getCurrentBlockNumber(),
+                              amount:contract.amount
+                            })
                             state.dex.steem.sellOrders.splice(i, 1)
                             break;
                         }
@@ -1058,7 +1062,17 @@ function startApp() {
                         }
                     }
                 }
-                delete state.contracts[json.to][dextx.contract]
+                state.contracts[json.to][dextx.contract] = [
+                    "escrow_approve",
+                    {
+                        "from": json.from,
+                        "to": json.to,
+                        "agent": json.to,
+                        "who": json.agent,
+                        "escrow_id": json.escrow_id,
+                        "approve": true
+                    }
+                ]
                 state.escrow.push([json.agent,
                     [
                         "escrow_approve",
@@ -1343,6 +1357,15 @@ function startApp() {
                     break;
                 }
             }
+        }
+        if (json.to == json.agent && state.contracts[json.to]){
+          for (var contract in state.contracts[json.to]){
+            if(state.contracts[json.to][contract][1].escrow_id = json.escrow_id){
+              state.contracts[json.to][contract]=0
+              delete state.contracts[json.to][contract]
+              break;
+            }
+          }
         }
     });
 
