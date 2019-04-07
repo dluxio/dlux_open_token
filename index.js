@@ -1628,6 +1628,31 @@ function startApp() {
           }
         }
         */
+        var found = 0
+        for (var i = 0; i < state.escrow.length; i++) {
+            if (state.escrow[i][0] == json.from && state.escrow[i][1][1].to == json.to && state.escrow[i][1][1].steem_amount == json.steem_amount && state.escrow[i][1][1].sbd_amount == json.sbd_amount) {
+              console.log(`Agent ${json.who} did the thing`)
+                state.escrow.splice(i, 1)
+                found = 1
+                state.markets.node[json.from].wins++
+                /*
+                state.pending.push([json.to,
+                    [
+                        "escrow_approve",
+                        {
+                            "from": json.from,
+                            "to": json.to,
+                            "agent": json.agent,
+                            "who": json.to,
+                            "escrow_id": json.escrow_id,
+                            "approve": true
+                        }
+                    ],
+                processor.getCurrentBlockNumber()])
+                */
+                break;
+            }
+        }
         if (json.to == 'robotolux' && json.amount.split(' ')[1] == 'STEEM') {
             if (!state.balances[json.from]) state.balances[json.from] = 0
             const icoEntry = (current - 20000) % 30240
