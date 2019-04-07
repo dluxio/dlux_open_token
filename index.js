@@ -1031,14 +1031,15 @@ function startApp() {
     processor.onOperation('escrow_transfer', function(json, from) { //grab posts to reward
         var op, dextx, contract, isAgent, isDAgent
         try {
-            dextx = json.json_meta.dextx
-            contract = state.contracts[json.to][json.json_meta.contract]
+            dextx = JSON.parse(json.json_meta).contract
+            contract = state.contracts[json.to][dextx]
             isAgent = state.markets.node[json.agent]
             isDAgent = state.markets.node[json.to]
         } catch (e) {}
-        console.log(json)
+        console.log(json,contract)
         if (contract) { //{txid, from: from, buying: buyAmount, amount: json.dlux, [json.dlux]:buyAmount, rate:parseFloat((json.dlux)/(buyAmount)).toFixed(6), block:current, partial: json.partial || true
-            if (contract.steem == parseInt(json.steem_amount)*1000 && contract.sbd == parseInt(json.sbd_amount)*1000) {
+            if (contract.steem == parseInt(parseFloat(json.steem_amount)*1000) && contract.sbd == parseInt(parseFloat(json.sbd_amount)*1000)) {
+              console.log('score!')
                 state.balances[json.from] += contract.amount
                 if (contract.steem) {
                     for (var i = 0; i < state.dex.steem.sellOrders.length; i++) {
@@ -1294,7 +1295,7 @@ function startApp() {
                     }
                 }
             }
-        } /* else if (isAgent) {
+        }  else if (isAgent) {
             state.escrow.push([json.agent,
                 [
                     "escrow_approve",
@@ -1309,7 +1310,6 @@ function startApp() {
                 ]
             ])
         }
-        */
     });
 
     processor.onOperation('escrow_approve', function(json) {
