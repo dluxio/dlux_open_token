@@ -1882,7 +1882,7 @@ function startApp() {
                             break;
                         case 'transfer':
                             steemClient.broadcast.transfer(
-                                wif,
+                                config.active,
                                 NodeOps[task][2].from,
                                 NodeOps[task][2].to,
                                 NodeOps[task][2].amount,
