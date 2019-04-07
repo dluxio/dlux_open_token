@@ -1350,7 +1350,7 @@ function startApp() {
     processor.onOperation('escrow_approve', function(json) {
         var found = 0
         for (var i = 0; i < state.escrow.length; i++) {
-            if (state.escrow[i][0] == json.agent && state.escrow[i][1][1].escrow_id == json.escrow_id) {
+            if (state.escrow[i][0] == json.agent || state.escrow[i][0] == json.to && state.escrow[i][1][1].escrow_id == json.escrow_id) {
                 state.escrow.splice(i, 1)
                 found = 1
                 state.markets.node[json.agent].wins++
