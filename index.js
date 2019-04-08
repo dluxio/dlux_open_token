@@ -1311,7 +1311,7 @@ function startApp() {
                 steem: 0,
                 sbd: parseInt(parseFloat(json.sbd_amount)*1000),
                 amount: dextx.dlux,
-                rate: parseFLoat(parseInt(parseFloat(json.sbd_amount)*1000)/dextx.dlux).toFixed(6),
+                rate: parseFloat(parseInt(parseFloat(json.sbd_amount)*1000)/dextx.dlux).toFixed(6),
                 block: processor.getCurrentBlockNumber(),
                 escrow_id: json.escrow_id,
                 agent: json.agent,
