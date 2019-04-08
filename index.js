@@ -1631,7 +1631,7 @@ function startApp() {
         var found = 0
         for (var i = 0; i < state.escrow.length; i++) {
             if (state.escrow[i][0] == json.from && state.escrow[i][1][1].to == json.to && state.escrow[i][1][1].steem_amount == json.steem_amount && state.escrow[i][1][1].sbd_amount == json.sbd_amount) {
-              console.log(`Agent ${json.who} did the thing`)
+              console.log(`Agent ${json.from} did the thing`)
                 state.escrow.splice(i, 1)
                 found = 1
                 state.markets.node[json.from].wins++
@@ -1798,7 +1798,7 @@ function startApp() {
                 broadcast--
             }
             while (!broadcast) {
-                for (var i = 0; i < state.escrow.length; i++) {
+                if(processor.getCurrentBlockNumber()%20==0){for (var i = 0; i < state.escrow.length; i++) {
                     if (state.escrow[i][0] == config.username) {
                         for (var j = 0; j < NodeOps.length; j++) {
                             if (NodeOps[j][2] == state.escrow[i][1][1]) {
@@ -1812,7 +1812,7 @@ function startApp() {
                         }
                         break;
                     }
-                }
+                }}
                 for (var i = 0; i < state.exeq.length; i++) {
                     if (state.exeq[i][0] == config.username) {
                         var chunk = null,
