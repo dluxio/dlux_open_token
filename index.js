@@ -960,7 +960,7 @@ function startApp() {
                 steem: buyAmount,
                 sbd: 0,
                 amount: parseInt(json.dlux),
-                rate: parseInt((json.dlux) / (buyAmount)),
+                rate: parseFloat((buyAmount)/(json.dlux)).toFixed(6),
                 block: current,
                 partial: json.partial || true
             })
@@ -990,7 +990,7 @@ function startApp() {
                 steem: 0,
                 sbd: buyAmount,
                 amount: json.dlux,
-                rate: parseInt((json.dlux) / (buyAmount)),
+                rate: parseFloat((buyAmount)/(json.dlux)).toFixed(6),
                 block: current,
                 partial: json.partial || true
             })
