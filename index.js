@@ -1792,7 +1792,7 @@ function startApp() {
             }
         }
         //*
-        if (config.active) {
+        if (config.active && processor.isStreaming()) {
             var found = -1
             if (broadcast) {
                 broadcast--
