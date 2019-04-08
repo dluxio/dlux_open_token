@@ -1064,7 +1064,11 @@ function startApp() {
         try {isDAgent = state.markets.node[json.to]} catch (e) {}
         console.log(json,contract,dextx,isAgent,isDAgent)
         if (contract) { //{txid, from: from, buying: buyAmount, amount: json.dlux, [json.dlux]:buyAmount, rate:parseFloat((json.dlux)/(buyAmount)).toFixed(6), block:current, partial: json.partial || true
-            if (contract.steem == parseInt(parseFloat(json.steem_amount)*1000) && contract.sbd == parseInt(parseFloat(json.sbd_amount)*1000)) {
+          const now = new Date()
+          const until = now.setHours(now.getHours() + 719)
+          const check = Date.parse(json.ratification_deadline)
+          console.log('Expiry:',check,until)
+            if (contract.steem == parseInt(parseFloat(json.steem_amount)*1000) && contract.sbd == parseInt(parseFloat(json.sbd_amount)*1000) && check > until) {
                 state.balances[json.from] += contract.amount
                 if (contract.steem) {
                     for (var i = 0; i < state.dex.steem.sellOrders.length; i++) {
@@ -1653,7 +1657,7 @@ function startApp() {
         var found = 0
         for (var i = 0; i < state.escrow.length; i++) {
             if (state.escrow[i][0] == json.from && state.escrow[i][1][1].to == json.to && state.escrow[i][1][1].steem_amount == json.steem_amount && state.escrow[i][1][1].sbd_amount == json.sbd_amount) {
-              console.log(`Agent ${json.from} did the thing`)
+              console.log(`Agent ${json.from} sent ${json.steem_amount}/${json.sbd_amount} satisfying ${state.contracts[json.to][addr].escrow}`)
                 var escrow = state.escrow.splice(i, 1)
                 found = 1
                 console.log(escrow)
@@ -2157,10 +2161,10 @@ function startApp() {
                     agents.push(agents[2])
                 }
                 let now = new Date();
-                escrowTimer.ratifyIn = now.setHours(now.getHours() + 1);
+                escrowTimer.ratifyIn = now.setHours(now.getHours() + 720);
                 escrowTimer.ratifyUTC = new Date(escrowTimer.ratifyIn);
                 escrowTimer.ratifyString = escrowTimer.ratifyUTC.toISOString().slice(0, -5);
-                escrowTimer.expiryIn = now.setDate(now.getDate() + 1);
+                escrowTimer.expiryIn = now.setDate(now.getDate() + 1440);
                 escrowTimer.expiryUTC = new Date(escrowTimer.expiryIn);
                 escrowTimer.expiryString = escrowTimer.expiryUTC.toISOString().slice(0, -5);
                 var eidi = txid
