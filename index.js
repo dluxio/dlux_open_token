@@ -41,7 +41,7 @@ var escrow = false
 var broadcast = 1
 const wif = steemClient.auth.toWif(config.username, config.active, 'active')
 const resteemAccount = 'dlux-io';
-var startingBlock = 31818500;
+var startingBlock = 31853309;
 var current, dsteem, testString
 
 const prefix = 'dluxT_';
@@ -879,6 +879,17 @@ function startApp() {
                     state.escrow.push(found.auths[0])
                     state.escrow.push(found.auths[1])
                     if (found.steem) {
+                      var comp = state.dex.steem.tick, dir
+                      state.dex.steem.tick = state.contracts[json.to][json.contract].rate
+                      if (comp > state.dex.steem.tick){dir='up'}
+                      else if (comp == contract.rate){dir='-'}
+                      else {dir='down'}
+                      state.dex.steem.his.unshift({
+                        rate:state.contracts[json.to][json.contract].rate,
+                        block:processor.getCurrentBlockNumber(),
+                        amount:state.contracts[json.to][json.contract].amount,
+                        dir
+                      })
                         state.escrow.push([found.auths[0][1][1].to,
                             [
                                 "transfer",
@@ -891,6 +902,17 @@ function startApp() {
                             ]
                         ])
                     } else {
+                      var comp = state.dex.sbd.tick, dir
+                      state.dex.sbd.tick = state.contracts[json.to][json.contract].rate
+                      if (comp > state.dex.sbd.tick){dir='up'}
+                      else if (comp == state.dex.sbd.tick){dir='-'}
+                      else {dir='down'}
+                      state.dex.sbd.his.unshift({
+                        rate:state.dex.sbd.tick,
+                        block:processor.getCurrentBlockNumber(),
+                        amount:state.contracts[json.to][json.contract].amount,
+                        dir
+                      })
                         state.escrow.push([found.auths[0][1][1].to,
                             [
                                 "transfer",
@@ -923,7 +945,7 @@ function startApp() {
                 }
             } else {
                 console.log(`${json.agent} has insuficient liquidity. Contract has been voided.`)
-                state.escrow.push(found.reject[0])
+                //state.escrow.push(found.reject[0])
             }
         }
     });
@@ -1632,8 +1654,13 @@ function startApp() {
         for (var i = 0; i < state.escrow.length; i++) {
             if (state.escrow[i][0] == json.from && state.escrow[i][1][1].to == json.to && state.escrow[i][1][1].steem_amount == json.steem_amount && state.escrow[i][1][1].sbd_amount == json.sbd_amount) {
               console.log(`Agent ${json.from} did the thing`)
-                state.escrow.splice(i, 1)
+                var escrow = state.escrow.splice(i, 1)
                 found = 1
+                console.log(escrow)
+                const addr = escrow[1].memo.split(' ')[0]
+                state.balances[json.from] += state.contracts[json.to][addr].escrow
+                state.contracts[json.to][addr] = ''
+                delete state.contracts[json.to][addr]
                 state.markets.node[json.from].wins++
                 /*
                 state.pending.push([json.to,
@@ -3223,8 +3250,10 @@ function exit() {
 function ipfsSaveState(blocknum, hashable) {
     ipfs.add(hashable, (err, IpFsHash) => {
         if (!err) {
-            plasma.hashLastIBlock = IpFsHash[0].hash
-            console.log(current + `:Saved:  ${IpFsHash[0].hash}`)
+            var hash = ''
+            try{hash = IpFsHash[0].hash} catch (e){console.log(e)}
+            plasma.hashLastIBlock = hash
+            console.log(current + `:Saved:  ${hash}`)
         } else {
             console.log({
                 cycle
