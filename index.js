@@ -41,7 +41,7 @@ var escrow = false
 var broadcast = 1
 const wif = steemClient.auth.toWif(config.username, config.active, 'active')
 const resteemAccount = 'dlux-io';
-var startingBlock = 31853309;
+var startingBlock = 31884300;
 var current, dsteem, testString
 
 const prefix = 'dluxT_';
@@ -867,13 +867,14 @@ function startApp() {
                 }
                 //delete state.contracts[json.to][json.contract] leave for transaction verification
             }
-        } catch (e) {}
+        } catch (e) {console.log(e)}
+        console.log({found})
         if (found) {
             if (state.balances[from] >= found.amount) {
                 if (state.balances[found.auths[0][1][1].to] > found.amount) {
                     state.balances[found.auths[0][1][1].to] -= found.amount
-                    state.contracts[json.to][json.contract].escrow = found.amount
-                    console.log(current + `:${from} sold ${state.contracts[json.to][json.contract].amount} DLUX`)
+                    state.contracts[found.from][json.contract].escrow = found.amount
+                    console.log(current + `:${from} sold ${state.contracts[found.from][json.contract].amount} DLUX`)
                     state.balances[from] -= found.amount
                     state.balances[found.from] += found.amount
                     state.escrow.push(found.auths[0])
@@ -890,7 +891,7 @@ function startApp() {
                         amount:state.contracts[json.to][json.contract].amount,
                         dir
                       })
-                        state.escrow.push([found.auths[0][1][1].to,
+                        state.contracts[found.from][json.contract].exe = [found.auths[0][1][1].to,
                             [
                                 "transfer",
                                 {
@@ -900,7 +901,7 @@ function startApp() {
                                     "memo": `${json.contract} purchased with ${found.amount} DLUX`
                                 }
                             ]
-                        ])
+                        ]
                     } else {
                       var comp = state.dex.sbd.tick, dir
                       state.dex.sbd.tick = state.contracts[json.to][json.contract].rate
@@ -913,7 +914,7 @@ function startApp() {
                         amount:state.contracts[json.to][json.contract].amount,
                         dir
                       })
-                        state.contracts[from][json.contract].exe = [found.auths[0][1][1].to,
+                        state.contracts[found.from][json.contract].exe = [found.auths[0][1][1].to,
                             [
                                 "transfer",
                                 {
@@ -944,7 +945,7 @@ function startApp() {
                     }
                 }
             } else {
-                console.log(`${json.agent} has insuficient liquidity. Contract has been voided.`)
+                console.log(`${json.agent} has insuficient liquidity.`)
                 //state.escrow.push(found.reject[0])
             }
         }
