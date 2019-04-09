@@ -2467,7 +2467,7 @@ function check() { //do this maybe cycle 5, gives 15 secs to be streaming behind
             self: self,
             agreement: false,
         }
-        if (state.markets.node[self].domain && state.markets.node[self].domain == config.NODEDOMAIN) {
+        if (state.markets.node[self].domain && state.markets.node[self].domain != config.NODEDOMAIN) {
             var domain = state.markets.node[self].domain
             if (domain.slice(-1) == '/') {
                 domain = domain.substring(0, domain.length - 1)
@@ -2479,7 +2479,7 @@ function check() { //do this maybe cycle 5, gives 15 secs to be streaming behind
                 })
                 .then(function(myJson) {
                     //console.log(JSON.stringify(myJson));
-                    if (state.stats.tokenSupply === myJson.stats.tokenSupply) {
+                    if (state.stats.hashLastIBlock === myJson.stats.hashLastIBlock) {
                         plasma.markets.nodes[myJson.node].agreement = true
                     }
                 });
@@ -2518,7 +2518,7 @@ function tally(num) { //tally state before save and next report
         l++
         if (tally.agreements.tally[node].votes / tally.agreements.votes >= 2 / 3) {
             consensus = tally.agreements.runners[node].report.hash
-            if (!testing && consensus != plasma.hashLastIBlock && node != config.username && processor.isStreaming()) {
+            if (consensus != plasma.hashLastIBlock && node == config.username && processor.isStreaming()) {
                 var errors = ['failed Consensus']
                 if (VERSION != state.markets.node[node].report.version) {
                     console.log(current + `:Abandoning ${plasma.hashLastABlock} because ${errors[0]}`)
@@ -2550,7 +2550,7 @@ function tally(num) { //tally state before save and next report
             console.log(`uh-oh: only @${node} is running blocks`)
         }
     }
-    console.log(consensus)
+    console.log('Consensus: '+consensus)
     state.stats.lastBlock = state.stats.hashLastIBlock
     state.stats.hashLastIBlock = consensus
     for (var node in state.markets.node) {
