@@ -913,7 +913,7 @@ function startApp() {
                         amount:state.contracts[json.to][json.contract].amount,
                         dir
                       })
-                        state.escrow.push([found.auths[0][1][1].to,
+                        state.contracts[from][json.contract].exe = [found.auths[0][1][1].to,
                             [
                                 "transfer",
                                 {
@@ -923,7 +923,7 @@ function startApp() {
                                     "memo": `${json.contract} fulfilled with ${found.amount} DLUX`
                                 }
                             ]
-                        ])
+                        ]
                     }
                     if (found.sbd) {
                         for (var i = 0; i < state.dex.sbd.buyOrders.length; i++) {
@@ -1380,6 +1380,9 @@ function startApp() {
               console.log(`Agent ${json.who} did the thing`)
                 state.escrow.splice(i, 1)
                 found = 1
+                if (state.contracts[json.from][json.contract].exe && json.who == json.agent ){
+                  state.escrow.push(state.contracts[json.from][json.contract].exe)
+                }
                 state.markets.node[json.who].wins++
                 /*
                 state.pending.push([json.to,
