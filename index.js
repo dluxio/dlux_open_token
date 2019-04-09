@@ -2543,7 +2543,7 @@ function tally(num) { //tally state before save and next report
                     })
                 });
             }
-        } else if (state.markets.node[node].report.hash !== state.stats.hashLastIBlock && l > 1) {
+        } else if (state.markets.node[node].report.hash !== state.stats.hashLastIBlock && l > 0) {
             delete state.runners[node]
             console.log('uh-oh:' + node + ' scored ' + tally.agreements.tally[node].votes + '/' + tally.agreements.votes)
         } else if (state.markets.node[node].report.hash !== state.stats.hashLastIBlock && l == 0) {
