@@ -1355,8 +1355,7 @@ function startApp() {
                         reject
                     }
                 }
-            }
-        }
+            }        }
     } else if (isAgent) {
             state.escrow.push([json.agent,
                 [
@@ -1508,10 +1507,11 @@ function startApp() {
         if (found >= 0) {
             state.queue.splice(found, 1)
         }
-        delete state.markets.node[from].domain
-        delete state.markets.node[from].bidRate
-        delete state.markets.node[from].marketingRate
-        state.markets.node[from].escrow = false
+        try {delete state.markets.node[from].domain} catch(e){console.log(`deleting ${from}'s node and got: `+ e)}
+        try {delete state.markets.node[from].bidRate} catch(e){console.log(`deleting ${from}'s node and got: `+ e)}
+        try {delete state.markets.node[from].marketingRate} catch(e){console.log(`deleting ${from}'s node and got: `+ e)}
+        try {state.markets.node[from].escrow = false} catch(e){console.log(`deleting ${from}'s node and got: `+ e)}
+        try {delete state.runners[from]} catch(e){console.log(`deleting ${from}'s node and got: `+ e)}
         console.log(current + `:@${from} has signed off their dlux node`)
     });
 
@@ -2507,7 +2507,7 @@ function tally(num) { //tally state before save and next report
     }
     for (var node in tally.agreements.runners) {
         for (var subnode in tally.agreements.runners[node].report.agreements) {
-            if (tally.agreements.runners[node].report.agreements[subnode].block > processor.getCurrentBlockNumber() - 200 && tally.agreements.runners[node].report.agreements[subnode].agreement == true && tally.agreements.tally[subnode]) {
+            if (tally.agreements.runners[node].report.agreements[subnode].block > processor.getCurrentBlockNumber() - 150 && tally.agreements.runners[node].report.agreements[subnode].agreement == true && tally.agreements.tally[subnode]) {
                 tally.agreements.tally[subnode].votes++
             }
         }
