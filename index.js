@@ -2507,7 +2507,7 @@ function tally(num) { //tally state before save and next report
     }
     for (var node in tally.agreements.runners) {
         for (var subnode in tally.agreements.runners[node].report.agreements) {
-            if (tally.agreements.runners[node].report.agreements[subnode].agreement == true && tally.agreements.tally[subnode]) {
+            if (tally.agreements.runners[node].report.agreements[subnode].block == tally.agreements.runners[config.username].report.agreements[config.username].block && tally.agreements.runners[node].report.agreements[subnode].agreement == true && tally.agreements.tally[subnode]) {
                 tally.agreements.tally[subnode].votes++
             }
         }
