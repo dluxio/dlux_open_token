@@ -1132,7 +1132,7 @@ function startApp() {
                     ]
                 ])
 
-            } else if (contract.partial) {
+            }/* else if (contract.partial) {
                 if (contract.steem) {
                     if (contract.steem > json.steem_amount.amount) {
                         const dif = contract.steem - json.steem_amount.amount
@@ -1204,7 +1204,7 @@ function startApp() {
                         ])
                     }
                 }
-            }
+            }*/
         }  else if (isAgent && isDAgent && dextx) { //two escrow agents to fascilitate open ended transfer with out estblishing steem/sbd bank //expiration times??
           console.log('yay')
         var txid = 'DLUX' + hashThis(`${from}${processor.getCurrentBlockNumber()}`)
@@ -1409,7 +1409,7 @@ function startApp() {
                 }
             }
         }
-        */
+        
         if (json.to == json.who && state.contracts[json.to]){
           for (var contract in state.contracts[json.to]){
             if(state.contracts[json.to][contract][1].escrow_id = json.escrow_id){
@@ -1419,6 +1419,7 @@ function startApp() {
             }
           }
         }
+        */
     });
 
     processor.onOperation('escrow_release', function(json) {
