@@ -1409,7 +1409,7 @@ function startApp() {
                 }
             }
         }
-        
+
         if (json.to == json.who && state.contracts[json.to]){
           for (var contract in state.contracts[json.to]){
             if(state.contracts[json.to][contract][1].escrow_id = json.escrow_id){
@@ -1663,7 +1663,7 @@ function startApp() {
                 found = 1
                 console.log(escrow[0][1])
                 const addr = escrow[0][1][1].memo.split(' ')[0]
-                state.balances[json.from] += state.contracts[json.to][addr].escrow
+                state.balances[json.from] += parseInt(state.contracts[json.to][addr].escrow)
                 state.contracts[json.to][addr] = ''
                 delete state.contracts[json.to][addr]
                 state.markets.node[json.from].wins++
