@@ -1657,11 +1657,11 @@ function startApp() {
         var found = 0
         for (var i = 0; i < state.escrow.length; i++) {
             if (state.escrow[i][0] == json.from && state.escrow[i][1][1].to == json.to && state.escrow[i][1][1].steem_amount == json.steem_amount && state.escrow[i][1][1].sbd_amount == json.sbd_amount) {
-              console.log(`Agent ${json.from} sent ${json.steem_amount}/${json.sbd_amount} satisfying ${state.contracts[json.to][addr].escrow}`)
+              console.log(`Agent ${json.from} sent ${json.steem_amount}/${json.sbd_amount}`)
                 var escrow = state.escrow.splice(i, 1)
                 found = 1
-                console.log(escrow)
-                const addr = escrow[1].memo.split(' ')[0]
+                console.log(escrow[0][1])
+                const addr = escrow[0][1][1].memo.split(' ')[0]
                 state.balances[json.from] += state.contracts[json.to][addr].escrow
                 state.contracts[json.to][addr] = ''
                 delete state.contracts[json.to][addr]
