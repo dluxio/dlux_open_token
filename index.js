@@ -1069,7 +1069,7 @@ function startApp() {
           const check = Date.parse(json.ratification_deadline)
           console.log('Expiry:',check,until)
             if (contract.steem == parseInt(parseFloat(json.steem_amount)*1000) && contract.sbd == parseInt(parseFloat(json.sbd_amount)*1000) && check > until) {
-                state.balances[json.from] += contract.amount
+                state.balances[json.from] = parseInt(contract.amount) + parseInt(state.balances[json.from])
                 if (contract.steem) {
                     for (var i = 0; i < state.dex.steem.sellOrders.length; i++) {
                         if (state.dex.steem.sellOrders[i].txid == contract.txid) {
@@ -1663,7 +1663,7 @@ function startApp() {
                 found = 1
                 console.log(escrow[0][1])
                 const addr = escrow[0][1][1].memo.split(' ')[0]
-                state.balances[json.from] += parseInt(state.contracts[json.to][addr].escrow)
+                state.balances[json.from] = parseInt(state.contracts[json.to][addr].escrow) + parseInt(state.balances[json.from])
                 state.contracts[json.to][addr] = ''
                 delete state.contracts[json.to][addr]
                 state.markets.node[json.from].wins++
