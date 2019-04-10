@@ -2543,15 +2543,16 @@ function tally(num) { //tally state before save and next report
                     })
                 });
             }
-        } else if (state.markets.node[node].report.hash !== state.stats.hashLastIBlock && l > 1) {
+        } else if (l > 1) {
             delete state.runners[node]
             console.log('uh-oh:' + node + ' scored ' + tally.agreements.tally[node].votes + '/' + tally.agreements.votes)
-        } else if (state.markets.node[node].report.hash !== state.stats.hashLastIBlock && l == 0) {
+        } else if (l == 0) {
             console.log(`uh-oh: only @${node} is running blocks`)
         }
         if(consensus === undefined){
           for(var node in state.runners){
             consensus=state.markets.node[node].report.hash
+            break;
           }
         }
     }
