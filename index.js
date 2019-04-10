@@ -1008,49 +1008,9 @@ function startApp() {
         }
     });
 
-    processor.on('dex_clear_buys', function(json, from) {
-        var l = 0,
-            t = 0
-        for (var i = 0; i < state.dex.steem.buyOrders.length; i++) {
-            if (state.dex.steem.buyOrders[i].from == from) {
-                state.pending.push(state.dex.steem.buyOrders[i].reject)
-                delete state.contracts[from][state.dex.steem.sellOrders[i].txid]
-                state.dex.steem.buyOrders.splice(i, 1)
-            }
-        }
-        for (var i = 0; i < state.dex.sbd.sellOrders.length; i++) {
-            if (state.dex.sbd.buyOrders[i].from == from) {
-                state.pending.push(state.dex.sbd.buyOrders[i].reject)
-                delete state.contracts[from][state.dex.sbd.sellOrders[i].txid]
-                state.dex.sbd.buyOrders.splice(i, 1)
-            }
-        }
-        console.log(current + `:${from} has canceled ${l} orders and recouped ${t} DLUX`)
-    });
-
-    processor.on('dex_clear_sells', function(json, from) {
-        var l = 0,
-            t = 0
-        for (var i = 0; i < state.dex.steem.sellOrders.length; i++) {
-            if (state.dex.steem.sellOrders[i].from == from) {
-                state.balances[from] += state.dex.steem.sellOrders[i].amount
-                delete state.contracts[from][state.dex.steem.sellOrders[i].txid]
-                t += state.dex.steem.sellOrders[i].amount
-                state.dex.steem.sellOrders.splice(i, 1)
-                i++
-            }
-        }
-        for (var i = 0; i < state.dex.sbd.sellOrders.length; i++) {
-            if (state.dex.sbd.sellOrders[i].from == from) {
-                state.balances[from] += state.dex.sbd.sellOrders[i].amount
-                delete state.contracts[from][state.dex.sbd.sellOrders[i].txid]
-                t += state.dex.sbd.sellOrders[i].amount
-                state.dex.sbd.sellOrders.splice(i, 1)
-                i++
-            }
-        }
-        console.log(current + `:${from} has canceled ${i} orders and recouped ${t} DLUX`)
-    });
+    processor.on('dex_clear', function(json, from) {
+      if(state.contracts[from][json.txid]){release(json.txid)}
+  })
 
     processor.onOperation('escrow_transfer', function(json, from) { //grab posts to reward
         var op, dextx, contract, isAgent, isDAgent, dextx
@@ -1744,6 +1704,22 @@ function startApp() {
     processor.onOperation('account_update', function(json, from) { //grab posts to reward
         Utils.upKey(json.account, json.memo_key)
     });
+    processor.onOperation('escrow_release', function(json, from) { //grab posts to reward
+        if(state.contracts[json.reciever]){
+          for(var i = 0;i<state.contracts[json.reciever].length;i++){
+            if(json.escrow_id == state.contracts[json.reciever].escrow_id){
+              state.contracts[json.reciever].splice(i,1)
+              break;
+            }
+          }
+          for (var i = 0;i < state.escrow.length;i++){
+            if(state.escrow[i][1][0]=='escrow_release' && state.escrow[i][1][1].escrow_id == json.escrow_id){
+              state.escrow.splice(i,1)
+              break;
+            }
+          }
+        }
+    });
 
     processor.onBlock(function(num, block) {
         current = num
@@ -1796,6 +1772,7 @@ function startApp() {
         }
         if ((num - 20000) % 30240 === 0 && num > 27417440) { //time for daily magic
             dao(num);
+            clean();
         }
         if (num % 100 === 0 && processor.isStreaming()) {
             client.database.getAccounts([config.username]).then(function(result) {
@@ -1810,13 +1787,6 @@ function startApp() {
             plasma.hashLastIBlock = hashThis(blockState)
             console.log(current + `:Signing: ${plasma.hashLastIBlock}`)
             ipfsSaveState(num, blockState)
-        }
-        if (num % 10000 === 0 && num < 30900000) {
-            const blockState = Buffer.from(JSON.stringify([num, state]))
-            plasma.hashBlock = num
-            plasma.hashLastIBlock = hashThis(blockState)
-            console.log(current + `:Signing: ${plasma.hashLastIBlock}`)
-            report(num)
         }
         for (var p = 0; p < pa.length; p++) { //automate some tasks
             var r = eval(pa[p][1])
@@ -1905,6 +1875,28 @@ function startApp() {
                                     }
                                 })
                             break;
+                          case 'escrow_release':
+                                steemClient.broadcast.escrowRelease(
+                                    config.active,
+                                    NodeOps[task][2][1].from,
+                                    NodeOps[task][2][1].to,
+                                    NodeOps[task][2][1].agent,
+                                    NodeOps[task][2][1].who,
+                                    NodeOps[task][2][1].from,
+                                    NodeOps[task][2][1].escrow_id,
+                                    NodeOps[task][2][1].sbd_amount,
+                                    NodeOps[task][2][1].steem_amount,
+                                    function(err, result) {
+                                        if (err) {
+                                            console.error(err)
+                                            noi(task)
+                                            broadcast = 1
+                                        } else {
+                                            console.log(`#Broadcast ${result} for ${NodeOps[task][2][1].json_meta.contract} @ block ${result.block_num}`)
+                                            NodeOps.splice(task, 1)
+                                        }
+                                    })
+                                break;
                         case 'escrow_approve':
                             console.log('trying to sign', NodeOps[task][2])
                             steemClient.broadcast.escrowApprove(
@@ -2605,7 +2597,59 @@ function tally(num) { //tally state before save and next report
         state.balances.ra += mint
     }
 }
-
+function clean(num){
+    for(var i = 0;i<state.markets.steem.buyOrders.length;i++){
+      if(state.markets.steem.buyOrders[i].block < num - 86400){release(state.markets.steem.buyOrders[i].txid)}
+    }
+    for(var i = 0;i<state.markets.sbd.buyOrders.length;i++){
+      if(state.markets.sbd.buyOrders[i].block < num - 86400){release(state.markets.sbd.buyOrders[i].txid)}
+    }
+    for(var i = 0;i<state.markets.steem.sellOrders.length;i++){
+      if(state.markets.steem.sellOrders[i].block < num - 86400){release(state.markets.steem.sellOrders[i].txid)}
+    }
+    for(var i = 0;i<state.markets.sbd.sellOrders.length;i++){
+      if(state.markets.sbd.sellOrders[i].block < num - 86400){release(state.markets.sbd.sellOrders[i].txid)}
+    }
+}
+function release(txid){
+  var found = ''
+  for(var i = 0;i<state.markets.steem.buyOrders.length;i++){
+    if(state.markets.steem.buyOrders[i].txid == txid){
+      found = state.markets.steem.buyOrders[i]
+      state.markets.steem.buyOrders.splice(i,1)
+    }
+  }
+  if(!found){
+    for(var i = 0;i<state.markets.sbd.buyOrders.length;i++){
+      if(state.markets.sbd.buyOrders[i].txid == txid){
+        found = state.markets.sbd.buyOrders[i]
+        state.markets.sbd.buyOrders.splice(i,1)
+      }
+    }
+  }
+  if(!found){
+    for(var i = 0;i<state.markets.steem.sellOrders.length;i++){
+      if(state.markets.steem.sellOrders[i].txid == txid){
+        found = state.markets.steem.sellOrders[i]
+        state.markets.steem.sellOrders.splice(i,1)
+      }
+    }
+  }
+  if(!found){
+    for(var i = 0;i<state.markets.sbd.sellOrders.length;i++){
+      if(state.markets.sbd.sellOrders[i].txid == txid){
+        found = state.markets.sbd.sellOrders[i]
+        state.markets.sbd.sellOrders.splice(i,1)
+      }
+    }
+  }
+  if(found.escrow_id){
+    state.escrow.push(found.reject)
+  } else {
+    state.balances[found.from] += parseInt(found.amount)
+    delete state.contracts[found.from][found.txid]
+  }
+}
 function dao(num) {
     var i = 0,
         j = 0,
@@ -3305,7 +3349,7 @@ function asyncIpfsSaveState(blocknum, hashable) {
 
 function sortBuyArray(array, key) {
     return array.sort(function(a, b) {
-        return a[key] - b[key];
+        return b[key] - a[key];
     });
 }
 
