@@ -2551,7 +2551,7 @@ function tally(num) { //tally state before save and next report
         }
         if(!consensus){
           for(var node in state.runners){
-            consenses=state.markets[node].hash
+            consensus=state.markets[node].hash
           }
         }
     }
