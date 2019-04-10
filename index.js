@@ -2598,48 +2598,48 @@ function tally(num) { //tally state before save and next report
     }
 }
 function clean(num){
-    for(var i = 0;i<state.markets.steem.buyOrders.length;i++){
-      if(state.markets.steem.buyOrders[i].block < num - 86400){release(state.markets.steem.buyOrders[i].txid)}
+    for(var i = 0;i<state.dex.steem.buyOrders.length;i++){
+      if(state.dex.steem.buyOrders[i].block < num - 86400){release(state.dex.steem.buyOrders[i].txid)}
     }
-    for(var i = 0;i<state.markets.sbd.buyOrders.length;i++){
-      if(state.markets.sbd.buyOrders[i].block < num - 86400){release(state.markets.sbd.buyOrders[i].txid)}
+    for(var i = 0;i<state.dex.sbd.buyOrders.length;i++){
+      if(state.dex.sbd.buyOrders[i].block < num - 86400){release(state.dex.sbd.buyOrders[i].txid)}
     }
-    for(var i = 0;i<state.markets.steem.sellOrders.length;i++){
-      if(state.markets.steem.sellOrders[i].block < num - 86400){release(state.markets.steem.sellOrders[i].txid)}
+    for(var i = 0;i<state.dex.steem.sellOrders.length;i++){
+      if(state.dex.steem.sellOrders[i].block < num - 86400){release(state.dex.steem.sellOrders[i].txid)}
     }
-    for(var i = 0;i<state.markets.sbd.sellOrders.length;i++){
-      if(state.markets.sbd.sellOrders[i].block < num - 86400){release(state.markets.sbd.sellOrders[i].txid)}
+    for(var i = 0;i<state.dex.sbd.sellOrders.length;i++){
+      if(state.dex.sbd.sellOrders[i].block < num - 86400){release(state.dex.sbd.sellOrders[i].txid)}
     }
 }
 function release(txid){
   var found = ''
-  for(var i = 0;i<state.markets.steem.buyOrders.length;i++){
-    if(state.markets.steem.buyOrders[i].txid == txid){
-      found = state.markets.steem.buyOrders[i]
-      state.markets.steem.buyOrders.splice(i,1)
+  for(var i = 0;i<state.dex.steem.buyOrders.length;i++){
+    if(state.dex.steem.buyOrders[i].txid == txid){
+      found = state.dex.steem.buyOrders[i]
+      state.dex.steem.buyOrders.splice(i,1)
     }
   }
   if(!found){
-    for(var i = 0;i<state.markets.sbd.buyOrders.length;i++){
-      if(state.markets.sbd.buyOrders[i].txid == txid){
-        found = state.markets.sbd.buyOrders[i]
-        state.markets.sbd.buyOrders.splice(i,1)
+    for(var i = 0;i<state.dex.sbd.buyOrders.length;i++){
+      if(state.dex.sbd.buyOrders[i].txid == txid){
+        found = state.dex.sbd.buyOrders[i]
+        state.dex.sbd.buyOrders.splice(i,1)
       }
     }
   }
   if(!found){
-    for(var i = 0;i<state.markets.steem.sellOrders.length;i++){
-      if(state.markets.steem.sellOrders[i].txid == txid){
-        found = state.markets.steem.sellOrders[i]
-        state.markets.steem.sellOrders.splice(i,1)
+    for(var i = 0;i<state.dex.steem.sellOrders.length;i++){
+      if(state.dex.steem.sellOrders[i].txid == txid){
+        found = state.dex.steem.sellOrders[i]
+        state.dex.steem.sellOrders.splice(i,1)
       }
     }
   }
   if(!found){
-    for(var i = 0;i<state.markets.sbd.sellOrders.length;i++){
-      if(state.markets.sbd.sellOrders[i].txid == txid){
-        found = state.markets.sbd.sellOrders[i]
-        state.markets.sbd.sellOrders.splice(i,1)
+    for(var i = 0;i<state.dex.sbd.sellOrders.length;i++){
+      if(state.dex.sbd.sellOrders[i].txid == txid){
+        found = state.dex.sbd.sellOrders[i]
+        state.dex.sbd.sellOrders.splice(i,1)
       }
     }
   }
