@@ -1009,7 +1009,7 @@ function startApp() {
     });
 
     processor.on('dex_clear', function(json, from) {
-      if(state.contracts[from][json.txid]){release(json.txid)}
+      try{if(state.contracts[from][json.txid]){release(json.txid)}}catch(e){console.log(e)}
   })
 
     processor.onOperation('escrow_transfer', function(json, from) { //grab posts to reward
