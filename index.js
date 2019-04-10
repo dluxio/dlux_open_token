@@ -1857,6 +1857,27 @@ function startApp() {
                 }
                 if (task >= 0) {
                     switch (NodeOps[task][1]) {
+                        case 'comment':
+                          steemClient.broadcast.comment(
+                              config.active,
+                              NodeOps[task][2][1].parentAuthor,
+                              NodeOps[task][2][1].parentPermlink,
+                              NodeOps[task][2][1].author,
+                              NodeOps[task][2][1].permlink,
+                              NodeOps[task][2][1].title,
+                              NodeOps[task][2][1].body,
+                              NodeOps[task][2][1].json_metadata,
+                              function(err, result) {
+                                  if (err) {
+                                      console.error(err)
+                                      noi(task)
+                                      broadcast = 1
+                                  } else {
+                                      console.log(`#Broadcast comment ${result} for ${NodeOps[task][2][1]}`)
+                                      NodeOps.splice(task, 1)
+                                  }
+                              })
+                          break;
                         case 'escrow_transfer':
                             steemClient.broadcast.escrowTransfer(
                                 config.active,
@@ -2656,6 +2677,7 @@ function release(txid){
   }
 }
 function dao(num) {
+    var post = `## DLUX DAO REPORT\n#### Daily Accounting\n`
     var i = 0,
         j = 0,
         b = 0,
@@ -2674,17 +2696,22 @@ function dao(num) {
     }
     state.stats.marketingRate = parseInt(b / i)
     state.stats.nodeRate = parseInt(j / i)
-    console.log(num + `:DAO Accounting In Progress:\n${t} has been generated today\n${state.stats.marketingRate} is the marketing rate.\n${state.stats.nodeRate} is the node rate.`)
+    post = post + `${parseFloat(parseInt(t)/1000).toFixed(3)} has been generated today.\n${parseFloat(state.stats.marketingRate/10000).toFixed(4)} is the marketing rate.\n${parseFloat(state.stats.nodeRate/1000).toFixed(4)} is the node rate.\n`
+    console.log(`DAO Accounting In Progress:\n${t} has been generated today\n${state.stats.marketingRate} is the marketing rate.\n${state.stats.nodeRate} is the node rate.`)
     state.balances.rn += parseInt(t * parseInt(state.stats.nodeRate) / 10000)
 
     state.balances.ra = parseInt(state.balances.ra) - parseInt(t * parseInt(state.stats.nodeRate) / 10000)
     state.balances.rm += parseInt(t * state.stats.marketingRate / 10000)
+    post = post + `${parseFloat(parseInt(t * state.stats.marketingRate / 10000)/1000).toFixed(3)} DLUX moved to Marketing Allocation.\n`
     if (state.balances.rm > 1000000000) {
         state.balances.rc += state.balances.rm - 1000000000;
+        post = post +`${parseFloat((state.balances.rm - 1000000000)/1000).toFixed(3)} moved from Marketing Allocation to Content Allocation due to Marketing Holdings Cap of 1,000,000.000 DLUX\n`
         state.balances.rm = 1000000000
     }
     state.balances.ra = parseInt(state.balances.ra) - parseInt(t * state.stats.marketingRate / 10000)
+
     i = 0, j = 0
+    post = post + `${parseFloat(parseInt(state.balances.rm)/1000).toFixed(3)} DLUX is in the Marketing Allocation.\n##### Node Rewards for Elected Reports and Escrow Transfers\n`
     console.log(num + `:${state.balances.rm} is availible in the marketing account\n${state.balances.rn} DLUX set asside to distribute to nodes`)
     for (var node in state.markets.node) { //tally the wins
         j = j + parseInt(state.markets.node[node].wins)
@@ -2698,10 +2725,12 @@ function dao(num) {
             state.balances[node] = i
         }
         state.balances.rn -= i
+        post = post + `* @${node} awarded ${parseFloat(i/1000).toFixed(3)} DLUX for ${state.markets.node[node].wins} credited transaction(s)\n`
         console.log(current + `:@${node} awarded ${i} DLUX for ${state.markets.node[node].wins} credited transaction(s)`)
         state.markets.node[node].wins = 0
     }
     state.balances.rd += parseInt(t * state.stats.delegationRate / 10000) // 10% to delegators
+    post = post + `### ${parseFloat(parseInt(state.balances.rd)/1000).toFixed(3)} DLUX set aside for delegators.\n`
     state.balances.ra -= parseInt(t * state.stats.delegationRate / 10000)
     b = state.balances.rd
     j = 0
@@ -2716,25 +2745,33 @@ function dao(num) {
         }
         state.balances[state.delegations[i].delegator] += k
         state.balances.rd -= k
+        post = post + `* ${parseFloat(parseInt(k)/1000).toFixed(3)} DLUX for @${state.delegations[i].delegator}'s ${parseFloat(state.delegations[i].vests/1000000)} Mvests.\n`
         console.log(current + `:${k} DLUX awarded to ${state.delegations[i].delegator} for ${state.delegations[i].vests} VESTS`)
     }
+    post = post + `*****\n ## ICO Status\n`
     if (state.balances.ri < 100000000 && state.stats.tokenSupply < 100000000000) {
         if (state.balances.ri == 0) {
             state.stats.tokenSupply += 100000000
             state.balances.ri = 100000000
-            const ago = num - state.stats.outOnBlock
+            var ago = num - state.stats.outOnBlock,dil = ' seconds'
             if (ago !== num) {
                 state.balances.rl = parseInt(ago / 30240 * 50000000)
                 state.balances.ri = 100000000 - parseInt(ago / 30240 * 50000000)
                 state.state.icoPrice = state.state.icoPrice * (1 + (ago / 30240) / 2)
             }
+            if(ago > 20){dil = ' minutes';ago=parseFloat(ago/20).toFixed(1)} else {ago = ago * 3}
+            if(ago > 60){dil = ' hours';ago=parseFloat(ago/60).toFixed(1)}
+            post = post + `### We sold out ${ago}${dil}\nThere are now ${parseFloat(state.balances.ri/1000).toFixed(3)} DLUX for sale from @robotolux for ${parseFloat(state.state.icoPrice/1000).toFixed(3)} Steem each.\n`
         } else {
             var left = state.balances.ri
             state.stats.tokenSupply += 100000000 - left
             state.balances.ri = 100000000
             state.state.icoPrice = state.state.icoPrice - (left / 1000000000)
             if (state.state.icoPrice < 220) state.state.icoPrice = 220
+            post = post + `### We Sold out ${100000000 - left} today.\nThere are now ${parseFloat(state.balances.ri/1000).toFixed(3)} DLUX for sale from @robotolux for ${parseFloat(state.state.icoPrice/1000).toFixed(3)} Steem each.\n`
         }
+    } else {
+      post = post + `### We have ${parseFloat((state.balances.ri - 100000000)/1000).toFixed(3)} DLUX left for sale at 0.22 STEEM in our Pre-ICO.\nOnce this is sold pricing feedback on our 3 year ICO starts.\n`
     }
     if (state.balances.rl) {
         var dailyICODistrobution = state.balances.rl,
@@ -2744,6 +2781,7 @@ function dao(num) {
                 y += state.ico[i][node]
             }
         }
+        post = post + `### ICO Over Auction Results:\n${parseFloat(state.balances.rl/1000).toFixed(3)} DLUX was set aside from today's ICO to divide between people who didn't get a chance at fixed price tokens and donated ${parseFloat(y/1000).toFixed(3)} STEEM today.\n`
         for (i = 0; i < state.ico.length; i++) {
             for (var node in state.ico[i]) {
                 if (!state.balances[node]) {
@@ -2751,9 +2789,11 @@ function dao(num) {
                 }
                 state.balances[node] += parseInt(state.ico[i][node] / y * state.balances.rl)
                 dailyICODistrobution -= parseInt(state.ico[i][node] / y * state.balances.rl)
+                post = post + `* @${node} awarded  ${parseFloat(parseInt(state.ico[i][node]/y*state.balances.rl)/1000).toFixed(3)} DLUX for ICO auction\n`
                 console.log(current + `:${node} awarded  ${parseInt(state.ico[i][node]/y*state.balances.rl)} DLUX for ICO auction`)
                 if (i == state.ico.length - 1) {
                     state.balances[node] += dailyICODistrobution
+                    post = post + `* @${node} awarded  ${parseFloat(parseInt(dailyICODistrobution)/1000).toFixed(3)} DLUX for ICO auction\n`
                     console.log(current + `:${node} given  ${dailyICODistrobution} remainder`)
                 }
             }
@@ -2761,6 +2801,47 @@ function dao(num) {
         state.balances.rl = 0
         state.ico = []
     }
+    var vol, volsbd, vols=0, his = [], hisb = [], hi={}
+    for (var int = 0; int < state.dex.steem.his.length;int++){
+      if (state.dex.steem.his[int].block < num - 30240){
+        his.push(state.dex.steem.his.splice(int,1))
+      } else {
+        vol = parseInt(state.dex.steem.his[int].amount + vol)
+        vols = parseInt(parseInt(parseInt(state.dex.steem.his[int].amount)*parseFloat(state.dex.steem.his[int].rate)) + vols)
+      }
+    }
+    for (var int = 0; int < state.dex.sbd.his.length;int++){
+      if (state.dex.sbd.his[int].block < num - 30240){
+        hisb.push(state.dex.sbd.his.splice(int,1))
+      } else {
+        vol = parseInt(state.dex.sbd.his[int].amount + vol)
+        volsbd = parseInt(parseInt(parseInt(state.dex.sbd.his[int].amount)*parseFloat(state.dex.sbd.his[int].rate)) + volsbd)
+      }
+    }
+    hi.block = num - 60480
+    hi.open = parseFloat(his[0].rate)
+    hi.close = parseFloat(his[his.length-1].rate)
+    hi.top = hi.open
+    hi.bottom = hi.open
+    hi.vol = 0
+    for (var int = 0; int < his.length;int++){
+      if(hi.top < parseFloat(his[int])){hi.top = parseFloat(his[int].rate)}
+      if(hi.bottom > parseFloat(his[int])){hi.bottom = parseFloat(his[int].rate)}
+      hi.vol = parseInt(hi.vol + parseInt(his[int].amount))
+    }
+    state.dex.steem.daily.push(hi)
+    hi.open = parseFloat(hisb[0].rate)
+    hi.close = parseFloat(hisb[hisb.length-1].rate)
+    hi.top = hi.open
+    hi.bottom = hi.open
+    hi.vol = 0
+    for (var int = 0; int < hisb.length;int++){
+      if(hi.top < parseFloat(hisb[int])){hi.top = parseFloat(hisb[int].rate)}
+      if(hi.bottom > parseFloat(hisb[int])){hi.bottom = parseFloat(hisb[int].rate)}
+      hi.vol = parseInt(hi.vol + parseInt(hisb[int].amount))
+    }
+    state.dex.sbd.daily.push(hi)
+    post = post + `*****\n### DEX Report\n#### Spot Information\n* Price: ${parseFloat(state.dex.steem.tick).toFixed(3)} STEEM per DLUX\n* Price: ${parseFloat(state.dex.sbd.tick).toFixed(3)} SBD per DLUX\n#### Daily Volume:\n* ${parseFloat(vol/1000).toFixed(3)} DLUX\n* ${parseFloat(vols/1000).toFixed(3)} STEEM\n* ${parseFloat(volsbd/1000).toFixed(3)} SBD\n`
     /*
     if(num < 31288131){
     var dailyICODistrobution = 3125000, y=0
@@ -2810,45 +2891,15 @@ function dao(num) {
             state.pending.splice(i, 1)
         }
     }
-    for (var contract in state.contracts) {
-        if (state.contracts[contract].block < num - 864000) { //30 day expire orders on DEX
-            state.balances[state.contracts[contract].from] += state.contracts[contract].amount
-            if (state.contracts[contract].reject) {
-                state.pending.push(state.contracts[contract].reject)
-            }
-            if (state.contracts[contract].steem) {
-                for (i = 0; i < state.dex.steem.length; i++) {
-                    if (state.dex.steem.sellOrders[i].txid == state.contracts[contract].txid) {
-                        state.dex.steem.sellOrders.splice(i, 1)
-                        break;
-                    }
-                }
-                for (i = 0; i < state.dex.steem.length; i++) {
-                    if (state.dex.steem.buyOrders[i].txid == state.contracts[contract].txid) {
-                        state.dex.steem.buyOrders.splice(i, 1)
-                        break;
-                    }
-                }
-            } else {
-                {
-                    for (i = 0; i < state.dex.sbd.length; i++) {
-                        if (state.dex.sbd.sellOrders[i].txid == state.contracts[contract].txid) {
-                            state.dex.sbd.sellOrders.splice(i, 1)
-                            break;
-                        }
-                    }
-                    for (i = 0; i < state.dex.sbd.length; i++) {
-                        if (state.dex.sbd.buyOrders[i].txid == state.contracts[contract].txid) {
-                            state.dex.sbd.buyOrders.splice(i, 1)
-                            break;
-                        }
-                    }
-                }
-            }
-            delete state.contracts[contract]
-        }
-    }
-    //utils.cleaner(num)
+    var op = ["comment",
+                                 {"parent_author": "",
+                                  "parent_permlink": "dlux",
+                                  "author": "dlux-io",
+                                  "permlink": 'dlux'+ num,
+                                  "title": `DLUX DAO | Automated Report ${num}`,
+                                  "body": post,
+                                  "json_metadata": JSON.stringify({tags:["dlux","ico","dex","cryptocurrency"]})}]
+    state.escrow.push(['dlux-io',op])
     Utils.cleaner()
 }
 
