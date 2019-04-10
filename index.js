@@ -110,7 +110,7 @@ api.get('/', (req, res, next) => {
 });
 api.get('/@:un', (req, res, next) => {
     let un = req.params.un
-    var bal, pb, lp, lb
+    var bal, pb, lp, lb, contracts
     try {
         bal = state.balances[un] || 0
     } catch (e) {
@@ -126,11 +126,17 @@ api.get('/@:un', (req, res, next) => {
     } catch (e) {
         lp = 0
     }
+    try {
+      contracts = state.contracts[un]
+    } catch (e){
+      contracts = {}
+    }
     res.setHeader('Content-Type', 'application/json');
     res.send(JSON.stringify({
         balance: bal,
         poweredUp: pb,
-        powerBeared: lp
+        powerBeared: lp,
+        contracts
     }, null, 3))
 });
 api.get('/stats', (req, res, next) => {
@@ -1340,9 +1346,9 @@ function startApp() {
               console.log(`Agent ${json.who} did the thing`)
                 state.escrow.splice(i, 1)
                 found = 1
-                if (state.contracts[json.from][json.contract].exe && json.who == json.agent ){
+                try{if (state.contracts[json.from][json.contract].exe && json.who == json.agent ){
                   state.escrow.push(state.contracts[json.from][json.contract].exe)
-                }
+                }}catch(e){console.log('Not a node')}
                 state.markets.node[json.who].wins++
                 /*
                 state.pending.push([json.to,
@@ -2470,7 +2476,6 @@ function check() { //do this maybe cycle 5, gives 15 secs to be streaming behind
                     return response.json();
                 })
                 .then(function(myJson) {
-                    //console.log(JSON.stringify(myJson));
                     if (state.stats.hashLastIBlock === myJson.stats.hashLastIBlock) {
                         plasma.markets.nodes[myJson.node].agreement = true
                     }
