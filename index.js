@@ -2549,6 +2549,11 @@ function tally(num) { //tally state before save and next report
         } else if (state.markets.node[node].report.hash !== state.stats.hashLastIBlock && l == 0) {
             console.log(`uh-oh: only @${node} is running blocks`)
         }
+        if(!consensus){
+          for(var node in state.runners){
+            consenses=state.markets[node].hash
+          }
+        }
     }
     console.log('Consensus: '+consensus)
     state.stats.lastBlock = state.stats.hashLastIBlock
