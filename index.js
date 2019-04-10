@@ -1710,6 +1710,15 @@ function startApp() {
     processor.onOperation('account_update', function(json, from) { //grab posts to reward
         Utils.upKey(json.account, json.memo_key)
     });
+    processor.onOperation('comment', function(json, from) { //grab posts to reward
+        if(from == 'dlux-io'){
+          for (var i =0;i<state.escrow.length;i++){
+            if (state.escrow[i][1][1].permlink == json.permlink && state.escrow[i][1][0] == 'comment'){
+              state.escrow.splice(i,1)
+            }
+          }
+        }
+    });
     processor.onOperation('escrow_release', function(json, from) { //grab posts to reward
         if(state.contracts[json.reciever]){
           for(var i = 0;i<state.contracts[json.reciever].length;i++){
