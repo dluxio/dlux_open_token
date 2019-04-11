@@ -1764,7 +1764,7 @@ function startApp() {
         Utils.upKey(json.account, json.memo_key)
     });
     processor.onOperation('comment', function(json, from) { //grab posts to reward
-        if(json.from == 'dlux-io'){
+        if(json.author == 'dlux-io'){
           for (var i =0;i<state.escrow.length;i++){
             if(state.escrow[i][0] == 'dlux-io'){
               if (state.escrow[i][1][1].permlink == json.permlink && state.escrow[i][1][0] == 'comment'){
