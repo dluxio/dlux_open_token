@@ -189,6 +189,15 @@ api.get('/runners', (req, res, next) => {
         realtime: current
     }, null, 3))
 });
+api.get('/feed', (req, res, next) => {
+    res.setHeader('Content-Type', 'application/json');
+    res.send(JSON.stringify({
+        feed: state.feed,
+        node: config.username,
+        VERSION,
+        realtime: current
+    }, null, 3))
+});
 api.get('/markets', (req, res, next) => {
     res.setHeader('Content-Type', 'application/json');
     res.send(JSON.stringify({
@@ -385,9 +394,9 @@ function startApp() {
             }
             state.balances[json.to] += json.amount;
             state.balances[from] -= json.amount;
-            console.log(current + `:Send occurred from ${from} to ${json.to} of ${json.amount}DLUX`)
+            state.feed.unshift(current + `:Send occurred from @${from} to @${json.to} of ${parseFloat(json.amount/1000).toFixed(3)}DLUX`)
         } else {
-            console.log(current + `:Invalid send operation from ${from}`)
+            state.feed.unshift(current + `:Invalid send operation from @${from}`)
         }
     });
 
@@ -431,9 +440,9 @@ function startApp() {
                 state.pow.t += amount
                 state.balances[from] -= amount
             }
-            console.log(current + `:Power up occurred by ${from} of ${json.amount} DLUX`)
+            state.feed.unshift(current + `:Power up occurred by @${from} of ${parseFloat(json.amount/1000).toFixed(3)} DLUX`)
         } else {
-            console.log(current + `:Invalid power up operation from ${from}`)
+            state.feed.unshift(current + `:Invalid power up operation from @${from}`)
         }
     });
 
@@ -455,9 +464,9 @@ function startApp() {
                 }) //fix current!!!
             }
             utils.chronoSort()
-            console.log(current + `:Power down occurred by ${from} of ${amount} DLUX`)
+            state.feed.unshift(current + `:Power down occurred by @${from} of ${parseFloat(amount/1000).toFixed(3)} DLUX`)
         } else {
-            console.log(current + `:Invalid power up operation from ${from}`)
+            state.feed.unshift(current + `:Invalid power up operation from @${from}`)
         }
     });
 
@@ -475,6 +484,7 @@ function startApp() {
                             from: from,
                             weight: parseInt(10000 * state.rolling[from] / 100000)
                         })
+                        state.feed.unshift(current + `:${from} voted for @${state.posts[i].author}/${state.posts[i].permlink}`)
                         state.rolling[from] -= parseInt(json.weight * state.rolling[from] / 100000)
                     } else {
                         state.posts[i].weight += parseInt(10000 * state.rolling[from] / 100000)
@@ -482,14 +492,15 @@ function startApp() {
                             from: from,
                             weight: parseInt(10000 * state.rolling[from] / 100000)
                         })
+                        state.feed.unshift(current + `:${from} voted for @${state.posts[i].author}/${state.posts[i].permlink}`)
                         state.rolling[from] -= parseInt(10000 * state.rolling[from] / 100000)
                     }
                 } else {
-                    console.log(current + `:${from} tried to vote for an unknown post`)
+                    state.feed.unshift(current + `:@${from} tried to vote for an unknown post`)
                 }
             }
         } else {
-            console.log(current + `:${from} doesn't have the dlux power to vote`)
+            state.feed.unshift(current + `:@${from} doesn't have the dlux power to vote`)
         }
     });
 
@@ -649,9 +660,9 @@ function startApp() {
             } else {
                 state.nft[from].push(nft.self)
             }
-            console.log(`${self} created with ${nft.bal} DLUX and ${nft.pow} DLUX POW\n${self} has a ${nft.behavior} behavior`)
+            state.feed.unshift(current +`:${self} created with ${nft.bal} DLUX and ${nft.pow} DLUX POW\n${self} has a ${nft.behavior} behavior`)
         } else {
-            console.log(error)
+            state.feed.unshift(current +`:@${self}ERROR->${error}`)
         }
     });
 
@@ -785,7 +796,7 @@ function startApp() {
             }
         }
         if (e) {
-            console.log(current + `:${from} tried to delete an NFT that wasn't theirs`)
+            state.feed.unshift(current +`:${from} tried to delete an NFT that wasn't theirs`)
         }
     });
 
@@ -880,12 +891,13 @@ function startApp() {
                 if (state.balances[found.auths[0][1][1].to] > found.amount) {
                     state.balances[found.auths[0][1][1].to] -= found.amount
                     state.contracts[found.from][json.contract].escrow = found.amount
-                    console.log(current + `:${from} sold ${state.contracts[found.from][json.contract].amount} DLUX`)
+                    state.feed.unshift(current +`:@${from} sold ${parseFloat(state.contracts[found.from][json.contract].amount).toFixed(3)} DLUX to @${found.from} via DEX`)
                     state.balances[from] -= found.amount
                     state.balances[found.from] += found.amount
-                    state.escrow.push(found.auths[0])
-                    state.escrow.push(found.auths[1])
+                    state.contracts[found.from][json.contract].buyer = from
+                    state.escrow.push(state.contracts[found.from][json.contract].auths.shift())
                     if (found.steem) {
+                      state.feed.unshift(current+`:@${from} purchased ${parseFloat(found.steem/1000).toFixed(3)} STEEM with ${parseFloat(found.amount/1000).toFixed(3)} DLUX via DEX`)
                       var comp = state.dex.steem.tick, dir
                       state.dex.steem.tick = state.contracts[json.to][json.contract].rate
                       if (comp > state.dex.steem.tick){dir='up'}
@@ -897,18 +909,19 @@ function startApp() {
                         amount:state.contracts[json.to][json.contract].amount,
                         dir
                       })
-                        state.contracts[found.from][json.contract].exe = [found.auths[0][1][1].to,
+                        state.contracts[found.from][json.contract].auths.push([found.auths[0][1][1].to,
                             [
                                 "transfer",
                                 {
                                     "from": found.auths[0][1][1].to,
                                     "to": from,
                                     "amount": (found.steem / 1000).toFixed(3) + ' STEEM',
-                                    "memo": `${json.contract} purchased with ${found.amount} DLUX`
+                                    "memo": `${json.contract} by ${found.from} purchased with ${found.amount} DLUX`
                                 }
                             ]
-                        ]
+                        ])
                     } else {
+                      state.feed.unshift(current+`:@${from} purchased ${parseFloat(found.sbd/1000).toFixed(3)} SBD via DEX`)
                       var comp = state.dex.sbd.tick, dir
                       state.dex.sbd.tick = state.contracts[json.to][json.contract].rate
                       if (comp > state.dex.sbd.tick){dir='up'}
@@ -920,17 +933,17 @@ function startApp() {
                         amount:state.contracts[json.to][json.contract].amount,
                         dir
                       })
-                        state.contracts[found.from][json.contract].exe = [found.auths[0][1][1].to,
+                        state.contracts[found.from][json.contract].auths.push([found.auths[0][1][1].to,
                             [
                                 "transfer",
                                 {
                                     "from": found.auths[0][1][1].to,
                                     "to": from,
                                     "amount": (found.sbd / 1000).toFixed(3) + ' SBD',
-                                    "memo": `${json.contract} fulfilled with ${found.amount} DLUX`
+                                    "memo": `${json.contract} by ${found.from} fulfilled with ${found.amount} DLUX`
                                 }
                             ]
-                        ]
+                        ])
                     }
                     if (found.sbd) {
                         for (var i = 0; i < state.dex.sbd.buyOrders.length; i++) {
@@ -951,7 +964,7 @@ function startApp() {
                     }
                 }
             } else {
-                console.log(`${json.agent} has insuficient liquidity.`)
+                state.feed.unshift(current+`:@${from} has insuficient liquidity to purchase ${found.txid}`)
                 //state.escrow.push(found.reject[0])
             }
         }
@@ -981,9 +994,9 @@ function startApp() {
                 }
             }
             sortSellArray(state.dex.steem.sellOrders, 'rate')
-            console.log(current + `:@${from} has placed order ${txid} to sell ${json.dlux} for ${json.steem} STEEM`)
+            state.feed.unshift(current+`:@${from} has placed order ${txid} to sell ${parseFloat(json.dlux/1000).toFixed(3)} for ${parseFloat(json.steem/1000).toFixed(3)} STEEM`)
         } else {
-            console.log(current + `:@${from} tried to place an order to sell ${json.dlux} for ${json.steem} STEEM`)
+            state.feed.unshift(current+`:@${from} tried to place an order to sell ${parseFloat(json.dlux/1000).toFixed(3)} for ${parseFloat(json.steem/1000).toFixed(3)} STEEM`)
         }
     });
 
@@ -1010,81 +1023,94 @@ function startApp() {
                 }
             }
             sortSellArray(state.dex.sbd.sellOrders, 'rate')
-            console.log(current + `:@${from} has placed an order to sell ${json.dlux} for ${json.sbd} SBD`)
+            state.feed.unshift(current+`:@${from} has placed order ${txid} to sell ${parseFloat(json.dlux/1000).toFixed(3)} for ${parseFloat(json.sbd/1000).toFixed(3)} SBD`)
+        } else {
+            state.feed.unshift(current+`:@${from} tried to place an order to sell ${parseFloat(json.dlux/1000).toFixed(3)} for ${parseFloat(json.sbd/1000).toFixed(3)} SBD`)
         }
     });
 
     processor.on('dex_clear', function(json, from) {
-      try{if(state.contracts[from][json.txid]){release(json.txid)}}catch(e){console.log(e)}
+      try{
+        if(state.contracts[from][json.txid]){
+          release(json.txid)
+          state.feed.unshift(current+`:@${from} canceled ${json.txid}`)
+        }
+      } catch(e){
+        console.log(e)
+      }
   })
 
     processor.onOperation('escrow_transfer', function(json, from) { //grab posts to reward
-        var op, dextx, contract, isAgent, isDAgent, dextx
+        var op, dextx, contract, isAgent, isDAgent, dextx, meta, done=0
         try {
             dextx = JSON.parse(json.json_meta).dextx
             meta = JSON.parse(json.json_meta).contract
-            contract = state.contracts[json.to][meta]
-            isAgent = state.markets.node[json.agent]
-            isDAgent = state.markets.node[json.to]
+            seller = JSON.parse(json.json_meta).for
+            contract = state.contracts[seller][meta]
         } catch (e) {}
         try {isAgent = state.markets.node[json.agent]} catch (e) {}
         try {isDAgent = state.markets.node[json.to]} catch (e) {}
-        console.log(json,contract,dextx,isAgent,isDAgent)
-        if (contract) { //{txid, from: from, buying: buyAmount, amount: json.dlux, [json.dlux]:buyAmount, rate:parseFloat((json.dlux)/(buyAmount)).toFixed(6), block:current, partial: json.partial || true
+        if (contract && isAgent && isDAgent) { //{txid, from: from, buying: buyAmount, amount: json.dlux, [json.dlux]:buyAmount, rate:parseFloat((json.dlux)/(buyAmount)).toFixed(6), block:current, partial: json.partial || true
           const now = new Date()
-          const until = now.setHours(now.getHours() + 719)
+          const until = now.setHours(now.getHours() + 1)
           const check = Date.parse(json.ratification_deadline)
-          console.log('Expiry:',check,until)
             if (contract.steem == parseInt(parseFloat(json.steem_amount)*1000) && contract.sbd == parseInt(parseFloat(json.sbd_amount)*1000) && check > until) {
-                state.balances[json.from] = parseInt(contract.amount) + parseInt(state.balances[json.from])
-                if (contract.steem) {
-                    for (var i = 0; i < state.dex.steem.sellOrders.length; i++) {
-                        if (state.dex.steem.sellOrders[i].txid == contract.txid) {
-                            var comp = state.dex.steem.tick, dir
-                            state.dex.steem.tick = contract.rate
-                            if (comp < contract.rate){dir='up'}
-                            else if (comp == contract.rate){dir='flat'}
-                            else {dir='down'}
-                            state.dex.steem.his.unshift({
-                              rate:contract.rate,
-                              block:processor.getCurrentBlockNumber(),
-                              amount:contract.amount,
-                              dir
-                            })
-                            state.dex.steem.sellOrders.splice(i, 1)
-                            break;
-                        }
-                    }
-                } else {
-                    for (var i = 0; i < state.dex.sbd.sellOrders.length; i++) {
-                        if (state.dex.sbd.sellOrders[i].txid == contract.txid) {
-                            var comp = state.dex.sbd.tick,dir
-                            state.dex.sbd.tick = contract.rate
-                            if (comp < contract.rate){dir='up'}
-                            else if (comp == contract.rate){dir='flat'}
-                            else {dir='down'}
-                            state.dex.sbd.his.unshift({
-                              rate:contract.rate,
-                              block:processor.getCurrentBlockNumber(),
-                              amount:contract.amount,
-                              dir
-                            })
-                            state.dex.sbd.sellOrders.splice(i, 1)
-                            break;
-                        }
-                    }
-                }
-                state.contracts[json.to][meta] = [
-                    "escrow_approve",
-                    {
-                        "from": json.from,
-                        "to": json.to,
-                        "agent": json.agent,
-                        "who": json.to,
-                        "escrow_id": json.escrow_id,
-                        "approve": true
-                    }
-                ]
+                if(state.balances[json.to] >= contract.amount){
+                  done = 1
+                  state.balances[json.to] -= contract.amount
+                  state.balances[json.from] += contract.amount
+                  var samount
+                  if (contract.steem) {
+                    samount = `${parseFloat(contract.steem/1000).toFixed(3)} STEEM`
+                      for (var i = 0; i < state.dex.steem.sellOrders.length; i++) {
+                          if (state.dex.steem.sellOrders[i].txid == contract.txid) {
+                              var comp = state.dex.steem.tick, dir
+                              state.dex.steem.tick = contract.rate
+                              if (comp < contract.rate){dir='up'}
+                              else if (comp == contract.rate){dir='flat'}
+                              else {dir='down'}
+                              state.dex.steem.his.unshift({
+                                rate:contract.rate,
+                                block:processor.getCurrentBlockNumber(),
+                                amount:contract.amount,
+                                dir
+                              })
+                              state.dex.steem.sellOrders.splice(i, 1)
+                              break;
+                          }
+                      }
+                  } else {
+                      samount = `${parseFloat(contract.sbd/1000).toFixed(3)} SBD`
+                      for (var i = 0; i < state.dex.sbd.sellOrders.length; i++) {
+                          if (state.dex.sbd.sellOrders[i].txid == contract.txid) {
+                              var comp = state.dex.sbd.tick,dir
+                              state.dex.sbd.tick = contract.rate
+                              if (comp < contract.rate){dir='up'}
+                              else if (comp == contract.rate){dir='flat'}
+                              else {dir='down'}
+                              state.dex.sbd.his.unshift({
+                                rate:contract.rate,
+                                block:processor.getCurrentBlockNumber(),
+                                amount:contract.amount,
+                                dir
+                              })
+                              state.dex.sbd.sellOrders.splice(i, 1)
+                              break;
+                          }
+                      }
+                  }
+                  state.escrow.push([json.to,[
+                      "escrow_approve",
+                      {
+                          "from": json.from,
+                          "to": json.to,
+                          "agent": json.agent,
+                          "who": json.to,
+                          "escrow_id": json.escrow_id,
+                          "approve": true
+                      }
+                  ]
+                ])
                 state.escrow.push([json.agent,
                     [
                         "escrow_approve",
@@ -1098,107 +1124,137 @@ function startApp() {
                         }
                     ]
                 ])
-
-            }/* else if (contract.partial) {
-                if (contract.steem) {
-                    if (contract.steem > json.steem_amount.amount) {
-                        const dif = contract.steem - json.steem_amount.amount
-                        const ratio = parseInt((json.steem_amount.amount / contract.steem) * 10000)
-                        const dluxFilled = parseInt((json.steem_amount.amount / contract.steem) * contract.amount)
-                        state.balances[json.from] += dluxFilled
-                        const txid = 'DLUX' + hashThis(contract.from + json.escrow_id)
-                        state.dex.steem.tick = contract.rate
-                        state.dex.steem.sellOrders.push({
-                            txid,
-                            from: contract.from,
-                            steem: dif,
-                            sbd: 0,
-                            amount: contract.amount - dluxFilled,
-                            rate: contract.rate,
-                            block: current,
-                            partial: true
-                        })
-                        delete state.contracts[json.to][dextx.contract]
-                        state.contracts[json.to][txid] = state.dex.steem.sellOrders[state.dex.steem.sellOrders.length - 1]
-                        sortSellArray(state.dex.steem.sellOrders, 'rate')
-                        state.escrow.push([json.agent,
-                            [
-                                "escrow_approve",
-                                {
-                                    "from": json.from,
-                                    "to": json.to,
-                                    "agent": json.agent,
-                                    "who": json.agent,
-                                    "escrow_id": json.escrow_id,
-                                    "approve": true
-                                }
-                            ]
-                        ])
-                    }
-                } else if (contract.sbd) {
-                    if (contract.sbd > json.sbd_amount.amount) {
-                        const dif = contract.sbd - json.sbd_amount.amount
-                        const ratio = parseInt((json.sbd_amount.amount / contract.sbd) * 10000)
-                        const dluxFilled = parseInt((json.sbd_amount.amount / contract.sbd) * contract.amount)
-                        state.balances[json.from] += dluxFilled
-                        const txid = 'DLUX' + hashThis(contract.from + json.escrow_id)
-                        state.dex.sbd.tick = contract.rate
-                        state.dex.sbd.sellOrders.push({
-                            txid,
-                            from: contract.from,
-                            steem: 0,
-                            sbd: dif,
-                            amount: contract.amount - dluxFilled,
-                            rate: contract.rate,
-                            block: current,
-                            partial: true
-                        })
-                        delete state.contracts[json.to][dextx.contract]
-                        state.contracts[json.to][txid] = state.dex.sbd.sellOrders[state.dex.sbd.sellOrders.length - 1]
-                        sortSellArray(state.dex.sbd.sellOrders, 'rate')
-                        state.escrow.push([json.agent,
-                            [
-                                "escrow_approve",
-                                {
-                                    "from": json.from,
-                                    "to": json.to,
-                                    "agent": json.agent,
-                                    "who": json.agent,
-                                    "escrow_id": json.escrow_id,
-                                    "approve": true
-                                }
-                            ]
-                        ])
-                    }
-                }
-            }*/
-        }  else if (isAgent && isDAgent && dextx) { //two escrow agents to fascilitate open ended transfer with out estblishing steem/sbd bank //expiration times??
-          console.log('yay')
-        var txid = 'DLUX' + hashThis(`${from}${processor.getCurrentBlockNumber()}`)
-        var auths = [
-            [json.agent,
-                [
-                    "escrow_approve",
-                    {
-                        "from": json.from,
-                        "to": json.to,
-                        "agent": json.agent,
-                        "who": json.agent,
-                        "escrow_id": json.escrow_id,
-                        "approve": true
-                    }
+                state.contracts[seller][meta].buyer = from
+                state.contracts[seller][meta].auths = [
+                  [json.to,
+                      [
+                          "escrow_dispute",
+                          {
+                              "from": json.from,
+                              "to": json.to,
+                              "agent": json.agent,
+                              "who": json.to,
+                              "escrow_id": json.escrow_id
+                          }
+                      ]
+                  ],
+                  [json.agent,
+                      [
+                          "escrow_release",
+                          {
+                              "from": json.from,
+                              "to": json.to,
+                              "agent": json.agent,
+                              "who": json.agent,
+                              "reciever": json.to,
+                              "escrow_id": json.escrow_id,
+                              "sbd_amount": {
+                                "amount": parseInt(parseFloat(json.sbd_amount)*1000).toFixed(0),
+                                "precision": 3,
+                                "nai": "@@000000013"
+                              },
+                              "steem_amount": {
+                                "amount": parseInt(parseFloat(json.sbd_amount)*1000).toFixed(0),
+                                "precision": 3,
+                                "nai": "@@000000021"
+                              }
+                          }
+                      ]
+                  ],[json.to,
+                      [
+                          "transfer",
+                          {
+                              "from": json.to,
+                              "to": json.from,
+                              "amount": samount,
+                              "memo": `${meta} by ${seller} fulfilled with ${parseFloat(contract.amount/1000).toFixed(3)} DLUX`
+                          }
+                      ]
+                  ]
                 ]
-            ],
+            }
+          }
+          if(!done){
+            state.escrow.push([json.to,[
+                "escrow_approve",
+                {
+                    "from": json.from,
+                    "to": json.to,
+                    "agent": json.agent,
+                    "who": json.to,
+                    "escrow_id": json.escrow_id,
+                    "approve": false
+                }
+            ]
+          ])
+          state.escrow.push([json.agent,
+              [
+                  "escrow_approve",
+                  {
+                      "from": json.from,
+                      "to": json.to,
+                      "agent": json.agent,
+                      "who": json.agent,
+                      "escrow_id": json.escrow_id,
+                      "approve": false
+                  }
+              ]
+          ])
+          }
+        }  else if (isAgent && isDAgent && dextx) { //two escrow agents to fascilitate open ended transfer with out estblishing steem/sbd bank //expiration times??
+        var txid = 'DLUX' + hashThis(`${from}${processor.getCurrentBlockNumber()}`)
+        if(state.balances[json.to] > dextx.dlux){
+          state.escrow.push([json.agent,
+              [
+                  "escrow_approve",
+                  {
+                      "from": json.from,
+                      "to": json.to,
+                      "agent": json.agent,
+                      "who": json.agent,
+                      "escrow_id": json.escrow_id,
+                      "approve": true
+                  }
+              ]
+          ])
+        state.escrow.push([json.to,
+            [
+                "escrow_approve",
+                {
+                    "from": json.from,
+                    "to": json.to,
+                    "agent": json.agent,
+                    "who": json.to,
+                    "escrow_id": json.escrow_id,
+                    "approve": true
+                }
+            ]
+        ])
+          var auths = [
             [json.to,
                 [
-                    "escrow_approve",
+                    "escrow_dispute",
                     {
                         "from": json.from,
                         "to": json.to,
                         "agent": json.agent,
                         "who": json.to,
+                        "escrow_id": json.escrow_id
+                    }
+                ]
+            ],
+            [json.agent,
+                [
+                    "escrow_release",
+                    {
+                        "from": json.from,
+                        "to": json.to,
+                        "agent": json.agent,
+                        "who": json.agent,
+                        "reciever": json.to,
                         "escrow_id": json.escrow_id,
-                        "approve": true
+                        "sbd_amount": json.sbd_amount,
+                        "steem_amount": json.sbd_amount
                     }
                 ]
             ]
@@ -1211,15 +1267,14 @@ function startApp() {
                     "to": json.to,
                     "agent": json.agent,
                     "who": json.to,
-                    "receiver": json.from,
                     "escrow_id": json.escrow_id,
                     "sbd_amount": json.sbd_amount,
-                    "steem_amount": json.steem_amount
+                    "steem_amount": json.sbd_amount
                 }
             ]
         ]
         if (parseFloat(json.steem_amount) > 0) {
-            console.log(current + `:@${json.from} signed a ${json.steem_amount} STEEM buy order`)
+            state.feed.unshift(current + `:@${json.from} signed a ${json.steem_amount} STEEM buy order`)
             state.dex.steem.buyOrders.push({
                 txid,
                 from: json.from,
@@ -1321,7 +1376,9 @@ function startApp() {
                         reject
                     }
                 }
-            }        }
+            }
+          }
+        }
     } else if (isAgent) {
             state.escrow.push([json.agent,
                 [
@@ -1343,75 +1400,72 @@ function startApp() {
         var found = 0
         for (var i = 0; i < state.escrow.length; i++) {
             if (state.escrow[i][0] == json.who && state.escrow[i][1][1].escrow_id == json.escrow_id && state.escrow[i][1][1].approve == json.approve) {
-              console.log(`Agent ${json.who} did the thing`)
+              state.feed.unshift(current +`:@${json.who} approved escrow for ${json.from}`)
                 state.escrow.splice(i, 1)
                 found = 1
-                try{if (state.contracts[json.from][json.contract].exe && json.who == json.agent ){
-                  state.escrow.push(state.contracts[json.from][json.contract].exe)
-                }}catch(e){console.log('Not a node')}
+                if(found){
+                  for(var i in state.contracts[json.from]){
+                    if(state.contracts[json.from][i].escrow_id == json.escrow_id){found = i;break;}
+                  }
+                }
+                if(found && found != 1){
+                  if(state.contracts[json.from][found].buyer){
+                    state.escrow.push(state.contracts[json.from][found].shift())
+                  }
+                }
                 state.markets.node[json.who].wins++
-                /*
-                state.pending.push([json.to,
-                    [
-                        "escrow_approve",
-                        {
-                            "from": json.from,
-                            "to": json.to,
-                            "agent": json.agent,
-                            "who": json.to,
-                            "escrow_id": json.escrow_id,
-                            "approve": true
-                        }
-                    ],
-                processor.getCurrentBlockNumber()])
-                */
+
                 break;
             }
         }
-        /*
-        if (found) {
-            for (var i = 0; i < state.pending.length; i++) {
-                if (state.pending[i][0] == json.to && state.pending[i][1][1].escrow_id == json.escrow_id) {
-                    state.pending.splice(i, 1)
-                    state.markets.node[json.to].wins++
-                    break;
-                }
-            }
-        }
-
-        if (json.to == json.who && state.contracts[json.to]){
-          for (var contract in state.contracts[json.to]){
-            if(state.contracts[json.to][contract][1].escrow_id = json.escrow_id){
-              state.contracts[json.to][contract]=0
-              delete state.contracts[json.to][contract]
-              break;
-            }
-          }
-        }
-        */
     });
-
-    processor.onOperation('escrow_release', function(json) {
+    processor.onOperation('escrow_dispute', function(json) {
         var found = 0
         for (var i = 0; i < state.escrow.length; i++) {
             if (state.escrow[i][0] == json.agent && state.escrow[i][1][1].escrow_id == json.escrow_id) {
                 state.escrow.splice(i, 1)
                 state.markets.node[json.agent].wins++
                 found = 1
+                if(found){
+                  for(var i in state.contracts[json.from]){
+                    if(state.contracts[json.from][i].escrow_id == json.escrow_id){found = i;break;}
+                  }
+                }
+                if(found && found != 1){
+                  if(state.contracts[json.from][found].buyer){
+                    state.escrow.push(state.contracts[json.from][found].shift())
+                  }
+                }
                 break;
             }
         }
-        if (!found) {
-            for (var i = 0; i < state.pending.length; i++) {
-                if (state.pending[i][0] == json.to && state.pending[i][1][1].escrow_id == json.escrow_id) {
-                    state.pending.splice(i, 1)
-                    if (state.markets.node[json.to]) {
-                        state.markets.node[json.to].wins++
-                    }
+    });
+
+    processor.onOperation('escrow_release', function(json) {
+        var found = 0, owner = ''
+        for (var i = 0; i < state.escrow.length; i++) {
+            if (state.escrow[i][0] == json.who && state.escrow[i][1][1].escrow_id == json.escrow_id) {
+                for(var txid in state.contracts[json.to]){
+                  if(state.contracts[json.to][txid].escrow_id = json.escrow_id){
+                    owner = json.to
                     break;
+                  }
                 }
+                if (!owner){
+                  for(var txid in state.contracts[json.from]){
+                    if(state.contracts[json.from][txid].escrow_id = json.escrow_id){
+                      owner = json.from
+                      break;
+                    }
+                }
+                state.escrow.splice(i, 1)
+                state.escrow.push(state.contracts[owner][txid].auths[0])
+                state.markets.node[json.agent].wins++
+                found = 1
+                break;
             }
         }
+      }
     });
 
     processor.on('node_add', function(json, from) {
@@ -1628,14 +1682,14 @@ function startApp() {
         var found = 0
         for (var i = 0; i < state.escrow.length; i++) {
             if (state.escrow[i][0] == json.from && state.escrow[i][1][1].to == json.to && state.escrow[i][1][1].steem_amount == json.steem_amount && state.escrow[i][1][1].sbd_amount == json.sbd_amount) {
-              console.log(`Agent ${json.from} sent ${json.steem_amount}/${json.sbd_amount}`)
+                state.feed.unshift(current+`:@${json.from} sent @${json.to} ${json.steem_amount}/${json.sbd_amount}`)
                 var escrow = state.escrow.splice(i, 1)
                 found = 1
-                console.log(escrow[0][1])
                 const addr = escrow[0][1][1].memo.split(' ')[0]
-                state.balances[json.from] = parseInt(state.contracts[json.to][addr].escrow) + parseInt(state.balances[json.from])
-                state.contracts[json.to][addr] = ''
-                delete state.contracts[json.to][addr]
+                const seller = escrow[0][1][1].memo.split(' ')[2]
+                state.balances[seller] = parseInt(state.contracts[seller][addr].escrow) + parseInt(state.balances[seller])
+                state.contracts[seler][addr] = ''
+                delete state.contracts[seller][addr]
                 state.markets.node[json.from].wins++
                 /*
                 state.pending.push([json.to,
@@ -1657,7 +1711,6 @@ function startApp() {
         }
         if (json.to == 'robotolux' && json.amount.split(' ')[1] == 'STEEM') {
             if (!state.balances[json.from]) state.balances[json.from] = 0
-            const icoEntry = (current - 20000) % 30240
             const amount = parseInt(parseFloat(json.amount) * 1000)
             var purchase
             if (!state.stats.outOnBlock) {
@@ -1774,6 +1827,7 @@ function startApp() {
         }
         //*
         if (num % 100 === 0 && !processor.isStreaming()) {
+          if(!state.feed){state.feed=[]}
             client.database.getDynamicGlobalProperties().then(function(result) {
                 console.log('At block', num, 'with', result.head_block_number - num, `left until real-time. DAO @ ${(num - 20000) % 30240}`)
             });
