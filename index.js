@@ -1765,9 +1765,12 @@ function startApp() {
     });
     processor.onOperation('comment', function(json, from) { //grab posts to reward
         if(from == 'dlux-io'){
+          console.log(json)
           for (var i =0;i<state.escrow.length;i++){
-            if (state.escrow[i][1][1].permlink == json.permlink && state.escrow[i][1][0] == 'comment'){
-              state.escrow.splice(i,1)
+            if(state.escrow[i][0] == 'dlux-io'){
+              if (state.escrow[i][1][1].permlink == json.permlink && state.escrow[i][1][0] == 'comment'){
+                state.escrow.splice(i,1)
+              }
             }
           }
         }
