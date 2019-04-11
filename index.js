@@ -1763,7 +1763,7 @@ function startApp() {
     processor.onOperation('account_update', function(json, from) { //grab posts to reward
         Utils.upKey(json.account, json.memo_key)
     });
-    processor.onOperation('comment', function(json, from) { //grab posts to reward
+    processor.onOperation('create_post', function(json, from) { //grab posts to reward
         if(from == 'dlux-io'){
           console.log(json)
           for (var i =0;i<state.escrow.length;i++){
