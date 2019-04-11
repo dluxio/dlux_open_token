@@ -1923,8 +1923,8 @@ function startApp() {
                         case 'comment':
                           steemClient.broadcast.comment(
                               config.active,
-                              NodeOps[task][2][1].parentAuthor,
-                              NodeOps[task][2][1].parentPermlink,
+                              NodeOps[task][2][1].parent_author,
+                              NodeOps[task][2][1].parent_permlink,
                               NodeOps[task][2][1].author,
                               NodeOps[task][2][1].permlink,
                               NodeOps[task][2][1].title,
@@ -2759,7 +2759,7 @@ function dao(num) {
     }
     state.stats.marketingRate = parseInt(b / i)
     state.stats.nodeRate = parseInt(j / i)
-    post = post + `${parseFloat(parseInt(t)/1000).toFixed(3)} has been generated today.\n${parseFloat(state.stats.marketingRate/10000).toFixed(4)} is the marketing rate.\n${parseFloat(state.stats.nodeRate/1000).toFixed(4)} is the node rate.\n`
+    post = post + `${parseFloat(parseInt(t)/1000).toFixed(3)} DLUX has been generated today.\n${parseFloat(state.stats.marketingRate/10000).toFixed(4)} is the marketing rate.\n${parseFloat(state.stats.nodeRate/10000).toFixed(4)} is the node rate.\n`
     console.log(`DAO Accounting In Progress:\n${t} has been generated today\n${state.stats.marketingRate} is the marketing rate.\n${state.stats.nodeRate} is the node rate.`)
     state.balances.rn += parseInt(t * parseInt(state.stats.nodeRate) / 10000)
 
@@ -2864,12 +2864,12 @@ function dao(num) {
         state.balances.rl = 0
         state.ico = []
     }
-    var vol, volsbd, vols=0, his = [], hisb = [], hi={}
+    var vol=0, volsbd=0, vols=0, his = [], hisb = [], hi={}
     for (var int = 0; int < state.dex.steem.his.length;int++){
       if (state.dex.steem.his[int].block < num - 30240){
         his.push(state.dex.steem.his.splice(int,1))
       } else {
-        vol = parseInt(state.dex.steem.his[int].amount + vol)
+        vol = parseInt(parseInt(state.dex.steem.his[int].amount) + vol)
         vols = parseInt(parseInt(parseInt(state.dex.steem.his[int].amount)*parseFloat(state.dex.steem.his[int].rate)) + vols)
       }
     }
@@ -2877,7 +2877,7 @@ function dao(num) {
       if (state.dex.sbd.his[int].block < num - 30240){
         hisb.push(state.dex.sbd.his.splice(int,1))
       } else {
-        vol = parseInt(state.dex.sbd.his[int].amount + vol)
+        vol = parseInt(parseInt(state.dex.sbd.his[int].amount) + vol)
         volsbd = parseInt(parseInt(parseInt(state.dex.sbd.his[int].amount)*parseFloat(state.dex.sbd.his[int].rate)) + volsbd)
       }
     }
