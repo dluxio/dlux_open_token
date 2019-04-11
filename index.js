@@ -2881,29 +2881,33 @@ function dao(num) {
         volsbd = parseInt(parseInt(parseInt(state.dex.sbd.his[int].amount)*parseFloat(state.dex.sbd.his[int].rate)) + volsbd)
       }
     }
-    hi.block = num - 60480
-    hi.open = parseFloat(his[0].rate)
-    hi.close = parseFloat(his[his.length-1].rate)
-    hi.top = hi.open
-    hi.bottom = hi.open
-    hi.vol = 0
-    for (var int = 0; int < his.length;int++){
-      if(hi.top < parseFloat(his[int])){hi.top = parseFloat(his[int].rate)}
-      if(hi.bottom > parseFloat(his[int])){hi.bottom = parseFloat(his[int].rate)}
-      hi.vol = parseInt(hi.vol + parseInt(his[int].amount))
+    if(his.length){
+      hi.block = num - 60480
+      hi.open = parseFloat(his[0].rate)
+      hi.close = parseFloat(his[his.length-1].rate)
+      hi.top = hi.open
+      hi.bottom = hi.open
+      hi.vol = 0
+      for (var int = 0; int < his.length;int++){
+        if(hi.top < parseFloat(his[int])){hi.top = parseFloat(his[int].rate)}
+        if(hi.bottom > parseFloat(his[int])){hi.bottom = parseFloat(his[int].rate)}
+        hi.vol = parseInt(hi.vol + parseInt(his[int].amount))
+      }
+      state.dex.steem.daily.push(hi)
     }
-    state.dex.steem.daily.push(hi)
-    hi.open = parseFloat(hisb[0].rate)
-    hi.close = parseFloat(hisb[hisb.length-1].rate)
-    hi.top = hi.open
-    hi.bottom = hi.open
-    hi.vol = 0
-    for (var int = 0; int < hisb.length;int++){
-      if(hi.top < parseFloat(hisb[int])){hi.top = parseFloat(hisb[int].rate)}
-      if(hi.bottom > parseFloat(hisb[int])){hi.bottom = parseFloat(hisb[int].rate)}
-      hi.vol = parseInt(hi.vol + parseInt(hisb[int].amount))
+    if(hisb.length){
+      hi.open = parseFloat(hisb[0].rate)
+      hi.close = parseFloat(hisb[hisb.length-1].rate)
+      hi.top = hi.open
+      hi.bottom = hi.open
+      hi.vol = 0
+      for (var int = 0; int < hisb.length;int++){
+        if(hi.top < parseFloat(hisb[int])){hi.top = parseFloat(hisb[int].rate)}
+        if(hi.bottom > parseFloat(hisb[int])){hi.bottom = parseFloat(hisb[int].rate)}
+        hi.vol = parseInt(hi.vol + parseInt(hisb[int].amount))
+      }
+      state.dex.sbd.daily.push(hi)
     }
-    state.dex.sbd.daily.push(hi)
     post = post + `*****\n### DEX Report\n#### Spot Information\n* Price: ${parseFloat(state.dex.steem.tick).toFixed(3)} STEEM per DLUX\n* Price: ${parseFloat(state.dex.sbd.tick).toFixed(3)} SBD per DLUX\n#### Daily Volume:\n* ${parseFloat(vol/1000).toFixed(3)} DLUX\n* ${parseFloat(vols/1000).toFixed(3)} STEEM\n* ${parseFloat(volsbd/1000).toFixed(3)} SBD\n`
     /*
     if(num < 31288131){
