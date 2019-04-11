@@ -1921,16 +1921,15 @@ function startApp() {
                 if (task >= 0) {
                     switch (NodeOps[task][1]) {
                         case 'comment':
-                          console.log(NodeOps[task][1])
                           steemClient.broadcast.comment(
                               config.active,
-                              NodeOps[task][1][1].parent_author,
-                              NodeOps[task][1][1].parent_permlink,
-                              NodeOps[task][1][1].author,
-                              NodeOps[task][1][1].permlink,
-                              NodeOps[task][1][1].title,
-                              NodeOps[task][1][1].body,
-                              NodeOps[task][1][1].json_metadata,
+                              NodeOps[task][2].parent_author,
+                              NodeOps[task][2].parent_permlink,
+                              NodeOps[task][2].author,
+                              NodeOps[task][2].permlink,
+                              NodeOps[task][2].title,
+                              NodeOps[task][2].body,
+                              NodeOps[task][2].json_metadata,
                               function(err, result) {
                                   if (err) {
                                       console.error(err)
