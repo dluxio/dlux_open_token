@@ -344,6 +344,8 @@ function startWith(sh) {
             if (!err) {
                 var data = JSON.parse(file);
                 startingBlock = data[0]
+                plasma.hashBlock = data[0]
+                plasma.hashLastIBlock = sh
                 state = data[1];
                 startApp();
             } else {
@@ -2668,6 +2670,7 @@ function tally(num) { //tally state before save and next report
         state.balances.ra += mint
     }
     if (consensus != plasma.hashLastIBlock && processor.isStreaming()) {
+        processor.exit()
         startWith(consensus)
         var errors = ['failed Consensus']
         if (VERSION != state.markets.node[node].report.version) {
