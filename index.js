@@ -1861,9 +1861,6 @@ function startApp() {
         }
         if (num % 100 === 1) {
           const blockState = Buffer.from(JSON.stringify([num, state]))
-          plasma.hashBlock = num
-          plasma.hashLastIBlock = hashThis(blockState)
-          console.log(current + `:Signing: ${plasma.hashLastIBlock}`)
           ipfsSaveState(num, blockState)
         }
         for (var p = 0; p < pa.length; p++) { //automate some tasks
@@ -2677,8 +2674,8 @@ function tally(num) { //tally state before save and next report
             console.log(current + `:Abandoning ${plasma.hashLastIBlock} because ${errors[0]}`)
         }
         const blockState = Buffer.from(JSON.stringify([num, state]))
-        plasma.hashBlock = num
-        plasma.hashLastABlock = hashThis(blockState)
+        plasma.hashBlock = ''
+        plasma.hashLastIBlock = ''
         console.log(current + `:Abandoning ${plasma.hashLastIBlock} because ${errors[0]}`)
         /*var abd = asyncIpfsSaveState(num, blockState)
         abd.then(function(value) {
@@ -3023,8 +3020,7 @@ function report(num) {
                 }
             }
         }
-        for (var node in state.runners) {
-            var self = state.runners[node].self;
+        for (var self in state.runners) {
             if (agreements[self]) {
                 agreements[self].top = true
             } else if (plasma.markets.nodes[self].agreement) {
