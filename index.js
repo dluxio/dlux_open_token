@@ -2597,9 +2597,11 @@ function tally(num) { //tally state before save and next report
     }
     for (var node in tally.agreements.runners) {
         for (var subnode in tally.agreements.runners[node].report.agreements) {
-            if (tally.agreements.tally[subnode].hash == tally.agreements.tally[node].hash) {
+            if(tally.agreements.tally[subnode]){
+              if (tally.agreements.tally[subnode].hash == tally.agreements.tally[node].hash) {
                 tally.agreements.tally[subnode].votes++
                 console.log(tally.agreements.tally[subnode])
+              }
             }
         }
         tally.agreements.votes++
