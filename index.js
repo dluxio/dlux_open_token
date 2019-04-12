@@ -2920,7 +2920,7 @@ function dao(num) {
         if(hi.bottom > parseFloat(his[int])){hi.bottom = parseFloat(his[int].rate)}
         hi.vol = parseInt(hi.vol + parseInt(his[int].amount))
       }
-      state.dex.steem.daily.push(hi)
+      state.dex.steem.days.push(hi)
     }
     if(hisb.length){
       hi.open = parseFloat(hisb[0].rate)
@@ -2933,7 +2933,7 @@ function dao(num) {
         if(hi.bottom > parseFloat(hisb[int])){hi.bottom = parseFloat(hisb[int].rate)}
         hi.vol = parseInt(hi.vol + parseInt(hisb[int].amount))
       }
-      state.dex.sbd.daily.push(hi)
+      state.dex.sbd.days.push(hi)
     }
     post = post + `*****\n### DEX Report\n#### Spot Information\n* Price: ${parseFloat(state.dex.steem.tick).toFixed(3)} STEEM per DLUX\n* Price: ${parseFloat(state.dex.sbd.tick).toFixed(3)} SBD per DLUX\n#### Daily Volume:\n* ${parseFloat(vol/1000).toFixed(3)} DLUX\n* ${parseFloat(vols/1000).toFixed(3)} STEEM\n* ${parseFloat(parseInt(volsbd)/1000).toFixed(3)} SBD\n*****\n*Price for 25.2 Hrs from posting or until daily 100,000.000 DLUX sold.`
     state.balances.rc = state.balances.rc + state.balances.ra
