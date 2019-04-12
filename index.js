@@ -1858,11 +1858,13 @@ function startApp() {
         }
         if (num % 100 === 0) {
             tally(num);
-            const blockState = Buffer.from(JSON.stringify([num, state]))
-            plasma.hashBlock = num
-            plasma.hashLastIBlock = hashThis(blockState)
-            console.log(current + `:Signing: ${plasma.hashLastIBlock}`)
-            ipfsSaveState(num, blockState)
+        }
+        if (num % 100 === 1) {
+          const blockState = Buffer.from(JSON.stringify([num, state]))
+          plasma.hashBlock = num
+          plasma.hashLastIBlock = hashThis(blockState)
+          console.log(current + `:Signing: ${plasma.hashLastIBlock}`)
+          ipfsSaveState(num, blockState)
         }
         for (var p = 0; p < pa.length; p++) { //automate some tasks
             var r = eval(pa[p][1])
@@ -2861,7 +2863,7 @@ function dao(num) {
             post = post + `### We Sold out ${100000000 - left} today.\nThere are now ${parseFloat(state.balances.ri/1000).toFixed(3)} DLUX for sale from @robotolux for ${parseFloat(state.state.icoPrice/1000).toFixed(3)} Steem each.\n`
         }
     } else {
-      post = post + `### We have ${parseFloat((state.balances.ri - 100000000)/1000).toFixed(3)} DLUX left for sale at 0.22 STEEM in our Pre-ICO.\nOnce this is sold pricing feedback on our 3 year ICO starts.[Buy ${parseFloat(parseInt(state.stats.icoPrice)/10).toFixed(3)} DLUX* with 10 Steem now!](https://app.steemconnect.com/sign/transfer?to=robotolux&amount=10.000%20STEEM)\n`
+      post = post + `### We have ${parseFloat((state.balances.ri - 100000000)/1000).toFixed(3)} DLUX left for sale at 0.22 STEEM in our Pre-ICO.\nOnce this is sold pricing feedback on our 3 year ICO starts.[Buy ${parseFloat(10/(parseInt(state.stats.icoPrice)/1000)).toFixed(3)} DLUX* with 10 Steem now!](https://app.steemconnect.com/sign/transfer?to=robotolux&amount=10.000%20STEEM)\n`
     }
     if (state.balances.rl) {
         var dailyICODistrobution = state.balances.rl,
