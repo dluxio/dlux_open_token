@@ -2610,18 +2610,17 @@ function tally(num) { //tally state before save and next report
     var consensus
     for (var node in state.runners) {
         l++
-        console.log(tally.agreements.tally[node].votes ,node, tally.agreements.votes)
         if (tally.agreements.tally[node].votes / tally.agreements.votes >= 2 / 3) {
             consensus = tally.agreements.runners[node].report.hash
         } else if (l > 1) {
             delete state.runners[node]
             console.log('uh-oh:' + node + ' scored ' + tally.agreements.tally[node].votes + '/' + tally.agreements.votes)
         } else if (l == 1) {
-            if(state.markets.node[node].block > num - 100)consensus=state.markets.node[node].report.hash
+            if(state.markets.node[node].report.block > num -100)consensus=state.markets.node[node].report.hash
         }
         if(consensus === undefined){
           for(var node in state.runners){
-            if(state.markets.node[node].block > num - 100)consensus=state.markets.node[node].report.hash
+            if(state.markets.node[node].report.block > num - 100)consensus=state.markets.node[node].report.hash
             break;
           }
         }
@@ -2675,8 +2674,7 @@ function tally(num) { //tally state before save and next report
         state.balances.ra += mint
     }
     if (consensus && consensus != plasma.hashLastIBlock && processor.isStreaming()) {
-        startWith(consensus)
-        exit()
+        exit(consensus)
         var errors = ['failed Consensus']
         if (VERSION != state.markets.node[node].report.version) {
             console.log(current + `:Abandoning ${plasma.hashLastIBlock} because ${errors[0]}`)
@@ -3467,9 +3465,9 @@ function computeTimer(fee) {
     }
 }
 
-function exit() {
-    console.log('Exiting...');
-    processor.stop(function(){process.exit()});
+function exit(consensus) {
+    console.log(`Restarting with ${consensus}...`);
+    processor.stop(function(){startWith(consensus)});
 }
 
 function ipfsSaveState(blocknum, hashable) {
