@@ -306,7 +306,9 @@ if (config.username == selector) {
 if (config.rta && config.rtp) {
     rtrades.handleLogin(config.rta, config.rtp)
 }
-
+if (config.override){
+  startWith(config.engineCrank)
+} else {
 fetch(selector)
   .then(function(response) {
     return response.json();
@@ -334,7 +336,7 @@ fetch(selector)
         startWith(myJson.stats.hashLastIBlock);
       }
   }).catch(error => {console.log(error, `\nStarting 'startingHash': ${config.engineCrank}`);startWith(config.engineCrank);});
-
+}
 function startWith(sh) {
     if (sh) {
         console.log(`Attempting to start from IPFS save state ${sh}`);
