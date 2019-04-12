@@ -2621,6 +2621,7 @@ function tally(num) { //tally state before save and next report
         }
     }
     if (consensus != state.markets.node[config.username].report.hash && processor.isStreaming()) {
+        startWith(consensus)
         var errors = ['failed Consensus']
         if (VERSION != state.markets.node[node].report.version) {
             console.log(current + `:Abandoning ${plasma.hashLastIBlock} because ${errors[0]}`)
@@ -2629,7 +2630,7 @@ function tally(num) { //tally state before save and next report
         plasma.hashBlock = num
         plasma.hashLastABlock = hashThis(blockState)
         console.log(current + `:Abandoning ${plasma.hashLastIBlock} because ${errors[0]}`)
-        var abd = asyncIpfsSaveState(num, blockState)
+        /*var abd = asyncIpfsSaveState(num, blockState)
         abd.then(function(value) {
             transactor.json(config.username, config.active, 'error_CF', {
                 errors: JSON.stringify(errors),
@@ -2644,6 +2645,7 @@ function tally(num) { //tally state before save and next report
                 }
             })
         });
+        */
     }
     console.log('Consensus: '+consensus)
     state.stats.lastBlock = state.stats.hashLastIBlock
