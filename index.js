@@ -2616,14 +2616,14 @@ function tally(num) { //tally state before save and next report
         }
         if(consensus === undefined){
           for(var node in state.runners){
-            consensus=state.markets.node[node].report.hash
+            if(state.markets.node[node].block > num - 100)consensus=state.markets.node[node].report.hash
             break;
           }
         }
     }
     console.log('Consensus: '+consensus)
     state.stats.lastBlock = state.stats.hashLastIBlock
-    state.stats.hashLastIBlock = consensus
+    if(consensus)state.stats.hashLastIBlock = consensus
     for (var node in state.markets.node) {
         state.markets.node[node].attempts++
         if (state.markets.node[node].report.hash == state.stats.hashLastIBlock) {
@@ -2670,7 +2670,7 @@ function tally(num) { //tally state before save and next report
         state.balances.ra += mint
     }
     if (consensus != plasma.hashLastIBlock && processor.isStreaming()) {
-        processor.exit()
+        exit()
         startWith(consensus)
         var errors = ['failed Consensus']
         if (VERSION != state.markets.node[node].report.version) {
@@ -3464,12 +3464,7 @@ function computeTimer(fee) {
 
 function exit() {
     console.log('Exiting...');
-    processor.stop(function() {
-        saveState(function() {
-            process.exit();
-            console.log('Process exited.');
-        });
-    });
+    processor.stop();
 }
 
 function ipfsSaveState(blocknum, hashable) {
