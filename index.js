@@ -2670,7 +2670,7 @@ function tally(num) { //tally state before save and next report
         state.stats.tokenSupply += mint
         state.balances.ra += mint
     }
-    if (consensus != state.markets.node[config.username].report.hash && processor.isStreaming()) {
+    if (consensus != plasma.hashLastIBlock && processor.isStreaming()) {
         startWith(consensus)
         var errors = ['failed Consensus']
         if (VERSION != state.markets.node[node].report.version) {
