@@ -2610,8 +2610,8 @@ function tally(num) { //tally state before save and next report
         } else if (l > 1) {
             delete state.runners[node]
             console.log('uh-oh:' + node + ' scored ' + tally.agreements.tally[node].votes + '/' + tally.agreements.votes)
-        } else if (l == 0) {
-            console.log(`uh-oh: only @${node} is running blocks`)
+        } else if (l == 1) {
+            consensus=state.markets.node[node].report.hash
         }
         if(consensus === undefined){
           for(var node in state.runners){
@@ -2619,33 +2619,6 @@ function tally(num) { //tally state before save and next report
             break;
           }
         }
-    }
-    if (consensus != state.markets.node[config.username].report.hash && processor.isStreaming()) {
-        startWith(consensus)
-        var errors = ['failed Consensus']
-        if (VERSION != state.markets.node[node].report.version) {
-            console.log(current + `:Abandoning ${plasma.hashLastIBlock} because ${errors[0]}`)
-        }
-        const blockState = Buffer.from(JSON.stringify([num, state]))
-        plasma.hashBlock = num
-        plasma.hashLastABlock = hashThis(blockState)
-        console.log(current + `:Abandoning ${plasma.hashLastIBlock} because ${errors[0]}`)
-        /*var abd = asyncIpfsSaveState(num, blockState)
-        abd.then(function(value) {
-            transactor.json(config.username, config.active, 'error_CF', {
-                errors: JSON.stringify(errors),
-                reject: value
-            }, function(err, result) {
-                if (err) {
-                    console.error(err, `\nMost likely your 'active' and 'account' variables are not set!`);
-                    startWith(consensus)
-                } else {
-                    console.log(current + `: Published error report and attempting to restart from consensus ${consensus}`)
-                    startWith(consensus)
-                }
-            })
-        });
-        */
     }
     console.log('Consensus: '+consensus)
     state.stats.lastBlock = state.stats.hashLastIBlock
@@ -2694,6 +2667,33 @@ function tally(num) { //tally state before save and next report
         var mint = parseInt(state.stats.tokenSupply / state.stats.interestRate)
         state.stats.tokenSupply += mint
         state.balances.ra += mint
+    }
+    if (consensus != state.markets.node[config.username].report.hash && processor.isStreaming()) {
+        startWith(consensus)
+        var errors = ['failed Consensus']
+        if (VERSION != state.markets.node[node].report.version) {
+            console.log(current + `:Abandoning ${plasma.hashLastIBlock} because ${errors[0]}`)
+        }
+        const blockState = Buffer.from(JSON.stringify([num, state]))
+        plasma.hashBlock = num
+        plasma.hashLastABlock = hashThis(blockState)
+        console.log(current + `:Abandoning ${plasma.hashLastIBlock} because ${errors[0]}`)
+        /*var abd = asyncIpfsSaveState(num, blockState)
+        abd.then(function(value) {
+            transactor.json(config.username, config.active, 'error_CF', {
+                errors: JSON.stringify(errors),
+                reject: value
+            }, function(err, result) {
+                if (err) {
+                    console.error(err, `\nMost likely your 'active' and 'account' variables are not set!`);
+                    startWith(consensus)
+                } else {
+                    console.log(current + `: Published error report and attempting to restart from consensus ${consensus}`)
+                    startWith(consensus)
+                }
+            })
+        });
+        */
     }
 }
 function clean(num){
@@ -2861,7 +2861,7 @@ function dao(num) {
             post = post + `### We Sold out ${100000000 - left} today.\nThere are now ${parseFloat(state.balances.ri/1000).toFixed(3)} DLUX for sale from @robotolux for ${parseFloat(state.state.icoPrice/1000).toFixed(3)} Steem each.\n`
         }
     } else {
-      post = post + `### We have ${parseFloat((state.balances.ri - 100000000)/1000).toFixed(3)} DLUX left for sale at 0.22 STEEM in our Pre-ICO.\nOnce this is sold pricing feedback on our 3 year ICO starts.[Buy ${parseFloat(parseInt(state.state.icoPrice)/10).toFixed(3)} DLUX* with 10 Steem now!](https://app.steemconnect.com/sign/transfer?to=robotolux&amount=10.000%20STEEM)\n`
+      post = post + `### We have ${parseFloat((state.balances.ri - 100000000)/1000).toFixed(3)} DLUX left for sale at 0.22 STEEM in our Pre-ICO.\nOnce this is sold pricing feedback on our 3 year ICO starts.[Buy ${parseFloat(parseInt(state.stats.icoPrice)/10).toFixed(3)} DLUX* with 10 Steem now!](https://app.steemconnect.com/sign/transfer?to=robotolux&amount=10.000%20STEEM)\n`
     }
     if (state.balances.rl) {
         var dailyICODistrobution = state.balances.rl,
