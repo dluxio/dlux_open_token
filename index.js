@@ -2617,7 +2617,7 @@ function tally(num) { //tally state before save and next report
             delete state.runners[node]
             console.log('uh-oh:' + node + ' scored ' + tally.agreements.tally[node].votes + '/' + tally.agreements.votes)
         } else if (l == 1) {
-            consensus=state.markets.node[node].report.hash
+            if(state.markets.node[node].block > num - 100)consensus=state.markets.node[node].report.hash
         }
         if(consensus === undefined){
           for(var node in state.runners){
@@ -2674,9 +2674,9 @@ function tally(num) { //tally state before save and next report
         state.stats.tokenSupply += mint
         state.balances.ra += mint
     }
-    if (consensus != plasma.hashLastIBlock && processor.isStreaming()) {
-        exit()
+    if (consensus && consensus != plasma.hashLastIBlock && processor.isStreaming()) {
         startWith(consensus)
+        exit()
         var errors = ['failed Consensus']
         if (VERSION != state.markets.node[node].report.version) {
             console.log(current + `:Abandoning ${plasma.hashLastIBlock} because ${errors[0]}`)
