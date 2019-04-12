@@ -2693,6 +2693,13 @@ function tally(num) { //tally state before save and next report
     }
 }
 function clean(num){
+    for (var i = state.feed.length - 1;i>0;i--){
+      if(state.feed[i].split(':')[0].split('|')[1] < num-30240){
+        state.feed.splice(i,1)
+      } else {
+        break;
+      }
+    }
     for(var i = 0;i<state.dex.steem.buyOrders.length;i++){
       if(state.dex.steem.buyOrders[i].block < num - 86400){release(state.dex.steem.buyOrders[i].txid)}
     }
@@ -3015,7 +3022,7 @@ function report(num) {
           }
         }
         transactor.json(config.username, config.active, 'report', {
-            feed: JSON.stringify(feed),
+            feed: feed,
             agreements: agreements,
             hash: plasma.hashLastIBlock,
             block: plasma.hashBlock,

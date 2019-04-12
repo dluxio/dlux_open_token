@@ -98,8 +98,9 @@ module.exports = function(client, steem, currentBlockNumber=1, blockComputeSpeed
         var op = transactions[i].operations[j];
         if(op[0] === 'custom_json') {
           if(typeof onCustomJsonOperation[op[1].id] === 'function') {
-            op[1].json.transaction_id = transactions[i].transaction_id
-            onCustomJsonOperation[op[1].id](JSON.parse(op[1].json), op[1].required_posting_auths[0]);
+            var ip = JSON.parse(op[1].json)
+            ip.transaction_id = transactions[i].transaction_id
+            onCustomJsonOperation[op[1].id](ip, op[1].required_posting_auths[0]);
           }
         } else if(onOperation[op[0]] !== undefined) {
           op[1].transaction_id = transactions[i].transaction_id
