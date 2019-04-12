@@ -1597,7 +1597,7 @@ function startApp() {
             } else {
                 state.queue.push(from)
             }
-            state.feed.unshift(json.transaction_id + '|' + processor.getCurrentBlockNumber() + `:@${from}'s report has been processed`)
+            state.feed.unshift(json.transaction_id + '|' + processor.getCurrentBlockNumber() + `:@${from} -> report has been processed`)
         } else {
             if (from === config.username && config.NODEDOMAIN) {
                 console.log(json.transaction_id + '|' + processor.getCurrentBlockNumber() + `:This node posted a spurious report and in now attempting to register`)
