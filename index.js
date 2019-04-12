@@ -33,7 +33,7 @@ function hashThis(data) {
     return multihash.toString()
 }
 const testing = true
-const VERSION = 'v0.0.2a'
+const VERSION = 'v0.0.3a'
 const api = express()
 var http = require('http').Server(api);
 //const io = require('socket.io')(http)
@@ -171,15 +171,6 @@ api.get('/pending', (req, res, next) => {
     res.setHeader('Content-Type', 'application/json');
     res.send(JSON.stringify(NodeOps, null, 3))
 });
-api.get('force', (req, res, next) => {
-    res.setHeader('Content-Type', 'application/json');
-    res.send(JSON.stringify({
-        stats: state,
-        node: config.username,
-        VERSION,
-        realtime: current
-    }, null, 3))
-});
 api.get('/runners', (req, res, next) => {
     res.setHeader('Content-Type', 'application/json');
     res.send(JSON.stringify({
@@ -308,13 +299,15 @@ var rtradesToken = ''
 const transactor = steemTransact(client, steem, prefix);
 var selector = 'dlux-io'
 if (config.username == selector) {
-    selector = 'disregardfiat'
+    selector = `https://dlux-token-markegiles.herokuapp.com/`
+} else {
+  selector = `https://token.dlux.io/markets`
 }
 if (config.rta && config.rtp) {
     rtrades.handleLogin(config.rta, config.rtp)
 }
-/*
-fetch(`${state.markets.node[selector].domain}/markets`)
+
+fetch(selector)
   .then(function(response) {
     return response.json();
   })
@@ -329,21 +322,18 @@ fetch(`${state.markets.node[selector].domain}/markets`)
               startWith(myJson.markets.node[config.username].report.hash)
             } else {
               console.log(`Lost Stash... Abandoning and starting from ${myJson.stats.hashLastIBlock}`) //maybe a recovery fall thru?
-              startWith(config.engineCrank || myJson.markets.node[selector].report.hash);
+              startWith(myJson.markets.node[config.username].report.hash);
             }
           });
         } else {
-          console.log(`No Private data found\nStarting from ${myJson.stats.hashLastIBlock}`)
-          startWith(config.engineCrank || myJson.markets.node[selector].report.hash)//myJson.stats.hashLastIBlock);
+          console.log(`No Private data found\nStarting from ${myJson.markets.node[config.username].report.hash}`)
+          startWith(myJson.stats.hashLastIBlock)//myJson.stats.hashLastIBlock);
         }
       } else {
-        console.log(`Starting from ${myJson.markets.node[selector].report}`)
-        startWith(config.engineCrank || myJson.markets.node[selector].report.hash);
+        console.log(`Starting from ${myJson.markets.node['dlux-io'].report}`)
+        startWith(myJson.stats.hashLastIBlock);
       }
   }).catch(error => {console.log(error, `\nStarting 'startingHash': ${config.engineCrank}`);startWith(config.engineCrank);});
-//startWith(config.engineCrank)
-*/
-startWith(config.engineCrank)
 
 function startWith(sh) {
     if (sh) {
@@ -479,7 +469,7 @@ function startApp() {
                         state.rolling[from] = (state.pow.n[from] || 0) + state.pow[from] * 10
                     }
                     if (json.weight > 0 && json.weight < 10001) {
-                        state.posts[i].weight += parseInt(json.weight * state.rolling[from] / 100000)
+                        state.posts[i].totalWeight += parseInt(json.weight * state.rolling[from] / 100000)
                         state.posts[i].voters.push({
                             from: from,
                             weight: parseInt(10000 * state.rolling[from] / 100000)
@@ -487,7 +477,7 @@ function startApp() {
                         state.feed.unshift(json.transaction_id + '|' + processor.getCurrentBlockNumber() + `:${from} voted for @${state.posts[i].author}/${state.posts[i].permlink}`)
                         state.rolling[from] -= parseInt(json.weight * state.rolling[from] / 100000)
                     } else {
-                        state.posts[i].weight += parseInt(10000 * state.rolling[from] / 100000)
+                        state.posts[i].totalWeight += parseInt(10000 * state.rolling[from] / 100000)
                         state.posts[i].voters.push({
                             from: from,
                             weight: parseInt(10000 * state.rolling[from] / 100000)
@@ -1039,6 +1029,11 @@ function startApp() {
         console.log(e)
       }
   })
+  processor.on('queueForDaily', function(json, from) {
+    if(from = 'dlux-io' && json.text && json.title){
+      state.postQueue.push({text:json.text,title:json.title})
+    }
+})
 
     processor.onOperation('escrow_transfer', function(json) { //grab posts to reward
         var op, dextx, contract, isAgent, isDAgent, dextx, meta, done=0
@@ -1530,7 +1525,7 @@ function startApp() {
             }
             state.feed.unshift(json.transaction_id + '|' + processor.getCurrentBlockNumber() + `:@${from} has bid the steem-state node ${json.domain} at ${json.bidRate}`)
         } else {
-            state.feed.unshift(json.transaction_id + '|' + processor.getCurrentBlockNumber() + `:Invalid steem-state node operation from ${from}`)
+            state.feed.unshift(json.transaction_id + '|' + processor.getCurrentBlockNumber() + `:@${from} sent and invalid steem-state node operation`)
         }
     });
 
@@ -1644,8 +1639,12 @@ function startApp() {
         for (var i = 0; i < filter.length; i++) {
             if (filter[i].account == 'dlux-io' && filter[i].weight > 999) {
                 state.posts.push({
+                    block: processor.getCurrentBlockNumber(),
                     author: json.author,
-                    permlink: json.permlink
+                    permlink: json.permlink,
+                    title: json.title,
+                    totalWeight: 1,
+                    voters:[]
                 })
                 state.chrono.push({
                     block: parseInt(processor.getCurrentBlockNumber() + 300000),
@@ -1657,20 +1656,19 @@ function startApp() {
                 client.database.call('get_content', [json.author, json.permlink]).then(result => {
                     rtrades.checkNpin(JSON.parse(result.json_metadata).assets)
                 });
-                state.feed.unshift(json.transaction_id + '|' + processor.getCurrentBlockNumber() + `:Added ${json.author}/${json.permlink} to dlux rewardable content`)
+                state.feed.unshift(json.transaction_id + '|' + processor.getCurrentBlockNumber() + `:@${json.author}/${json.permlink} added to dlux rewardable content`)
             }
         }
     });
-
-    processor.onOperation('comment_benefactor_reward', function(json) { //grab posts to reward
-        if (json.benefactor == 'dlux-io') {
-            state.br.push({
-                to: json.author,
-                weights: {}
-            })
-            console.log(json)
+    processor.onOperation('vote', function(json) {
+      if(json.voter == 'dlux-io'){
+        for(var i = 0;i<state.escrow.length;i++){
+          if(json.permlink == state.escrow[i][1][1].permlink && json.author == state.escrow[i][1][1].author){
+            state.escrow.splice(i,1)
+          }
         }
-    });
+      }
+    })
 
     processor.onOperation('transfer', function(json) { //ICO calculate
         /* for sending to NFTs - not gonna happen this way
@@ -1737,7 +1735,7 @@ function startApp() {
                 if (purchase < state.balances.ri) {
                     state.balances.ri -= purchase
                     state.balances[json.from] += purchase
-                    state.feed.unshift(json.transaction_id + '|' + processor.getCurrentBlockNumber() + `:${json.from} bought ${parseFloat(purchase/1000).toFixed(3)} DLUX with ${parseFloat(json.amount/1000).toFixed(3)} STEEM`)
+                    state.feed.unshift(json.transaction_id + '|' + processor.getCurrentBlockNumber() + `:@${json.from} bought ${parseFloat(purchase/1000).toFixed(3)} DLUX with ${parseFloat(parseFlaot(json.amount)/1000).toFixed(3)} STEEM`)
                 } else {
                     state.balances[json.from] = state.balances.ri
                     const left = purchase - state.balances.ri
@@ -1745,13 +1743,13 @@ function startApp() {
                         [json.from]: (parseInt(amount * left / purchase))
                     })
                     state.stats.outOnBlock = current
-                    state.feed.unshift(json.transaction_id + '|' + processor.getCurrentBlockNumber() + `:${json.from} bought ALL ${parseFloat(parseInt(purchase - left)).toFixed(3)} DLUX with ${parseFloat(json.amount/1000).toFixed(3)} STEEM. And bid in the over-auction`)
+                    state.feed.unshift(json.transaction_id + '|' + processor.getCurrentBlockNumber() + `:@${json.from} bought ALL ${parseFloat(parseInt(purchase - left)).toFixed(3)} DLUX with ${parseFloat(json.amount/1000).toFixed(3)} STEEM. And bid in the over-auction`)
                 }
             } else {
                 state.ico.push({
                     [json.from]: (amount)
                 })
-                state.feed.unshift(json.transaction_id + '|' + processor.getCurrentBlockNumber() + `:${json.from} bid in DLUX auction with ${json.amount}`)
+                state.feed.unshift(json.transaction_id + '|' + processor.getCurrentBlockNumber() + `:@${json.from} bid in DLUX auction with ${json.amount}`)
             }
         }
     });
@@ -1769,7 +1767,7 @@ function startApp() {
                 delegator: json.delegator,
                 vests
             })
-            state.feed.unshift(json.transaction_id + '|' + processor.getCurrentBlockNumber() + `:${json.delegator} has delegated ${vests} vests to @dlux-io`)
+            state.feed.unshift(json.transaction_id + '|' + processor.getCurrentBlockNumber() + `:@${json.delegator} has delegated ${vests} vests to @dlux-io`)
         } else if (json.delegatee == 'dlux-io' && !vests) {
             for (var i = 0; i < state.delegations.length; i++) {
                 if (state.delegations[i].delegator == json.delegator) {
@@ -1777,7 +1775,7 @@ function startApp() {
                     break;
                 }
             }
-            state.feed.unshift(json.transaction_id + '|' + processor.getCurrentBlockNumber() + `:${json.delegator} has removed delegation to @dlux-io`)
+            state.feed.unshift(json.transaction_id + '|' + processor.getCurrentBlockNumber() + `:@${json.delegator} has removed delegation to @dlux-io`)
         }
     });
 
@@ -1839,6 +1837,7 @@ function startApp() {
             });
         }
         if (num % 100 === 5 && processor.isStreaming()) {
+          if(!state.postQueue)state.postQueue = []
             check(num);
         }
         if (num % 100 === 50 && processor.isStreaming()) {
@@ -2589,12 +2588,13 @@ function tally(num) { //tally state before save and next report
         tally.agreements.runners[node] = state.markets.node[node] //move the state data to tally to process
         tally.agreements.tally[node] = {
             self: node,
+            hash: state.markets.node[node].report.hash,
             votes: 0
         } //build a dataset to count
     }
     for (var node in tally.agreements.runners) {
         for (var subnode in tally.agreements.runners[node].report.agreements) {
-            if (tally.agreements.runners[node].report.agreements[subnode].block > processor.getCurrentBlockNumber() - 150 && tally.agreements.runners[node].report.agreements[subnode].agreement == true && tally.agreements.tally[subnode]) {
+            if (tally.agreements.runners[node].report.agreements[subnode].block > processor.getCurrentBlockNumber() - 150 && tally.agreements.runners[node].report.agreements[subnode].agreement == true && tally.agreements.tally[subnode].hash == state.markets.node[node].report.hash) {
                 tally.agreements.tally[subnode].votes++
             }
         }
@@ -2605,31 +2605,6 @@ function tally(num) { //tally state before save and next report
         l++
         if (tally.agreements.tally[node].votes / tally.agreements.votes >= 2 / 3) {
             consensus = tally.agreements.runners[node].report.hash
-            if (consensus != plasma.hashLastIBlock && node == config.username && processor.isStreaming()) {
-                var errors = ['failed Consensus']
-                if (VERSION != state.markets.node[node].report.version) {
-                    console.log(current + `:Abandoning ${plasma.hashLastABlock} because ${errors[0]}`)
-                }
-                const blockState = Buffer.from(JSON.stringify([num, state]))
-                plasma.hashBlock = num
-                plasma.hashLastABlock = hashThis(blockState)
-                console.log(current + `:Abandoning ${plasma.hashLastABlock} because ${errors[0]}`)
-                var abd = asyncIpfsSaveState(num, blockState)
-                abd.then(function(value) {
-                    transactor.json(config.username, config.active, 'error_CF', {
-                        errors: JSON.stringify([errors]),
-                        reject: value
-                    }, function(err, result) {
-                        if (err) {
-                            console.error(err, `\nMost likely your 'active' and 'account' variables are not set!`);
-                            startWith(consensus)
-                        } else {
-                            console.log(current + `: Published error report and attempting to restart from consensus ${consensus}`)
-                            startWith(consensus)
-                        }
-                    })
-                });
-            }
         } else if (l > 1) {
             delete state.runners[node]
             console.log('uh-oh:' + node + ' scored ' + tally.agreements.tally[node].votes + '/' + tally.agreements.votes)
@@ -2642,6 +2617,31 @@ function tally(num) { //tally state before save and next report
             break;
           }
         }
+    }
+    if (consensus != state.markets.node[config.username].report.hash && processor.isStreaming()) {
+        var errors = ['failed Consensus']
+        if (VERSION != state.markets.node[node].report.version) {
+            console.log(current + `:Abandoning ${plasma.hashLastIBlock} because ${errors[0]}`)
+        }
+        const blockState = Buffer.from(JSON.stringify([num, state]))
+        plasma.hashBlock = num
+        plasma.hashLastABlock = hashThis(blockState)
+        console.log(current + `:Abandoning ${plasma.hashLastIBlock} because ${errors[0]}`)
+        var abd = asyncIpfsSaveState(num, blockState)
+        abd.then(function(value) {
+            transactor.json(config.username, config.active, 'error_CF', {
+                errors: JSON.stringify(errors),
+                reject: value
+            }, function(err, result) {
+                if (err) {
+                    console.error(err, `\nMost likely your 'active' and 'account' variables are not set!`);
+                    startWith(consensus)
+                } else {
+                    console.log(current + `: Published error report and attempting to restart from consensus ${consensus}`)
+                    startWith(consensus)
+                }
+            })
+        });
     }
     console.log('Consensus: '+consensus)
     state.stats.lastBlock = state.stats.hashLastIBlock
@@ -2753,7 +2753,16 @@ function release(txid){
   }
 }
 function dao(num) {
-    var post = `## DLUX DAO REPORT\n#### Daily Accounting\n`
+    if (state.postQueue.length)
+    var post = `## DLUX DAO REPORT\n`, news = ''
+    if(state.postQueue.length)news = '*****\n### News from Humans!\n'
+    for(var i = 0; i < state.postQueue.length ; i++){
+      news = news + `#### ${state.postQueue[i].title}\n`
+      news = news + `${state.postQueue[i].text}\n\n`
+    }
+    state.postQueue = []
+    news = news + '*****\n'
+    const header = post + news
     var i = 0,
         j = 0,
         b = 0,
@@ -2772,6 +2781,7 @@ function dao(num) {
     }
     state.stats.marketingRate = parseInt(b / i)
     state.stats.nodeRate = parseInt(j / i)
+    post = `![The Hyper Cube](https://ipfs.busy.org/ipfs/QmRtFirFM3f3Lp7Y22KtfsS2qugULYXTBnpnyh8AHzJa7e)\n#### Daily Accounting\n`
     post = post + `${parseFloat(parseInt(t)/1000).toFixed(3)} DLUX has been generated today.\n${parseFloat(state.stats.marketingRate/10000).toFixed(4)} is the marketing rate.\n${parseFloat(state.stats.nodeRate/10000).toFixed(4)} is the node rate.\n`
     console.log(`DAO Accounting In Progress:\n${t} has been generated today\n${state.stats.marketingRate} is the marketing rate.\n${state.stats.nodeRate} is the node rate.`)
     state.balances.rn += parseInt(t * parseInt(state.stats.nodeRate) / 10000)
@@ -2806,11 +2816,11 @@ function dao(num) {
         state.markets.node[node].wins = 0
     }
     state.balances.rd += parseInt(t * state.stats.delegationRate / 10000) // 10% to delegators
-    post = post + `### ${parseFloat(parseInt(state.balances.rd)/1000).toFixed(3)} DLUX set aside for delegators.\n`
+    post = post + `### ${parseFloat(parseInt(state.balances.rd)/1000).toFixed(3)} DLUX set aside for [@dlux-io delegators](https://app.steemconnect.com/sign/delegate-vesting-shares?delegatee=dlux-io&vesting_shares=100%20SP)\n`
     state.balances.ra -= parseInt(t * state.stats.delegationRate / 10000)
     b = state.balances.rd
     j = 0
-    console.log(current + `:${b} DLUX to distribute to @dlux-io delegators`)
+    console.log(current + `:${b} DLUX to distribute to delegators`)
     for (i = 0; i < state.delegations.length; i++) { //count vests
         j += state.delegations[i].vests
     }
@@ -2847,7 +2857,7 @@ function dao(num) {
             post = post + `### We Sold out ${100000000 - left} today.\nThere are now ${parseFloat(state.balances.ri/1000).toFixed(3)} DLUX for sale from @robotolux for ${parseFloat(state.state.icoPrice/1000).toFixed(3)} Steem each.\n`
         }
     } else {
-      post = post + `### We have ${parseFloat((state.balances.ri - 100000000)/1000).toFixed(3)} DLUX left for sale at 0.22 STEEM in our Pre-ICO.\nOnce this is sold pricing feedback on our 3 year ICO starts.\n`
+      post = post + `### We have ${parseFloat((state.balances.ri - 100000000)/1000).toFixed(3)} DLUX left for sale at 0.22 STEEM in our Pre-ICO.\nOnce this is sold pricing feedback on our 3 year ICO starts.[Buy ${parseFloat(parseInt(state.state.icoPrice)/10).toFixed(3)} DLUX* with 10 Steem now!](https://app.steemconnect.com/sign/transfer?to=robotolux&amount=10.000%20STEEM)\n`
     }
     if (state.balances.rl) {
         var dailyICODistrobution = state.balances.rl,
@@ -2921,49 +2931,27 @@ function dao(num) {
       }
       state.dex.sbd.daily.push(hi)
     }
-    post = post + `*****\n### DEX Report\n#### Spot Information\n* Price: ${parseFloat(state.dex.steem.tick).toFixed(3)} STEEM per DLUX\n* Price: ${parseFloat(state.dex.sbd.tick).toFixed(3)} SBD per DLUX\n#### Daily Volume:\n* ${parseFloat(vol/1000).toFixed(3)} DLUX\n* ${parseFloat(vols/1000).toFixed(3)} STEEM\n* ${parseFloat(volsbd/1000).toFixed(3)} SBD\n`
-    /*
-    if(num < 31288131){
-    var dailyICODistrobution = 3125000, y=0
-    for(i=0;i<state.ico.length;i++){
-      for (var node in state.ico[i]){
-        y += state.ico[i][node]
-      }
-    }
-    for(i=0;i<state.ico.length;i++){
-      for (var node in state.ico[i]){
-        if (!state.balances[node]){state.balances[node] = 0}
-        state.balances[node] += parseInt(state.ico[i][node]/y*3125000)
-        dailyICODistrobution -= parseInt(state.ico[i][node]/y*3125000)
-        console.log(current + `:${node} awarded  ${parseInt(state.ico[i][node]/y*3125000)} DLUX for ICO auction`)
-        if (i == state.ico.length - 1){
-          state.balances[node] += dailyICODistrobution
-          console.log(current + `:${node} given  ${dailyICODistrobution} remainder`)
-        }
-      }
-    }
-    state.ico = []
-    state.pow.robotolux -= 3125000
-    state.pow.t -= 3125000
-    }
-    */
-
-    state.balances.rc = state.balances.ra
+    post = post + `*****\n### DEX Report\n#### Spot Information\n* Price: ${parseFloat(state.dex.steem.tick).toFixed(3)} STEEM per DLUX\n* Price: ${parseFloat(state.dex.sbd.tick).toFixed(3)} SBD per DLUX\n#### Daily Volume:\n* ${parseFloat(vol/1000).toFixed(3)} DLUX\n* ${parseFloat(vols/1000).toFixed(3)} STEEM\n* ${parseFloat(parseInt(volsbd)/1000).toFixed(3)} SBD\n*****\n*Price for 25.2 Hrs from posting or until daily 100,000.000 DLUX sold.`
+    state.balances.rc = state.balances.rc + state.balances.ra
     state.balances.ra = 0
     var q = 0,
         r = state.balances.rc
     for (var i = 0; i < state.br.length; i++) {
         q += state.br[i].totalWeight
     }
+    var contentRewards = ``
+    if(state.br.length)contentRewards = `#### Top Paid Posts\n`
+    const compa = state.balances.rc
     for (var i = 0; i < state.br.length; i++) {
         for (var j = 0; j < state.br[i].post.voters.length; j++) {
             state.balances[state.br[i].post.author] += parseInt(state.br[i].post.voters[j].weight * 2 / q * 3)
             state.balances.rc -= parseInt(state.br[i].post.voters[j].weight / q * 3)
             state.balances[state.br[i].post.voters[j].from] += parseInt(state.br[i].post.voters[j].weight / q * 3)
             state.balances.rc -= parseInt(state.br[i].post.voters[j].weight * 2 / q * 3)
-            console.log(current + `:${state.br[i].post.voters[j].from} awarded ${parseInt(state.br[i].post.voters[j].weight * 2 /q * 3)} for ${state.br[i].post.author}/${state.br[i].post.permlink}`)
         }
+      contentRewards = contentRewards + `* [${state.br[i].title}](https://dlux.io/@${state.br[i].post.author}/${state.br[i].post.permlink}) awarded ${parseFloat(parseInt(compa) - parseInt(state.balances.rc)).toFixed(3)} DLUX\n`
     }
+    if(contentRewards)contentRewards = contentRewards + `\n*****\n`
     state.br = []
     state.rolling = {}
     for (i = 0; i < state.pending.length; i++) { //clean up markets after 30 days
@@ -2971,6 +2959,36 @@ function dao(num) {
             state.pending.splice(i, 1)
         }
     }
+    var vo = [],breaker = 0,tw=0,ww=0,ii=100,steemVotes = ''
+    for(var po = 0;po < state.posts.length;po++){
+      if(state.posts[po].block < num - 90720 && state.posts[po].block > num - 123960){
+        vo.push(state.posts[po])
+        breaker=1
+      } else if (breaker){break;}
+    }
+    for (var po = 0;po < vo.length;po++){
+      tw = tw + vo[po].totalWeight
+    }
+    ww=parseInt(tw/100000)
+    vo = sortBuyArray(vo, 'totalWeight')
+    if(vo.length<ii)ii=vo.length
+    for(var oo = 0;oo<ii;oo++){
+      var weight = parseInt(ww *vo[oo].totalWeight)
+      if(weight>10000)weight=10000
+      var op = [
+        "vote",
+        {
+          "voter": "dlux-io",
+          "author": vo[oo].author,
+          "permlink": vo[oo].permlink,
+          "weight": weight
+        }
+      ]
+      steemVotes = steemVotes + `* [${vo[oo].title}](https://dlux.io/@${vo[oo].author}/${vo[oo].permlink}) by @${vo[oo].author} | ${parseFloat(weight/100).toFixed(3)}% \n`
+      state.escrow.push(['dlux-io',op])
+    }
+    if(steemVotes)steemVotes = `#### Community Voted DLUX Posts\n`+steemVotes+`*****\n`
+    post = header + contentRewards + steemVotes + post
     var op = ["comment",
                                  {"parent_author": "",
                                   "parent_permlink": "dlux",
@@ -2979,7 +2997,7 @@ function dao(num) {
                                   "title": `DLUX DAO | Automated Report ${num}`,
                                   "body": post,
                                   "json_metadata": JSON.stringify({tags:["dlux","ico","dex","cryptocurrency"]})}]
-    state.escrow.push(['dlux-io',op])
+    state.escrow.unshift(['dlux-io',op])
     Utils.cleaner()
 }
 
