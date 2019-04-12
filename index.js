@@ -2593,7 +2593,7 @@ function tally(num) { //tally state before save and next report
         tally.agreements.tally[node] = {
             self: node,
             hash: state.markets.node[node].report.hash,
-            votes: 0
+            votes: 1
         } //build a dataset to count
     }
     for (var node in tally.agreements.runners) {
