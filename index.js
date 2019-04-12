@@ -3478,6 +3478,7 @@ function ipfsSaveState(blocknum, hashable) {
             var hash = ''
             try{hash = IpFsHash[0].hash} catch (e){console.log(e)}
             plasma.hashLastIBlock = hash
+            plasma.hashBlock = blocknum
             console.log(current + `:Saved:  ${hash}`)
         } else {
             console.log({
