@@ -2592,20 +2592,23 @@ function tally(num) { //tally state before save and next report
         tally.agreements.tally[node] = {
             self: node,
             hash: state.markets.node[node].report.hash,
-            votes: 1
+            votes: 0
         } //build a dataset to count
     }
     for (var node in tally.agreements.runners) {
         for (var subnode in tally.agreements.runners[node].report.agreements) {
-            if (tally.agreements.runners[node].report.agreements[subnode].block > processor.getCurrentBlockNumber() - 150 && tally.agreements.runners[node].report.agreements[subnode].agreement == true && tally.agreements.tally[subnode].hash == state.markets.node[node].report.hash) {
+            if (tally.agreements.tally[subnode].hash == tally.agreements.tally[node].hash) {
                 tally.agreements.tally[subnode].votes++
+                console.log(tally.agreements.tally[subnode])
             }
         }
+        tally.agreements.votes++
     }
     var l = 0
     var consensus
     for (var node in state.runners) {
         l++
+        console.log(tally.agreements.tally[node].votes ,node, tally.agreements.votes)
         if (tally.agreements.tally[node].votes / tally.agreements.votes >= 2 / 3) {
             consensus = tally.agreements.runners[node].report.hash
         } else if (l > 1) {
@@ -3464,7 +3467,7 @@ function computeTimer(fee) {
 
 function exit() {
     console.log('Exiting...');
-    processor.stop();
+    processor.stop(function(){process.exit()});
 }
 
 function ipfsSaveState(blocknum, hashable) {
