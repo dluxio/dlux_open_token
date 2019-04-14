@@ -4,6 +4,7 @@ const steemTransact = require('steem-transact');
 const readline = require('readline');
 const safeEval = require('safe-eval');
 const IPFS = require('ipfs-api');
+var aesjs = require('aes-js');
 const ipfs = new IPFS({
     host: 'ipfs.infura.io',
     port: 5001,
@@ -1657,9 +1658,14 @@ function startApp() {
                     permlink: json.permlink
                 })
                 utils.chronoSort()
+                if(config.username=='dlux-io'){
                 client.database.call('get_content', [json.author, json.permlink]).then(result => {
-                    rtrades.checkNpin(JSON.parse(result.json_metadata).assets)
+                    var bytes = rtrades.checkNpin(JSON.parse(result.json_metadata).assets)
+                    bytes.then(function(values) {
+
+                    })
                 });
+                }
                 state.feed.unshift(json.transaction_id + '|' + json.block_num + `:@${json.author}/${json.permlink} added to dlux rewardable content`)
             }
         }
@@ -1850,7 +1856,7 @@ function startApp() {
         }
         if ((num - 20000) % 30240 === 0 && num > 27417440) { //time for daily magic
             dao(num);
-            clean();
+            clean(num);
         }
         if (num % 100 === 0 && processor.isStreaming()) {
             client.database.getAccounts([config.username]).then(function(result) {
@@ -2063,18 +2069,27 @@ function startApp() {
                                 }
                             })
                             break;
+                          case 'lots':
+                            steemClient.broadcast.sendOperations(
+                                NodeOps[task][2],
+                                wif,
+                                function(err, result) {
+                                    if (err) {
+                                        console.error(err);
+                                        noi(task)
+                                    } else {
+                                        NodeOps.splice(task, 1)
+                                    }
+                                });
+                            break;
                         case 'claim_account':
                             steemClient.broadcast.sendOperations(
                                 [
                                     "claim_account",
                                     {
-                                        "fee": {
-                                            "amount": "0",
-                                            "precision": 3,
-                                            "nai": "@@000000021"
-                                        },
-                                        "creator": config.username,
-                                        "extensions": []
+                                      "creator": config.username,
+                                      "fee": "0.000 STEEM",
+                                      "extensions": []
                                     }
                                 ], wif,
                                 function(err, result) {
@@ -2762,7 +2777,6 @@ function release(txid){
   }
 }
 function dao(num) {
-    if (state.postQueue.length)
     var post = `## DLUX DAO REPORT\n`, news = ''
     if(state.postQueue.length)news = '*****\n### News from Humans!\n'
     for(var i = 0; i < state.postQueue.length ; i++){
@@ -2940,7 +2954,7 @@ function dao(num) {
       }
       state.dex.sbd.days.push(hi)
     }
-    post = post + `*****\n### DEX Report\n#### Spot Information\n* Price: ${parseFloat(state.dex.steem.tick).toFixed(3)} STEEM per DLUX\n* Price: ${parseFloat(state.dex.sbd.tick).toFixed(3)} SBD per DLUX\n#### Daily Volume:\n* ${parseFloat(vol/1000).toFixed(3)} DLUX\n* ${parseFloat(vols/1000).toFixed(3)} STEEM\n* ${parseFloat(parseInt(volsbd)/1000).toFixed(3)} SBD\n*****\n*Price for 25.2 Hrs from posting or until daily 100,000.000 DLUX sold.`
+    post = post + `*****\n### DEX Report\n#### Spot Information\n* Price: ${parseFloat(state.dex.steem.tick).toFixed(3)} STEEM per DLUX\n* Price: ${parseFloat(state.dex.sbd.tick).toFixed(3)} SBD per DLUX\n#### Daily Volume:\n* ${parseFloat(vol/1000).toFixed(3)} DLUX\n* ${parseFloat(vols/1000).toFixed(3)} STEEM\n* ${parseFloat(parseInt(volsbd)/1000).toFixed(3)} SBD\n*****\n`
     state.balances.rc = state.balances.rc + state.balances.ra
     state.balances.ra = 0
     var q = 0,
@@ -2968,7 +2982,7 @@ function dao(num) {
             state.pending.splice(i, 1)
         }
     }
-    var vo = [],breaker = 0,tw=0,ww=0,ii=100,steemVotes = ''
+    var vo = [],breaker = 0,tw=0,ww=0,ii=100,steemVotes = '',ops
     for(var po = 0;po < state.posts.length;po++){
       if(state.posts[po].block < num - 90720 && state.posts[po].block > num - 123960){
         vo.push(state.posts[po])
@@ -2984,7 +2998,7 @@ function dao(num) {
     for(var oo = 0;oo<ii;oo++){
       var weight = parseInt(ww *vo[oo].totalWeight)
       if(weight>10000)weight=10000
-      var op = [
+      ops.push([
         "vote",
         {
           "voter": "dlux-io",
@@ -2992,12 +3006,13 @@ function dao(num) {
           "permlink": vo[oo].permlink,
           "weight": weight
         }
-      ]
+      ])
       steemVotes = steemVotes + `* [${vo[oo].title}](https://dlux.io/@${vo[oo].author}/${vo[oo].permlink}) by @${vo[oo].author} | ${parseFloat(weight/100).toFixed(3)}% \n`
-      state.escrow.push(['dlux-io',op])
     }
-    if(steemVotes)steemVotes = `#### Community Voted DLUX Posts\n`+steemVotes+`*****\n`
-    post = header + contentRewards + steemVotes + post
+    state.escrow.push(['dlux-io',['lots',ops]])
+    const footer = `[Visit dlux.io](https://dlux.io)\n[Find us on Discord](https://discord.gg/Beeb38j)\n[Visit our DEX/Wallet - Soon](https://dlux.io)\n[Learn how to use DLUX](https://github.com/dluxio/dluxio/wiki)\n*Price for 25.2 Hrs from posting or until daily 100,000.000 DLUX sold.`
+    if(steemVotes)steemVotes = `#### Community Voted DLUX Posts\n`+ steemVotes +`*****\n`
+    post = header + contentRewards + steemVotes + post + footer
     var op = ["comment",
                                  {"parent_author": "",
                                   "parent_permlink": "dlux",
