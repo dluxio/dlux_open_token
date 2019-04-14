@@ -42,7 +42,7 @@ var escrow = false
 var broadcast = 1
 const wif = steemClient.auth.toWif(config.username, config.active, 'active')
 const resteemAccount = 'dlux-io';
-var startingBlock = 31884300;
+var startingBlock = 32025592;
 var current, dsteem, testString
 
 const prefix = 'dluxT_';
@@ -307,8 +307,8 @@ if (config.username == selector) {
 if (config.rta && config.rtp) {
     rtrades.handleLogin(config.rta, config.rtp)
 }
-if (config.override){
-  startWith(config.engineCrank)
+if (config.engineCrank){
+  startApp()
 } else {
 fetch(selector)
   .then(function(response) {
@@ -2753,6 +2753,7 @@ function release(txid){
       }
     }
   }
+
   if(!found){
     for(var i = 0;i<state.dex.steem.sellOrders.length;i++){
       if(state.dex.steem.sellOrders[i].txid == txid){
@@ -2761,6 +2762,7 @@ function release(txid){
       }
     }
   }
+
   if(!found){
     for(var i = 0;i<state.dex.sbd.sellOrders.length;i++){
       if(state.dex.sbd.sellOrders[i].txid == txid){
@@ -2776,6 +2778,7 @@ function release(txid){
     delete state.contracts[found.from][found.txid]
   }
 }
+
 function dao(num) {
     var post = `## DLUX DAO REPORT\n`, news = ''
     if(state.postQueue.length)news = '*****\n### News from Humans!\n'
