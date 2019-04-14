@@ -304,29 +304,7 @@ let state = {
                "contracts": 0,
                "lastGood": 32025500,
                "transfers": 0,
-               "report": {
-                  "feed": [
-                     "1d9f40f75278f432367dbe2c61a330a70a974857|32025474:@disregardfiat - report has been processed",
-                     "f084913b0de0a6230263424b6aae314670a639de|32025473:@dlux-io - report has been processed"
-                  ],
-                  "agreements": {
-                     "dlux-io": {
-                        "node": "dlux-io",
-                        "agreement": true,
-                        "top": true
-                     },
-                     "disregardfiat": {
-                        "node": "disregardfiat",
-                        "agreement": false
-                     }
-                  },
-                  "hash": "QmQVtmN9y4c7UXNn95555gurZNKagYG1PV9S5CozMNGRvc",
-                  "block": 32025501,
-                  "version": "v0.0.3a",
-                  "escrow": true,
-                  "transaction_id": "53161599501e9517f88d3935137e52ddc341e403",
-                  "block_num": 32025568
-               }
+               "report": {}
             },
             "disregardfiat": {
                "self": "disregardfiat",
@@ -336,30 +314,7 @@ let state = {
                "contracts": 0,
                "escrows": 0,
                "lastGood": 32025500,
-               "report": {
-                  "feed": [
-                     "1d9f40f75278f432367dbe2c61a330a70a974857|32025474:@disregardfiat - report has been processed",
-                     "f084913b0de0a6230263424b6aae314670a639de|32025473:@dlux-io - report has been processed"
-                  ],
-                  "agreements": {
-                     "disregardfiat": {
-                        "node": "disregardfiat",
-                        "agreement": true,
-                        "top": true
-                     },
-                     "dlux-io": {
-                        "node": "dlux-io",
-                        "agreement": true,
-                        "top": true
-                     }
-                  },
-                  "hash": "QmQVtmN9y4c7UXNn95555gurZNKagYG1PV9S5CozMNGRvc",
-                  "block": 32025501,
-                  "version": "v0.0.3a",
-                  "escrow": true,
-                  "transaction_id": "b10621660f31aa42438eed5dab71f5e95bd51ec3",
-                  "block_num": 32025568
-               },
+               "report": {},
                "escrow": true,
                "domain": "https://dlux-token.herokuapp.com",
                "bidRate": 2000,
@@ -374,34 +329,6 @@ let state = {
                "escrows": 0,
                "lastGood": 32024500,
                "report": {
-                  "feed": [
-                     "e08f5d1aed0d67a056a31e3f6d7b0333be6d9d62|32023600:@disregardfiat canceled DLUXQmbSHQn1teusjFQL7Jh8cUyQnEStRJqyDf54w2ob2C3VgV",
-                     "27fa1b9d10e7b26a6c7b6da35176efded6c0d41e|32023570:@disregardfiat - report has been processed",
-                     "24b4b20637270a295ee5f1a3556603f46a07c161|32023568:@dlux-io - report has been processed",
-                     "371a58ac44889edf7b67da0ea337978596319edc|32023568:@markegiles - report has been processed"
-                  ],
-                  "agreements": {
-                     "markegiles": {
-                        "node": "markegiles",
-                        "agreement": true,
-                        "top": true
-                     },
-                     "dlux-io": {
-                        "node": "dlux-io",
-                        "agreement": true,
-                        "top": true
-                     },
-                     "disregardfiat": {
-                        "node": "disregardfiat",
-                        "agreement": false
-                     }
-                  },
-                  "hash": "Qme7VZt2LK12FYx2pUTpuXjW3j8nveAyaxvPtL4bb51Ts5",
-                  "block": 32023601,
-                  "version": "v0.0.3a",
-                  "escrow": true,
-                  "transaction_id": "420f1c760c7bf35aca41fa98fa711ea1bf130258",
-                  "block_num": 32023671
                },
                "escrow": true,
                "domain": "https://dlux-token-markegiles.herokuapp.com",
