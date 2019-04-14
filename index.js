@@ -308,7 +308,7 @@ if (config.rta && config.rtp) {
     rtrades.handleLogin(config.rta, config.rtp)
 }
 if (config.engineCrank){
-  startApp()
+  startWith(config.engineCrank)
 } else {
 fetch(selector)
   .then(function(response) {
@@ -2808,10 +2808,12 @@ function dao(num) {
     state.stats.marketingRate = parseInt(b / i)
     state.stats.nodeRate = parseInt(j / i)
     post = `![The Hyper Cube](https://ipfs.busy.org/ipfs/QmRtFirFM3f3Lp7Y22KtfsS2qugULYXTBnpnyh8AHzJa7e)\n#### Daily Accounting\n`
-    post = post + `${parseFloat(parseInt(t)/1000).toFixed(3)} DLUX has been generated today.\n${parseFloat(state.stats.marketingRate/10000).toFixed(4)} is the marketing rate.\n${parseFloat(state.stats.nodeRate/10000).toFixed(4)} is the node rate.\n`
+    post = post + `Total Supply: ${parseFloat(parseInt(state.stats.tokenSupply)/1000).toFixed(3)} DLUX\n* ${parseFloat(parseInt(state.stats.tokenSupply-state.pow.t-state.balances.a -state.balances.b -state.balances.c -state.balances.d -state.balances.e -state.balances.i -state.balances.r -state.balances.n)/1000).toFixed(3)} DLUX liquid\n`
+    post = post + `* ${parseFloat(parseInt(state.pow.t)/1000).toFixed(3)} DLUX Powered up for Voting\n`
+    post = post + `* ${parseFloat(parseInt(state.balances.a +state.balances.b +state.balances.c +state.balances.d +state.balances.e +state.balances.i +state.balances.r +state.balances.n)/1000).toFixed(3)} DLUX in distribution accounts\n`
+    post = post + `${parseFloat(parseInt(t)/1000).toFixed(3)} DLUX has been generated today. 5% APY.\n${parseFloat(state.stats.marketingRate/10000).toFixed(4)} is the marketing rate.\n${parseFloat(state.stats.nodeRate/10000).toFixed(4)} is the node rate.\n`
     console.log(`DAO Accounting In Progress:\n${t} has been generated today\n${state.stats.marketingRate} is the marketing rate.\n${state.stats.nodeRate} is the node rate.`)
     state.balances.rn += parseInt(t * parseInt(state.stats.nodeRate) / 10000)
-
     state.balances.ra = parseInt(state.balances.ra) - parseInt(t * parseInt(state.stats.nodeRate) / 10000)
     state.balances.rm += parseInt(t * state.stats.marketingRate / 10000)
     post = post + `${parseFloat(parseInt(t * state.stats.marketingRate / 10000)/1000).toFixed(3)} DLUX moved to Marketing Allocation.\n`
@@ -2883,7 +2885,7 @@ function dao(num) {
             post = post + `### We Sold out ${100000000 - left} today.\nThere are now ${parseFloat(state.balances.ri/1000).toFixed(3)} DLUX for sale from @robotolux for ${parseFloat(state.state.icoPrice/1000).toFixed(3)} Steem each.\n`
         }
     } else {
-      post = post + `### We have ${parseFloat((state.balances.ri - 100000000)/1000).toFixed(3)} DLUX left for sale at 0.22 STEEM in our Pre-ICO.\nOnce this is sold pricing feedback on our 3 year ICO starts.[Buy ${parseFloat(10/(parseInt(state.stats.icoPrice)/1000)).toFixed(3)} DLUX* with 10 Steem now!](https://app.steemconnect.com/sign/transfer?to=robotolux&amount=10.000%20STEEM)\n`
+      post = post + `### We have ${parseFloat(parseInt(state.balances.ri - 100000000)/1000).toFixed(3)} DLUX left for sale at 0.22 STEEM in our Pre-ICO.\nOnce this is sold pricing feedback on our 3 year ICO starts.[Buy ${parseFloat(10/(parseInt(state.stats.icoPrice)/1000)).toFixed(3)} DLUX* with 10 Steem now!](https://app.steemconnect.com/sign/transfer?to=robotolux&amount=10.000%20STEEM)\n`
     }
     if (state.balances.rl) {
         var dailyICODistrobution = state.balances.rl,
@@ -3012,7 +3014,7 @@ function dao(num) {
       ])
       steemVotes = steemVotes + `* [${vo[oo].title}](https://dlux.io/@${vo[oo].author}/${vo[oo].permlink}) by @${vo[oo].author} | ${parseFloat(weight/100).toFixed(3)}% \n`
     }
-    state.escrow.push(['dlux-io',['lots',ops]])
+    if(ops.length){state.escrow.push(['dlux-io',['lots',ops]])}
     const footer = `[Visit dlux.io](https://dlux.io)\n[Find us on Discord](https://discord.gg/Beeb38j)\n[Visit our DEX/Wallet - Soon](https://dlux.io)\n[Learn how to use DLUX](https://github.com/dluxio/dluxio/wiki)\n*Price for 25.2 Hrs from posting or until daily 100,000.000 DLUX sold.`
     if(steemVotes)steemVotes = `#### Community Voted DLUX Posts\n`+ steemVotes +`*****\n`
     post = header + contentRewards + steemVotes + post + footer
