@@ -1745,7 +1745,7 @@ function startApp() {
                 if (purchase < state.balances.ri) {
                     state.balances.ri -= purchase
                     state.balances[json.from] += purchase
-                    state.feed.unshift(json.transaction_id + '|' + json.block_num + `:@${json.from} bought ${parseFloat(purchase/1000).toFixed(3)} DLUX with ${parseFloat(parseFlaot(json.amount)/1000).toFixed(3)} STEEM`)
+                    state.feed.unshift(json.transaction_id + '|' + json.block_num + `:@${json.from} bought ${parseFloat(purchase/1000).toFixed(3)} DLUX with ${parseFloat(parseFloat(json.amount)/1000).toFixed(3)} STEEM`)
                 } else {
                     state.balances[json.from] = state.balances.ri
                     const left = purchase - state.balances.ri
