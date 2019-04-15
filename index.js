@@ -1745,7 +1745,7 @@ function startApp() {
                 if (purchase < state.balances.ri) {
                     state.balances.ri -= purchase
                     state.balances[json.from] += purchase
-                    state.feed.unshift(json.transaction_id + '|' + json.block_num + `:@${json.from} bought ${parseFloat(purchase/1000).toFixed(3)} DLUX with ${parseFloat(parseFloat(json.amount)/1000).toFixed(3)} STEEM`)
+                    state.feed.unshift(json.transaction_id + '|' + json.block_num + `:@${json.from} bought ${parseFloat(purchase/1000).toFixed(3)} DLUX with ${parseFloat(parseFloat(json.amount)*1000).toFixed(3)} STEEM`)
                 } else {
                     state.balances[json.from] = state.balances.ri
                     const left = purchase - state.balances.ri
@@ -2988,7 +2988,7 @@ function dao(num) {
             state.pending.splice(i, 1)
         }
     }
-    var vo = [],breaker = 0,tw=0,ww=0,ii=100,steemVotes = '',ops
+    var vo = [],breaker = 0,tw=0,ww=0,ii=100,steemVotes = '',ops=[]
     for(var po = 0;po < state.posts.length;po++){
       if(state.posts[po].block < num - 90720 && state.posts[po].block > num - 123960){
         vo.push(state.posts[po])
