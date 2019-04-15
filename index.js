@@ -2625,17 +2625,18 @@ function tally(num) { //tally state before save and next report
     var consensus
     for (var node in state.runners) {
         l++
-        if (tally.agreements.tally[node].votes / tally.agreements.votes >= 2 / 3) {
+        if (tally.agreements.tally[node].votes / tally.agreements.votes >= 2 / 3 && state.markets.node[node].report.block > num -100) {
             consensus = tally.agreements.runners[node].report.hash
-        } else if (l > 1) {
+        } else if (l > 1 && state.markets.node[node].report.block > num -100) {
             delete state.runners[node]
             console.log('uh-oh:' + node + ' scored ' + tally.agreements.tally[node].votes + '/' + tally.agreements.votes)
-        } else if (l == 1) {
+        } else if (l == 1 && state.markets.node[node].report.block > num -100) {
             if(state.markets.node[node].report.block > num -100)consensus=state.markets.node[node].report.hash
         }
         if(consensus === undefined){
           for(var node in state.runners){
-            if(state.markets.node[node].report.block > num - 100)consensus=state.markets.node[node].report.hash
+            if(state.markets.node[node].report.block > num - 100){consensus=state.markets.node[node].report.hash}
+            else{}
             break;
           }
         }
