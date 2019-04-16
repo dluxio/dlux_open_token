@@ -1147,7 +1147,7 @@ processor.on('nomention', function(json, from, active) {
                         }
                     ]
                 ])
-                state.contracts[seller][meta].buyer = from
+                state.contracts[seller][meta].buyer = json.from
                 state.contracts[seller][meta].auths = [
                   [json.to,
                       [
