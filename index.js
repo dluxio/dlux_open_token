@@ -6,7 +6,7 @@ const safeEval = require('safe-eval');
 const IPFS = require('ipfs-api');
 var aesjs = require('aes-js');
 const ipfs = new IPFS({
-    host: 'prod.infura.org',
+    host: 'ipfs.infura.io',
     port: 5001,
     protocol: 'https'
 });
