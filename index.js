@@ -6,7 +6,7 @@ const safeEval = require('safe-eval');
 const IPFS = require('ipfs-api');
 var aesjs = require('aes-js');
 const ipfs = new IPFS({
-    host: 'ipfs.infura.io',
+    host: 'prod.infura.org',
     port: 5001,
     protocol: 'https'
 });
@@ -1177,7 +1177,7 @@ processor.on('nomention', function(json, from, active) {
                                 "nai": "@@000000013"
                               },
                               "steem_amount": {
-                                "amount": parseInt(parseFloat(json.sbd_amount)*1000).toFixed(0),
+                                "amount": parseInt(parseFloat(json.steem_amount)*1000).toFixed(0),
                                 "precision": 3,
                                 "nai": "@@000000021"
                               }
@@ -1277,7 +1277,7 @@ processor.on('nomention', function(json, from, active) {
                         "reciever": json.to,
                         "escrow_id": json.escrow_id,
                         "sbd_amount": json.sbd_amount,
-                        "steem_amount": json.sbd_amount
+                        "steem_amount": json.steem_amount
                     }
                 ]
             ]
@@ -1292,7 +1292,7 @@ processor.on('nomention', function(json, from, active) {
                     "who": json.to,
                     "escrow_id": json.escrow_id,
                     "sbd_amount": json.sbd_amount,
-                    "steem_amount": json.sbd_amount
+                    "steem_amount": json.steem_amount
                 }
             ]
         ]
@@ -2046,6 +2046,20 @@ processor.on('nomention', function(json, from, active) {
                                     }
                                 })
                             break;
+                          case 'escrow_dispute':
+                                console.log('trying to sign', NodeOps[task][2])
+                                steemClient.broadcast.sendOperations(
+                                    NodeOps[task],
+                                    wif,
+                                    function(err, result) {
+                                        if (err) {
+                                            console.error(err);
+                                            noi(task)
+                                        } else {
+                                            NodeOps.splice(task, 1)
+                                        }
+                                    });
+                                break;
                         case 'send':
                             transactor.json(config.username, config.active, 'send', {
                                 to: NodeOps[task][2].to,
