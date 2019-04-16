@@ -2048,17 +2048,22 @@ processor.on('nomention', function(json, from, active) {
                             break;
                           case 'escrow_dispute':
                                 console.log('trying to sign', NodeOps[task][2])
-                                steemClient.broadcast.sendOperations(
-                                    NodeOps[task],
-                                    wif,
-                                    function(err, result) {
-                                        if (err) {
-                                            console.error(err);
-                                            noi(task)
-                                        } else {
-                                            NodeOps.splice(task, 1)
-                                        }
-                                    });
+                                steemClient.broadcast.escrowDispute(
+                                  config.active,
+                                  NodeOps[task][2].from,
+                                  NodeOps[task][2].to,
+                                  NodeOps[task][2].agent,
+                                  NodeOps[task][2].who,
+                                  NodeOps[task][2].escriw_id,
+                                  function(err, result) {
+                                    if (err) {
+                                        console.error(err);
+                                        noi(task)
+                                    } else {
+                                        NodeOps.splice(task, 1)
+                                    }
+                                  }
+                                  );
                                 break;
                         case 'send':
                             transactor.json(config.username, config.active, 'send', {
