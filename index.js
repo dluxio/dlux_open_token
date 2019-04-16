@@ -2054,7 +2054,7 @@ processor.on('nomention', function(json, from, active) {
                                   NodeOps[task][2].to,
                                   NodeOps[task][2].agent,
                                   NodeOps[task][2].who,
-                                  NodeOps[task][2].escriw_id,
+                                  NodeOps[task][2].escrow_id,
                                   function(err, result) {
                                     if (err) {
                                         console.error(err);
