@@ -1499,7 +1499,7 @@ processor.on('nomention', function(json, from, active) {
                 state.feed.unshift(json.transaction_id + '|' + json.block_num + `:@${json.who} released funds for @${owner}/${found}`)
                 state.escrow.splice(i, 1)
                 state.escrow.push(state.contracts[owner][found].auths[0])
-                state.markets.node[json.agent].wins++
+                state.markets.node[json.who].wins++
                 found = 1
                 break;
             }
@@ -2004,14 +2004,14 @@ processor.on('nomention', function(json, from, active) {
                           case 'escrow_release':
                                 steemClient.broadcast.escrowRelease(
                                     config.active,
-                                    NodeOps[task][2][1].from,
-                                    NodeOps[task][2][1].to,
-                                    NodeOps[task][2][1].agent,
-                                    NodeOps[task][2][1].who,
-                                    NodeOps[task][2][1].from,
-                                    NodeOps[task][2][1].escrow_id,
-                                    NodeOps[task][2][1].sbd_amount,
-                                    NodeOps[task][2][1].steem_amount,
+                                    NodeOps[task][2].from,
+                                    NodeOps[task][2].to,
+                                    NodeOps[task][2].agent,
+                                    NodeOps[task][2].who,
+                                    NodeOps[task][2].from,
+                                    NodeOps[task][2].escrow_id,
+                                    NodeOps[task][2].sbd_amount,
+                                    NodeOps[task][2].steem_amount,
                                     function(err, result) {
                                         if (err) {
                                             console.error('#broadcast err:'+err)
