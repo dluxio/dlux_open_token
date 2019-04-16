@@ -1225,7 +1225,7 @@ processor.on('nomention', function(json, from, active) {
           ])
           }
         }  else if (isAgent && isDAgent && dextx) { //two escrow agents to fascilitate open ended transfer with out estblishing steem/sbd bank //expiration times??
-        var txid = 'DLUX' + hashThis(`${from}${json.block_num}`)
+        var txid = 'DLUX' + hashThis(`${json.from}${json.block_num}`)
         if(state.balances[json.to] > dextx.dlux && typeof dextx.dlux === 'number' && dextx.dlux > 0){
           state.escrow.push([json.agent,
               [
