@@ -1466,14 +1466,12 @@ processor.on('nomention', function(json, from, active) {
                 console.log(state.escrow.splice(i, 1))
                 state.markets.node[json.who].wins++
                 for(var i in state.contracts[json.from]){
-                  if(state.contracts[json.from][i].escrow_id == json.escrow_id){found = i;break;}
-                }
-                if(found >=0){
-                  if(state.contracts[json.from][found].buyer){
+                  if(state.contracts[json.from][i].escrow_id == json.escrow_id && state.contracts[json.from][i].buyer){
                     state.escrow.push(state.contracts[json.from][found].auths.shift())
+                    state.feed.unshift(json.transaction_id + '|' + json.block_num + `:@${json.who} authorized ${json.agent} for ${i}`)
+                    break;
                   }
                 }
-                state.feed.unshift(json.transaction_id + '|' + json.block_num + `:@${json.who} authorized ${json.agent} for ${found}`)
                 break;
             }
         }
