@@ -1869,7 +1869,6 @@ processor.on('nomention', function(json, from, active) {
             });
         }
         if (num % 100 === 5 && processor.isStreaming()) {
-          if(!state.nomention)state.nomention = {}
             check(num);
         }
         if (num % 100 === 50 && processor.isStreaming()) {
@@ -1948,7 +1947,7 @@ processor.on('nomention', function(json, from, active) {
                     for (var i = 0; i < NodeOps.length; i++) {
                         if (NodeOps[i][0][0] == 0 && task == -1) {
                             task = i
-                            NodeOps[i][0][0] = 45
+                            NodeOps[i][0][0] = 75
                         } else if (NodeOps[i][0][0] != 0) {
                             NodeOps[i][0][0]--
                         }
