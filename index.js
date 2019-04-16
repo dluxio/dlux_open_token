@@ -363,9 +363,9 @@ function startWith(sh) {
 function startApp() {
     processor = steemState(client, steem, startingBlock, 10, prefix, streamMode);
 
-    processor.on('send', function(json, from) {
+    processor.on('send', function(json, from, active) {
         //check json.memo to contracts for resolution
-        if (json.memo) {
+        if (json.memo && active) {
             for (var i = 0; i < state.listeners.length; i++) {
                 if (json.memo == state.listeners[i][0]) {
                     if (state.contracts[state.listeners[i][1]] && state.contracts[state.listeners[i][1]].listener[0] && state.contracts[state.listeners[i][1]].listener[0][2] == json.to && state.contracts[state.listeners[i][1]].listener[0][3] == json.amount) {
@@ -374,7 +374,7 @@ function startApp() {
                 }
             }
         }
-        if (json.to && typeof json.to == 'string' && typeof json.amount == 'number' && (json.amount | 0) === json.amount && json.amount >= 0 && state.balances[from] && state.balances[from] >= json.amount) {
+        if (json.to && typeof json.to == 'string' && typeof json.amount == 'number' && (json.amount | 0) === json.amount && json.amount >= 0 && state.balances[from] && state.balances[from] >= json.amount && active) {
 
             if (state.balances[json.to] === undefined) {
                 state.balances[json.to] = 0;
@@ -396,7 +396,7 @@ function startApp() {
     });
 
     /* Custom node software */
-    processor.on(config.username, function(json, from) { //redesign for private stash
+    processor.on(config.username, function(json, from, active) { //redesign for private stash
         if (from == config.username) {
             switch (json.exe) {
                 case 'schedule':
@@ -423,9 +423,9 @@ function startApp() {
     });
 
     // power up tokens
-    processor.on('power_up', function(json, from) {
+    processor.on('power_up', function(json, from, active) {
         var amount = parseInt(json.amount)
-        if (typeof amount == 'number' && amount >= 0 && state.balances[from] && state.balances[from] >= amount) {
+        if (typeof amount == 'number' && amount >= 0 && state.balances[from] && state.balances[from] >= amount && active) {
             if (state.pow[from] === undefined) {
                 state.pow[from] = amount;
                 state.pow.t += amount
@@ -442,9 +442,9 @@ function startApp() {
     });
 
     // power down tokens
-    processor.on('power_down', function(json, from) {
+    processor.on('power_down', function(json, from, active) {
         var amount = parseInt(json.amount)
-        if (typeof amount == 'number' && amount >= 0 && state.pow[from] && state.pow[from] >= amount) {
+        if (typeof amount == 'number' && amount >= 0 && state.pow[from] && state.pow[from] >= amount && active) {
             var odd = parseInt(amount % 13),
                 weekly = parseInt(amount / 13)
             for (var i = 0; i < 13; i++) {
@@ -466,7 +466,7 @@ function startApp() {
     });
 
     // vote on content
-    processor.on('vote_content', function(json, from) {
+    processor.on('vote_content', function(json, from, active) {
         if (state.pow[from] >= 1) {
             for (var i = 0; i < state.posts.length; i++) {
                 if (state.posts[i].author === json.author && state.posts[i].permlink === json.permlink) {
@@ -501,7 +501,7 @@ function startApp() {
 
 
     //create nft
-    processor.on('create_nft', function(json, from) {
+    processor.on('create_nft', function(json, from, active) {
         var self = 'DLUX' + hashThis(from + json.block_num),
             error = '',
             actions = [0] //fix current with block num
@@ -662,7 +662,7 @@ function startApp() {
     });
 
 
-    processor.on('transfer_nft', function(json, from) { //json.to valid contract or random name json.nftid valid contract beared
+    processor.on('transfer_nft', function(json, from, active) { //json.to valid contract or random name json.nftid valid contract beared
         var bearer = '',
             error = '',
             to = '',
@@ -718,67 +718,67 @@ function startApp() {
         }
     });
 
-    processor.on('custom_cms_' + config.username + '_add', function(json, from) { //json.to valid contract or random name json.nftid valid contract beared
+    processor.on('custom_cms_' + config.username + '_add', function(json, from, active) { //json.to valid contract or random name json.nftid valid contract beared
         if (from == config.username) {
             Utils.addContent(json.content)
         }
     });
 
-    processor.on('custom_cms_' + config.username + '_set_level', function(json, from) { //json.to valid contract or random name json.nftid valid contract beared
+    processor.on('custom_cms_' + config.username + '_set_level', function(json, from, active) { //json.to valid contract or random name json.nftid valid contract beared
         if (from == config.username) {
             Utils.setContentLevel(json.content, json.level)
         }
     });
 
-    processor.on('custom_cms_' + config.username + '_delete', function(json, from) { //json.to valid contract or random name json.nftid valid contract beared
+    processor.on('custom_cms_' + config.username + '_delete', function(json, from, active) { //json.to valid contract or random name json.nftid valid contract beared
         if (from == config.username) {
             Utils.deleteContent(json.content)
         }
     });
 
-    processor.on('custom_cms_' + config.username + '_tier_add', function(json, from) { //json.to valid contract or random name json.nftid valid contract beared
+    processor.on('custom_cms_' + config.username + '_tier_add', function(json, from, active) { //json.to valid contract or random name json.nftid valid contract beared
         if (from == config.username) {
             Utils.addAccessLevel()
         }
     });
 
-    processor.on('custom_cms_' + config.username + '_tier_delete', function(json, from) { //json.to valid contract or random name json.nftid valid contract beared
+    processor.on('custom_cms_' + config.username + '_tier_delete', function(json, from, active) { //json.to valid contract or random name json.nftid valid contract beared
         if (from == config.username) {
             Utils.removeAccessLevel(json.tier)
         }
     });
 
-    processor.on('custom_cms_' + config.username + '_model_add', function(json, from) { //json.to valid contract or random name json.nftid valid contract beared
+    processor.on('custom_cms_' + config.username + '_model_add', function(json, from, active) { //json.to valid contract or random name json.nftid valid contract beared
         if (from == config.username) {
             Utils.addModel(json.num, json.tier, json.dlux)
         }
     });
 
-    processor.on('custom_cms_' + config.username + '_model_delete', function(json, from) { //json.to valid contract or random name json.nftid valid contract beared
+    processor.on('custom_cms_' + config.username + '_model_delete', function(json, from, active) { //json.to valid contract or random name json.nftid valid contract beared
         if (from == config.username) {
             Utils.deleteModel(json.num, json.tier, json.dlux)
         }
     });
 
-    processor.on('custom_cms_' + config.username + '_add_user', function(json, from) { //json.to valid contract or random name json.nftid valid contract beared
+    processor.on('custom_cms_' + config.username + '_add_user', function(json, from, active) { //json.to valid contract or random name json.nftid valid contract beared
         if (from == config.username) {
             Utils.assignLevel(json.name, json.tier, json.expires)
         }
     });
 
-    processor.on('custom_cms_' + config.username + '_ban_user', function(json, from) { //json.to valid contract or random name json.nftid valid contract beared
+    processor.on('custom_cms_' + config.username + '_ban_user', function(json, from, active) { //json.to valid contract or random name json.nftid valid contract beared
         if (from == config.username) {
             Utils.ban(json.name)
         }
     });
 
-    processor.on('custom_cms_' + config.username + '_unban_user', function(json, from) { //json.to valid contract or random name json.nftid valid contract beared
+    processor.on('custom_cms_' + config.username + '_unban_user', function(json, from, active) { //json.to valid contract or random name json.nftid valid contract beared
         if (from == config.username) {
             Utils.unban(json.name)
         }
     });
 
-    processor.on('delete_nft', function(json, from) {
+    processor.on('delete_nft', function(json, from, active) {
         var e = 1
         if (json.nftid && typeof json.nftid === 'string' && state.contracts[from]) {
             for (var i = 0; i < state.contracts[from].length; i++) {
@@ -795,7 +795,7 @@ function startApp() {
         }
     });
 
-    processor.on('nft_op', function(json, from) {
+    processor.on('nft_op', function(json, from, active) {
         var i, j, auth = false,
             ex = ''
         for (i = 0; i < state.exeq.length; i++) {
@@ -859,7 +859,7 @@ function startApp() {
 
 
     //dex transactions
-    processor.on('dex_buy', function(json, from) {
+    processor.on('dex_buy', function(json, from, active) {
         var found = ''
         try {
             if (state.contracts[json.to][json.contract].sbd) {
@@ -881,7 +881,7 @@ function startApp() {
             }
         } catch (e) {console.log(e)}
         console.log({found})
-        if (found) {
+        if (found && active) {
             if (state.balances[from] >= found.amount) {
                 if (state.balances[found.auths[0][1][1].to] > found.amount) {
                     state.balances[found.auths[0][1][1].to] -= found.amount
@@ -965,9 +965,9 @@ function startApp() {
         }
     });
 
-    processor.on('dex_steem_sell', function(json, from) {
+    processor.on('dex_steem_sell', function(json, from, active) {
         var buyAmount = parseInt(json.steem)
-        if (json.dlux <= state.balances[from] && typeof buyAmount == 'number') {
+        if (json.dlux <= state.balances[from] && typeof buyAmount == 'number' && active) {
             var txid = 'DLUX' + hashThis(from + current)
             state.dex.steem.sellOrders.push({
                 txid,
@@ -995,9 +995,9 @@ function startApp() {
         }
     });
 
-    processor.on('dex_sbd_sell', function(json, from) {
+    processor.on('dex_sbd_sell', function(json, from, active) {
         var buyAmount = parseInt(json.sbd)
-        if (json.dlux <= state.balances[from] && typeof buyAmount == 'number') {
+        if (json.dlux <= state.balances[from] && typeof buyAmount == 'number' && active) {
             var txid = 'DLUX' + hashThis(from + current)
             state.dex.sbd.sellOrders.push({
                 txid,
@@ -1024,9 +1024,9 @@ function startApp() {
         }
     });
 
-    processor.on('dex_clear', function(json, from) {
+    processor.on('dex_clear', function(json, from, active) {
       try{
-        if(state.contracts[from][json.txid]){
+        if(state.contracts[from][json.txid] && active){
           release(json.txid)
           state.feed.unshift(json.transaction_id + '|' + json.block_num+`:@${from} canceled ${json.txid}`)
         }
@@ -1034,10 +1034,32 @@ function startApp() {
         console.log(e)
       }
   })
-  processor.on('queueForDaily', function(json, from) {
+  processor.on('queueForDaily', function(json, from, active) {
     if(from = 'dlux-io' && json.text && json.title){
       state.postQueue.push({text:json.text,title:json.title})
     }
+})
+
+processor.on('nomention', function(json, from, active) {
+  for(i=0;i<state.delegations.length;i++){
+    if(state.delegations[i].delegator == from){
+      if(json.mention == false){
+        state.nomention[from]=true
+      } else if(json.mention==true){
+        delete state.nomention[from]
+      }
+      break;
+    }
+  }
+  if(!state.nomention[from] && !json.mention){
+    if(state.markets.node[from]){
+      state.nomention[from]=true
+    }
+  } else if (state.nomention[from] && json.mention){
+    if(state.markets.node[from]){
+      delete state.nomention[from]
+    }
+  }
 })
 
     processor.onOperation('escrow_transfer', function(json) { //grab posts to reward
@@ -1487,8 +1509,8 @@ function startApp() {
       }
     });
 
-    processor.on('node_add', function(json, from) {
-        if (json.domain && typeof json.domain === 'string') {
+    processor.on('node_add', function(json, from, active) {
+        if (json.domain && typeof json.domain === 'string' && active) {
             var z = false
             if (json.escrow == true) {
                 z = true
@@ -1534,7 +1556,8 @@ function startApp() {
         }
     });
 
-    processor.on('node_delete', function(json, from) {
+    processor.on('node_delete', function(json, from, active) {
+      if(active){
         state.markets.node[from].escrow = false
         var found = NaN
         for (var i = 0; i < state.queue.length; i++) {
@@ -1552,6 +1575,7 @@ function startApp() {
         try {state.markets.node[from].escrow = false} catch(e){console.log(`deleting ${from}'s node and got: `+ e)}
         try {delete state.runners[from]} catch(e){console.log(`deleting ${from}'s node and got: `+ e)}
         state.feed.unshift(json.transaction_id + '|' + json.block_num + `:@${from} has signed off their dlux node`)
+      }
     });
 
     processor.on('set_delegation_reward', function(json, from) {
@@ -1576,7 +1600,7 @@ function startApp() {
         console.log(json.transaction_id + '|' + json.block_num + `:@dlux-io has expired rewards on ${json.permlink}`)
       });
     */
-    processor.on('report', function(json, from) {
+    processor.on('report', function(json, from, active) {
         var cfrom, domain, found = NaN
         try {
             cfrom = state.markets.node[from].self
@@ -1745,7 +1769,7 @@ function startApp() {
                 if (purchase < state.balances.ri) {
                     state.balances.ri -= purchase
                     state.balances[json.from] += purchase
-                    state.feed.unshift(json.transaction_id + '|' + json.block_num + `:@${json.from} bought ${parseFloat(purchase/1000).toFixed(3)} DLUX with ${parseFloat(parseFloat(json.amount)*1000).toFixed(3)} STEEM`)
+                    state.feed.unshift(json.transaction_id + '|' + json.block_num + `:@${json.from} bought ${parseFloat(purchase/1000).toFixed(3)} DLUX with ${parseFloat(parseInt(json.amount)/1000).toFixed(3)} STEEM`)
                 } else {
                     state.balances[json.from] = state.balances.ri
                     const left = purchase - state.balances.ri
@@ -1753,7 +1777,7 @@ function startApp() {
                         [json.from]: (parseInt(amount * left / purchase))
                     })
                     state.stats.outOnBlock = current
-                    state.feed.unshift(json.transaction_id + '|' + json.block_num + `:@${json.from} bought ALL ${parseFloat(parseInt(purchase - left)).toFixed(3)} DLUX with ${parseFloat(json.amount/1000).toFixed(3)} STEEM. And bid in the over-auction`)
+                    state.feed.unshift(json.transaction_id + '|' + json.block_num + `:@${json.from} bought ALL ${parseFloat(parseInt(purchase - left)).toFixed(3)} DLUX with ${parseFloat(parseInt(json.amount)/1000).toFixed(3)} STEEM. And bid in the over-auction`)
                 }
             } else {
                 state.ico.push({
@@ -1847,7 +1871,7 @@ function startApp() {
             });
         }
         if (num % 100 === 5 && processor.isStreaming()) {
-          if(!state.postQueue)state.postQueue = []
+          if(!state.nomention)state.nomention = {}
             check(num);
         }
         if (num % 100 === 50 && processor.isStreaming()) {
@@ -2809,9 +2833,9 @@ function dao(num) {
     state.stats.marketingRate = parseInt(b / i)
     state.stats.nodeRate = parseInt(j / i)
     post = `![The Hyper Cube](https://ipfs.busy.org/ipfs/QmRtFirFM3f3Lp7Y22KtfsS2qugULYXTBnpnyh8AHzJa7e)\n#### Daily Accounting\n`
-    post = post + `Total Supply: ${parseFloat(parseInt(state.stats.tokenSupply)/1000).toFixed(3)} DLUX\n* ${parseFloat(parseInt(state.stats.tokenSupply-state.pow.t-state.balances.a -state.balances.b -state.balances.c -state.balances.d -state.balances.e -state.balances.i -state.balances.r -state.balances.n)/1000).toFixed(3)} DLUX liquid\n`
+    post = post + `Total Supply: ${parseFloat(parseInt(state.stats.tokenSupply)/1000).toFixed(3)} DLUX\n* ${parseFloat(parseInt(state.stats.tokenSupply-state.pow.t-(state.balances.ra +state.balances.rb +state.balances.rc +state.balances.rd +state.balances.re +state.balances.ri +state.balances.rr +state.balances.rn+state.balances.rm))/1000).toFixed(3)} DLUX liquid\n`
     post = post + `* ${parseFloat(parseInt(state.pow.t)/1000).toFixed(3)} DLUX Powered up for Voting\n`
-    post = post + `* ${parseFloat(parseInt(state.balances.a +state.balances.b +state.balances.c +state.balances.d +state.balances.e +state.balances.i +state.balances.r +state.balances.n)/1000).toFixed(3)} DLUX in distribution accounts\n`
+    post = post + `* ${parseFloat(parseInt(state.balances.ra +state.balances.rb +state.balances.rc +state.balances.rd +state.balances.re +state.balances.ri +state.balances.rr +state.balances.rn+state.balances.rm)/1000).toFixed(3)} DLUX in distribution accounts\n`
     post = post + `${parseFloat(parseInt(t)/1000).toFixed(3)} DLUX has been generated today. 5% APY.\n${parseFloat(state.stats.marketingRate/10000).toFixed(4)} is the marketing rate.\n${parseFloat(state.stats.nodeRate/10000).toFixed(4)} is the node rate.\n`
     console.log(`DAO Accounting In Progress:\n${t} has been generated today\n${state.stats.marketingRate} is the marketing rate.\n${state.stats.nodeRate} is the node rate.`)
     state.balances.rn += parseInt(t * parseInt(state.stats.nodeRate) / 10000)
@@ -2832,6 +2856,7 @@ function dao(num) {
         j = j + parseInt(state.markets.node[node].wins)
     }
     b = state.balances.rn
+    function _atfun (node){if(state.nomention[node]){return '@_'}else{return '@'}}
     for (var node in state.markets.node) { //and pay them
         i = parseInt(state.markets.node[node].wins / j * b)
         if (state.balances[node]) {
@@ -2840,7 +2865,8 @@ function dao(num) {
             state.balances[node] = i
         }
         state.balances.rn -= i
-        post = post + `* @${node} awarded ${parseFloat(i/1000).toFixed(3)} DLUX for ${state.markets.node[node].wins} credited transaction(s)\n`
+        const _at = _atfun(node)
+        post = post + `* ${_at}${node} awarded ${parseFloat(i/1000).toFixed(3)} DLUX for ${state.markets.node[node].wins} credited transaction(s)\n`
         console.log(current + `:@${node} awarded ${i} DLUX for ${state.markets.node[node].wins} credited transaction(s)`)
         state.markets.node[node].wins = 0
     }
@@ -2860,7 +2886,8 @@ function dao(num) {
         }
         state.balances[state.delegations[i].delegator] += k
         state.balances.rd -= k
-        post = post + `* ${parseFloat(parseInt(k)/1000).toFixed(3)} DLUX for @${state.delegations[i].delegator}'s ${parseFloat(state.delegations[i].vests/1000000)} Mvests.\n`
+        const _at = _atfun(node)
+        post = post + `* ${parseFloat(parseInt(k)/1000).toFixed(3)} DLUX for ${_at}${state.delegations[i].delegator}'s ${parseFloat(state.delegations[i].vests/1000000)} Mvests.\n`
         console.log(current + `:${k} DLUX awarded to ${state.delegations[i].delegator} for ${state.delegations[i].vests} VESTS`)
     }
     post = post + `*****\n ## ICO Status\n`
@@ -3016,7 +3043,7 @@ function dao(num) {
       steemVotes = steemVotes + `* [${vo[oo].title}](https://dlux.io/@${vo[oo].author}/${vo[oo].permlink}) by @${vo[oo].author} | ${parseFloat(weight/100).toFixed(3)}% \n`
     }
     if(ops.length){state.escrow.push(['dlux-io',['lots',ops]])}
-    const footer = `[Visit dlux.io](https://dlux.io)\n[Find us on Discord](https://discord.gg/Beeb38j)\n[Visit our DEX/Wallet - Soon](https://dlux.io)\n[Learn how to use DLUX](https://github.com/dluxio/dluxio/wiki)\n*Price for 25.2 Hrs from posting or until daily 100,000.000 DLUX sold.`
+    const footer = `[Visit dlux.io](https://dlux.io)\n[Find us on Discord](https://discord.gg/Beeb38j)\n[Visit our DEX/Wallet - Soon](https://dlux.io)\n[Learn how to use DLUX](https://github.com/dluxio/dluxio/wiki)\n[Turn off mentions for nodes and delegators](https://app.steemconnect.com/sign/custom-json?id=dluxT_nomention&json=%7B%22mention%22%3Afalse%7D)\n*Price for 25.2 Hrs from posting or until daily 100,000.000 DLUX sold.`
     if(steemVotes)steemVotes = `#### Community Voted DLUX Posts\n`+ steemVotes +`*****\n`
     post = header + contentRewards + steemVotes + post + footer
     var op = ["comment",
