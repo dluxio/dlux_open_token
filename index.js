@@ -1467,7 +1467,7 @@ processor.on('nomention', function(json, from, active) {
                 state.markets.node[json.who].wins++
                 for(var i in state.contracts[json.from]){
                   if(state.contracts[json.from][i].escrow_id == json.escrow_id && state.contracts[json.from][i].buyer){
-                    state.escrow.push(state.contracts[json.from][found].auths.shift())
+                    state.escrow.push(state.contracts[json.from][i].auths.shift())
                     state.feed.unshift(json.transaction_id + '|' + json.block_num + `:@${json.who} authorized ${json.agent} for ${i}`)
                     break;
                   }
