@@ -862,7 +862,7 @@ function startApp() {
     processor.on('dex_buy', function(json, from, active) {
         var found = ''
         try {
-            if (state.contracts[json.to][json.contract].sbd) {
+            if (state.contracts[json.for][json.contract].sbd) {
                 for (var i = 0; i < state.dex.sbd.buyOrders.length; i++) {
                     if (state.dex.sbd.buyOrders[i].txid == json.contract) {
                         found = state.dex.sbd.buyOrders[i];
@@ -894,14 +894,14 @@ function startApp() {
                     if (found.steem) {
                       state.feed.unshift(json.transaction_id + '|' + json.block_num+`:@${from} purchased ${parseFloat(found.steem/1000).toFixed(3)} STEEM with ${parseFloat(found.amount/1000).toFixed(3)} DLUX via DEX`)
                       var comp = state.dex.steem.tick, dir
-                      state.dex.steem.tick = state.contracts[json.to][json.contract].rate
+                      state.dex.steem.tick = state.contracts[json.for][json.contract].rate
                       if (comp > state.dex.steem.tick){dir='up'}
-                      else if (comp == contract.rate){dir='-'}
+                      else if (comp == found.rate){dir='-'}
                       else {dir='down'}
                       state.dex.steem.his.unshift({
-                        rate:state.contracts[json.to][json.contract].rate,
+                        rate:state.contracts[json.for][json.contract].rate,
                         block:json.block_num,
-                        amount:state.contracts[json.to][json.contract].amount,
+                        amount:state.contracts[json.for][json.contract].amount,
                         dir
                       })
                         state.contracts[found.from][json.contract].auths.push([found.auths[0][1][1].to,
@@ -918,14 +918,14 @@ function startApp() {
                     } else {
                       state.feed.unshift(json.transaction_id + '|' + json.block_num+`:@${from} purchased ${parseFloat(found.sbd/1000).toFixed(3)} SBD via DEX`)
                       var comp = state.dex.sbd.tick, dir
-                      state.dex.sbd.tick = state.contracts[json.to][json.contract].rate
+                      state.dex.sbd.tick = state.contracts[json.for][json.contract].rate
                       if (comp > state.dex.sbd.tick){dir='up'}
                       else if (comp == state.dex.sbd.tick){dir='-'}
                       else {dir='down'}
                       state.dex.sbd.his.unshift({
                         rate:state.dex.sbd.tick,
                         block:json.block_num,
-                        amount:state.contracts[json.to][json.contract].amount,
+                        amount:state.contracts[json.for][json.contract].amount,
                         dir
                       })
                         state.contracts[found.from][json.contract].auths.push([found.auths[0][1][1].to,
