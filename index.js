@@ -1769,7 +1769,7 @@ processor.on('nomention', function(json, from, active) {
                 if (purchase < state.balances.ri) {
                     state.balances.ri -= purchase
                     state.balances[json.from] += purchase
-                    state.feed.unshift(json.transaction_id + '|' + json.block_num + `:@${json.from} bought ${parseFloat(purchase/1000).toFixed(3)} DLUX with ${parseFloat(parseInt(json.amount)/1000).toFixed(3)} STEEM`)
+                    state.feed.unshift(json.transaction_id + '|' + json.block_num + `:@${json.from} bought ${parseFloat(purchase/1000).toFixed(3)} DLUX with ${parseFloat(amount/1000).toFixed(3)} STEEM`)
                 } else {
                     state.balances[json.from] = state.balances.ri
                     const left = purchase - state.balances.ri
@@ -1777,13 +1777,13 @@ processor.on('nomention', function(json, from, active) {
                         [json.from]: (parseInt(amount * left / purchase))
                     })
                     state.stats.outOnBlock = current
-                    state.feed.unshift(json.transaction_id + '|' + json.block_num + `:@${json.from} bought ALL ${parseFloat(parseInt(purchase - left)).toFixed(3)} DLUX with ${parseFloat(parseInt(json.amount)/1000).toFixed(3)} STEEM. And bid in the over-auction`)
+                    state.feed.unshift(json.transaction_id + '|' + json.block_num + `:@${json.from} bought ALL ${parseFloat(parseInt(purchase - left)).toFixed(3)} DLUX with ${parseFloat(parseInt(amount)/1000).toFixed(3)} STEEM. And bid in the over-auction`)
                 }
             } else {
                 state.ico.push({
                     [json.from]: (amount)
                 })
-                state.feed.unshift(json.transaction_id + '|' + json.block_num + `:@${json.from} bid in DLUX auction with ${json.amount}`)
+                state.feed.unshift(json.transaction_id + '|' + json.block_num + `:@${json.from} bid in DLUX auction with ${parseFloat(amount/1000).toFixed(3)}`)
             }
         }
     });
@@ -3043,7 +3043,7 @@ function dao(num) {
       steemVotes = steemVotes + `* [${vo[oo].title}](https://dlux.io/@${vo[oo].author}/${vo[oo].permlink}) by @${vo[oo].author} | ${parseFloat(weight/100).toFixed(3)}% \n`
     }
     if(ops.length){state.escrow.push(['dlux-io',['lots',ops]])}
-    const footer = `[Visit dlux.io](https://dlux.io)\n[Find us on Discord](https://discord.gg/Beeb38j)\n[Visit our DEX/Wallet - Soon](https://dlux.io)\n[Learn how to use DLUX](https://github.com/dluxio/dluxio/wiki)\n[Turn off mentions for nodes and delegators](https://app.steemconnect.com/sign/custom-json?id=dluxT_nomention&json=%7B%22mention%22%3Afalse%7D)\n*Price for 25.2 Hrs from posting or until daily 100,000.000 DLUX sold.`
+    const footer = `[Visit dlux.io](https://dlux.io)\n[Find us on Discord](https://discord.gg/Beeb38j)\n[Visit our DEX/Wallet - Soon](https://dlux.io)\n[Learn how to use DLUX](https://github.com/dluxio/dluxio/wiki)\n[Turn off mentions for nodes and delegators](https://app.steemconnect.com/sign/custom-json?id=dluxT_nomention&json=%7B%22mention%22%3Afalse%7D) or [back on](https://app.steemconnect.com/sign/custom-json?id=dluxT_nomention&json=%7B%22mention%22%3Atrue%7D)\n*Price for 25.2 Hrs from posting or until daily 100,000.000 DLUX sold.`
     if(steemVotes)steemVotes = `#### Community Voted DLUX Posts\n`+ steemVotes +`*****\n`
     post = header + contentRewards + steemVotes + post + footer
     var op = ["comment",
