@@ -1737,7 +1737,7 @@ processor.on('nomention', function(json, from, active) {
                 const addr = escrow[0][1][1].memo.split(' ')[0]
                 const seller = escrow[0][1][1].memo.split(' ')[2]
                 state.balances[seller] = parseInt(state.contracts[seller][addr].escrow) + parseInt(state.balances[seller])
-                state.contracts[seler][addr] = ''
+                state.contracts[seller][addr] = ''
                 delete state.contracts[seller][addr]
                 state.markets.node[json.from].wins++
                 /*
