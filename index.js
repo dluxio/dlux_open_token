@@ -1461,9 +1461,8 @@ processor.on('nomention', function(json, from, active) {
     });
     processor.onOperation('escrow_dispute', function(json) {
         var found = -1
-        console.log(json)
         for (var i = 0; i < state.escrow.length; i++) {
-            if (state.escrow[i][0] == json.agent && state.escrow[i][1][1].escrow_id == json.escrow_id) {
+            if (state.escrow[i][0] == json.who && state.escrow[i][1][1].escrow_id == json.escrow_id) {
                 console.log(state.escrow.splice(i, 1))
                 state.markets.node[json.who].wins++
                 for(var i in state.contracts[json.from]){
