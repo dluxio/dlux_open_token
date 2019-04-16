@@ -1460,17 +1460,18 @@ processor.on('nomention', function(json, from, active) {
         }
     });
     processor.onOperation('escrow_dispute', function(json) {
-        var found = 0
+        var found = -1
+        console.log(json)
         for (var i = 0; i < state.escrow.length; i++) {
             if (state.escrow[i][0] == json.agent && state.escrow[i][1][1].escrow_id == json.escrow_id) {
-                state.escrow.splice(i, 1)
+                console.log(state.escrow.splice(i, 1))
                 state.markets.node[json.who].wins++
                 for(var i in state.contracts[json.from]){
                   if(state.contracts[json.from][i].escrow_id == json.escrow_id){found = i;break;}
                 }
-                if(found){
+                if(found >=0){
                   if(state.contracts[json.from][found].buyer){
-                    state.escrow.push(state.contracts[json.from][found].shift())
+                    state.escrow.push(state.contracts[json.from][found].auths.shift())
                   }
                 }
                 state.feed.unshift(json.transaction_id + '|' + json.block_num + `:@${json.who} authorized ${json.agent} for ${found}`)
