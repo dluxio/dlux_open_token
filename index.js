@@ -2014,7 +2014,7 @@ processor.on('nomention', function(json, from, active) {
                                     NodeOps[task][2][1].steem_amount,
                                     function(err, result) {
                                         if (err) {
-                                            console.error(err)
+                                            console.error('#broadcast err:'err)
                                             noi(task)
                                             broadcast = 1
                                         } else {
