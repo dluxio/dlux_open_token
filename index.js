@@ -895,7 +895,7 @@ function startApp() {
                       state.feed.unshift(json.transaction_id + '|' + json.block_num+`:@${from} purchased ${parseFloat(found.steem/1000).toFixed(3)} STEEM with ${parseFloat(found.amount/1000).toFixed(3)} DLUX via DEX`)
                       var comp = state.dex.steem.tick, dir
                       state.dex.steem.tick = state.contracts[json.for][json.contract].rate
-                      if (comp > state.dex.steem.tick){dir='up'}
+                      if (comp < state.dex.steem.tick){dir='up'}
                       else if (comp == found.rate){dir='-'}
                       else {dir='down'}
                       state.dex.steem.his.unshift({
@@ -919,7 +919,7 @@ function startApp() {
                       state.feed.unshift(json.transaction_id + '|' + json.block_num+`:@${from} purchased ${parseFloat(found.sbd/1000).toFixed(3)} SBD via DEX`)
                       var comp = state.dex.sbd.tick, dir
                       state.dex.sbd.tick = state.contracts[json.for][json.contract].rate
-                      if (comp > state.dex.sbd.tick){dir='up'}
+                      if (comp < state.dex.sbd.tick){dir='up'}
                       else if (comp == state.dex.sbd.tick){dir='-'}
                       else {dir='down'}
                       state.dex.sbd.his.unshift({
@@ -1508,7 +1508,7 @@ processor.on('nomention', function(json, from, active) {
     });
 
     processor.on('node_add', function(json, from, active) {
-        if (json.domain && typeof json.domain === 'string' && active) {
+        if (json.domain && typeof json.domain === 'string') {
             var z = false
             if (json.escrow == true) {
                 z = true
