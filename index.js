@@ -1496,6 +1496,7 @@ processor.on('nomention', function(json, from, active) {
                       found = txid
                       break;
                     }
+                  }
                 }
                 state.feed.unshift(json.transaction_id + '|' + json.block_num + `:@${json.who} released funds for @${owner}/${found}`)
                 state.escrow.splice(i, 1)
@@ -1503,7 +1504,6 @@ processor.on('nomention', function(json, from, active) {
                 state.markets.node[json.who].wins++
                 found = 1
                 break;
-            }
         }
       }
     });
