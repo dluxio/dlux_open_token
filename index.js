@@ -891,6 +891,7 @@ function startApp() {
                     state.balances[found.from] += found.amount
                     state.contracts[found.from][json.contract].buyer = from
                     state.escrow.push(state.contracts[found.from][json.contract].auths.shift())
+                    console.log(state.escrow)
                     if (found.steem) {
                       state.feed.unshift(json.transaction_id + '|' + json.block_num+`:@${from} purchased ${parseFloat(found.steem/1000).toFixed(3)} STEEM with ${parseFloat(found.amount/1000).toFixed(3)} DLUX via DEX`)
                       var comp = state.dex.steem.tick, dir
@@ -915,7 +916,7 @@ function startApp() {
                                 }
                             ]
                         ])
-                    } else {
+                    } else if (found.sbd) {
                       state.feed.unshift(json.transaction_id + '|' + json.block_num+`:@${from} purchased ${parseFloat(found.sbd/1000).toFixed(3)} SBD via DEX`)
                       var comp = state.dex.sbd.tick, dir
                       state.dex.sbd.tick = state.contracts[json.for][json.contract].rate
@@ -1463,7 +1464,7 @@ processor.on('nomention', function(json, from, active) {
         var found = -1
         for (var i = 0; i < state.escrow.length; i++) {
             if (state.escrow[i][0] == json.who && state.escrow[i][1][1].escrow_id == json.escrow_id) {
-                console.log(state.escrow.splice(i, 1))
+                state.escrow.splice(i, 1)
                 state.markets.node[json.who].wins++
                 for(var i in state.contracts[json.from]){
                   if(state.contracts[json.from][i].escrow_id == json.escrow_id && state.contracts[json.from][i].buyer){
@@ -1498,7 +1499,7 @@ processor.on('nomention', function(json, from, active) {
                 }
                 state.feed.unshift(json.transaction_id + '|' + json.block_num + `:@${json.who} released funds for @${owner}/${found}`)
                 state.escrow.splice(i, 1)
-                state.escrow.push(state.contracts[owner][found].auths[0])
+                state.escrow.push(state.contracts[owner][found].auths.shift())
                 state.markets.node[json.who].wins++
                 found = 1
                 break;
