@@ -2153,6 +2153,7 @@ function startApp() {
                         },
                         wif, (err, result) => {
                             if (err) {
+                              console.log(err)
                                 for (q = 0; q < NodeOps.length; q++) {
                                     if (NodeOps[i][0][1] == 1) {
                                         NodeOps[i][0][1] = 0
@@ -2224,7 +2225,7 @@ function check() {
                         if (s.hashLastIBlock === myJson.stats.hashLastIBlock) {
                             plasma.markets.nodes[myJson.node].agreement = true
                         }
-                    });
+                    }).catch(e=>{})
             }
         }
     })
