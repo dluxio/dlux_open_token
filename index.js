@@ -190,9 +190,9 @@ api.get('/state', (req, res, next) => {
     var state = {}
     res.setHeader('Content-Type', 'application/json')
     store.get([], function(err, obj) {
-        meh = obj,
+        state = obj,
             res.send(JSON.stringify({
-                meh
+                state
             }, null, 3))
     });
 });
@@ -455,6 +455,20 @@ function startWith(sh) {
                 plasma.hashBlock = data[0]
                 plasma.hashLastIBlock = sh
                 //store.batch([{type:'del',path:[]}])
+                store.del([],function(e){
+                  if(!e){
+                    store.put([], data[1], function(err) {
+                        if(err){ console.log(err)} else{
+                          store.get(['balances','ra'],function(error,returns){
+                            if(!error){
+                              console.log(returns)
+                            }
+                          })
+                          startApp()
+                        }
+                    })
+                  } else {console.log(e)}
+                })
                 data[1] = {
     "limbo": {},
     "listeners": [],
@@ -831,16 +845,6 @@ function startWith(sh) {
         "disregardfiat": true
     }
 }
-              store.put([], data[1], function(err) {
-                  if(err){ console.log(err)} else{
-                    store.get(['balances','ra'],function(error,returns){
-                      if(!error){
-                        console.log(returns)
-                      }
-                    })
-                    startApp()
-                  }
-              })
             } else {
                 startWith(config.engineCrank)
                 console.log(`${sh} failed to load, Replaying from genesis.\nYou may want to set the env var STARTHASH\nFind it at any token API such as token.dlux.io`)
@@ -2373,7 +2377,7 @@ function tally(num) {
       var mint = parseInt(stats.tokenSupply / stats.interestRate)
       stats.tokenSupply += mint
       rbal += mint
-  }console.log({stats},{runners},{nodes},{rbal})
+  }
   store.batch([
     {type:'put', path:['stats'], data:stats},
     {type:'put', path:['runners'], data:runners},
