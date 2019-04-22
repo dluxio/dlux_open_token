@@ -2297,7 +2297,6 @@ function tally(num) {
           if (tally.agreements.tally[subnode]) {
               if (tally.agreements.tally[subnode].hash == tally.agreements.tally[node].hash) {
                   tally.agreements.tally[subnode].votes++
-                  console.log(tally.agreements.tally[subnode])
               }
           }
       }
@@ -2308,10 +2307,10 @@ function tally(num) {
   for (var node in runners) {
       l++
       var forblock = 0
-      try{forblock=nodes[node].report.block}catch(e){}
+      try{ forblock = nodes[node].report.block}catch(e){}
       if (tally.agreements.tally[node].votes / tally.agreements.votes >= 2 / 3 && nodes[node].report.block > num - 100) {
           consensus = tally.agreements.runners[node].report.hash
-      } else if (l > 1 && forBlock > num - 100) {
+      } else if (l > 1 && forblock > num - 100) {
           delete runners[node]
           console.log('uh-oh:' + node + ' scored ' + tally.agreements.tally[node].votes + '/' + tally.agreements.votes)
       } else if (l == 1 && forblock > num - 100) {
