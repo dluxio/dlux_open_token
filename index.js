@@ -2151,7 +2151,7 @@ function startApp() {
                             extensions: [],
                             operations: ops
                         },
-                        wif, (err, result) => {
+                        config.active, (err, result) => {
                             if (err) {
                               console.log(err)
                                 for (q = 0; q < NodeOps.length; q++) {
