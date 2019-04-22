@@ -2147,8 +2147,9 @@ function startApp() {
                             NodeOps[i][0][0]++
                         }
                     }
-                    console.log(ops,NodeOps[i])
-                    steemClient.broadcast.send({
+                    if(ops.length){
+                      console.log(ops)
+                      steemClient.broadcast.send({
                             extensions: [],
                             operations: ops
                         },
@@ -2168,6 +2169,7 @@ function startApp() {
                                 }
                             }
                         });
+                      }
                 } else {
                     console.log(e)
                 }
