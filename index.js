@@ -2147,11 +2147,11 @@ function startApp() {
                             NodeOps[i][0][0]++
                         }
                     }
-                    steem.broadcast.send({
+                    steemClient.broadcast.send({
                             extensions: [],
                             operations: ops
                         },
-                        config.active, (err, result) => {
+                        wif, (err, result) => {
                             if (err) {
                               console.log(err)
                                 for (q = 0; q < NodeOps.length; q++) {
@@ -2916,8 +2916,8 @@ function report(num) {
                 NodeOps.push([
                     [0, 0],
                     ["custom_json",{
-                      required_auths:  [config.username],
-                      required_posting_auths: [],
+                      required_auths:  [],
+                      required_posting_auths: [config.username],
                       id: 'dluxT_report',
                       json: JSON.stringify({
                           feed: feed,
