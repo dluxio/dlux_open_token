@@ -2147,6 +2147,7 @@ function startApp() {
                             NodeOps[i][0][0]++
                         }
                     }
+                    console.log(ops,NodeOps[i])
                     steemClient.broadcast.send({
                             extensions: [],
                             operations: ops
