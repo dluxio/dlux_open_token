@@ -2156,13 +2156,13 @@ function startApp() {
                         wif, (err, result) => {
                             if (err) {
                               console.log(err)
-                                for (q = 0; q < NodeOps.length; q++) {
+                                for (q = 0; q < ops.length; q++) {
                                     if (NodeOps[q][0][1] == 1) {
                                         NodeOps[q][0][1] = 0
                                     }
                                 }
                             } else {
-                                for (q = 0; q < NodeOps.length; q++) {
+                                for (q = 0; q < ops.length; q++) {
                                     if (NodeOps[q][0][0] = 1) {
                                         NodeOps[q][0][1] = 1
                                     }
