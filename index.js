@@ -1441,7 +1441,7 @@ function startApp() {
 
     processor.on('nomention', function(json, from, active) {
         if (typeof json.nomention == 'boolean') {
-            store.get(['delegators', from], function(e, a) {
+            store.get(['delegations', from], function(e, a) {
                 var ops = []
                 if (!e && json.nomention) {
                     ops.push({type:'put',path:['nomention', from],data: true})
@@ -1626,10 +1626,10 @@ function startApp() {
         var ops = []
         const vests = parseInt(parseFloat(json.vesting_shares) * 1000000)
         if (json.delegatee == 'dlux-io' && vests) {
-            ops.push({type:'put',path:['delegators', json.delegator], data: vests})
+            ops.push({type:'put',path:['delegations', json.delegator], data: vests})
             ops.push({type:'put',path:['feed', `${json.block_num}:${json.transaction_id}`], data: `@${json.delegator} has delegated ${vests} vests to @dlux-io`})
         } else if (json.delegatee == 'dlux-io' && !vests) {
-            ops.push({type:'del',path:['delegators', json.delegator]})
+            ops.push({type:'del',path:['delegations', json.delegator]})
             ops.push({type:'put',path:['feed', `${json.block_num}:${json.transaction_id}`], data: `@${json.delegator} has removed delegation to @dlux-io`})
         }
         store.batch(ops)
