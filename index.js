@@ -2133,10 +2133,14 @@ function startApp() {
             store.get(['escrow', config.username], function(e, a) {
                 if (!e) {
                     for (b in a) {
+                      var pending = plasma.pending.indexOf(b)
+                      if (pending == -1){
                         NodeOps.push([
                             [0, 0],
                             a[b][1]
                         ]);
+                        plasma.pending.push(b)
+                      }
                     }
                     var ops = []
                     for (i = 0; i < NodeOps.length; i++) {
