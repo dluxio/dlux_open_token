@@ -451,7 +451,7 @@ function startWith(sh) {
         ipfs.cat(sh, (err, file) => {
             if (!err) {
                 var data = JSON.parse(file);
-                //startingBlock = data[0]
+                startingBlock = data[0]
                 plasma.hashBlock = data[0]
                 plasma.hashLastIBlock = sh
                 //store.batch([{type:'del',path:[]}])
@@ -469,382 +469,6 @@ function startWith(sh) {
                     })
                   } else {console.log(e)}
                 })
-                data[1] = {
-    "limbo": {},
-    "listeners": [],
-    "balances": {
-        "ra": 1603708,
-        "rb": 0,
-        "rc": 7653494,
-        "rd": 11,
-        "re": 0,
-        "ri": 998283978,
-        "rr": 0,
-        "rn": 2,
-        "rm": 13038493,
-        "kellie.leigh": 50000000,
-        "surfyogi": 12000000,
-        "sunlakeslady": 3000000,
-        "bitduck86": 2000000,
-        "a1-shroom-spores": 52799200,
-        "vasqus": 2000000,
-        "phteven.withap": 2000000,
-        "cowboys.angel": 5000000,
-        "paint.baller": 7500000,
-        "dlux-io": 1007644281,
-        "disregardfiat": 8117705,
-        "eastmael": 27059946,
-        "elgeko": 15416780,
-        "gabbagallery": 15404885,
-        "cryptoandzen": 109258596,
-        "markegiles": 12085042,
-        "whatsup": 6814697,
-        "d-pend": 1159715,
-        "flash07": 223795,
-        "onealfa": 3306848,
-        "kriptonik": 41919297,
-        "gabbynhice": 989665,
-        "ackza": 21750658,
-        "pangoli": 3372429,
-        "fyrstikken": 28769708,
-        "angelveselinov": 138714,
-        "michelios": 22237961,
-        "masterthematrix": 5132481,
-        "taskmaster4450": 3787005,
-        "direwolf": 14650724,
-        "jznsamuel": 1929087,
-        "bobby.madagascar": 12952720,
-        "itstime": 2517296,
-        "igster": 3501352,
-        "deybacsi": 14142,
-        "protegeaa": 11494677,
-        "gattino": 538201,
-        "mannacurrency": 234835,
-        "seareader1": 586855,
-        "pocketrocket": 114545,
-        "preparedwombat": 3726554,
-        "janusface": 2287632,
-        "nataboo": 133242,
-        "j85063": 854021,
-        "b-s": 3392179,
-        "caramaeplays": 5371565,
-        "inconceivable": 406346,
-        "bubke": 3773700,
-        "okean123": 188645,
-        "blockcryptochain": 75434,
-        "bryan-imhoff": 619917,
-        "shellyduncan": 1424081,
-        "east.autovote": 0,
-        "snubbermike": 3977499,
-        "flauwy": 0,
-        "theycallmedan": 2574172,
-        "tkept260": 22206524,
-        "runicar": 5253291,
-        "acidyo": 33220275,
-        "lanmower": 465318,
-        "tarazkp": 20468613,
-        "juvyjabian": 4715237,
-        "stackin": 182536,
-        "organduo": 0,
-        "dera123": 2183259,
-        "rovill": 1375502,
-        "tracilin": 95541004,
-        "elementm": 739379,
-        "doon": 1645964,
-        "superlotto": 938825,
-        "chrismgiles": 52084713,
-        "kenny-crane": 5066074,
-        "altrosa": 362477,
-        "shredz7": 1943431,
-        "dlux-highway": 1594578,
-        "dlux-sm": 791577,
-        "theb0red1": 2876369,
-        "onthewayout": 6477197,
-        "syedumair": 1300146,
-        "austindro": 6328417,
-        "kohost": 1101498,
-        "yasu24": 4353,
-        "novacadian": 380742,
-        "alexvanaken": 28344,
-        "nekomuneca": 6000000,
-        "suzanoslin": 6000000,
-        "achimmertens": 198125,
-        "flora-francis": 3200000,
-        "azuremoon": 4545,
-        "qwoyn": 9090,
-        "buckydurddle": 63757,
-        "dlux-treasure": 1000,
-        "ecoinstar": 9123
-    },
-    "pow": {
-        "n": {},
-        "t": 8300000000,
-        "disregardfiat": 1000000000,
-        "markegiles": 1000000000,
-        "shredz7": 100000000,
-        "a1-shroom-spores": 100000000,
-        "caramaeplays": 100000000,
-        "dlux-io": 6000000000,
-        "robotolux": 0
-    },
-    "rolling": {},
-    "nft": {},
-    "chrono": [],
-    "pending": [],
-    "exeq": [],
-    "exes": [],
-    "queue": ["inconceivable", "dlux-io", "markegiles", "disregardfiat"],
-    "escrow": {},
-    "bannedNodes": [],
-    "agents": {
-        "dlux-io": {
-            "self": "dlux-io",
-            "queue": [],
-            "online": true
-        }
-    },
-    "delegations": {
-      achimmertens: 400056928307,
-      blockcryptochain: 20186584362,
-      "bobby.madagascar": 199848965430,
-      bubke: 1009371232275,
-      buckydurddle: 599409998448,
-      dera123: 101886031929,
-      direwolf: 20616896980,
-      disregardfiat: 20115916810,
-      eastmael: 199747641576,
-      ecoinstar: 199757366360,
-      elementm: 19977817670,
-      flash07: 20187819550,
-      j85063: 201870966828,
-      jznsamuel: 201798905991,
-      kriptonik: 200952516306,
-      masterthematrix: 301484502951,
-      michelios: 4003079453843,
-      novacadian: 200343431865,
-      okean123: 50466716897,
-      onthewayout: 2005640925153,
-      preparedwombat: 201875204241,
-      superlotto: 251119699919,
-      syedumair: 300845301398,
-      tarazkp: 1205958434476,
-      taskmaster4450: 201876824153,
-      theb0red1: 2002253743110,
-      yasu24: 2004134932
-    },
-    "stats": {
-        "tokenSupply": 11153569817,
-        "interestRate": 2100000,
-        "nodeRate": 2166,
-        "IPFSRate": 2000,
-        "budgetRate": 2000,
-        "maxBudget": 1000000000,
-        "savingsRate": 1000,
-        "marketingRate": 833,
-        "resteemReward": 10000,
-        "delegationRate": 2000,
-        "currationRate": 2000,
-        "icoPrice": 220,
-        "outOnBlock": 0,
-        "lastBlock": "QmZrySGT91mC2pcFWq9o8RvMAVJFFdasfbxUMgg5PNdXHG",
-        "hashLastIBlock": "Qmc1Teyx5XS4tS6ZFffuhbXSqsyHZCnqgsXHx8Tm9dvtK5"
-    },
-    "dex": {
-        "steem": {
-            "tick": "0.222222",
-            "buyOrders": [],
-            "sellOrders": [],
-            "his": [],
-            "days": [],
-            "weeks": [],
-            "months": []
-        },
-        "sbd": {
-            "tick": "0.100000",
-            "buyOrders": [],
-            "sellOrders": [{
-            }],
-            "his": [{}],
-            "days": [],
-            "weeks": [],
-            "months": []
-        }
-    },
-    "runners": {
-        "dlux-io": {
-            "self": "dlux-io",
-            "domain": "https://token.dlux.io"
-        },
-        "markegiles": {
-            "self": "markegiles",
-            "domain": "https://dlux-token-markegiles.herokuapp.com"
-        },
-        "inconceivable": {
-            "self": "inconceivable",
-            "domain": "https://dlux-token.herokuapp.com/"
-        }
-    },
-    "markets": {
-        "node": {
-            "dlux-io": {
-                "self": "dlux-io",
-                "domain": "https://token.dlux.io",
-                "bidRate": 2500,
-                "marketingRate": 2500,
-                "attempts": 39047,
-                "yays": 14190,
-                "wins": 302,
-                "contracts": 0,
-                "lastGood": 32255700,
-                "transfers": 0,
-                "report": {
-                    "feed": ["df62e44311c92f59ee5a4697fdda6ea644419d4d|32255576:@inconceivable - report has been processed", "0d8377371849c213112ad6a10f74d69a359048ef|32255575:@dlux-io - report has been processed", "78443a0378a709a3442c46583d8b63d3c70298a1|32255575:@markegiles - report has been processed"],
-                    "agreements": {
-                        "dlux-io": {
-                            "node": "dlux-io",
-                            "agreement": true,
-                            "top": true
-                        },
-                        "markegiles": {
-                            "node": "markegiles",
-                            "agreement": true,
-                            "top": true
-                        },
-                        "inconceivable": {
-                            "node": "inconceivable",
-                            "agreement": false
-                        }
-                    },
-                    "hash": "Qmc1Teyx5XS4tS6ZFffuhbXSqsyHZCnqgsXHx8Tm9dvtK5",
-                    "block": 32255601,
-                    "version": "v0.0.3a",
-                    "escrow": true,
-                    "transaction_id": "1da90187823852d0c642c3703e82dce0e4339037",
-                    "block_num": 32255678
-                }
-            },
-            "disregardfiat": {
-                "self": "disregardfiat",
-                "attempts": 3729,
-                "yays": 1689,
-                "wins": 0,
-                "contracts": 0,
-                "escrows": 0,
-                "lastGood": 32136800,
-                "report": {
-                    "feed": ["ac913f2977925d82900985a5996a924b9b6fb6aa|32142067:@disregardfiat - report has been processed", "7af5b2b05ae814b0a61a00f6f8751b9d02c1898b|32142067:@dlux-io - report has been processed", "3046c11972e808ae1b6705a9986bcea2d8fdbdda|32142067:@markegiles - report has been processed", "ac913f2977925d82900985a5996a924b9b6fb6aa|32142067:@disregardfiat - report has been processed", "7af5b2b05ae814b0a61a00f6f8751b9d02c1898b|32142067:@dlux-io - report has been processed", "3046c11972e808ae1b6705a9986bcea2d8fdbdda|32142067:@markegiles - report has been processed"],
-                    "agreements": {
-                        "disregardfiat": {
-                            "node": "disregardfiat",
-                            "agreement": true
-                        },
-                        "dlux-io": {
-                            "node": "dlux-io",
-                            "agreement": true,
-                            "top": true
-                        },
-                        "markegiles": {
-                            "node": "markegiles",
-                            "agreement": true,
-                            "top": true
-                        }
-                    },
-                    "hash": "QmZQLivyBMA2pe6U8s6bDfuaauC7VsHWhpMzJVZV5Qj6Bh",
-                    "block": 32142101,
-                    "version": "v0.0.3a",
-                    "escrow": true,
-                    "transaction_id": "add07cc9d06345476135f406c5b7cbe788ba77eb",
-                    "block_num": 32142175
-                },
-                "escrow": true,
-                "domain": "http://dlux-token.herokuapp.com",
-                "bidRate": 2000,
-                "marketingRate": 0
-            },
-            "markegiles": {
-                "self": "markegiles",
-                "attempts": 3724,
-                "yays": 2663,
-                "wins": 301,
-                "contracts": 0,
-                "escrows": 0,
-                "lastGood": 32255700,
-                "report": {
-                    "feed": ["df62e44311c92f59ee5a4697fdda6ea644419d4d|32255576:@inconceivable - report has been processed", "0d8377371849c213112ad6a10f74d69a359048ef|32255575:@dlux-io - report has been processed", "78443a0378a709a3442c46583d8b63d3c70298a1|32255575:@markegiles - report has been processed"],
-                    "agreements": {
-                        "markegiles": {
-                            "node": "markegiles",
-                            "agreement": true,
-                            "top": true
-                        },
-                        "dlux-io": {
-                            "node": "dlux-io",
-                            "agreement": true,
-                            "top": true
-                        },
-                        "inconceivable": {
-                            "node": "inconceivable",
-                            "agreement": false
-                        }
-                    },
-                    "hash": "Qmc1Teyx5XS4tS6ZFffuhbXSqsyHZCnqgsXHx8Tm9dvtK5",
-                    "block": 32255601,
-                    "version": "v0.0.3a",
-                    "escrow": true,
-                    "transaction_id": "9efb09fd6dbbdeb9bb479b31c61df8eed251e390",
-                    "block_num": 32255677
-                },
-                "escrow": true,
-                "domain": "https://dlux-token-markegiles.herokuapp.com",
-                "bidRate": 2000,
-                "marketingRate": 0
-            },
-            "inconceivable": {
-                "domain": "https://dlux-token.herokuapp.com/",
-                "self": "inconceivable",
-                "bidRate": 2000,
-                "marketingRate": 0,
-                "attempts": 1516,
-                "yays": 1346,
-                "wins": 297,
-                "contracts": 0,
-                "escrows": 0,
-                "lastGood": 32255700,
-                "report": {
-                    "feed": ["df62e44311c92f59ee5a4697fdda6ea644419d4d|32255576:@inconceivable - report has been processed", "0d8377371849c213112ad6a10f74d69a359048ef|32255575:@dlux-io - report has been processed", "78443a0378a709a3442c46583d8b63d3c70298a1|32255575:@markegiles - report has been processed"],
-                    "agreements": {
-                        "inconceivable": {
-                            "node": "inconceivable",
-                            "agreement": true,
-                            "top": true
-                        },
-                        "dlux-io": {
-                            "node": "dlux-io",
-                            "agreement": true,
-                            "top": true
-                        },
-                        "markegiles": {
-                            "node": "markegiles",
-                            "agreement": true,
-                            "top": true
-                        }
-                    },
-                    "hash": "Qmc1Teyx5XS4tS6ZFffuhbXSqsyHZCnqgsXHx8Tm9dvtK5",
-                    "block": 32255601,
-                    "version": "v0.0.3a",
-                    "escrow": true,
-                    "transaction_id": "e08327a7861f9b4740b7df8e3027408ba40a94ee",
-                    "block_num": 32255678
-                },
-                "escrow": true
-            }
-        }
-    },
-    "feed": {},
-    "nomention": {
-        "disregardfiat": true
-    }
-}
             } else {
                 startWith(config.engineCrank)
                 console.log(`${sh} failed to load, Replaying from genesis.\nYou may want to set the env var STARTHASH\nFind it at any token API such as token.dlux.io`)
@@ -972,13 +596,7 @@ function startApp() {
     processor.on('vote_content', function(json, from, active) {
         var powPromise = new Promise(function(resolve, reject) {
             store.get(['pow', from], function(e, a) {
-                if (e) {
-                    reject(e)
-                } else if (a == {}) {
-                    resolve(0)
-                } else {
-                    resolve(a)
-                }
+                if (e) { reject(e) } else if (a == {}) { resolve(0) } else { resolve(a) }
             });
         })
         var postPromise = new Promise(function(resolve, reject) {
@@ -1582,8 +1200,14 @@ function startApp() {
                         dataOps.push({type:'put',path:['escrow'.c.pending[0],c.txid+':dispute'],data:c.pending[1]})
                       }
                       dataOps.push({type:'del',path:['escrow',json.who,c.txid+':buyApprove']})
+                      if(json.who == config.username){
+                        plasma.pending.splice(plasma.pending.indexOf(c.txid+':buyApprove'),1)
+                      }
                     } else {
                       dataOps.push({type:'del',path:['escrow',json.who,c.txid+'listApprove']})
+                      if(json.who == config.username){
+                        plasma.pending.splice(plasma.pending.indexOf(c.txid+'listApprove'),1)
+                      }
                     }
                     dataOps.push({type:'put',path:['contracts',a[i].for,a[i].contract],data:c})
                     store.batch(dataOps)
@@ -1592,6 +1216,9 @@ function startApp() {
                   if (c.pending[1].approve == false){
                     dataOps.push({type:'del',path:['contracts', a.for, a.contract]})
                     dataOps.push({type:'del',path:['escrow',json.who,`deny${json.from}:${json.escrow_id}`]})
+                    if(json.who == config.username){
+                      plasma.pending.splice(plasma.pending.indexOf(`deny${json.from}:${json.escrow_id}`),1)
+                    }
                     store.batch(dataOps)
                     credit(json.who)
                   }
@@ -1615,6 +1242,9 @@ function startApp() {
                     {type:'put',path:['feed', `${json.block_num}:${json.transaction_id}`],data: `@${json.who} authorized ${json.agent} for ${c.txid}`},
                     {type:'del',path:['escrow',json.who,c.txid+`:dispute`]}
                   ])
+                  if(json.who == config.username){
+                    plasma.pending.splice(plasma.pending.indexOf(c.txid+`:dispute`),1)
+                  }
                   credit(json.who)
                 }
               })
@@ -1635,6 +1265,9 @@ function startApp() {
                       {type:'put',path:['feed', `${json.block_num}:${json.transaction_id}`],data:`@${json.who} released funds for @${owner}/${found}`},
                       {type:'del',path:['escrow',json.who,c.txid+`:release`]}
                     ])
+                    if(json.who == config.username){
+                      plasma.pending.splice(plasma.pending.indexOf(c.txid+`:release`),1)
+                    }
                     credit(json.who)
                   }
                 })
@@ -1870,6 +1503,9 @@ function startApp() {
                     for (b in a) {
                         if (a[b][1].permlink == json.permlink) {
                             store.batch([{type:'del',path:['escrow', json.voter, b]}])
+                            if(json.voter == config.username){
+                              plasma.pending.splice(plasma.pending.indexOf(b),1)
+                            }
                             break;
                         }
                     }
@@ -1902,6 +1538,9 @@ function startApp() {
                             ops.push({type:'put',path:['balances', json.from],data: parseInt(g+d)})
                             ops.push({type:'del',path:['escrow', json.from, i+':transfer']})
                             ops.push({type:'del',path:['contracts',seller,addr]})
+                            if(json.from == config.username){
+                              plasma.pending.splice(plasma.pending.indexOf(i+':transfer'),1)
+                            }
                             credit(json.from)
                             store.batch(ops)
                           } else {
@@ -2009,6 +1648,9 @@ function startApp() {
                     for (b in a) {
                         if (a[b][1].permlink == json.permlink && b == 'comment') {
                             ops.push({type:'del',path:['escrow', json.author, b]})
+                            if(json.author == config.username){
+                              plasma.pending.splice(plasma.pending.indexOf(b),1)
+                            }
                             store.batch(ops)
                             break;
                         }
@@ -2144,11 +1786,13 @@ function startApp() {
                     }
                     var ops = []
                     for (i = 0; i < NodeOps.length; i++) {
-                        if (NodeOps[i][0][1] == 0) {
+                        if (NodeOps[i][0][1] == 0 && NodeOps[i][0][0] == 0) {
                             ops.push(NodeOps[i][1])
                             NodeOps[i][0][0] = 1
                         } else if (NodeOps[i][0][0] < 100) {
                             NodeOps[i][0][0]++
+                        } else if (NodeOps[i][0][0] == 100) {
+                            NodeOps[i][0][0] = 0
                         }
                     }
                     if(ops.length){
@@ -2212,6 +1856,7 @@ function check() {
       store.get(['markets','node'],function(e,a){
         var b = a
         for (var account in b) {
+          console.log(account,b[account])
             var self = b[account].self
             plasma.markets.nodes[self] = {
                 self: self,
