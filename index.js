@@ -1411,6 +1411,7 @@ function startApp() {
               if (from === config.username && config.NODEDOMAIN) {
                 var op = {required_auth:json.required_auths,required_posting_auths:json.required_posting_auths,id:json.id,custom_json:json.custom_json}
                 var checker = ['custom_json',op]
+                if(!plasma.pending)plasma.pending = {}
                 if(plasma.pending[hashThis(JSON.stringify(checker))]){
                   delete plasma.pending[hashThis(JSON.stringify(checker))]
                   for(i=0;i<NodeOps.length;i++){
