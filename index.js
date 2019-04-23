@@ -1201,12 +1201,12 @@ function startApp() {
                       }
                       dataOps.push({type:'del',path:['escrow',json.who,c.txid+':buyApprove']})
                       if(json.who == config.username){
-                        plasma.pending.splice(plasma.pending.indexOf(c.txid+':buyApprove'),1)
+                        delete plasma.pending[c.txid+':buyApprove']
                       }
                     } else {
                       dataOps.push({type:'del',path:['escrow',json.who,c.txid+'listApprove']})
                       if(json.who == config.username){
-                        plasma.pending.splice(plasma.pending.indexOf(c.txid+'listApprove'),1)
+                        delete plasma.pending[c.txid+'listApprove']
                       }
                     }
                     dataOps.push({type:'put',path:['contracts',a[i].for,a[i].contract],data:c})
@@ -1217,7 +1217,7 @@ function startApp() {
                     dataOps.push({type:'del',path:['contracts', a.for, a.contract]})
                     dataOps.push({type:'del',path:['escrow',json.who,`deny${json.from}:${json.escrow_id}`]})
                     if(json.who == config.username){
-                      plasma.pending.splice(plasma.pending.indexOf(`deny${json.from}:${json.escrow_id}`),1)
+                      delete plasma.pending[`deny${json.from}:${json.escrow_id}`]
                     }
                     store.batch(dataOps)
                     credit(json.who)
@@ -1243,7 +1243,7 @@ function startApp() {
                     {type:'del',path:['escrow',json.who,c.txid+`:dispute`]}
                   ])
                   if(json.who == config.username){
-                    plasma.pending.splice(plasma.pending.indexOf(c.txid+`:dispute`),1)
+                    delete plasma.pending[c.txid+`:dispute`]
                   }
                   credit(json.who)
                 }
@@ -1266,7 +1266,7 @@ function startApp() {
                       {type:'del',path:['escrow',json.who,c.txid+`:release`]}
                     ])
                     if(json.who == config.username){
-                      plasma.pending.splice(plasma.pending.indexOf(c.txid+`:release`),1)
+                      delete plasma.pending[c.txid+`:release`]
                     }
                     credit(json.who)
                   }
@@ -1409,6 +1409,15 @@ function startApp() {
               })
             } else {
               if (from === config.username && config.NODEDOMAIN) {
+                var op = {required_auth:json.required_auths,required_posting_auths:json.required_posting_auths,id:json.id,custom_json:json.custom_json}
+                var checker = ['custom_json',op]
+                if(plasma.pending[hashThis(JSON.stringify(checker))]){
+                  delete plasma.pending[hashThis(JSON.stringify(checker))]
+                  for(i=0;i<NodeOps.length;i++){
+                    if(NodeOps[i][0] == 'custom_json'){NodeOps.splice(i,1);break;}
+                  }
+                }
+                NodeOps.push([[0, 0],op]);
                   console.log(json.transaction_id + '|' + json.block_num + `:This node posted a spurious report and in now attempting to register`)
                   transactor.json(config.username, config.active, 'node_add', {
                       domain: config.NODEDOMAIN,
@@ -1504,7 +1513,7 @@ function startApp() {
                         if (a[b][1].permlink == json.permlink) {
                             store.batch([{type:'del',path:['escrow', json.voter, b]}])
                             if(json.voter == config.username){
-                              plasma.pending.splice(plasma.pending.indexOf(b),1)
+                              delete plasma.pending[b]
                             }
                             break;
                         }
@@ -1539,7 +1548,7 @@ function startApp() {
                             ops.push({type:'del',path:['escrow', json.from, i+':transfer']})
                             ops.push({type:'del',path:['contracts',seller,addr]})
                             if(json.from == config.username){
-                              plasma.pending.splice(plasma.pending.indexOf(i+':transfer'),1)
+                              delete plasma.pending[i+':transfer']
                             }
                             credit(json.from)
                             store.batch(ops)
@@ -1649,7 +1658,7 @@ function startApp() {
                         if (a[b][1].permlink == json.permlink && b == 'comment') {
                             ops.push({type:'del',path:['escrow', json.author, b]})
                             if(json.author == config.username){
-                              plasma.pending.splice(plasma.pending.indexOf(b),1)
+                              delete plasma.pending[b]
                             }
                             store.batch(ops)
                             break;
@@ -1775,13 +1784,12 @@ function startApp() {
             store.get(['escrow', config.username], function(e, a) {
                 if (!e) {
                     for (b in a) {
-                      var pending = plasma.pending.indexOf(b)
-                      if (pending == -1){
+                      if (!plasma.pending[b]){
                         NodeOps.push([
                             [0, 0],
                             a[b][1]
                         ]);
-                        plasma.pending.push(b)
+                        plasma.pending[b] = true
                       }
                     }
                     var ops = []
@@ -2565,23 +2573,24 @@ function report(num) {
                 lte: num
             }, function(e, a) {
                 feed = a
-                NodeOps.push([
-                    [0, 0],
-                    ["custom_json",{
-                      required_auths:  [],
-                      required_posting_auths: [config.username],
-                      id: 'dluxT_report',
-                      json: JSON.stringify({
-                          feed: feed,
-                          agreements: agreements,
-                          hash: plasma.hashLastIBlock,
-                          block: plasma.hashBlock,
-                          version: VERSION,
-                          escrow: escrow,
-                          stash: plasma.privHash
-                      })
-                    }]
-                ]);
+                var op = ["custom_json",{
+                  required_auths:  [config.username],
+                  required_posting_auths: [],
+                  id: 'dluxT_report',
+                  json: JSON.stringify({
+                      feed: feed,
+                      agreements: agreements,
+                      hash: plasma.hashLastIBlock,
+                      block: plasma.hashBlock,
+                      version: VERSION,
+                      escrow: escrow,
+                      stash: plasma.privHash
+                  })
+                }]
+                if(!plasma.pending){
+                  plasma.pending[hashThis(JSON.stringify(op))]
+                }
+                NodeOps.push([[0, 0],op]);
                 /*
                 transactor.json(config.username, config.active, 'report', { //nodeops instead
                     feed: feed,
