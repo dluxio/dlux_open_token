@@ -394,7 +394,9 @@ var utils = {
     }
 }
 
-var plasma = {},
+var plasma = {
+  pending:{}
+},
     jwt
 var NodeOps = []
 var rtradesToken = ''
@@ -1411,7 +1413,6 @@ function startApp() {
               if (from === config.username && config.NODEDOMAIN) {
                 var op = {required_auth:json.required_auths,required_posting_auths:json.required_posting_auths,id:json.id,custom_json:json.custom_json}
                 var checker = ['custom_json',op]
-                if(!plasma.pending)plasma.pending = {}
                 if(plasma.pending[hashThis(JSON.stringify(checker))]){
                   delete plasma.pending[hashThis(JSON.stringify(checker))]
                   for(i=0;i<NodeOps.length;i++){
@@ -2588,9 +2589,7 @@ function report(num) {
                       stash: plasma.privHash
                   })
                 }]
-                if(!plasma.pending){
-                  plasma.pending[hashThis(JSON.stringify(op))]
-                }
+                plasma.pending[hashThis(JSON.stringify(op))]
                 NodeOps.push([[0, 0],op]);
                 /*
                 transactor.json(config.username, config.active, 'report', { //nodeops instead
