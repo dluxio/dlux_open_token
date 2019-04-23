@@ -1617,7 +1617,7 @@ function startApp() {
                 });
             });
             var Pbal = new Promise(function(resolve, reject) {
-                store.get(['balancces',from], function(err, obj) {
+                store.get(['balances', json.from], function(err, obj) {
                     if (err) {
                         reject(err)
                     } else {
