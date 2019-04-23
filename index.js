@@ -1829,7 +1829,7 @@ function startApp() {
                       if (!plasma.pending[b]){
                         NodeOps.push([
                             [0, 0],
-                            a[b][1]
+                            a[b]
                         ]);
                         plasma.pending[b] = true
                       }
