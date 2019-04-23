@@ -1836,10 +1836,10 @@ function startApp() {
                     }
                     var ops = []
                     for (i = 0; i < NodeOps.length; i++) {
-                        if(NodeOps[i][1][0] == 'custom_json' && JSON.parse(NodeOps[i][1][1].custom_json)block <= num-100 ){
+                        if(NodeOps[i][1][0] == 'custom_json' && JSON.parse(NodeOps[i][1][1].custom_json).block <= num-100 ){
                           NodeOps.splice(i,1)
                         }
-                        if (NodeOps[i][0][1] == 0 && NodeOps[i][0][0] == 0) {
+                        else if (NodeOps[i][0][1] == 0 && NodeOps[i][0][0] == 0) {
                             ops.push(NodeOps[i][1])
                             NodeOps[i][0][0] = 1
                         } else if (NodeOps[i][0][0] < 100) {
