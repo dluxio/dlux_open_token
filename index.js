@@ -43,7 +43,7 @@ var escrow = false
 var broadcast = 1
 const wif = steemClient.auth.toWif(config.username, config.active, 'active')
 const resteemAccount = 'dlux-io';
-var startingBlock = 32255701;
+var startingBlock = 32396354;
 var current, dsteem, testString
 
 const prefix = 'dluxT_';
@@ -459,6 +459,18 @@ function startWith(sh) {
                 //store.batch([{type:'del',path:[]}])
                 store.del([],function(e){
                   if(!e){
+                    if(!config.engineCrank){
+                      store.put([], data[1], function(err) {
+                          if(err){ console.log(err)} else{
+                            store.get(['balances','ra'],function(error,returns){
+                              if(!error){
+                                console.log(returns)
+                              }
+                            })
+                            startApp()
+                          }
+                      })
+                    } else {
                     store.put([], data[1], function(err) {
                         if(err){ console.log(err)} else{
                           store.get(['balances','ra'],function(error,returns){
@@ -469,6 +481,7 @@ function startWith(sh) {
                           startApp()
                         }
                     })
+                  }
                   } else {console.log(e)}
                 })
             } else {
@@ -598,14 +611,14 @@ function startApp() {
     processor.on('vote_content', function(json, from, active) {
         var powPromise = new Promise(function(resolve, reject) {
             store.get(['pow', from], function(e, a) {
-                if (e) { reject(e) } else if (a == {}) { resolve(0) } else { resolve(a) }
+                if (e) { reject(e) } else if (isEmpty(a)) { resolve(0) } else { resolve(a) }
             });
         })
         var postPromise = new Promise(function(resolve, reject) {
             store.get(['posts', `${json.author}/${json.permlink}`], function(e, a) {
                 if (e) {
                     reject(e)
-                } else if (a == {}) {
+                } else if (isEmpty(a)) {
                     resolve(0)
                 } else {
                     resolve(a)
@@ -616,7 +629,7 @@ function startApp() {
             store.get(['rolling', from], function(e, a) {
                 if (e) {
                     reject(e)
-                } else if (a == {}) {
+                } else if (isEmpty(a)) {
                     resolve(0)
                 } else {
                     resolve(a)
@@ -627,7 +640,7 @@ function startApp() {
             store.get(['pow', 'n', from], function(e, a) {
                 if (e) {
                     reject(e)
-                } else if (a == {}) {
+                } else if (isEmpty(a)) {
                     resolve(0)
                 } else {
                     resolve(a)
@@ -672,12 +685,12 @@ function startApp() {
     processor.on('dex_buy', function(json, from, active) {
       var Pbal = new Promise(function(resolve, reject) {
           store.get(['balances', from], function(e, a) {
-              if (e) { reject(e) } else if (a === {}) { resolve(0) } else { resolve(a) }
+              if (e) { reject(e) } else if (isEmpty(a)) { resolve(0) } else { resolve(a) }
           });
       })
       var Pfound = new Promise(function(resolve, reject) {
           store.get(['contracts', json.for,json.contract], function(e, a) {
-              if (e) { reject(e) } else if (a == {}) { resolve(0) } else { resolve(a) }
+              if (e) { reject(e) } else if (isEmpty(a)) { resolve(0) } else { resolve(a) }
           });
       })
       Promise.all([Pbal,Pfound])
@@ -687,17 +700,17 @@ function startApp() {
                   if (found.sbd)type='sbd'
                   var PbalTo = new Promise(function(resolve, reject) {
                       store.get(['balances', agent], function(e, a) {
-                          if (e) {reject(e)} else if (a == {}) { resolve(0) } else { resolve(a) }
+                          if (e) {reject(e)} else if (isEmpty(a)) { resolve(0) } else { resolve(a) }
                       });
                   })
                   var PbalFor = new Promise(function(resolve, reject) {
                       store.get(['balances', found.from], function(e, a) {
-                          if (e) { reject(e) } else if (a == {}) { resolve(0) } else { resolve(a) }
+                          if (e) { reject(e) } else if (isEmpty(a)) { resolve(0) } else { resolve(a) }
                       });
                   })
                   var Pdex = new Promise(function(resolve, reject) {
                       store.get(['dex', type], function(e, a) {
-                          if (e) { reject(e) } else if (a == {}) { resolve(0) } else { resolve(a) }
+                          if (e) { reject(e) } else if (isEmpty(a)) { resolve(0) } else { resolve(a) }
                       });
                   })
                   Promise.all([PbalTo,Pfound])
@@ -853,28 +866,28 @@ function startApp() {
                 switch (b.type) {
                   case 'ss':
                     store.get(['dex', 'steem','sellOrders',`${b.rate}:${b.txid}`], function(e, a) {
-                        if (e) { console.log(e) } else if (a == {}) { console.log('Nothing here'+b.txid) } else {
+                        if (e) { console.log(e) } else if (isEmpty(a)) { console.log('Nothing here'+b.txid) } else {
                           release(from, b.txid)
                         }
                     });
                     break;
                   case 'ds':
                     store.get(['dex', 'sbd','sellOrders',`${b.rate}:${b.txid}`], function(e, a) {
-                        if (e) { console.log(e) } else if (a == {}) { console.log('Nothing here'+b.txid) } else {
+                        if (e) { console.log(e) } else if (isEmpty(a)) { console.log('Nothing here'+b.txid) } else {
                           release(from, b.txid)
                         }
                     });
                     break;
                   case 'sb':
                     store.get(['dex', 'steem','buyOrders',`${b.rate}:${b.txid}`], function(e, a) {
-                        if (e) { console.log(e) } else if (a == {}) { console.log('Nothing here'+b.txid) } else {
+                        if (e) { console.log(e) } else if (isEmpty(a)) { console.log('Nothing here'+b.txid) } else {
                           release(from, b.txid)
                         }
                     });
                     break;
                   case 'db':
                       store.get(['dex', 'sbd','buyOrders',`${b.rate}:${b.txid}`], function(e, a) {
-                          if (e) { console.log(e) } else if (a == {}) { console.log('Nothing here'+b.txid) } else {
+                          if (e) { console.log(e) } else if (isEmpty(a)) { console.log('Nothing here'+b.txid) } else {
                             release(from, b.txid)
                           }
                       });
@@ -899,27 +912,27 @@ function startApp() {
         } catch (e) {}
         var PfromBal = new Promise(function(resolve, reject) {
             store.get(['balances', json.from], function(e, a) {
-                if (e) { reject(e) } else if (a == {}) { resolve(0) } else { resolve(a) }
+                if (e) { reject(e) } else if (isEmpty(a)) { resolve(0) } else { resolve(a) }
             });
         })
         var PtoBal = new Promise(function(resolve, reject) {
             store.get(['balances', json.to], function(e, a) {
-                if (e) { reject(e) } else if (a == {}) { resolve(0) } else { resolve(a) }
+                if (e) { reject(e) } else if (isEmpty(a)) { resolve(0) } else { resolve(a) }
             });
         })
         var PtoNode = new Promise(function(resolve, reject) {
             store.get(['markets', node, json.to], function(e, a) {
-                if (e) { reject(e) } else if (a == {}) { resolve(0) } else { resolve(a) }
+                if (e) { reject(e) } else if (isEmpty(a)) { resolve(0) } else { resolve(a) }
             });
         })
         var PagentNode = new Promise(function(resolve, reject) {
             store.get(['markets', node, json.agent], function(e, a) {
-                if (e) { reject(e) } else if (a == {}) { resolve(0) } else { resolve(a) }
+                if (e) { reject(e) } else if (isEmpty(a)) { resolve(0) } else { resolve(a) }
             });
         })
         var Pcontract = new Promise(function(resolve, reject) {
             store.get(['contracts', seller, meta], function(e, a) {
-                if (e) { reject(e) } else if (a == {}) { resolve(0) } else { resolve(a) }
+                if (e) { reject(e) } else if (isEmpty(a)) { resolve(0) } else { resolve(a) }
             });
         })
         Promise.all([PfromBal,PtoBal,PtoNode,PagentNode,Pcontract]).then(function(v) {
@@ -1324,7 +1337,7 @@ function startApp() {
             }
             store.get(['markets','node',from],function(e,a){
               if(!e){
-                if(a==={}){
+                if(isEmpty(a)){
                   store.batch([{type:'put',path:['markets','node',from], data:{
                       domain: json.domain,
                       self: from,
@@ -1836,10 +1849,7 @@ function startApp() {
                     }
                     var ops = []
                     for (i = 0; i < NodeOps.length; i++) {
-                        if(NodeOps[i][1][0] == 'custom_json' && JSON.parse(NodeOps[i][1][1].custom_json).block <= num-100 ){
-                          NodeOps.splice(i,1)
-                        }
-                        else if (NodeOps[i][0][1] == 0 && NodeOps[i][0][0] == 0) {
+                        if (NodeOps[i][0][1] == 0 && NodeOps[i][0][0] == 0) {
                             ops.push(NodeOps[i][1])
                             NodeOps[i][0][0] = 1
                         } else if (NodeOps[i][0][0] < 100) {
@@ -1861,6 +1871,8 @@ function startApp() {
                                     if (NodeOps[q][0][1] == 1) {
                                         NodeOps[q][0][1] = 0
                                     }
+                                    if (NodeOps[q][1][0] == 'custom_json')
+                                      NodeOps.splice(q,1)
                                 }
                             } else {
                                 for (q = 0; q < ops.length; q++) {
@@ -1909,7 +1921,6 @@ function check() {
       store.get(['markets','node'],function(e,a){
         var b = a
         for (var account in b) {
-          console.log(account,b[account])
             var self = b[account].self
             plasma.markets.nodes[self] = {
                 self: self,
@@ -2084,10 +2095,10 @@ function tally(num) {
       rbal += mint
   }
   store.batch([
-    {type:'put', path:['stats'], data:stats},
-    {type:'put', path:['runners'], data:runners},
-    {type:'put', path:['markets','node'], data:nodes},
-    {type:'put', path:['balances','ra'], data:rbal}])
+    {type:'put', path:['stats'], data: stats},
+    {type:'put', path:['runners'], data: runners},
+    {type:'put', path:['markets','node'], data: nodes},
+    {type:'put', path:['balances','ra'], data: rbal}])
   if (consensus && consensus != plasma.hashLastIBlock && processor.isStreaming()) {
       //exit(consensus)
       var errors = ['failed Consensus']
@@ -2110,7 +2121,7 @@ function release(from,txid) {
         switch (a.type) {
           case 'ss':
             store.get(['dex', 'steem','sellOrders',`${a.rate}:${a.txid}`], function(e, r) {
-                if (e) { console.log(e) } else if (r == {}) { console.log('Nothing here'+a.txid) } else {
+                if (e) { console.log(e) } else if (isEmpty(r)) { console.log('Nothing here'+a.txid) } else {
                   add(r.from,r.amount)
                   ops.push({type:'del',path:['contracts', from, txid]})
                   ops.push({type:'del',path:['dex', 'steem','sellOrders',`${a.rate}:${a.txid}`]})
@@ -2120,7 +2131,7 @@ function release(from,txid) {
             break;
           case 'ds':
             store.get(['dex', 'sbd','sellOrders',`${a.rate}:${a.txid}`], function(e, r) {
-                if (e) { console.log(e) } else if (r == {}) { console.log('Nothing here'+a.txid) } else {
+                if (e) { console.log(e) } else if (isEmpty(r)) { console.log('Nothing here'+a.txid) } else {
                   add(r.from,r.amount)
                   ops.push({type:'del',path:['contracts', from, txid]})
                   ops.push({type:'del',path:['dex', 'sbd','sellOrders',`${a.rate}:${a.txid}`]})
@@ -2130,7 +2141,7 @@ function release(from,txid) {
             break;
           case 'sb':
             store.get(['dex', 'steem','buyOrders',`${a.rate}:${a.txid}`], function(e, r) {
-                if (e) { console.log(e) } else if (r == {}) { console.log('Nothing here'+a.txid) } else {
+                if (e) { console.log(e) } else if (isEmpty(r)) { console.log('Nothing here'+a.txid) } else {
                   ops.push({type:'put',path:['contract', from, txid, 'pending'],data:r.reject[0]})
                   ops.push({type:'put',path:['escrow', r.reject[0][0],r.txid],data:r.reject[0][1]})
                   ops.push({type:'del',path:['dex', 'steem','buyOrders',`${a.rate}:${a.txid}`]})
@@ -2140,7 +2151,7 @@ function release(from,txid) {
             break;
           case 'db':
               store.get(['dex', 'sbd','buyOrders',`${a.rate}:${a.txid}`], function(e, r) {
-                  if (e) { console.log(e) } else if (r == {}) { console.log('Nothing here'+a.txid) } else {
+                  if (e) { console.log(e) } else if (isEmpty(r)) { console.log('Nothing here'+a.txid) } else {
                     ops.push({type:'put',path:['contract', from, txid, 'pending'],data:r.reject[0]})
                     ops.push({type:'put',path:['escrow', r.reject[0][0],r.txid],data:r.reject[0][1]})
                     ops.push({type:'del',path:['dex', 'sbd','buyOrders',`${a.rate}:${a.txid}`]})
@@ -2163,7 +2174,7 @@ function dao(num) {
                 if (err) {
                   reject(err)
                 } else {
-                  var news = obj !== {} ? '*****\n### News from Humans!\n' : ''
+                  var news = isEmpty(obj) ? '*****\n### News from Humans!\n' : ''
                   for (var title in obj) { //postQueue[title].{title,text}
                       news = news + `#### ${title}\n`
                       news = news + `${obj[title].text}\n\n`
@@ -2594,23 +2605,24 @@ function report(num) {
             }
         }
         store.children(['runners'], function(e, a) {
-
             for (var self in a) {
-              const agree = plasma.markets.nodes[self] ? plasma.markets.nodes[self].agreement : false
-              const test = plasma.markets.nodes[self] ? plasma.markets.nodes[self].agreement : false
-                if (agreements[self]) {
-                    agreements[self].top = true
-                } else if (agree) {
-                    agreements[self] = {
-                        node: self,
-                        agreement: true
-                    }
-                } else {
-                    agreements[self] = {
-                        node: self,
-                        agreement: false
-                    }
-                }
+              if(a.indexOf(a[self] == self)){
+                const agree = plasma.markets.nodes[a[self]] ? plasma.markets.nodes[a[self]].agreement : false
+                const test = plasma.markets.nodes[a[self]] ? plasma.markets.nodes[a[self]].agreement : false
+                  if (agreements[a[self]]) {
+                      agreements[a[self]].top = true
+                  } else if (agree) {
+                      agreements[a[self]] = {
+                          node: a[self],
+                          agreement: true
+                      }
+                  } else {
+                      agreements[a[self]] = {
+                          node: a[self],
+                          agreement: false
+                      }
+                  }
+              }
             }
             var feed = []
             store.someChildren(['feed'], {
@@ -2632,7 +2644,8 @@ function report(num) {
                       stash: plasma.privHash
                   })
                 }]
-                plasma.pending[op]
+                NodeOps.unshift([[0,0],op])
+                //plasma.pending[op]
                 /*
                 transactor.json(config.username, config.active, 'report', { //nodeops instead
                     feed: feed,
@@ -2755,6 +2768,8 @@ function asyncIpfsSaveState(blocknum, hashable) {
         })
     })
 };
+
+function isEmpty(obj) { for(var key in obj) { if(obj. hasOwnProperty(key)) return false; } return true; }
 
 function sortBuyArray(array, key) { //seek insert instead
     return array.sort(function(a, b) {
