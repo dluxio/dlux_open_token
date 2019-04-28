@@ -401,9 +401,9 @@ var NodeOps = []
 var rtradesToken = ''
 var selector = 'dlux-io'
 if (config.username == selector) {
-    selector = `https://dlux-token-markegiles.herokuapp.com/`
+    selector = `https://dlux-token-markegiles.herokuapp.com/state`
 } else {
-    selector = `https://token.dlux.io/markets`
+    selector = `https://token.dlux.io/state`
 }
 if (config.rta && config.rtp) {
     rtrades.handleLogin(config.rta, config.rtp)
@@ -1869,8 +1869,6 @@ function startApp() {
                                     if (NodeOps[q][0][1] == 1) {
                                         NodeOps[q][0][1] = 0
                                     }
-                                    if (NodeOps[q][1][0] == 'custom_json')
-                                      NodeOps.splice(q,1)
                                 }
                             } else {
                                 for (q = 0; q < ops.length; q++) {

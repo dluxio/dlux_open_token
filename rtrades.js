@@ -8,7 +8,7 @@ module.exports = {
   tries: 0,
   setJWT: function (jwt){module.exports.jwt=jwt},
   handleLogin: function (username, password){
-        fetch('https://dev.api.temporal.cloud/v2/auth/login', {
+        fetch('https://api.temporal.cloud/v2/auth/login', {
             method: 'POST',
             headers: {
                 'Content-Type': 'text/plain'
@@ -25,11 +25,13 @@ module.exports = {
         })
             .then(response => {
                 if (response.expire) {
+                    console.log('Got temporal JWT')
                     module.exports.jwt = response.token,
                     module.exports.up = password.toString(),
                     module.exports.un = username.toString()
                 }
             })
+            .catch(e=>{console.log(e)})
     },
 
 handlePinFile: function (ipfsHash){
