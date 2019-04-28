@@ -2698,6 +2698,7 @@ function chronAssign(block,op){
       if (e) {
           console.log(e)
       } else {
+        console.log(a)
           var t
           if (a.length && a.length < 10) {
               t = a.length
