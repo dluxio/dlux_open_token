@@ -53,7 +53,7 @@ handlePinFile: function (ipfsHash){
         }
     }.bind(this));
 
-    xhr.open("POST", "https://dev.api.temporal.cloud/v2/ipfs/public/pin/" + ipfsHash);
+    xhr.open("POST", "https://api.temporal.cloud/v2/ipfs/public/pin/" + ipfsHash);
     xhr.setRequestHeader("Cache-Control", "no-cache");
     xhr.setRequestHeader("Authorization", "Bearer " + module.exports.jwt);
     xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded')
@@ -78,7 +78,7 @@ handleObject: function (hash){
         }
     }.bind(this));
 
-    xhr_stat.open("GET", "https://dev.api.temporal.cloud/v2/ipfs/public/stat/" + hash);
+    xhr_stat.open("GET", "https://api.temporal.cloud/v2/ipfs/public/stat/" + hash);
     xhr_stat.setRequestHeader("Cache-Control", "no-cache");
     xhr_stat.setRequestHeader("Authorization", "Bearer " + module.exports.jwt);
     xhr_stat.send();
