@@ -1524,6 +1524,7 @@ function startApp() {
                     permlink: json.permlink
                 })
                 ops.push({type:'put',path:['feed', `${json.block_num}:${json.transaction_id}`], data: `@${json.author}/${json.permlink} added to dlux rewardable content`})
+                console.log(ops)
                 store.batch(ops)
                 if (config.username == 'dlux-io') {
                     client.database.call('get_content', [json.author, json.permlink])
