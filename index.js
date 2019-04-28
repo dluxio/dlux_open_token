@@ -1514,8 +1514,7 @@ function startApp() {
                     author: json.author,
                     permlink: json.permlink,
                     title: json.title,
-                    totalWeight: 1,
-                    voters: []
+                    totalWeight: 1
                 }})
                 chronAssign(json.block_num + 300000, {
                     block: parseInt(json.block_num + 300000),
