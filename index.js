@@ -654,16 +654,17 @@ function startApp() {
                     ops=[]
                 if (pow >= 1) {
                     if (post) {
-                        if(!post.voters){post.voters=[]}
+                        console.log(post)
+                        if(!post.voters){post.voters={}}
                         if (!rolling) {
                             rolling = parseInt((nft + pow) * 10)
                         }
                         const w = json.weight > 0 && json.weight < 10001 ? parseInt(json.weight * rolling / 100000) : parseInt(rolling / 10)
                         post.totalWeight += parseInt(json.weight * rolling / 100000)
-                        post.voters.push({
-                            from: from,
+                        post.voters[from] = {
+                            block: json.block_num,
                             weight: w
-                        })
+                        }
                         ops.push({type:'put',path:['posts', `${json.author}/${json.permlink}`],data: post})
                         ops.push({type:'put',path:['feed', `${json.block_num}:${json.transaction_id}`],data: `${from} voted for @${json.author}/${json.permlink}`})
                         rolling -= w
