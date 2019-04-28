@@ -609,7 +609,7 @@ function startApp() {
     processor.on('vote_content', function(json, from, active) {
         var powPromise = new Promise(function(resolve, reject) {
             store.get(['pow', from], function(e, a) {
-                if (e) { reject(e) } else if (isEmpty(a)) { resolve(0) } else { resolve(a) }
+                if (e) { reject(e) } else if (isEmpty(a) && typeof a != 'number') { resolve(0) } else { resolve(a) }
             });
         })
         var postPromise = new Promise(function(resolve, reject) {
@@ -1509,7 +1509,7 @@ function startApp() {
         var ops = []
         for (var i = 0; i < filter.length; i++) {
             if (filter[i].account == 'dlux-io' && filter[i].weight > 999) {
-                ops.push({type:'put',path:['posts',`${json.block_num}`, `${json.author}/${json.permlink}`], data:{
+                ops.push({type:'put',path:['posts',`${json.author}/${json.permlink}`], data:{
                     block: json.block_num,
                     author: json.author,
                     permlink: json.permlink,
@@ -1776,7 +1776,7 @@ function startApp() {
                                     post: b,
                                     totalWeight: w
                                 }})
-                                ops.push({type:'del',path:['posts',`${num}`, `${b.author}/${b.permlink}`]})
+                                ops.push({type:'del',path:['posts',`${b.author}/${b.permlink}`]})
                                 store.batch(ops)
                             })
                             console.log(current + `:${post.author}/${post.permlink} voting expired and queued for payout`)
