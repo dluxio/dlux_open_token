@@ -654,6 +654,7 @@ function startApp() {
                     ops=[]
                 if (pow >= 1) {
                     if (post) {
+                        if(!post.voters){post.voters=[]}
                         if (!rolling) {
                             rolling = parseInt((nft + pow) * 10)
                         }
