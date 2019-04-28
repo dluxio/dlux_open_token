@@ -1,6 +1,5 @@
 const steem = require('dsteem');
 const steemState = require('./processor');
-const steemTransact = require('steem-transact');
 const readline = require('readline');
 const safeEval = require('safe-eval');
 const IPFS = require('ipfs-api');
@@ -35,7 +34,7 @@ function hashThis(data) {
     return multihash.toString()
 }
 const testing = true
-const VERSION = 'v0.0.3a'
+const VERSION = 'v0.0.4a'
 const api = express()
 var http = require('http').Server(api);
 //const io = require('socket.io')(http)
@@ -46,7 +45,7 @@ const resteemAccount = 'dlux-io';
 var startingBlock = 32396354;
 var current, dsteem, testString
 
-const prefix = 'dluxT_';
+const prefix = 'dlux_';
 const streamMode = args.mode || 'irreversible';
 console.log("Streaming using mode", streamMode);
 var client = new steem.Client(config.clientURL);
@@ -400,7 +399,6 @@ var plasma = {
     jwt
 var NodeOps = []
 var rtradesToken = ''
-const transactor = steemTransact(client, steem, prefix);
 var selector = 'dlux-io'
 if (config.username == selector) {
     selector = `https://dlux-token-markegiles.herokuapp.com/`
@@ -2380,7 +2378,7 @@ function dao(num) {
           }
           bals[i] += k
           bals.rd -= k
-          const _at = _atfun(node)
+          const _at = _atfun(i)
           post = post + `* ${parseFloat(parseInt(k)/1000).toFixed(3)} DLUX for ${_at}${i}'s ${parseFloat(deles[i]/1000000).toFixed(1)} Mvests.\n`
           console.log(current + `:${k} DLUX awarded to ${i} for ${deles[i]} VESTS`)
       }
