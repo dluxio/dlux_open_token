@@ -2714,7 +2714,7 @@ function chronAssign(block,op){
               var temp = t
               t = `${block}:${temp}`
           }
-          store.batch([{type:'put',path:['chrono', chronAssign],data:op}])
+          store.batch([{type:'put',path:['chrono', t],data:op}])
       }
   })
 }
