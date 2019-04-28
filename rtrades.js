@@ -45,6 +45,7 @@ handlePinFile: function (ipfsHash){
             let result = JSON.parse(xhr.responseText);
             if (result.code === 200) {
               resolve(result)
+              console.log('pinned', ipfsHash)
             }
 
             else {
