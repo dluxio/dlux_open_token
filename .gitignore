@@ -1,6 +1,7 @@
 deploy.env
 event.json
 .lambda
+.db
 claudia.json
 context.json
 event_sources.json
