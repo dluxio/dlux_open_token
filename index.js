@@ -664,7 +664,7 @@ function startApp() {
                             from: from,
                             weight: w
                         })
-                        ops.push({type:'put',path:['posts', `${json.block_num}`,`${json.author}/${json.permlink}`],data: post})
+                        ops.push({type:'put',path:['posts', `${json.author}/${json.permlink}`],data: post})
                         ops.push({type:'put',path:['feed', `${json.block_num}:${json.transaction_id}`],data: `${from} voted for @${json.author}/${json.permlink}`})
                         rolling -= w
                         ops.push({type:'put',path:['rolling', from], data: rolling})
