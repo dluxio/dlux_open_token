@@ -49,6 +49,7 @@ handlePinFile: function (ipfsHash){
             }
 
             else {
+              console.log(result)
               return reject()
             }
         }
