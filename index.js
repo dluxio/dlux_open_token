@@ -1513,8 +1513,8 @@ function startApp() {
                     block: json.block_num,
                     author: json.author,
                     permlink: json.permlink,
-                    title: json.title,
-                    totalWeight: 1
+                    totalWeight: 1,
+                    voters: []
                 }})
                 chronAssign(json.block_num + 300000, {
                     block: parseInt(json.block_num + 300000),
@@ -1523,7 +1523,6 @@ function startApp() {
                     permlink: json.permlink
                 })
                 ops.push({type:'put',path:['feed', `${json.block_num}:${json.transaction_id}`], data: `@${json.author}/${json.permlink} added to dlux rewardable content`})
-                console.log(ops)
                 store.batch(ops)
                 if (config.username == 'dlux-io') {
                     client.database.call('get_content', [json.author, json.permlink])
