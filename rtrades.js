@@ -101,12 +101,14 @@ checkNpin: function (assets){
     for (var i = 0;i < values.length;i++){
       totalBytes += values[i].response.CumulativeSize
     }
+    console.log(values)
     resolve(totalBytes)
     if(totalBytes < 134217728){
       for (var i = 0; i < hashes.length; i++){
         pins.push(module.exports.handlePinFile(hashes[i]))
 
       }
+      console.log(pins)
       Promise.all(pins).then(function(result) {
         module.exports.tries = 0
         console.log(result,'pinned hashes')
@@ -118,8 +120,8 @@ checkNpin: function (assets){
             if (module.exports.tires < 3){
               module.exports.checkNpin(assets)
             }
+            console.log('BAD',error)
         } else {
-        console.log('BAD',error)
       }
     })
     } else {console.log('Pin request too large:'+totalBytes)}
