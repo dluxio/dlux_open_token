@@ -469,7 +469,7 @@ function startWith(sh) {
                           }
                       })
                     } else {
-                    store.put([], data[0], function(err) {
+                    store.put([], data[1], function(err) {
                         if(err){ console.log(err)} else{
                           store.get(['balances','ra'],function(error,returns){
                             if(!error){
