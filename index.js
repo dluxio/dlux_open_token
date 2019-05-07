@@ -2074,6 +2074,7 @@ function tally(num) {
       }
       tally.results = []
       for (var node in runners) {
+          queue.push(node)
           delete tally.election[node]
       }
       for (var node in tally.election) {
@@ -2092,7 +2093,9 @@ function tally(num) {
           tally.results.sort(function(a, b) {
               return a[1] - b[1];
           })
-          queue = tally.results
+          for (p=0;p<tally.results.length;p++){
+            queue.push(tally.results[p][1])
+          }
           tally.winner = tally.results.pop()
           runners[tally.winner[0]] = {
               self: nodes[tally.winner[0]].self,
