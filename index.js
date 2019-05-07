@@ -1990,7 +1990,7 @@ function tally(num) {
           }
       });
   });
-  Promise.all([Prunners, Pnode, Pstats,Prb,Pqueue]).then(function(v) {
+  Promise.all([Prunners, Pnode, Pstats,Prb]).then(function(v) {
   var runners = v[0], nodes = v[1], stats = v[2], rbal = v[3], queue = []
   var tally = {
       agreements: {
