@@ -1990,17 +1990,8 @@ function tally(num) {
           }
       });
   });
-  var Pqueue = new Promise(function(resolve, reject) {
-      store.get(['queue'], function(err, obj) {
-          if (err) {
-              reject(err)
-          } else {
-              resolve(obj)
-          }
-      });
-  });
   Promise.all([Prunners, Pnode, Pstats,Prb,Pqueue]).then(function(v) {
-  var runners = v[0], nodes = v[1], stats = v[2], rbal = v[3], queue = v[4]
+  var runners = v[0], nodes = v[1], stats = v[2], rbal = v[3], queue = []
   var tally = {
       agreements: {
           runners: {},
