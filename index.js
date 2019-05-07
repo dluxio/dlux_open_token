@@ -1496,6 +1496,8 @@ function startApp() {
       }
   });
 
+
+
     processor.onOperation('comment_options', function(json, from) { //grab posts to reward
         try {
             var filter = json.extensions[0][1].beneficiaries
@@ -1505,40 +1507,214 @@ function startApp() {
         var ops = []
         for (var i = 0; i < filter.length; i++) {
             if (filter[i].account == 'dlux-io' && filter[i].weight > 999) {
-                ops.push({type:'put',path:['posts',`${json.author}/${json.permlink}`], data:{
-                    block: json.block_num,
-                    author: json.author,
-                    permlink: json.permlink,
-                    totalWeight: 1,
-                    voters: [],
-                    resteems: []
-                }})
+              store.get(['queue'], function(e,a){
+                if(e)console.log(e)
+                var queue = a
                 chronAssign(json.block_num + 300000, {
                     block: parseInt(json.block_num + 300000),
                     op: 'post_reward',
                     author: json.author,
                     permlink: json.permlink
                 })
+                var assignments = [0,0,0,0]
+                if (config.username == 'dlux-io') { //pin content ... hard set here since rewards are still hard set as well
+                  assignments[0] = 1
+                }
+                if(!e){
+                  assignments[1] = queue.shift()
+                  assignments[2] = queue.shift()
+                  assignments[3] = queue.shift()
+                  queue.push(assignments[1])
+                  queue.push(assignments[2])
+                  queue.push(assignments[3])
+                }
+                ops.push({type:'put',path:['posts',`${json.author}/${json.permlink}`], data:{
+                    block: json.block_num,
+                    author: json.author,
+                    permlink: json.permlink,
+                    totalWeight: 1,
+                    voters: [],
+                    resteems: [],
+                    credentials:{},
+                    signatures:{},
+                    customJSON:{
+                      assignments: ['dlux-io',assignments[1],assignments[2],assignments[3]]
+                    },
+                }})
+                ops.push({type:'put',path:['queue'],data:queue})
                 ops.push({type:'put',path:['feed', `${json.block_num}:${json.transaction_id}`], data: `@${json.author}|${json.permlink} added to dlux rewardable content`})
                 store.batch(ops)
-                if (config.username == 'dlux-io') {
+                if(assignments[0]||assignments[1]||assignments[2]||assignments[3]){
                     client.database.call('get_content', [json.author, json.permlink])
                         .then(result => {
+                          var trimmed = JSON.parse(result.json_metadata), final = {a:[]}
+                          for(j in trimmed.assets){
+                            if (trimmed.assets[j].hash.length == 32)final.a.push(trimmed.assets[j].hash) //a for assets
+                          }
+                          if (trimmed.app.length < 33){ //p for process
+                            final.p = trimmed.app
+                          }
+                          try{
+                          if (trimmed.Hash360.length == 32){ //s for surround
+                            final.s = trimmed.Hash360
+                          }} catch(e){}
+                          if (trimmed.vrHash.length == 32){ //e for executable
+                            final.e = trimmed.vrHash
+                          }
+                          try{
+                          if (JSON.stringify(trimmed.loc).length < 1024){ //l for spactial indexing
+                            final.l = trimmed.loc
+                          }}catch(e){}
+                          final.t = trimmed.tags
+                          console.log(value)
+                          if(assignments[0]){
                             var bytes = rtrades.checkNpin(JSON.parse(result.json_metadata)
                                 .assets)
-/*
                             bytes.then(function(value) {
-                                store.get(['stats'], function(e, a) {
-                                    ops.push({type:'put',path:['stats', 'totalBytes'], data: (a.totalBytes + value)})
-                                    ops.push({type:'put',path:['stats', 'bytesToday'], data: (a.bytesToday + value)})
+                              var op = ["custom_json",{
+                                required_auths:  [config.username],
+                                required_posting_auths: [],
+                                id: 'dlux_cjv',//custom json verification
+                                json: JSON.stringify({
+                                    a: json.author,
+                                    p: json.permlink,
+                                    c: final, //customJson trimmed
+                                    b: value //amount of bytes posted
                                 })
-                            })
-*/
+                              }]
+                              NodeOps.unshift([[0,0],op])
+                            }).catch(e=>{console.log(e)})
+                          } else {
+                            var op = ["custom_json",{
+                              required_auths:  [config.username],
+                              required_posting_auths: [],
+                              id: 'dlux_cjv',//custom json verification
+                              json: JSON.stringify({
+                                  a: json.author,
+                                  p: json.permlink,
+                                  c: final
+                              })
+                            }]
+                            NodeOps.unshift([[0,0],op])
+                          }
                         }).catch(e=>{console.log(e)});
-                }
-            }
+              }
+            })
         }
+      }
     });
+
+    processor.on('cjv', function(json, from, active) {
+        var postPromise = new Promise(function(resolve, reject) {
+            store.get(['posts', `${json.a}/${json.p}`], function(e, a) {
+                if (e) {
+                    reject(e)
+                } else if (isEmpty(a)) {
+                    resolve(0)
+                } else {
+                    resolve(a)
+                }
+            });
+        })
+        Promise.all([postPromise])
+            .then(function(v) {
+                var post = v[0]
+                    ops=[],
+                    auth = false
+                if (post) {
+                    for(i=0;i<post.customJSON.assignments.length;i++){
+                      if(from == post.customJSON.assignments[i]){
+                        auth = trusted
+                        if(i==0){post.customJSON.b = json.b}
+                        break;
+                      }
+                    }
+                    if (auth){
+                      if(!post.customJSON.p){
+                        post.customJSON.p = json.c
+                        post.customJSON.pw = 1
+                      } else if(JSON.stringify(post.customJSON.p) == JSON.stringify(json.c)){
+                        post.customJSON.pw++
+                      } else if (!post.customJSON.s){
+                        post.customJSON.s = json.c
+                        post.customJSON.sw = 1
+                      } else if(JSON.stringify(post.customJSON.s) == JSON.stringify(json.c)){
+                        post.customJSON.sw++
+                        if(post.customJSON.sw > post.customJSON.pw){
+                          var temp = post.customJSON.p
+                          post.customJSON.p = post.customJSON.s
+                          post.customJSON.s = temp
+                          temp = post.customJSON.pw
+                          post.customJSON.pw = post.customJSON.sw
+                          post.customJSON.sw = temp
+                        }
+                      }
+                      ops.push({type:'put',path:['posts', `${json.author}/${json.permlink}`],data: post})
+                      store.batch(ops)
+                    }
+                }
+            })
+            .catch(function(e) {
+                console.log(e)
+            });
+    });
+
+    processor.on('sig', function(json, from, active) {
+        var postPromise = new Promise(function(resolve, reject) {
+            store.get(['posts', `${json.author}/${json.permlink}`], function(e, a) {
+                if (e) {
+                    reject(e)
+                } else if (isEmpty(a)) {
+                    resolve(0)
+                } else {
+                    resolve(a)
+                }
+            });
+        })
+        Promise.all([postPromise])
+            .then(function(v) {
+                var post = v[0]
+                    ops=[]
+                if (post) {
+                      post.signatures[from] = json.sig
+                      ops.push({type:'put',path:['posts', `${json.author}/${json.permlink}`],data: post})
+                      ops.push({type:'put',path:['feed', `${json.block_num}:${json.transaction_id}`],data: `@${from}| Signed on ${json.author}/${json.permlink}`})
+                      store.batch(ops)
+                }
+            })
+            .catch(function(e) {
+                console.log(e)
+            });
+    });
+
+    processor.on('cert', function(json, from, active) {
+        var postPromise = new Promise(function(resolve, reject) {
+            store.get(['posts', `${json.author}/${json.permlink}`], function(e, a) {
+                if (e) {
+                    reject(e)
+                } else if (isEmpty(a)) {
+                    resolve(0)
+                } else {
+                    resolve(a)
+                }
+            });
+        })
+        Promise.all([postPromise])
+            .then(function(v) {
+                var post = v[0]
+                    ops=[]
+                if (post) {
+                      post.cert[from] = json.cert
+                      ops.push({type:'put',path:['posts', `${json.author}/${json.permlink}`],data: post})
+                      ops.push({type:'put',path:['feed', `${json.block_num}:${json.transaction_id}`],data: `@${from}| Signed a certificate on ${json.author}/${json.permlink}`})
+                      store.batch(ops)
+                }
+            })
+            .catch(function(e) {
+                console.log(e)
+            });
+    });
+
     processor.onOperation('vote', function(json) {
         if (json.voter == 'dlux-io') {
             store.get(['escrow', json.voter], function(e, a) {
