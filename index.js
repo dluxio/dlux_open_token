@@ -1979,15 +1979,6 @@ function startApp() {
                 }
                 NodeOps.push([[0, 0],op]);
                   console.log(json.transaction_id + '|' + json.block_num + `:This node posted a spurious report and in now attempting to register`)
-                  transactor.json(config.username, config.active, 'node_add', {
-                      domain: config.NODEDOMAIN,
-                      bidRate: config.bidRate,
-                      escrow
-                  }, function(err, result) {
-                      if (err) {
-                          console.error(err);
-                      }
-                  })
               } else if (from === config.username) {
                   console.log(json.transaction_id + '|' + json.block_num + `:This node has posted a spurious report\nPlease configure your DOAMAIN and BIDRATE env variables`)
               } else {
