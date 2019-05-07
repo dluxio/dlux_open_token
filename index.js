@@ -470,7 +470,6 @@ function startWith(sh) {
                       })
                     } else {
                     store.put([], {
-   "state": {
       "agents": {
          "dlux-io": {
             "online": true,
@@ -988,8 +987,7 @@ function startWith(sh) {
          "savingsRate": 1000,
          "tokenSupply": 11176168534
       }
-   }
-}, function(err) {
+   }, function(err) {
                         if(err){ console.log(err)} else{
                           store.get(['balances','ra'],function(error,returns){
                             if(!error){
