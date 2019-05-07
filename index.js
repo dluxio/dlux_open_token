@@ -2085,7 +2085,7 @@ function tally(num) {
               return a[1] - b[1];
           })
           for (p=0;p<tally.results.length;p++){
-            queue.push(tally.results[p][1])
+            queue.push(tally.results[p][0])
           }
           tally.winner = tally.results.pop()
           runners[tally.winner[0]] = {
