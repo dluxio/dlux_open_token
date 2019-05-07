@@ -1423,24 +1423,11 @@ function startApp() {
             var b = a
             if(from == b.self && b.domain){
               b.report = json
-              store.get(['queue'],function(e1,c){
-                if(!e1){
-                  var q = c.length >= 0 ? c : [],f
-                  if(q.indexOf(from)>=0){
-                    q.unshift(q.splice(q.indexOf(from),1))
-                  } else {
-                    q.unshift(from)
-                  }
-                  var ops = [
-                    {type:'put',path:['queue'],data:q},
-                    {type:'put',path:['markets','node',from],data:b},
-                    {type:'put',path:['feed', `${json.block_num}:${json.transaction_id}`],data: `@${from}| Report processed`}
-                  ]
-                  store.batch(ops)
-                } else {
-                  console.log(e1)
-                }
-              })
+              var ops = [
+                {type:'put',path:['markets','node',from],data:b},
+                {type:'put',path:['feed', `${json.block_num}:${json.transaction_id}`],data: `@${from}| Report processed`}
+              ]
+              store.batch(ops)
             } else {
               if (from === config.username && config.NODEDOMAIN) {
                 var op = {required_auth:json.required_auths,required_posting_auths:json.required_posting_auths,id:json.id,custom_json:json.custom_json}
