@@ -250,6 +250,35 @@ api.get('/fresh', (req, res, next) => {
         }, null, 3))
     });
 });
+api.get('/freshncz', (req, res, next) => {
+    let page = req.query.page || 0
+    res.setHeader('Content-Type', 'application/json')
+    var ip = page && typeof page == 'number' ? plasma.page[page] : realtime
+    store.someChildren(['posts'],{lte:ip,gte:plasma.page[page]}, function(err, obj) {
+        var feed = []
+        for (i in obj){
+          if(i.credentials.nanocheeze){
+            if(i.credentials.nanocheeze.safe)feed.push(i)
+          }
+          if(feed.length==25){
+            if( typeof page == 'number' && page > plasma.page.length) {
+              plasma.page.push(i)
+            }
+            else if(typeof page == 'number' && page >= 0) {
+              plasma.page.push(i)
+            } else {
+              plasma.page[page] = i
+            }
+            break;}
+        }
+        res.send(JSON.stringify({
+            feed,
+            node: config.username,
+            VERSION,
+            realtime: current
+        }, null, 3))
+    });
+});
 api.get('/markets', (req, res, next) => {
     var markets = new Promise(function(resolve, reject) {
         store.get(['markets'], function(err, obj) {
