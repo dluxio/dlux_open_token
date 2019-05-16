@@ -227,7 +227,7 @@ api.get('/fresh', (req, res, next) => {
     let page = req.query.page || 0
     res.setHeader('Content-Type', 'application/json')
     var ip = page && typeof page == 'number' ? plasma.page[page] : realtime
-    store.someChildren(['posts'],{lte:ip,gte:plasma.page[page]}, function(err, obj) {
+    store.someChildren(['postchron'],{lte:ip,gte:plasma.page[page]}, function(err, obj) {
         var feed = []
         for (i in obj){
           feed.push(i)
@@ -251,34 +251,49 @@ api.get('/fresh', (req, res, next) => {
     });
 });
 api.get('/freshncz', (req, res, next) => {
-    let page = req.query.page || 0
+    let pagencz = req.query.page || 0
     res.setHeader('Content-Type', 'application/json')
-    var ip = page && typeof page == 'number' ? plasma.page[page] : realtime
-    store.someChildren(['posts'],{lte:ip,gte:plasma.page[page]}, function(err, obj) {
-        var feed = []
-        for (i in obj){
-          if(i.credentials.nanocheeze){
-            if(i.credentials.nanocheeze.safe)feed.push(i)
-          }
-          if(feed.length==25){
-            if( typeof page == 'number' && page > plasma.page.length) {
-              plasma.page.push(i)
-            }
-            else if(typeof page == 'number' && page >= 0) {
-              plasma.page.push(i)
-            } else {
-              plasma.page[page] = i
-            }
-            break;}
+    var ip = pagencz && typeof pagencz == 'number' ? plasma.pagencz[pagencz] : realtime
+    store.someChildren(['postchron'],{lte:ip,gte:plasma.pagencz[pagencz]}, function(err, obj){
+        var feed = [], Promises = []
+        for (p in obj){
+          Promises.push(new Promise(function(resolve, reject) {
+              store.get(['posts', `${obj[p].a}/${obj[p].p}`], function(err, obj) {
+                  if (err) {
+                      reject(err)
+                  } else {
+                      resolve(obj)
+                  }
+              });
+          }));
         }
-        res.send(JSON.stringify({
-            feed,
-            node: config.username,
-            VERSION,
-            realtime: current
-        }, null, 3))
+        Promise.all(Promises)
+        .then(function(obj){
+          for (i=0;i<obj.length;i++){
+            if(obj[i].credentials.nanocheeze){
+              if(obj[i].credentials.nanocheeze.safe)feed.push(i)
+            }
+            if(feed.length==25){
+              if( typeof pagencz == 'number' && pagencz > plasma.pagencz[i]) {
+                plasma.pagencz.push(obj[i].block)
+              }
+              else if(typeof pagencz == 'number' && pagencz >= 0) {
+                plasma.pagencz.push(obj[i].block)
+              } else {
+                plasma.pagencz[pagencz] = obj[i].block
+              }
+              break;}
+          }
+          res.send(JSON.stringify({
+              feed,
+              node: config.username,
+              VERSION,
+              realtime: current
+          }, null, 3))
+        })
+      })
     });
-});
+
 api.get('/markets', (req, res, next) => {
     var markets = new Promise(function(resolve, reject) {
         store.get(['markets'], function(err, obj) {
@@ -423,7 +438,9 @@ var utils = {
 }
 
 var plasma = {
-  pending:{}
+  pending:{},
+  page: [],
+  pagencz: []
 },
     jwt
 var NodeOps = []
@@ -1263,7 +1280,7 @@ function startApp() {
                         delete plasma.pending[c.txid+'listApprove']
                       }
                     }
-                    dataOps.push({type:'put',path:['contracts',a[i].for,a[i].contract],data:c})
+                    dataOps.push({type:'put',path:['contracts',a.for,a.contract],data:c})
                     store.batch(dataOps)
                     credit(json.who)
                 } else {
@@ -1557,6 +1574,7 @@ function startApp() {
                   queue.push(assignments[2])
                   queue.push(assignments[3])
                 }
+                ops.push({type:'put',path:['postchron',`${json.block_num}:`], data:`${json.author}/${json.permlink}`})
                 ops.push({type:'put',path:['posts',`${json.author}/${json.permlink}`], data:{
                     block: json.block_num,
                     author: json.author,
