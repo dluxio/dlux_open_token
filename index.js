@@ -967,12 +967,12 @@ function startApp() {
             });
         })
         var PtoNode = new Promise(function(resolve, reject) {
-            store.get(['markets', node, json.to], function(e, a) {
+            store.get(['markets', 'node', json.to], function(e, a) {
                 if (e) { reject(e) } else if (isEmpty(a)) { resolve(0) } else { resolve(a) }
             });
         })
         var PagentNode = new Promise(function(resolve, reject) {
-            store.get(['markets', node, json.agent], function(e, a) {
+            store.get(['markets', 'node', json.agent], function(e, a) {
                 if (e) { reject(e) } else if (isEmpty(a)) { resolve(0) } else { resolve(a) }
             });
         })
