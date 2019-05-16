@@ -1343,6 +1343,7 @@ function startApp() {
           if(!e){
                 store.get(['contracts', a.for, a.contract],function(e,b){
                   if(e){console.log(e1)} else {
+                    console.log(json,b)
                     if(Object.keys(b).length)  {
                       var c = b
                       c.pending = c.auth.shift()
