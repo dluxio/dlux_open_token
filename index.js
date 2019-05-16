@@ -950,10 +950,15 @@ function startApp() {
     })
 
     processor.onOperation('escrow_transfer', function(json) { //grab posts to reward
-        var op, dextx, contract, isAgent, isDAgent, dextx, meta, done = 0,type='steem'
+        var op, dextx, contract, isAgent, isDAgent, dextxdlux, meta, done = 0,type='steem'
         try {
             dextx = JSON.parse(json.json_meta).dextx
+            dextxdlux = dextx.dlux
+        } catch (e) {}
+        try {
             meta = JSON.parse(json.json_meta).contract
+        } catch (e) {}
+        try {
             seller = JSON.parse(json.json_meta).for
         } catch (e) {}
         var PfromBal = new Promise(function(resolve, reject) {
@@ -1123,7 +1128,7 @@ function startApp() {
                     store.batch(out)
                   }
               }
-            } else if (toBal > dextx.dlux && typeof dextx.dlux === 'number' && dextx.dlux > 0 && isAgent && isDAgent) {
+            } else if (toBal > dextxdlux && typeof dextxdlux === 'number' && dextxdlux > 0 && isAgent && isDAgent) {
               var txid = 'DLUX' + hashThis(`${json.from}${json.block_num}`),
                   ops = [
                     {type:'put',path:['escrow',json.agent, txid+':listApprove'],data:[
@@ -1338,23 +1343,25 @@ function startApp() {
           if(!e){
                 store.get(['contracts', a.for, a.contract],function(e,b){
                   if(e){console.log(e1)} else {
-                    var c = b
-                    c.pending = c.auth.shift()
-                    store.batch([
-                      {type:'put',path:['escrow'.c.pending[0],c.txid+':transfer'],data:c.pending[1]},
-                      {type:'put',path:['contracts',a[i].for,a[i].contract],data:c},
-                      {type:'put',path:['feed', `${json.block_num}:${json.transaction_id}`],data:`@${json.who}| released funds for @${owner}/${found}`},
-                      {type:'del',path:['escrow',json.who,c.txid+`:release`]}
-                    ])
-                    if(json.who == config.username){
-                      for(var i = 0;i<NodeOps.length;i++){
-                        if(NodeOps[i][1][1].from == json.from && NodeOps[i][1][1].escrow_id == json.escrow_id && NodeOps[i][1][0] == 'escrow_release'){
-                          NodeOps.splice(i,1)
+                    if(Object.keys(b).length)  {
+                      var c = b
+                      c.pending = c.auth.shift()
+                      store.batch([
+                        {type:'put',path:['escrow'.c.pending[0],c.txid+':transfer'],data:c.pending[1]},
+                        {type:'put',path:['contracts',a[i].for,a[i].contract],data:c},
+                        {type:'put',path:['feed', `${json.block_num}:${json.transaction_id}`],data:`@${json.who}| released funds for @${owner}/${found}`},
+                        {type:'del',path:['escrow',json.who,c.txid+`:release`]}
+                      ])
+                      if(json.who == config.username){
+                        for(var i = 0;i<NodeOps.length;i++){
+                          if(NodeOps[i][1][1].from == json.from && NodeOps[i][1][1].escrow_id == json.escrow_id && NodeOps[i][1][0] == 'escrow_release'){
+                            NodeOps.splice(i,1)
+                          }
                         }
+                        delete plasma.pending[c.txid+`:release`]
                       }
-                      delete plasma.pending[c.txid+`:release`]
+                      credit(json.who)
                     }
-                    credit(json.who)
                   }
                 })
             } else {console.log(e)}
