@@ -34,18 +34,18 @@ function hashThis(data) {
     return multihash.toString()
 }
 const testing = true
-const VERSION = 'v0.0.4a'
+const VERSION = 'v0.0.1a'
 const api = express()
 var http = require('http').Server(api);
 //const io = require('socket.io')(http)
 var escrow = false
 var broadcast = 1
 const wif = steemClient.auth.toWif(config.username, config.active, 'active')
-const resteemAccount = 'dlux-io';
+const resteemAccount = '';
 var startingBlock = 32396354;
 var current, dsteem, testString
 
-const prefix = 'dlux_';
+const prefix = 'RCeco_';
 const streamMode = args.mode || 'irreversible';
 console.log("Streaming using mode", streamMode);
 var client = new steem.Client(config.clientURL);
@@ -223,76 +223,6 @@ api.get('/feed', (req, res, next) => {
         }, null, 3))
     });
 });
-api.get('/fresh', (req, res, next) => {
-    let page = req.query.page || 0
-    res.setHeader('Content-Type', 'application/json')
-    var ip = page && typeof page == 'number' ? plasma.page[page] : realtime
-    store.someChildren(['postchron'],{lte:ip,gte:plasma.page[page]}, function(err, obj) {
-        var feed = []
-        for (i in obj){
-          feed.push(i)
-          if(feed.length==25){
-            if( typeof page == 'number' && page > plasma.page.length) {
-              plasma.page.push(i)
-            }
-            else if(typeof page == 'number' && page >= 0) {
-              plasma.page.push(i)
-            } else {
-              plasma.page[page] = i
-            }
-            break;}
-        }
-        res.send(JSON.stringify({
-            feed,
-            node: config.username,
-            VERSION,
-            realtime: current
-        }, null, 3))
-    });
-});
-api.get('/freshncz', (req, res, next) => {
-    let pagencz = req.query.page || 0
-    res.setHeader('Content-Type', 'application/json')
-    var ip = pagencz && typeof pagencz == 'number' ? plasma.pagencz[pagencz] : realtime
-    store.someChildren(['postchron'],{lte:ip,gte:plasma.pagencz[pagencz]}, function(err, obj){
-        var feed = [], Promises = []
-        for (p in obj){
-          Promises.push(new Promise(function(resolve, reject) {
-              store.get(['posts', `${obj[p].a}/${obj[p].p}`], function(err, obj) {
-                  if (err) {
-                      reject(err)
-                  } else {
-                      resolve(obj)
-                  }
-              });
-          }));
-        }
-        Promise.all(Promises)
-        .then(function(obj){
-          for (i=0;i<obj.length;i++){
-            if(obj[i].credentials.nanocheeze){
-              if(obj[i].credentials.nanocheeze.safe)feed.push(i)
-            }
-            if(feed.length==25){
-              if( typeof pagencz == 'number' && pagencz > plasma.pagencz[i]) {
-                plasma.pagencz.push(obj[i].block)
-              }
-              else if(typeof pagencz == 'number' && pagencz >= 0) {
-                plasma.pagencz.push(obj[i].block)
-              } else {
-                plasma.pagencz[pagencz] = obj[i].block
-              }
-              break;}
-          }
-          res.send(JSON.stringify({
-              feed,
-              node: config.username,
-              VERSION,
-              realtime: current
-          }, null, 3))
-        })
-      })
-    });
 
 api.get('/markets', (req, res, next) => {
     var markets = new Promise(function(resolve, reject) {
@@ -378,7 +308,7 @@ api.get('/report/:un', (req, res, next) => {
 });
 //api.listen(port, () => console.log(`DLUX token API listening on port ${port}!\nAvailible commands:\n/@username =>Balance\n/stats\n/markets`))
 http.listen(config.port, function() {
-    console.log(`DLUX token API listening on port ${config.port}`);
+    console.log(`${config.short} token API listening on port ${config.port}`);
 });
 var utils = {
     chronoSort: function() {
@@ -439,18 +369,12 @@ var utils = {
 
 var plasma = {
   pending:{},
-  page: [],
-  pagencz: []
+  page: []
 },
     jwt
 var NodeOps = []
 var rtradesToken = ''
-var selector = 'dlux-io'
-if (config.username == selector) {
-    selector = `https://dlux-token-markegiles.herokuapp.com/state`
-} else {
-    selector = `https://token.dlux.io/state`
-}
+var selector = 'inconceivable'
 if (config.rta && config.rtp) {
     rtrades.handleLogin(config.rta, config.rtp)
 }
@@ -480,7 +404,7 @@ if (config.engineCrank) {
                     startWith(myJson.stats.hashLastIBlock) //myJson.stats.hashLastIBlock);
                 }
             } else {
-                console.log(`Starting from ${myJson.markets.node['dlux-io'].report}`)
+                console.log(`Starting from ${myJson.markets.node[config.primary].report}`)
                 startWith(myJson.stats.hashLastIBlock);
             }
         })
@@ -517,11 +441,6 @@ function startWith(sh) {
                     } else {
                     store.put([], data[1], function(err) {
                         if(err){ console.log(err)} else{
-                          store.get(['balances','ra'],function(error,returns){
-                            if(!error){
-                              console.log(returns)
-                            }
-                          })
                           startApp()
                         }
                     })
@@ -530,7 +449,7 @@ function startWith(sh) {
                 })
             } else {
                 startWith(config.engineCrank)
-                console.log(`${sh} failed to load, Replaying from genesis.\nYou may want to set the env var STARTHASH\nFind it at any token API such as token.dlux.io`)
+                console.log(`${sh} failed to load, Replaying from genesis.\nYou may want to set the env var STARTHASH`)
             }
         });
     } else {
@@ -553,7 +472,7 @@ function startApp() {
                     if (json.to && typeof json.to == 'string' && typeof json.amount == 'number' && (json.amount | 0) === json.amount && json.amount >= 0 && fbal >= json.amount && active) {
                         ops.push({type:'put',path:['balances', from], data:(fbal - json.amount)})
                         ops.push({type:'put',path:['balances', json.to], data:(tbal + json.amount)})
-                        ops.push({type:'put',path:['feed', `${json.block_num}:${json.transaction_id}`], data:`@${from}| Sent @${json.to} ${parseFloat(json.amount/1000).toFixed(3)}DLUX`})
+                        ops.push({type:'put',path:['feed', `${json.block_num}:${json.transaction_id}`], data:`@${from}| Sent @${json.to} ${parseFloat(json.amount/1000).toFixed(3)} ${config.short}`})
                     } else {
                         ops.push({type:'put',path:['feed', `${json.block_num}:${json.transaction_id}`],data: `@${from}| Invalid send operation`})
                     }
@@ -561,7 +480,6 @@ function startApp() {
                 }
             });
         })
-
     });
 
     // power up tokens
@@ -587,8 +505,8 @@ function startApp() {
                             ops.push({type:'put',path:['balances', from], data: lbal - amount})
                             ops.push({type:'put',path:['pow', from], data: pbal + amount})
                             ops.push({type:'put',path:['pow', 't'], data: tpow + amount})
-                            ops.push({type:'put',path:['feed', `${json.block_num}:${json.transaction_id}`], data: `@${from}| Powered up ${parseFloat(json.amount/1000).toFixed(3)} DLUX`})
-                            ops.push({type:'put',path:['feed', `${json.block_num}:${json.transaction_id}`], data: `@${from}| Powered up ${parseFloat(json.amount/1000).toFixed(3)} DLUX`})
+                            ops.push({type:'put',path:['feed', `${json.block_num}:${json.transaction_id}`], data: `@${from}| Powered up ${parseFloat(json.amount/1000).toFixed(3)} ${config.short}`})
+                            ops.push({type:'put',path:['feed', `${json.block_num}:${json.transaction_id}`], data: `@${from}| Powered up ${parseFloat(json.amount/1000).toFixed(3)} ${config.short}`})
                         } else {
                             ops.push({type:'put',path:['feed', `${json.block_num}:${json.transaction_id}`], data:`@${from}| Invalid power up`})
                         }
@@ -643,7 +561,7 @@ function startApp() {
                         }
                     })
                 }
-                ops.push({type:'put',path:['feed', `${json.block_num}:${json.transaction_id}`], data: `@${from}| Powered down ${parseFloat(amount/1000).toFixed(3)} DLUX`})
+                ops.push({type:'put',path:['feed', `${json.block_num}:${json.transaction_id}`], data: `@${from}| Powered down ${parseFloat(amount/1000).toFixed(3)} ${config.short}`})
             } else {
                 ops.push({type:'put',path:['feed', `${json.block_num}:${json.transaction_id}`], data: `@${from}| Invalid Power Down`})
             }
@@ -719,7 +637,7 @@ function startApp() {
                         ops.push({type:'put',path:['feed', `${json.block_num}:${json.transaction_id}`], data: `@${from}| tried to vote for an unknown post`})
                     }
                 } else {
-                    ops.push({type:'put',path:['feed', `${json.block_num}:${json.transaction_id}`], data: `@${from}| doesn't have the dlux power to vote`})
+                    ops.push({type:'put',path:['feed', `${json.block_num}:${json.transaction_id}`], data: `@${from}| doesn't have the ${config.short} power to vote`})
                 }
                 store.batch(ops)
             })
@@ -776,7 +694,7 @@ function startApp() {
                         },
                         ops = []
                         if (found.steem) {
-                            ops.push({type:'put',path:['feed', `${json.block_num}:${json.transaction_id}`], data:`@${from}| purchased ${parseFloat(found.steem/1000).toFixed(3)} STEEM with ${parseFloat(found.amount/1000).toFixed(3)} DLUX via DEX`})
+                            ops.push({type:'put',path:['feed', `${json.block_num}:${json.transaction_id}`], data:`@${from}| purchased ${parseFloat(found.steem/1000).toFixed(3)} STEEM with ${parseFloat(found.amount/1000).toFixed(3)} ${config.short} via DEX`})
                             found.auths.push([agent,
                                 [
                                     "transfer",
@@ -784,7 +702,7 @@ function startApp() {
                                         "from": agent,
                                         "to": from,
                                         "amount": (found.steem / 1000).toFixed(3) + ' STEEM',
-                                        "memo": `${json.contract} by ${found.from} purchased with ${found.amount} DLUX`
+                                        "memo": `${json.contract} by ${found.from} purchased with ${found.amount} ${config.short}`
                                     }
                                 ]
                             ])
@@ -797,7 +715,7 @@ function startApp() {
                                         "from": agent,
                                         "to": from,
                                         "amount": (found.sbd / 1000).toFixed(3) + ' SBD',
-                                        "memo": `${json.contract} by ${found.from} fulfilled with ${found.amount} DLUX`
+                                        "memo": `${json.contract} by ${found.from} fulfilled with ${found.amount} ${config.short}`
                                     }
                                 ]
                             ])
@@ -826,16 +744,16 @@ function startApp() {
         store.get(['balances',from],function(e,a){
           if(!e){
             var b = a
-            if (json.dlux <= b && typeof buyAmount == 'number' && active) {
-                var txid = 'DLUX' + hashThis(from + json.block_num)
+            if (json[config.short] <= b && typeof buyAmount == 'number' && active) {
+                var txid = `${config.short}` + hashThis(from + json.block_num)
                 const contract = {
                     txid,
                     type: 'ss',
                     from: from,
                     steem: buyAmount,
                     sbd: 0,
-                    amount: parseInt(json.dlux),
-                    rate: parseFloat((buyAmount) / (json.dlux)).toFixed(6),
+                    amount: parseInt(json[config.short]),
+                    rate: parseFloat((buyAmount) / (json[config.short])).toFixed(6),
                     block: json.block_num
                 }
                 chronAssign(json.block_num + 86400, {
@@ -848,10 +766,10 @@ function startApp() {
                   {type:'put', path:['dex', 'steem', 'sellOrders', `${contract.rate}:${contract.txid}`], data: contract},
                   {type:'put', path:['balances', from], data: b-contract.amount},
                   {type:'put', path:['contracts', from, contract.txid], data: contract},
-                  {type:'put',path:['feed', `${json.block_num}:${json.transaction_id}`], data:`@${from}| has placed order ${txid} to sell ${parseFloat(json.dlux/1000).toFixed(3)} for ${parseFloat(json.steem/1000).toFixed(3)} STEEM`}
+                  {type:'put',path:['feed', `${json.block_num}:${json.transaction_id}`], data:`@${from}| has placed order ${txid} to sell ${parseFloat(json[config.short]/1000).toFixed(3)} ${config.short} for ${parseFloat(json.steem/1000).toFixed(3)} STEEM`}
                 ])
             } else {
-                store.batch([{type:'put', path:['feed', `${json.block_num}:${json.transaction_id}`], data:`@${from}| tried to place an order to sell ${parseFloat(json.dlux/1000).toFixed(3)} for ${parseFloat(json.steem/1000).toFixed(3)} STEEM`}])
+                store.batch([{type:'put', path:['feed', `${json.block_num}:${json.transaction_id}`], data:`@${from}| tried to place an order to sell ${parseFloat(json[config.short]/1000).toFixed(3)} ${config.short} for ${parseFloat(json.steem/1000).toFixed(3)} STEEM`}])
             }
           } else {
             console.log(e)
@@ -864,16 +782,16 @@ function startApp() {
         store.get(['balances',from],function(e,a){
           if(!e){
             var b = a
-            if (json.dlux <= b && typeof buyAmount == 'number' && active) {
-                var txid = 'DLUX' + hashThis(from + json.block_num)
+            if (json[config.short] <= b && typeof buyAmount == 'number' && active) {
+                var txid = `${config.short}` + hashThis(from + json.block_num)
                 const contract = {
                     txid,
                     type:'ds',
                     from: from,
                     steem: 0,
                     sbd: buyAmount,
-                    amount: json.dlux,
-                    rate: parseFloat((buyAmount) / (json.dlux)).toFixed(6),
+                    amount: json[config.short],
+                    rate: parseFloat((buyAmount) / (json[config.short])).toFixed(6),
                     block: json.block_num
                 }
                 chronAssign(json.block_num + 86400, {
@@ -886,10 +804,10 @@ function startApp() {
                   {type:'put', path:['dex', 'sbd', 'sellOrders', `${contract.rate}:${contract.txid}`], data: contract},
                   {type:'put', path:['balances', from], data: b-contract.amount},
                   {type:'put', path:['contracts', from, contract.txid], data: contract},
-                  {type:'put', path:['feed', `${json.block_num}:${json.transaction_id}`], data:`@${from}| has placed order ${txid} to sell ${parseFloat(json.dlux/1000).toFixed(3)} for ${parseFloat(json.sbd/1000).toFixed(3)} SBD`}
+                  {type:'put', path:['feed', `${json.block_num}:${json.transaction_id}`], data:`@${from}| has placed order ${txid} to sell ${parseFloat(json[config.short]/1000).toFixed(3)} ${config.short} for ${parseFloat(json.sbd/1000).toFixed(3)} SBD`}
                 ])
             } else {
-                store.batch([{type:'put', path:['feed', `${json.block_num}:${json.transaction_id}`], data:`@${from}| tried to place an order to sell ${parseFloat(json.dlux/1000).toFixed(3)} for ${parseFloat(json.sbd/1000).toFixed(3)} SBD`}])
+                store.batch([{type:'put', path:['feed', `${json.block_num}:${json.transaction_id}`], data:`@${from}| tried to place an order to sell ${parseFloat(json[config.short]/1000).toFixed(3)} ${config.short} for ${parseFloat(json.sbd/1000).toFixed(3)} SBD`}])
             }
           } else {
             console.log(e)
@@ -953,7 +871,7 @@ function startApp() {
         var op, dextx, contract, isAgent, isDAgent, dextxdlux, meta, done = 0,type='steem'
         try {
             dextx = JSON.parse(json.json_meta).dextx
-            dextxdlux = dextx.dlux
+            dextxdlux = dextx[config.short]
         } catch (e) {}
         try {
             meta = JSON.parse(json.json_meta).contract
@@ -991,7 +909,7 @@ function startApp() {
               isAgent = toNode.escrow
               isDAgent = agentNode.escrow
               buy = contract.amount
-              if (typeof buy == 'number' && isAgent && isDAgent) { //{txid, from: from, buying: buyAmount, amount: json.dlux, [json.dlux]:buyAmount, rate:parseFloat((json.dlux)/(buyAmount)).toFixed(6), block:current, partial: json.partial || true
+              if (typeof buy == 'number' && isAgent && isDAgent) { //{txid, from: from, buying: buyAmount, amount: json[config.short], [json[config.short]]:buyAmount, rate:parseFloat((json[config.short])/(buyAmount)).toFixed(6), block:current, partial: json.partial || true
                   const now = new Date()
                   const until = now.setHours(now.getHours() + 1)
                   const check = Date.parse(json.ratification_deadline)
@@ -1060,13 +978,13 @@ function startApp() {
                                         "from": json.to,
                                         "to": contract.from,
                                         "amount": samount,
-                                        "memo": `${contract.txid} by ${contract.from} purchased with ${parseFloat(contract.amount/1000).toFixed(3)} DLUX`
+                                        "memo": `${contract.txid} by ${contract.from} purchased with ${parseFloat(contract.amount/1000).toFixed(3)} ${config.short}`
                                     }
                                 ]
                             ]
                           ]
                           var ops = [
-                            {type:'put',path:['feed',`${json.block_num}:${json.transaction_id}`],data:`@${json.from}| has bought ${meta}: ${parseFloat(contract.amount/1000).toFixed(3)} for ${samount}`},
+                            {type:'put',path:['feed',`${json.block_num}:${json.transaction_id}`],data:`@${json.from}| has bought ${meta}: ${parseFloat(contract.amount/1000).toFixed(3)} for ${samount} ${config.short}`},
                             {type:'put',path:['contracts', seller, meta], data: contract},
                             {type:'put',path:['escrow', contract.pending[0][0],contract.txid], data: contract.pending[0][1]},
                             {type:'put',path:['escrow', json.escrow_id, json.from], data: {'for':seller,'contract':meta}},
@@ -1129,7 +1047,7 @@ function startApp() {
                   }
               }
             } else if (toBal > dextxdlux && typeof dextxdlux === 'number' && dextxdlux > 0 && isAgent && isDAgent) {
-              var txid = 'DLUX' + hashThis(`${json.from}${json.block_num}`),
+              var txid = `${config.short}` + hashThis(`${json.from}${json.block_num}`),
                   ops = [
                     {type:'put',path:['escrow',json.agent, txid+':listApprove'],data:[
                         "escrow_approve",
@@ -1203,8 +1121,8 @@ function startApp() {
                   from: json.from,
                   steem: parseInt(parseFloat(json.steem_amount) * 1000),
                   sbd: parseInt(parseFloat(json.sbd_amount) * 1000),
-                  amount: dextx.dlux,
-                  rate: parseFloat(parseInt(parseFloat(json.steem_amount) * 1000) / dextx.dlux)
+                  amount: dextx[config.short],
+                  rate: parseFloat(parseInt(parseFloat(json.steem_amount) * 1000) / dextx[config.short])
                       .toFixed(6),
                   block: json.block_num,
                   escrow_id: json.escrow_id,
@@ -1222,11 +1140,11 @@ function startApp() {
               })
               if (parseFloat(json.steem_amount) > 0) {
                 contract.type = 'sb'
-                ops.push({type:'put',path:['feed', `${json.block_num}:${json.transaction_id}`], data: `@${json.from}| signed a ${parseFloat(json.steem_amount).toFixed(3)} STEEM buy order for ${parseFloat(dextx.dlux).toFixed(3)} DLUX:${txid}`})
+                ops.push({type:'put',path:['feed', `${json.block_num}:${json.transaction_id}`], data: `@${json.from}| signed a ${parseFloat(json.steem_amount).toFixed(3)} STEEM buy order for ${parseFloat(dextx[config.short]).toFixed(3)} ${config.short}:${txid}`})
                 ops.push({type:'put',path:['dex', 'steem', 'buyOrders',`${contract.rate}:${contract.txid}`],contract})
               } else if (parseFloat(json.sbd_amount) > 0) {
                 contract.type = 'db'
-                ops.push({type:'put',path:['feed', `${json.block_num}:${json.transaction_id}`], data: `@${json.from}| signed a ${parseFloat(json.sbd_amount).toFixed(3)} STEEM buy order for ${parseFloat(dextx.dlux).toFixed(3)} DLUX:${txid}`})
+                ops.push({type:'put',path:['feed', `${json.block_num}:${json.transaction_id}`], data: `@${json.from}| signed a ${parseFloat(json.sbd_amount).toFixed(3)} STEEM buy order for ${parseFloat(dextx[config.short]).toFixed(3)} ${config.short}:${txid}`})
                 ops.push({type:'put',path:['dex', 'sbd', 'buyOrders',`${contract.rate}:${contract.txid}`],contract})
               }
               ops.push({type:'put',path:['contracts', json.from, txid],contract})
@@ -1419,9 +1337,9 @@ function startApp() {
                 console.log(e)
               }
             })
-            store.batch([{type:'put',path:['feed', `${json.block_num}:${json.transaction_id}`], data:`@${from}| has bid the steem-state node ${json.domain} at ${json.bidRate}`}])
+            store.batch([{type:'put',path:['feed', `${json.block_num}:${json.transaction_id}`], data:`@${from}| has bid the ${config.short} node ${json.domain} at ${json.bidRate}`}])
         } else {
-            store.batch([{type:'put',path:['feed', `${json.block_num}:${json.transaction_id}`], data:`@${from}| sent and invalid steem-state node operation`}])
+            store.batch([{type:'put',path:['feed', `${json.block_num}:${json.transaction_id}`], data:`@${from}| sent and invalid ${config.short} node operation`}])
         }
     });
 
@@ -1466,7 +1384,7 @@ function startApp() {
               ops.push({type:'del',path:['runners',from]})
               ops.push({type:'put',path:['markets','node',from],data:b})
             }
-            ops.push({type:'put',path:['feed', `${json.block_num}:${json.transaction_id}`], data:`@${from}| has signed off their dlux node`})
+            ops.push({type:'put',path:['feed', `${json.block_num}:${json.transaction_id}`], data:`@${from}| has signed off their ${config.short} node`})
             store.batch(ops)
           }).catch(function(e){console.log(e)})
         }
@@ -1494,9 +1412,9 @@ function startApp() {
                   }
                 }
                 NodeOps.push([[0, 0],op]);
-                  console.log(json.transaction_id + '|' + json.block_num + `:This node posted a spurious report and in now attempting to register`)
+                  console.log(json.transaction_id + '|' + json.block_num + `:This ${config.short} node posted a spurious report and in now attempting to register`)
               } else if (from === config.username) {
-                  console.log(json.transaction_id + '|' + json.block_num + `:This node has posted a spurious report\nPlease configure your DOAMAIN and BIDRATE env variables`)
+                  console.log(json.transaction_id + '|' + json.block_num + `:This ${config.short} node has posted a spurious report\nPlease configure your DOAMAIN and BIDRATE env variables`)
               } else {
                   console.log(json.transaction_id + '|' + json.block_num + `:@${from} has posted a spurious report`)
               }
@@ -1507,7 +1425,7 @@ function startApp() {
     });
 
     processor.on('queueForDaily', function(json, from, active) {
-        if (from = 'dlux-io' && json.text && json.title) {
+        if (from = config.primary && json.text && json.title) {
             store.batch([{type:'put',path:['postQueue', json.title],data: {
                 text: json.text,
                 title: json.title
@@ -1561,7 +1479,7 @@ function startApp() {
         }
         var ops = []
         for (var i = 0; i < filter.length; i++) {
-            if (filter[i].account == 'dlux-io' && filter[i].weight > 999) {
+            if (filter[i].account == config.primary && filter[i].weight > 999) {
               store.get(['queue'], function(e,a){
                 if(e)console.log(e)
                 var queue = a
@@ -1572,7 +1490,7 @@ function startApp() {
                     permlink: json.permlink
                 })
                 var assignments = [0,0,0,0]
-                if (config.username == 'dlux-io') { //pin content ... hard set here since rewards are still hard set as well
+                if (config.username == config.primary) { //pin content ... hard set here since rewards are still hard set as well
                   assignments[0] = 1
                 }
                 if(!e){
@@ -1594,11 +1512,11 @@ function startApp() {
                     credentials:{},
                     signatures:{},
                     customJSON:{
-                      assignments: ['dlux-io',assignments[1],assignments[2],assignments[3]]
+                      assignments: [config.primary,assignments[1],assignments[2],assignments[3]]
                     },
                 }})
                 ops.push({type:'put',path:['queue'],data:queue})
-                ops.push({type:'put',path:['feed', `${json.block_num}:${json.transaction_id}`], data: `@${json.author}|${json.permlink} added to dlux rewardable content`})
+                ops.push({type:'put',path:['feed', `${json.block_num}:${json.transaction_id}`], data: `@${json.author}|${json.permlink} added to ${config.short} rewardable content`})
                 store.batch(ops)
                 if(assignments[0]||assignments[1]||assignments[2]||assignments[3]){
                     client.database.call('get_content', [json.author, json.permlink])
@@ -1630,7 +1548,7 @@ function startApp() {
                               var op = ["custom_json",{
                                 required_auths:  [config.username],
                                 required_posting_auths: [],
-                                id: 'dlux_cjv',//custom json verification
+                                id: `${config.short}_cjv`,//custom json verification
                                 json: JSON.stringify({
                                     a: json.author,
                                     p: json.permlink,
@@ -1644,7 +1562,7 @@ function startApp() {
                             var op = ["custom_json",{
                               required_auths:  [config.username],
                               required_posting_auths: [],
-                              id: 'dlux_cjv',//custom json verification
+                              id: `${config.short}_cjv`,//custom json verification
                               json: JSON.stringify({
                                   a: json.author,
                                   p: json.permlink,
@@ -1660,7 +1578,7 @@ function startApp() {
       }
     });
 
-    processor.on('cjv', function(json, from, active) {
+    processor.on('cjv', function(json, from, active) { //a: author, p: permlink, c: minified customjson from post, b:
         var postPromise = new Promise(function(resolve, reject) {
             store.get(['posts', `${json.a}/${json.p}`], function(e, a) {
                 if (e) {
@@ -1680,7 +1598,7 @@ function startApp() {
                 if (post) {
                     for(i=0;i<post.customJSON.assignments.length;i++){
                       if(from == post.customJSON.assignments[i]){
-                        auth = trusted
+                        auth = true
                         if(i==0){post.customJSON.b = json.b}
                         break;
                       }
@@ -1705,7 +1623,7 @@ function startApp() {
                           post.customJSON.sw = temp
                         }
                       }
-                      ops.push({type:'put',path:['posts', `${json.author}/${json.permlink}`],data: post})
+                      ops.push({type:'put',path:['posts', `${json.a}/${json.p}`],data: post})
                       store.batch(ops)
                     }
                 }
@@ -1717,7 +1635,7 @@ function startApp() {
 
     processor.on('sig', function(json, from, active) {
         var postPromise = new Promise(function(resolve, reject) {
-            store.get(['posts', `${json.author}/${json.permlink}`], function(e, a) {
+            store.get(['posts', `${json.a}/${json.p}`], function(e, a) {
                 if (e) {
                     reject(e)
                 } else if (isEmpty(a)) {
@@ -1732,9 +1650,9 @@ function startApp() {
                 var post = v[0]
                     ops=[]
                 if (post) {
-                      post.signatures[from] = json.sig
-                      ops.push({type:'put',path:['posts', `${json.author}/${json.permlink}`],data: post})
-                      ops.push({type:'put',path:['feed', `${json.block_num}:${json.transaction_id}`],data: `@${from}| Signed on ${json.author}/${json.permlink}`})
+                      post.signatures[from] = JSON.stringify(json.sig)
+                      ops.push({type:'put',path:['posts', `${json.a}/${json.p}`],data: post})
+                      ops.push({type:'put',path:['feed', `${json.block_num}:${json.transaction_id}`],data: `@${from}| Signed on ${json.a}/${json.p}`})
                       store.batch(ops)
                 }
             })
@@ -1745,7 +1663,7 @@ function startApp() {
 
     processor.on('cert', function(json, from, active) {
         var postPromise = new Promise(function(resolve, reject) {
-            store.get(['posts', `${json.author}/${json.permlink}`], function(e, a) {
+            store.get(['posts', `${json.a}/${json.p}`], function(e, a) {
                 if (e) {
                     reject(e)
                 } else if (isEmpty(a)) {
@@ -1760,9 +1678,9 @@ function startApp() {
                 var post = v[0]
                     ops=[]
                 if (post) {
-                      post.cert[from] = json.cert
-                      ops.push({type:'put',path:['posts', `${json.author}/${json.permlink}`],data: post})
-                      ops.push({type:'put',path:['feed', `${json.block_num}:${json.transaction_id}`],data: `@${from}| Signed a certificate on ${json.author}/${json.permlink}`})
+                      post.cert[from] = JSON.stringify(json.cert)
+                      ops.push({type:'put',path:['posts', `${json.a}/${json.p}`],data: post})
+                      ops.push({type:'put',path:['feed', `${json.block_num}:${json.transaction_id}`],data: `@${from}| Signed a certificate on ${json.a}/${json.p}`})
                       store.batch(ops)
                 }
             })
@@ -1772,7 +1690,7 @@ function startApp() {
     });
 
     processor.onOperation('vote', function(json) {
-        if (json.voter == 'dlux-io') {
+        if (json.voter == config.primary) {
             store.get(['escrow', json.voter], function(e, a) {
                 if (!e) {
                     for (b in a) {
@@ -1804,7 +1722,7 @@ function startApp() {
             var b = a
             for (i in b) {
                 if (b[i][1].to == json.to && b[i][1].steem_amount == json.steem_amount && b[i][1].sbd_amount == json.sbd_amount) {
-                    ops.push({type:'put',path:['feed', `${json.block_num}:${json.transaction_id}`], data: `@${json.from}| sent @${json.to} ${json.steem_amount}/${json.sbd_amount} for ${json.memo.split(' ')[0]}`})
+                    ops.push({type:'put',path:['feed', `${json.block_num}:${json.transaction_id}`], data: `@${json.from}| sent @${json.to} ${json.steem_amount}/${json.sbd_amount} ${config.short} for ${json.memo.split(' ')[0]}`})
                     var escrow = b.splice(i, 1)
                     found = 1
                     const addr = escrow[1].memo.split(' ')[0]
@@ -1843,7 +1761,7 @@ function startApp() {
             console.log(e)
           }
         })
-        if (json.to == 'robotolux' && json.amount.split(' ')[1] == 'STEEM') {
+        if (json.to == config.sec && json.amount.split(' ')[1] == 'STEEM') {
             const amount = parseInt(parseFloat(json.amount) * 1000)
             var purchase
             var Pstats = new Promise(function(resolve, reject) {
@@ -1884,7 +1802,7 @@ function startApp() {
                   if (purchase < i) {
                       i -= purchase
                       b += purchase
-                      store.batch([{type:'put',path:['feed', `${json.block_num}:${json.transaction_id}`], data:`@${json.from}| bought ${parseFloat(purchase/1000).toFixed(3)} DLUX with ${parseFloat(amount/1000).toFixed(3)} STEEM`}])
+                      store.batch([{type:'put',path:['feed', `${json.block_num}:${json.transaction_id}`], data:`@${json.from}| bought ${parseFloat(purchase/1000).toFixed(3)} ${config.short} with ${parseFloat(amount/1000).toFixed(3)} STEEM`}])
                   } else {
                       b += i
                       const left = purchase - i
@@ -1894,13 +1812,13 @@ function startApp() {
                         {type:'put',path:['balances',json.from],data:b},
                         {type:'put',path:['balances','ri'],data:i},
                         {type:'put',path:['stats'],data:stats},
-                        {type:'put',path:['feed', `${json.block_num}:${json.transaction_id}`],data:`@${json.from}| bought ALL ${parseFloat(parseInt(purchase - left)).toFixed(3)} DLUX with ${parseFloat(parseInt(amount)/1000).toFixed(3)} STEEM. And bid in the over-auction`}
+                        {type:'put',path:['feed', `${json.block_num}:${json.transaction_id}`],data:`@${json.from}| bought ALL ${parseFloat(parseInt(purchase - left)).toFixed(3)} ${config.short} with ${parseFloat(parseInt(amount)/1000).toFixed(3)} STEEM. And bid in the over-auction`}
                       ])
                   }
               } else {
                 store.batch([
                   {type:'put',path:['ico',json.block_num,json.from],data:parseInt(amount)},
-                  {type:'put',path:['feed', `${json.block_num}:${json.transaction_id}`],data:`@${json.from}| bought ALL ${parseFloat(parseInt(purchase - left)).toFixed(3)} DLUX with ${parseFloat(parseInt(amount)/1000).toFixed(3)} STEEM. And bid in the over-auction`}
+                  {type:'put',path:['feed', `${json.block_num}:${json.transaction_id}`],data:`@${json.from}| bought ALL ${parseFloat(parseInt(purchase - left)).toFixed(3)} ${config.short} with ${parseFloat(parseInt(amount)/1000).toFixed(3)} STEEM. And bid in the over-auction`}
                 ])
               }
             });
@@ -1910,12 +1828,12 @@ function startApp() {
     processor.onOperation('delegate_vesting_shares', function(json) { //grab posts to reward
         var ops = []
         const vests = parseInt(parseFloat(json.vesting_shares) * 1000000)
-        if (json.delegatee == 'dlux-io' && vests) {
+        if (json.delegatee == config.primary && vests) {
             ops.push({type:'put',path:['delegations', json.delegator], data: vests})
-            ops.push({type:'put',path:['feed', `${json.block_num}:${json.transaction_id}`], data: `@${json.delegator}| has delegated ${vests} vests to @dlux-io`})
-        } else if (json.delegatee == 'dlux-io' && !vests) {
+            ops.push({type:'put',path:['feed', `${json.block_num}:${json.transaction_id}`], data: `@${json.delegator}| has delegated ${vests} vests to @${config.primary}`})
+        } else if (json.delegatee == config.primary && !vests) {
             ops.push({type:'del',path:['delegations', json.delegator]})
-            ops.push({type:'put',path:['feed', `${json.block_num}:${json.transaction_id}`], data: `@${json.delegator}| has removed delegation to @dlux-io`})
+            ops.push({type:'put',path:['feed', `${json.block_num}:${json.transaction_id}`], data: `@${json.delegator}| has removed delegation to @${config.primary}`})
         }
         store.batch(ops)
     });
@@ -1926,7 +1844,7 @@ function startApp() {
     */
 
     processor.onOperation('comment', function(json) { //grab posts to reward
-        if (json.author == 'dlux-io') {
+        if (json.author == config.primary) {
             store.get(['escrow', json.author], function(e, a) {
                 if (!e) {
                   var ops = []
@@ -1986,7 +1904,7 @@ function startApp() {
                                                 ops.push({type:'put',path:['balances', from], data: lbal + b.amount})
                                                 ops.push({type:'put',path:['pow', from], data:pbal - b.amount})
                                                 ops.push({type:'put',path:['pow', 't'], data:tpow - b.amount})
-                                                ops.push({type:'put',path:['feed', `${json.block_num}:${json.transaction_id}`], data:`@${b.by}| powered down ${parseFloat(b.amount/1000).toFixed(3)} DLUX`})
+                                                ops.push({type:'put',path:['feed', `${json.block_num}:${json.transaction_id}`], data:`@${b.by}| powered down ${parseFloat(b.amount/1000).toFixed(3)} ${config.short}`})
                                                 store.batch(ops)
                                             }
                                         }
@@ -2395,7 +2313,7 @@ function release(from,txid) {
 }
 
 function dao(num) {
-    var post = `## DLUX DAO REPORT\n`,
+    var post = `## ${config.short} DAO REPORT\n`,
         news = '',
         daops = []
     var Pnews = new Promise(function(resolve, reject) {
@@ -2542,32 +2460,32 @@ function dao(num) {
           console.log(b, j, i)
       }
       if (!i) {
-          b = mnode['dlux-io'].marketingRate
-          j = mnode['dlux-io'].bidRate
+          b = mnode[config.primary].marketingRate
+          j = mnode[config.primary].bidRate
           i++
       }
       stats.marketingRate = parseInt(b / i)
       stats.nodeRate = parseInt(j / i)
       post = `![The Hyper Cube](https://ipfs.busy.org/ipfs/QmRtFirFM3f3Lp7Y22KtfsS2qugULYXTBnpnyh8AHzJa7e)\n#### Daily Accounting\n`
-      post = post + `Total Supply: ${parseFloat(parseInt(stats.tokenSupply)/1000).toFixed(3)} DLUX\n* ${parseFloat(parseInt(stats.tokenSupply-powBal-(bals.ra +bals.rb +bals.rc +bals.rd +bals.re +bals.ri +bals.rr +bals.rn+bals.rm))/1000).toFixed(3)} DLUX liquid\n`
-      post = post + `* ${parseFloat(parseInt(powBal)/1000).toFixed(3)} DLUX Powered up for Voting\n`
-      post = post + `* ${parseFloat(parseInt(bals.ra +bals.rb +bals.rc +bals.rd +bals.re +bals.ri +bals.rr +bals.rn+bals.rm)/1000).toFixed(3)} DLUX in distribution accounts\n`
-      post = post + `${parseFloat(parseInt(t)/1000).toFixed(3)} DLUX has been generated today. 5% APY.\n${parseFloat(stats.marketingRate/10000).toFixed(4)} is the marketing rate.\n${parseFloat(stats.nodeRate/10000).toFixed(4)} is the node rate.\n`
+      post = post + `Total Supply: ${parseFloat(parseInt(stats.tokenSupply)/1000).toFixed(3)} ${config.short}\n* ${parseFloat(parseInt(stats.tokenSupply-powBal-(bals.ra +bals.rb +bals.rc +bals.rd +bals.re +bals.ri +bals.rr +bals.rn+bals.rm))/1000).toFixed(3)} ${config.short} liquid\n`
+      post = post + `* ${parseFloat(parseInt(powBal)/1000).toFixed(3)} ${config.short} Powered up for Voting\n`
+      post = post + `* ${parseFloat(parseInt(bals.ra +bals.rb +bals.rc +bals.rd +bals.re +bals.ri +bals.rr +bals.rn+bals.rm)/1000).toFixed(3)} ${config.short} in distribution accounts\n`
+      post = post + `${parseFloat(parseInt(t)/1000).toFixed(3)} ${config.short} has been generated today. 5% APY.\n${parseFloat(stats.marketingRate/10000).toFixed(4)} is the marketing rate.\n${parseFloat(stats.nodeRate/10000).toFixed(4)} is the node rate.\n`
       console.log(`DAO Accounting In Progress:\n${t} has been generated today\n${stats.marketingRate} is the marketing rate.\n${stats.nodeRate} is the node rate.`)
       bals.rn += parseInt(t * parseInt(stats.nodeRate) / 10000)
       bals.ra = parseInt(bals.ra) - parseInt(t * parseInt(stats.nodeRate) / 10000)
       bals.rm += parseInt(t * stats.marketingRate / 10000)
-      post = post + `${parseFloat(parseInt(t * stats.marketingRate / 10000)/1000).toFixed(3)} DLUX moved to Marketing Allocation.\n`
+      post = post + `${parseFloat(parseInt(t * stats.marketingRate / 10000)/1000).toFixed(3)} ${config.short} moved to Marketing Allocation.\n`
       if (bals.rm > 1000000000) {
           bals.rc += bals.rm - 1000000000;
-          post = post + `${parseFloat((bals.rm - 1000000000)/1000).toFixed(3)} moved from Marketing Allocation to Content Allocation due to Marketing Holdings Cap of 1,000,000.000 DLUX\n`
+          post = post + `${parseFloat((bals.rm - 1000000000)/1000).toFixed(3)} moved from Marketing Allocation to Content Allocation due to Marketing Holdings Cap of 1,000,000.000 ${config.short}\n`
           bals.rm = 1000000000
       }
       bals.ra = parseInt(bals.ra) - parseInt(t * stats.marketingRate / 10000)
 
       i = 0, j = 0
-      post = post + `${parseFloat(parseInt(bals.rm)/1000).toFixed(3)} DLUX is in the Marketing Allocation.\n##### Node Rewards for Elected Reports and Escrow Transfers\n`
-      console.log(num + `:${bals.rm} is availible in the marketing account\n${bals.rn} DLUX set asside to distribute to nodes`)
+      post = post + `${parseFloat(parseInt(bals.rm)/1000).toFixed(3)} ${config.short} is in the Marketing Allocation.\n##### Node Rewards for Elected Reports and Escrow Transfers\n`
+      console.log(num + `:${bals.rm} is availible in the marketing account\n${bals.rn} ${config.short} set asside to distribute to nodes`)
       for (var node in mnode) { //tally the wins
           j = j + parseInt(mnode[node].wins)
       }
@@ -2589,16 +2507,16 @@ function dao(num) {
           }
           bals.rn -= i
           const _at = _atfun(node)
-          post = post + `* ${_at}${node} awarded ${parseFloat(i/1000).toFixed(3)} DLUX for ${mnode[node].wins} credited transaction(s)\n`
-          console.log(current + `:@${node} awarded ${i} DLUX for ${mnode[node].wins} credited transaction(s)`)
+          post = post + `* ${_at}${node} awarded ${parseFloat(i/1000).toFixed(3)} ${config.short} for ${mnode[node].wins} credited transaction(s)\n`
+          console.log(current + `:@${node} awarded ${i} ${config.short} for ${mnode[node].wins} credited transaction(s)`)
           mnode[node].wins = 0
       }
       bals.rd += parseInt(t * stats.delegationRate / 10000) // 10% to delegators
-      post = post + `### ${parseFloat(parseInt(bals.rd)/1000).toFixed(3)} DLUX set aside for [@dlux-io delegators](https://app.steemconnect.com/sign/delegate-vesting-shares?delegatee=dlux-io&vesting_shares=100%20SP)\n`
+      post = post + `### ${parseFloat(parseInt(bals.rd)/1000).toFixed(3)} ${config.short} set aside for [@${config.primary} delegators](https://app.steemconnect.com/sign/delegate-vesting-shares?delegatee=${config.primary}&vesting_shares=100%20SP)\n`
       bals.ra -= parseInt(t * stats.delegationRate / 10000)
       b = bals.rd
       j = 0
-      console.log(current + `:${b} DLUX to distribute to delegators`)
+      console.log(current + `:${b} ${config.short} to distribute to delegators`)
       for (i in deles) { //count vests
           j += deles[i]
       }
@@ -2610,8 +2528,8 @@ function dao(num) {
           bals[i] += k
           bals.rd -= k
           const _at = _atfun(i)
-          post = post + `* ${parseFloat(parseInt(k)/1000).toFixed(3)} DLUX for ${_at}${i}'s ${parseFloat(deles[i]/1000000).toFixed(1)} Mvests.\n`
-          console.log(current + `:${k} DLUX awarded to ${i} for ${deles[i]} VESTS`)
+          post = post + `* ${parseFloat(parseInt(k)/1000).toFixed(3)} ${config.short} for ${_at}${i}'s ${parseFloat(deles[i]/1000000).toFixed(1)} Mvests.\n`
+          console.log(current + `:${k} ${config.short} awarded to ${i} for ${deles[i]} VESTS`)
       }
       post = post + `*****\n ## ICO Status\n`
       if (bals.ri < 100000000 && stats.tokenSupply < 100000000000) {
@@ -2637,17 +2555,17 @@ function dao(num) {
                   ago = parseFloat(ago / 60)
                       .toFixed(1)
               }
-              post = post + `### We sold out ${ago}${dil}\nThere are now ${parseFloat(bals.ri/1000).toFixed(3)} DLUX for sale from @robotolux for ${parseFloat(stats.icoPrice/1000).toFixed(3)} Steem each.\n`
+              post = post + `### We sold out ${ago}${dil}\nThere are now ${parseFloat(bals.ri/1000).toFixed(3)} ${config.short} for sale from @${config.sec} for ${parseFloat(stats.icoPrice/1000).toFixed(3)} Steem each.\n`
           } else {
               var left = bals.ri
               stats.tokenSupply += 100000000 - left
               bals.ri = 100000000
               stats.icoPrice = stats.icoPrice - (left / 1000000000)
               if (stats.icoPrice < 220) stats.icoPrice = 220
-              post = post + `### We Sold out ${100000000 - left} today.\nThere are now ${parseFloat(bals.ri/1000).toFixed(3)} DLUX for sale from @robotolux for ${parseFloat(stats.icoPrice/1000).toFixed(3)} Steem each.\n`
+              post = post + `### We Sold out ${100000000 - left} today.\nThere are now ${parseFloat(bals.ri/1000).toFixed(3)} ${config.short} for sale from @${config.sec} for ${parseFloat(stats.icoPrice/1000).toFixed(3)} Steem each.\n`
           }
       } else {
-          post = post + `### We have ${parseFloat(parseInt(bals.ri - 100000000)/1000).toFixed(3)} DLUX left for sale at 0.22 STEEM in our Pre-ICO.\nOnce this is sold pricing feedback on our 3 year ICO starts.[Buy ${parseFloat(10/(parseInt(stats.icoPrice)/1000)).toFixed(3)} DLUX* with 10 Steem now!](https://app.steemconnect.com/sign/transfer?to=robotolux&amount=10.000%20STEEM)\n`
+          post = post + `### We have ${parseFloat(parseInt(bals.ri - 100000000)/1000).toFixed(3)} ${config.short} left for sale at 0.22 STEEM in our Pre-ICO.\nOnce this is sold pricing feedback on our 3 year ICO starts.[Buy ${parseFloat(10/(parseInt(stats.icoPrice)/1000)).toFixed(3)} ${config.short}* with 10 Steem now!](https://app.steemconnect.com/sign/transfer?to=${config.sec}&amount=10.000%20STEEM)\n`
       }
       if (bals.rl) {
           var dailyICODistrobution = bals.rl,
@@ -2657,7 +2575,7 @@ function dao(num) {
                   y +=ico[i][node]
               }
           }
-          post = post + `### ICO Over Auction Results:\n${parseFloat(bals.rl/1000).toFixed(3)} DLUX was set aside from today's ICO to divide between people who didn't get a chance at fixed price tokens and donated ${parseFloat(y/1000).toFixed(3)} STEEM today.\n`
+          post = post + `### ICO Over Auction Results:\n${parseFloat(bals.rl/1000).toFixed(3)} ${config.short} was set aside from today's ICO to divide between people who didn't get a chance at fixed price tokens and donated ${parseFloat(y/1000).toFixed(3)} STEEM today.\n`
           for (i = 0; i <ico.length; i++) {
               for (var node in ico[i]) {
                   if (!bals[node]) {
@@ -2665,11 +2583,11 @@ function dao(num) {
                   }
                   bals[node] += parseInt(ico[i][node] / y * bals.rl)
                   dailyICODistrobution -= parseInt(ico[i][node] / y * bals.rl)
-                  post = post + `* @${node} awarded  ${parseFloat(parseInt(ico[i][node]/y*bals.rl)/1000).toFixed(3)} DLUX for ICO auction\n`
-                  console.log(current + `:${node} awarded  ${parseInt(ico[i][node]/y*bals.rl)} DLUX for ICO auction`)
+                  post = post + `* @${node} awarded  ${parseFloat(parseInt(ico[i][node]/y*bals.rl)/1000).toFixed(3)} ${config.short} for ICO auction\n`
+                  console.log(current + `:${node} awarded  ${parseInt(ico[i][node]/y*bals.rl)} ${config.short} for ICO auction`)
                   if (i ==ico.length - 1) {
                       bals[node] += dailyICODistrobution
-                      post = post + `* @${node} awarded  ${parseFloat(parseInt(dailyICODistrobution)/1000).toFixed(3)} DLUX for ICO auction\n`
+                      post = post + `* @${node} awarded  ${parseFloat(parseInt(dailyICODistrobution)/1000).toFixed(3)} ${config.short} for ICO auction\n`
                       console.log(current + `:${node} given  ${dailyICODistrobution} remainder`)
                   }
               }
@@ -2736,7 +2654,7 @@ function dao(num) {
           }
           dex.sbd.days.push(hi)
       }
-      post = post + `*****\n### DEX Report\n#### Spot Information\n* Price: ${parseFloat(dex.steem.tick).toFixed(3)} STEEM per DLUX\n* Price: ${parseFloat(dex.sbd.tick).toFixed(3)} SBD per DLUX\n#### Daily Volume:\n* ${parseFloat(vol/1000).toFixed(3)} DLUX\n* ${parseFloat(vols/1000).toFixed(3)} STEEM\n* ${parseFloat(parseInt(volsbd)/1000).toFixed(3)} SBD\n*****\n`
+      post = post + `*****\n### DEX Report\n#### Spot Information\n* Price: ${parseFloat(dex.steem.tick).toFixed(3)} STEEM per ${config.short}\n* Price: ${parseFloat(dex.sbd.tick).toFixed(3)} SBD per ${config.short}\n#### Daily Volume:\n* ${parseFloat(vol/1000).toFixed(3)} ${config.short}\n* ${parseFloat(vols/1000).toFixed(3)} STEEM\n* ${parseFloat(parseInt(volsbd)/1000).toFixed(3)} SBD\n*****\n`
       bals.rc = bals.rc + bals.ra
       bals.ra = 0
       var q = 0,
@@ -2754,7 +2672,7 @@ function dao(num) {
               bals[br[i].post.voters[j].from] += parseInt(br[i].post.voters[j].weight / q * 3)
               bals.rc -= parseInt(br[i].post.voters[j].weight * 2 / q * 3)
           }
-          contentRewards = contentRewards + `* [${br[i].title}](https://dlux.io/@${br[i].post.author}/${br[i].post.permlink}) awarded ${parseFloat(parseInt(compa) - parseInt(bals.rc)).toFixed(3)} DLUX\n`
+          contentRewards = contentRewards + `* [${br[i].title}](https://dlux.io/@${br[i].post.author}/${br[i].post.permlink}) awarded ${parseFloat(parseInt(compa) - parseInt(bals.rc)).toFixed(3)} ${config.short}\n`
       }
       if (contentRewards) contentRewards = contentRewards + `\n*****\n`
       var vo = [],
@@ -2780,10 +2698,10 @@ function dao(num) {
       for (var oo = 0; oo < ii; oo++) {
           var weight = parseInt(ww * vo[oo].totalWeight)
           if (weight > 10000) weight = 10000
-          daops.push({type:'put',path:['escrow','dlux-io',`vote:${vo[oo].author}:${vo[oo].permlink}`], data: op[
+          daops.push({type:'put',path:['escrow',config.primary,`vote:${vo[oo].author}:${vo[oo].permlink}`], data: op[
               "vote",
               {
-                  "voter": "dlux-io",
+                  "voter": config.primary,
                   "author": vo[oo].author,
                   "permlink": vo[oo].permlink,
                   "weight": weight
@@ -2791,19 +2709,19 @@ function dao(num) {
           ]})
           steemVotes = steemVotes + `* [${vo[oo].title}](https://dlux.io/@${vo[oo].author}/${vo[oo].permlink}) by @${vo[oo].author} | ${parseFloat(weight/100).toFixed(3)}% \n`
       }
-      const footer = `[Visit dlux.io](https://dlux.io)\n[Find us on Discord](https://discord.gg/Beeb38j)\n[Visit our DEX/Wallet - Soon](https://dlux.io)\n[Learn how to use DLUX](https://github.com/dluxio/dluxio/wiki)\n[Turn off mentions for nodes and delegators](https://app.steemconnect.com/sign/custom-json?id=dlux_nomention&json=%7B%22mention%22%3Afalse%7D) or [back on](https://app.steemconnect.com/sign/custom-json?id=dlux_nomention&json=%7B%22mention%22%3Atrue%7D)\n*Price for 25.2 Hrs from posting or until daily 100,000.000 DLUX sold.`
-      if (steemVotes) steemVotes = `#### Community Voted DLUX Posts\n` + steemVotes + `*****\n`
+      const footer = `[Visit dlux.io](https://dlux.io)\n[Find us on Discord](https://discord.gg/Beeb38j)\n[Visit our DEX/Wallet - Soon](https://dlux.io)\n[Learn how to use ${config.short}](https://github.com/dluxio/dluxio/wiki)\n[Turn off mentions for nodes and delegators](https://app.steemconnect.com/sign/custom-json?id=${prefix}_nomention&json=%7B%22mention%22%3Afalse%7D) or [back on](https://app.steemconnect.com/sign/custom-json?id=${prefix}_nomention&json=%7B%22mention%22%3Atrue%7D)\n*Price for 25.2 Hrs from posting or until daily 100,000.000 ${config.short} sold.`
+      if (steemVotes) steemVotes = `#### Community Voted ${config.short} Posts\n` + steemVotes + `*****\n`
       post = header + contentRewards + steemVotes + post + footer
       var op = ["comment",
           {
               "parent_author": "",
-              "parent_permlink": "dlux",
-              "author": "dlux-io",
-              "permlink": 'dlux' + num,
-              "title": `DLUX DAO | Automated Report ${num}`,
+              "parent_permlink": config.short,
+              "author": config.primary,
+              "permlink": config.short + num,
+              "title": `${config.short} DAO | Automated Report ${num}`,
               "body": post,
               "json_metadata": JSON.stringify({
-                  tags: ["dlux", "ico", "dex", "cryptocurrency"]
+                  tags: [config.short, "ico", "dex", "cryptocurrency"]
               })
           }
       ]
@@ -2812,7 +2730,7 @@ function dao(num) {
       daops.push({type:'put',path:['balances'], data: bals})
       daops.push({type:'put',path:['markets','node'], data: mnode})
       daops.push({type:'put',path:['delegations'], data: deles})
-      daops.push({type:'put',path:['escrow','dlux-io','comment'], data: op})
+      daops.push({type:'put',path:['escrow',config.primary,'comment'], data: op})
       store.batch(daops)
     })
 }
@@ -2862,7 +2780,7 @@ function report(num) {
                 var op = ["custom_json",{
                   required_auths:  [config.username],
                   required_posting_auths: [],
-                  id: 'dlux_report',
+                  id: `${config.short}_report`,
                   json: JSON.stringify({
                       feed: feed,
                       agreements: agreements,
