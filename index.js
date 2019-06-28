@@ -1330,7 +1330,7 @@ function startApp() {
       store.get(['contracts',json.escrow_id,json.from],function(e,a){ // since escrow ids are unique to sender, store a list of pointers to the owner of the contract
         if(!e){
               store.get(['contracts', a.for, a.contract],function(e,b){
-                if(e){console.log(e1)} else {
+                if(e || Object.keys(b).length == 0){console.log(e1, 'empty record')} else {
                   var c = b
                   c.pending = c.auth.shift()[0]
                   store.batch([
