@@ -1,5 +1,4 @@
-{
-   "state": {
+module.exports = {
       "agents": {
          "dlux-io": {
             "online": true,
@@ -515,4 +514,3 @@
          "tokenSupply": 11232061073
       }
    }
-}
