@@ -1332,7 +1332,7 @@ function startApp() {
               store.get(['contracts', a.for, a.contract],function(e,b){
                 if(e){console.log(e1)} else {
                   var c = b
-                  c.pending = c.auth.shift()
+                  c.pending = c.auth.shift()[0]
                   store.batch([
                     {type:'put',path:['escrow'.c.pending[0],c.txid+':release'],data:c.pending[1]},
                     {type:'put',path:['contracts',a[i].for,a[i].contract],data:c},
