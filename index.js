@@ -21,7 +21,7 @@ var Pathwise = require('./pathwise');
 var level = require('level');
 
 var store = new Pathwise(level('./db', {createIfEmpty: true}));
-
+const statestart = require('./state')
 const crypto = require('crypto')
 const bs58 = require('bs58')
 const hashFunction = Buffer.from('12', 'hex')
@@ -42,7 +42,7 @@ var escrow = false
 var broadcast = 1
 const wif = steemClient.auth.toWif(config.username, config.active, 'active')
 const resteemAccount = 'dlux-io';
-var startingBlock = 32396354;
+var startingBlock = 33719772;
 var current, dsteem, testString
 
 const prefix = 'dlux_';
@@ -455,7 +455,22 @@ if (config.rta && config.rtp) {
     rtrades.handleLogin(config.rta, config.rtp)
 }
 if (config.engineCrank) {
+    if (config.engineCrank == 'init'){
+    startingBlock = 33719772
+    plasma.hashBlock = 33719772
+    store.put([], statestart, function(err) {
+                        if(err){ console.log(err)} else{
+                          store.get(['balances','ra'],function(error,returns){
+                            if(!error){
+                              console.log(returns)
+                            }
+                          })
+                          startApp()
+                        }
+                    })
+    } else {
     startWith(config.engineCrank)
+    }
 } else {
     fetch(selector)
         .then(function(response) {
