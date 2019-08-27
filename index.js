@@ -489,12 +489,12 @@ function startWith(hash) {
                 //store.batch([{type:'del',path:[]}])
                 store.del([],function(e){
                   if(!e){
-                    if(!hash){
+                    if(hash){
                       store.put([], data[1], function(err) {
                           if(err){ console.log(err)} else{
                             store.get(['balances','ra'],function(error,returns){
                               if(!error){
-                                console.log(returns)
+                                console.log('here' +returns)
                               }
                             })
                             startApp()
@@ -505,7 +505,7 @@ function startWith(hash) {
                         if(err){ console.log(err)} else{
                           store.get(['balances','ra'],function(error,returns){
                             if(!error){
-                              console.log(returns)
+                              console.log('there' + returns)
                             }
                           })
                           startApp()
@@ -526,7 +526,7 @@ function startWith(hash) {
 
 
 function startApp() {
-    processor = steemState(client, steem, startingBlock, 1000, prefix, streamMode);
+    processor = steemState(client, steem, startingBlock, 10, prefix, streamMode);
 
     processor.on('send', function(json, from, active) {
         store.get(['balances', from], function(e, fbal) {
