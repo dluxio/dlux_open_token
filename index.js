@@ -456,6 +456,7 @@ if (config.rta && config.rtp) {
     rtrades.handleLogin(config.rta, config.rtp)
 }
 var recents = []
+
 steemjs.api.getAccountHistory(config.username, -1, 100, function(err, result) {
   if (err){
     console.log(err)
@@ -465,9 +466,13 @@ steemjs.api.getAccountHistory(config.username, -1, 100, function(err, result) {
     for(i=ebus.length -1;i>=0;i--){
       if(JSON.parse(ebus[i][1].op[1].json).hash !== null)recents.push(JSON.parse(ebus[i][1].op[1].json).hash)
     }
-    const mostRecent = recents.shift()
-    console.log(mostRecent)
-    startWith(mostRecent)
+    if(recents.length){
+        const mostRecent = recents.shift()
+        console.log(mostRecent)
+        startWith(mostRecent)
+    } else {
+        startWith(config.startingHash)
+    }
   }
 });
 
@@ -521,7 +526,7 @@ function startWith(hash) {
 
 
 function startApp() {
-    processor = steemState(client, steem, startingBlock, 10, prefix, streamMode);
+    processor = steemState(client, steem, startingBlock, 1000, prefix, streamMode);
 
     processor.on('send', function(json, from, active) {
         store.get(['balances', from], function(e, fbal) {
