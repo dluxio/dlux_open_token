@@ -480,7 +480,7 @@ function startWith(hash) {
                 var data = JSON.parse(file);
                 startingBlock = data[0]
                 plasma.hashBlock = data[0]
-                plasma.hashLastIBlock = sh
+                plasma.hashLastIBlock = hash
                 //store.batch([{type:'del',path:[]}])
                 store.del([],function(e){
                   if(!e){
