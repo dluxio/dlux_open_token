@@ -1,4 +1,5 @@
 const steem = require('dsteem');
+const steemjs = require('steem');
 const steemState = require('./processor');
 const readline = require('readline');
 const safeEval = require('safe-eval');
@@ -454,62 +455,27 @@ if (config.username == selector) {
 if (config.rta && config.rtp) {
     rtrades.handleLogin(config.rta, config.rtp)
 }
-if (config.engineCrank) {
-    if (config.engineCrank == 'init'){
-    startingBlock = 33719772
-    plasma.hashBlock = 33719772
-    store.put([], statestart, function(err) {
-                        if(err){ console.log(err)} else{
-                          store.get(['balances','ra'],function(error,returns){
-                            if(!error){
-                              console.log(returns)
-                            }
-                          })
-                          startApp()
-                        }
-                    })
-    } else {
-    startWith(config.engineCrank)
+var recents = []
+steemjs.api.getAccountHistory(username, -1, 100, function(err, result) {
+  if (err){
+    console.log(err)
+    startWith(sh)
+  } else {
+    let ebus = result.filter( tx => tx[1].op[1].id === 'qwoyn_report' )
+    for(i=ebus.length -1;i>=0;i--){
+      if(JSON.parse(ebus[i][1].op[1].json).stateHash !== null)recents.push(JSON.parse(ebus[i][1].op[1].json).stateHash)
     }
-} else {
-    fetch(selector)
-        .then(function(response) {
-            return response.json();
-        })
-        .then(function(myJson) {
-            if (myJson.markets.node[config.username]) {
-                if (myJson.markets.node[config.username].report.stash) {
-                    ipfs.cat(myJson.markets.node[config.username].report.stash, (err, file) => {
-                        if (!err) {
-                            var data = JSON.parse(file);
-                            Private = data;
-                            console.log(`Starting from ${myJson.markets.node[config.username].report.hash}\nPrivate encrypted data recovered`)
-                            startWith(myJson.markets.node[config.username].report.hash)
-                        } else {
-                            console.log(`Lost Stash... Abandoning and starting from ${myJson.stats.hashLastIBlock}`) //maybe a recovery fall thru?
-                            startWith(myJson.markets.node[config.username].report.hash);
-                        }
-                    });
-                } else {
-                    console.log(`No Private data found\nStarting from ${myJson.markets.node[config.username].report.hash}`)
-                    startWith(myJson.stats.hashLastIBlock) //myJson.stats.hashLastIBlock);
-                }
-            } else {
-                console.log(`Starting from ${myJson.markets.node['dlux-io'].report}`)
-                startWith(myJson.stats.hashLastIBlock);
-            }
-        })
-        .catch(error => {
-            console.log(error, `\nStarting 'startingHash': ${config.engineCrank}`);
-            startWith(config.engineCrank);
-        });
-}
+    const mostRecent = recents.shift()
+    console.log(mostRecent)
+    startWith(mostRecent)
+  }
+});
 
 // Special Attention
-function startWith(sh) {
-    if (sh) {
-        console.log(`Attempting to start from IPFS save state ${sh}`);
-        ipfs.cat(sh, (err, file) => {
+function startWith(hash) {
+    if (hash) {
+        console.log(`Attempting to start from IPFS save state ${hahs}`);
+        ipfs.cat(hash, (err, file) => {
             if (!err) {
                 var data = JSON.parse(file);
                 startingBlock = data[0]
@@ -518,7 +484,7 @@ function startWith(sh) {
                 //store.batch([{type:'del',path:[]}])
                 store.del([],function(e){
                   if(!e){
-                    if(!config.engineCrank){
+                    if(!hash){
                       store.put([], data[1], function(err) {
                           if(err){ console.log(err)} else{
                             store.get(['balances','ra'],function(error,returns){
