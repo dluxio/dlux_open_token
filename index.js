@@ -459,11 +459,11 @@ var recents = []
 steemjs.api.getAccountHistory(config.username, -1, 100, function(err, result) {
   if (err){
     console.log(err)
-    startWith(sh)
+    startWith(config.startingHash)
   } else {
-    let ebus = result.filter( tx => tx[1].op[1].id === 'qwoyn_report' )
+    let ebus = result.filter( tx => tx[1].op[1].id === 'dlux_report' )
     for(i=ebus.length -1;i>=0;i--){
-      if(JSON.parse(ebus[i][1].op[1].json).stateHash !== null)recents.push(JSON.parse(ebus[i][1].op[1].json).stateHash)
+      if(JSON.parse(ebus[i][1].op[1].json).hash !== null)recents.push(JSON.parse(ebus[i][1].op[1].json).hash)
     }
     const mostRecent = recents.shift()
     console.log(mostRecent)
@@ -474,7 +474,7 @@ steemjs.api.getAccountHistory(config.username, -1, 100, function(err, result) {
 // Special Attention
 function startWith(hash) {
     if (hash) {
-        console.log(`Attempting to start from IPFS save state ${hahs}`);
+        console.log(`Attempting to start from IPFS save state ${hash}`);
         ipfs.cat(hash, (err, file) => {
             if (!err) {
                 var data = JSON.parse(file);
