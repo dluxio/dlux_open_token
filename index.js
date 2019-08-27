@@ -456,7 +456,7 @@ if (config.rta && config.rtp) {
     rtrades.handleLogin(config.rta, config.rtp)
 }
 var recents = []
-steemjs.api.getAccountHistory(username, -1, 100, function(err, result) {
+steemjs.api.getAccountHistory(config.username, -1, 100, function(err, result) {
   if (err){
     console.log(err)
     startWith(sh)
