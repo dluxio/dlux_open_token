@@ -1550,8 +1550,10 @@ function startApp() {
             if (filter[i].account == 'dlux-io' && filter[i].weight > 999) {
               store.get(['queue'], function(e,a){
                 if(e)console.log(e)
-                var queue = a
-                console.log(a)
+                var queue = []
+                for(var numb in a){
+                    queue.push(a[numb])
+                }
                 chronAssign(json.block_num + 300000, {
                     block: parseInt(json.block_num + 300000),
                     op: 'post_reward',
