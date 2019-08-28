@@ -1611,7 +1611,6 @@ function startApp() {
                             final.l = trimmed.loc
                           }}catch(e){}
                           final.t = trimmed.tags
-                          console.log(value)
                           if(assignments[0]){
                             var bytes = rtrades.checkNpin(JSON.parse(result.json_metadata)
                                 .assets)
