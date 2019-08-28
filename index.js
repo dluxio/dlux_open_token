@@ -1551,6 +1551,7 @@ function startApp() {
               store.get(['queue'], function(e,a){
                 if(e)console.log(e)
                 var queue = a
+                console.log(a)
                 chronAssign(json.block_num + 300000, {
                     block: parseInt(json.block_num + 300000),
                     op: 'post_reward',
