@@ -553,9 +553,7 @@ function startApp() {
         store.get(['sps'], function(e, spsc) {
             var sps = spsc
             delete sps.jga //delete later
-            if(Object.keys(sps).length == 0){
-                sps = {disregardfiat:true,"dlux-io":true,onthewayout:true}
-            }
+            console.log(sps)
             if(json.approve){
                 for(i=0;i<json.proposal_ids.length;i++){
                     if(json.proposal_ids[i] == 11){
