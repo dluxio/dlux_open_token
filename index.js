@@ -2391,7 +2391,7 @@ function dao(num) {
                 if (err) {
                   reject(err)
                 } else {
-                  var news = isEmpty(obj) ? '*****\n### News from Humans!\n' : ''
+                  var news = isEmpty(obj) ? '' : '*****\n### News from Humans!\n'
                   for (var title in obj) { //postQueue[title].{title,text}
                       news = news + `#### ${title}\n`
                       news = news + `${obj[title].text}\n\n`
@@ -2499,7 +2499,16 @@ function dao(num) {
                 }
             });
         });
-    Promise.all([Pnews,Pbals,Prunners,Pnodes,Pstats,Pdelegations,Pico,Pdex,Pbr,Ppbal,Pnomen,Pposts]).then(function(v) {
+    var Pfeed = new Promise(function(resolve, reject) { //put back
+            store.get(['feed'], function(err, obj) {
+                if (err) {
+                    reject(err)
+                } else {
+                    resolve(obj)
+                }
+            });
+        });
+    Promise.all([Pnews,Pbals,Prunners,Pnodes,Pstats,Pdelegations,Pico,Pdex,Pbr,Ppbal,Pnomen,Pposts,Pfeed]).then(function(v) {
       daops.push({type:'del',path:['postQueue']})
       daops.push({type:'del',path:['br']})
       daops.push({type:'del',path:['rolling']})
@@ -2516,8 +2525,15 @@ function dao(num) {
           br = v[8],
           powBal = v[9],
           nomention = v[10],
-          cpost = v[11]
-
+          cpost = v[11],
+          feedCleaner = v[12],
+          feedKeys = Object.keys(feedCleaner)
+          for (feedi = 0; feedi < feedKeys.length;feedi++){
+            if(feedKeys[feedi].split(':')[0] < num - 30240){
+                delete feedCleaner[feedKeys[feedi]]
+            }
+          }
+          daops.push({type:'put',path:['feed'], data: feedCleaner})
       var i = 0,
           j = 0,
           b = 0,
@@ -2536,7 +2552,7 @@ function dao(num) {
       }
       stats.marketingRate = parseInt(b / i)
       stats.nodeRate = parseInt(j / i)
-      post = `![The Hyper Cube](https://ipfs.busy.org/ipfs/QmRtFirFM3f3Lp7Y22KtfsS2qugULYXTBnpnyh8AHzJa7e)\n#### Daily Accounting\n`
+      post = `![The Hyper Cube](https://ipfs.busy.org/ipfs/QmRtFirFM3f3Lp7Y22KtfsS2qugULYXTBnpnyh8AHzJa7e)\n### (Approve Steem DAO Funding of 166 SBD per Day for Development)[https://beta.steemconnect.com/sign/update-proposal-votes?proposal_ids=[11]&approve=true]\n(See the proposal)[/steemdao/@dlux-io/sps]\n#### Daily Accounting\n`
       post = post + `Total Supply: ${parseFloat(parseInt(stats.tokenSupply)/1000).toFixed(3)} DLUX\n* ${parseFloat(parseInt(stats.tokenSupply-powBal-(bals.ra +bals.rb +bals.rc +bals.rd +bals.re +bals.ri +bals.rr +bals.rn+bals.rm))/1000).toFixed(3)} DLUX liquid\n`
       post = post + `* ${parseFloat(parseInt(powBal)/1000).toFixed(3)} DLUX Powered up for Voting\n`
       post = post + `* ${parseFloat(parseInt(bals.ra +bals.rb +bals.rc +bals.rd +bals.re +bals.ri +bals.rr +bals.rn+bals.rm)/1000).toFixed(3)} DLUX in distribution accounts\n`
