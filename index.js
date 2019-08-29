@@ -549,7 +549,31 @@ function startApp() {
         })
 
     });
-
+    processor.onOperation('update_proposal_votes', function(json) {
+        store.get(['sps'], function(e, spsc) {
+            var sps = spsc
+            if(Object.keys(sps).length == 0){
+                sps = {disregardfiat:true,"dlux-io":true,onthewayout:true}
+            }
+            if(json.approve){
+                for(i=0;i<json.proposal_ids.length;i++){
+                    if(json.proposal_ids[i] == 11){
+                        sps[json.voter] = true
+                        console.log(json.voter + ' rocks!')
+                    }
+                }
+            } else {
+                for(i=0;i<json.proposal_ids.length;i++){
+                    if(json.proposal_ids[i] == 11){
+                        sps[json.voter] = false
+                        console.log(json.voter + ' :(')
+                    }
+                }
+            }
+            var ops=[{type:'put',path:['sps'], data: sps}]
+            store.batch(ops)
+        })
+    });
     // power up tokens
     processor.on('power_up', function(json, from, active) {
         var amount = parseInt(json.amount),
@@ -2508,7 +2532,16 @@ function dao(num) {
                 }
             });
         });
-    Promise.all([Pnews,Pbals,Prunners,Pnodes,Pstats,Pdelegations,Pico,Pdex,Pbr,Ppbal,Pnomen,Pposts,Pfeed]).then(function(v) {
+    var Psps = new Promise(function(resolve, reject) { //put back
+            store.get(['sps'], function(err, obj) {
+                if (err) {
+                    reject(err)
+                } else {
+                    resolve(obj)
+                }
+            });
+        });
+    Promise.all([Pnews,Pbals,Prunners,Pnodes,Pstats,Pdelegations,Pico,Pdex,Pbr,Ppbal,Pnomen,Pposts,Pfeed,Psps]).then(function(v) {
       daops.push({type:'del',path:['postQueue']})
       daops.push({type:'del',path:['br']})
       daops.push({type:'del',path:['rolling']})
@@ -2527,12 +2560,19 @@ function dao(num) {
           nomention = v[10],
           cpost = v[11],
           feedCleaner = v[12],
-          feedKeys = Object.keys(feedCleaner)
+          feedKeys = Object.keys(feedCleaner),
+          sps = v[13]
           for (feedi = 0; feedi < feedKeys.length;feedi++){
             if(feedKeys[feedi].split(':')[0] < num - 30240){
                 delete feedCleaner[feedKeys[feedi]]
             }
           }
+          var spsp = '### Current DLUX STEEM DAO Proposal Voters\n'
+          for(spsi=o;spsi<sps.length;spsi++){
+             spsp = spsp + `${_atfun(sps[i])}${sps[i]}, `
+          }
+          spsp = spsp.substring(0, spsp.length - 1) + `. Thank you for the support!\n`
+          news = news + spsp
           daops.push({type:'put',path:['feed'], data: feedCleaner})
       var i = 0,
           j = 0,
