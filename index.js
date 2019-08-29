@@ -552,6 +552,7 @@ function startApp() {
     processor.onOperation('update_proposal_votes', function(json) {
         store.get(['sps'], function(e, spsc) {
             var sps = spsc
+            delete sps.jga //delete later
             if(Object.keys(sps).length == 0){
                 sps = {disregardfiat:true,"dlux-io":true,onthewayout:true}
             }
@@ -565,7 +566,7 @@ function startApp() {
             } else {
                 for(i=0;i<json.proposal_ids.length;i++){
                     if(json.proposal_ids[i] == 11){
-                        sps[json.voter] = false
+                        delete sps[json.voter]
                         console.log(json.voter + ' :(')
                     }
                 }
@@ -2592,7 +2593,7 @@ function dao(num) {
       }
       stats.marketingRate = parseInt(b / i)
       stats.nodeRate = parseInt(j / i)
-      post = `![The Hyper Cube](https://ipfs.busy.org/ipfs/QmRtFirFM3f3Lp7Y22KtfsS2qugULYXTBnpnyh8AHzJa7e)\n### (Approve Steem DAO Funding of 166 SBD per Day for Development)[https://beta.steemconnect.com/sign/update-proposal-votes?proposal_ids=[11]&approve=true]\n(See the proposal)[/steemdao/@dlux-io/sps]\n#### Daily Accounting\n`
+      post = `![Dlux Advert](https://camo.githubusercontent.com/954558e3ca2d68e0034cae13663d9807dcce3fcf/68747470733a2f2f697066732e627573792e6f72672f697066732f516d64354b78395548366a666e5a6748724a583339744172474e6b514253376359465032357a3467467132576f50)\n### (Approve Steem DAO Funding of 166 SBD per Day for Development)[https://beta.steemconnect.com/sign/update-proposal-votes?proposal_ids=[11]&approve=true]\n(See the proposal)[/steemdao/@dlux-io/sps]\n#### Daily Accounting\n`
       post = post + `Total Supply: ${parseFloat(parseInt(stats.tokenSupply)/1000).toFixed(3)} DLUX\n* ${parseFloat(parseInt(stats.tokenSupply-powBal-(bals.ra +bals.rb +bals.rc +bals.rd +bals.re +bals.ri +bals.rr +bals.rn+bals.rm))/1000).toFixed(3)} DLUX liquid\n`
       post = post + `* ${parseFloat(parseInt(powBal)/1000).toFixed(3)} DLUX Powered up for Voting\n`
       post = post + `* ${parseFloat(parseInt(bals.ra +bals.rb +bals.rc +bals.rd +bals.re +bals.ri +bals.rr +bals.rn+bals.rm)/1000).toFixed(3)} DLUX in distribution accounts\n`
