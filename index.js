@@ -551,26 +551,28 @@ function startApp() {
     });
     processor.onOperation('update_proposal_votes', function(json) {
         store.get(['sps'], function(e, spsc) {
-            var sps = spsc
-            delete sps.jga //delete later
-            console.log(sps)
-            if(json.approve){
-                for(i=0;i<json.proposal_ids.length;i++){
-                    if(json.proposal_ids[i] == 11){
-                        sps[json.voter] = true
-                        console.log(json.voter + ' rocks!')
+            store.del(['sps'],function(e){
+                var sps = spsc
+                delete sps.jga //delete later
+                console.log(sps)
+                if(json.approve){
+                    for(i=0;i<json.proposal_ids.length;i++){
+                        if(json.proposal_ids[i] == 11){
+                            sps[json.voter] = true
+                            console.log(json.voter + ' rocks!')
+                        }
+                    }
+                } else {
+                    for(i=0;i<json.proposal_ids.length;i++){
+                        if(json.proposal_ids[i] == 11){
+                            delete sps[json.voter]
+                            console.log(json.voter + ' :(')
+                        }
                     }
                 }
-            } else {
-                for(i=0;i<json.proposal_ids.length;i++){
-                    if(json.proposal_ids[i] == 11){
-                        delete sps[json.voter]
-                        console.log(json.voter + ' :(')
-                    }
-                }
-            }
-            var ops=[{type:'put',path:['sps'], data: sps}]
-            store.batch(ops)
+                var ops=[{type:'put',path:['sps'], data: sps}]
+                store.batch(ops)
+            })
         })
     });
     // power up tokens
