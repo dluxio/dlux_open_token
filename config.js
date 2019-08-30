@@ -14,9 +14,10 @@ const rrate = ENV.release_rate || 2000 //maximum percent of ACTs to redeem/sell 
 const rcmin = ENV.rc_min || 2000 //lowest RC balance the auto ACT purchaser will achieve
 const fut = ENV.futures || false //willing to engage in ACT futures
 const futmax = ENV.futures_max || 31536000 //max time a futures contract will be held before liquidated in blocks
+const delshare = ENV.del_share || true
 
 let config = {
-    username, activeKey, memoKey, NODEDOMAIN, ec, port, clientURL, agent, low, fee, rrate, rcmin, fut, futmax
+    username, activeKey, memoKey, NODEDOMAIN, ec, port, clientURL, agent, low, fee, rrate, rcmin, fut, futmax, delshare
 };
 
 module.exports = config;
