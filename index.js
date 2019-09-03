@@ -2538,6 +2538,7 @@ function dao(num) {
       daops.push({type:'del',path:['br']})
       daops.push({type:'del',path:['rolling']})
       daops.push({type:'del',path:['ico']})
+      daops.push({type:'del',path:['feed']})
       news = v[0] + '*****\n'
       const header = post + news
       var bals = v[1],
@@ -2559,7 +2560,6 @@ function dao(num) {
             }
           }
           news = news
-          daops.push({type:'del',path:['feed']})
           daops.push({type:'put',path:['feed'], data: feedCleaner})
       var i = 0,
           j = 0,
@@ -2680,6 +2680,7 @@ function dao(num) {
       } else {
           post = post + `### We have ${parseFloat(parseInt(bals.ri - 100000000)/1000).toFixed(3)} DLUX left for sale at 0.22 STEEM in our Pre-ICO.\nOnce this is sold pricing feedback on our 3 year ICO starts.[Buy ${parseFloat(10/(parseInt(stats.icoPrice)/1000)).toFixed(3)} DLUX* with 10 Steem now!](https://app.steemconnect.com/sign/transfer?to=robotolux&amount=10.000%20STEEM)\n`
       }
+      console.log('got past ICO')
       if (bals.rl) {
           var dailyICODistrobution = bals.rl,
               y = 0
@@ -2708,6 +2709,7 @@ function dao(num) {
           bals.rl = 0
          ico = []
       }
+      console.log('made it to DEX')
       var vol = 0,
           volsbd = 0,
           vols = 0,
@@ -2767,6 +2769,7 @@ function dao(num) {
           }
           dex.sbd.days.push(hi)
       }
+      console.log('past the DEX')
       post = post + `*****\n### DEX Report\n#### Spot Information\n* Price: ${parseFloat(dex.steem.tick).toFixed(3)} STEEM per DLUX\n* Price: ${parseFloat(dex.sbd.tick).toFixed(3)} SBD per DLUX\n#### Daily Volume:\n* ${parseFloat(vol/1000).toFixed(3)} DLUX\n* ${parseFloat(vols/1000).toFixed(3)} STEEM\n* ${parseFloat(parseInt(volsbd)/1000).toFixed(3)} SBD\n*****\n`
       bals.rc = bals.rc + bals.ra
       bals.ra = 0
@@ -2822,6 +2825,7 @@ function dao(num) {
           ]})
           steemVotes = steemVotes + `* [${vo[oo].title}](https://dlux.io/@${vo[oo].author}/${vo[oo].permlink}) by @${vo[oo].author} | ${parseFloat(weight/100).toFixed(3)}% \n`
       }
+      console.log('past some fun stuff that doesn\'t work')
       const footer = `[Visit dlux.io](https://dlux.io)\n[Find us on Discord](https://discord.gg/Beeb38j)\n[Visit our DEX/Wallet - Soon](https://dlux.io)\n[Learn how to use DLUX](https://github.com/dluxio/dluxio/wiki)\n[Turn off mentions for nodes and delegators](https://app.steemconnect.com/sign/custom-json?id=dlux_nomention&json=%7B%22mention%22%3Afalse%7D) or [back on](https://app.steemconnect.com/sign/custom-json?id=dlux_nomention&json=%7B%22mention%22%3Atrue%7D)\n*Price for 25.2 Hrs from posting or until daily 100,000.000 DLUX sold.`
       if (steemVotes) steemVotes = `#### Community Voted DLUX Posts\n` + steemVotes + `*****\n`
       post = header + contentRewards + steemVotes + post + footer
@@ -2838,6 +2842,7 @@ function dao(num) {
               })
           }
       ]
+      console.log('all the way')
       daops.push({type:'put',path:['dex'], data: dex})
       daops.push({type:'put',path:['stats'], data: stats})
       daops.push({type:'put',path:['balances'], data: bals})
