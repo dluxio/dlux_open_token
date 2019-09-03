@@ -2568,12 +2568,7 @@ function dao(num) {
                 delete feedCleaner[feedKeys[feedi]]
             }
           }
-          var spsp = '### Current DLUX STEEM DAO Proposal Voters\n'
-          for(spsi=0;spsi<sps.length;spsi++){
-             spsp = spsp + `${_atfun(sps[i])}${sps[i]}, `
-          }
-          spsp = spsp.substring(0, spsp.length - 1) + `. Thank you for the support!\n`
-          news = news + spsp
+          news = news
           daops.push({type:'put',path:['feed'], data: feedCleaner})
       var i = 0,
           j = 0,
