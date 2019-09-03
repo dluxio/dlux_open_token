@@ -2569,7 +2569,7 @@ function dao(num) {
             }
           }
           var spsp = '### Current DLUX STEEM DAO Proposal Voters\n'
-          for(spsi=o;spsi<sps.length;spsi++){
+          for(spsi=0;spsi<sps.length;spsi++){
              spsp = spsp + `${_atfun(sps[i])}${sps[i]}, `
           }
           spsp = spsp.substring(0, spsp.length - 1) + `. Thank you for the support!\n`
