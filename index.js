@@ -2559,6 +2559,7 @@ function dao(num) {
                 delete feedCleaner[feedKeys[feedi]]
             }
           }
+          console.log(feedCleaner)
           news = news
           daops.push({type:'put',path:['feed'], data: feedCleaner})
       var i = 0,
