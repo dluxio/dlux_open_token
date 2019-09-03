@@ -2533,16 +2533,7 @@ function dao(num) {
                 }
             });
         });
-    var Psps = new Promise(function(resolve, reject) { //put back
-            store.get(['sps'], function(err, obj) {
-                if (err) {
-                    reject(err)
-                } else {
-                    resolve(obj)
-                }
-            });
-        });
-    Promise.all([Pnews,Pbals,Prunners,Pnodes,Pstats,Pdelegations,Pico,Pdex,Pbr,Ppbal,Pnomen,Pposts,Pfeed,Psps]).then(function(v) {
+    Promise.all([Pnews,Pbals,Prunners,Pnodes,Pstats,Pdelegations,Pico,Pdex,Pbr,Ppbal,Pnomen,Pposts,Pfeed]).then(function(v) {
       daops.push({type:'del',path:['postQueue']})
       daops.push({type:'del',path:['br']})
       daops.push({type:'del',path:['rolling']})
@@ -2561,14 +2552,14 @@ function dao(num) {
           nomention = v[10],
           cpost = v[11],
           feedCleaner = v[12],
-          feedKeys = Object.keys(feedCleaner),
-          sps = v[13]
+          feedKeys = Object.keys(feedCleaner)
           for (feedi = 0; feedi < feedKeys.length;feedi++){
             if(feedKeys[feedi].split(':')[0] < num - 30240){
                 delete feedCleaner[feedKeys[feedi]]
             }
           }
           news = news
+          daops.push({type:'del',path:['feed']})
           daops.push({type:'put',path:['feed'], data: feedCleaner})
       var i = 0,
           j = 0,
