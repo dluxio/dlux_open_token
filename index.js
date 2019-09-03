@@ -2538,6 +2538,9 @@ function dao(num) {
       daops.push({type:'del',path:['br']})
       daops.push({type:'del',path:['rolling']})
       daops.push({type:'del',path:['ico']})
+      daops.push({type:'del',path:['feed']})
+      store.batch(daops)
+      daops = []
       news = v[0] + '*****\n'
       const header = post + news
       var bals = v[1],
@@ -2561,7 +2564,6 @@ function dao(num) {
           console.log(feedCleaner)
           news = news
           daops.push({type:'put',path:['feed'], data: feedCleaner})
-          daops.push({type:'del',path:['feed']})
       var i = 0,
           j = 0,
           b = 0,
