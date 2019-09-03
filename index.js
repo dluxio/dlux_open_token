@@ -2563,7 +2563,6 @@ function dao(num) {
           }
           console.log(feedCleaner)
           news = news
-          daops.push({type:'put',path:['feed'], data: feedCleaner})
       var i = 0,
           j = 0,
           b = 0,
@@ -2847,6 +2846,7 @@ function dao(num) {
       ]
       console.log('all the way')
       daops.push({type:'put',path:['dex'], data: dex})
+      daops.push({type:'put',path:['feed'], data: feedCleaner})
       daops.push({type:'put',path:['stats'], data: stats})
       daops.push({type:'put',path:['balances'], data: bals})
       daops.push({type:'put',path:['markets','node'], data: mnode})
