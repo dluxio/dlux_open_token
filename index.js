@@ -1967,7 +1967,7 @@ function startApp() {
 
     processor.onBlock(function(num, block) {
         current = num
-
+        console.log(num)
         //* // virtual ops
         chronoProcess = true
         store.someChildren(['chrono'], {
