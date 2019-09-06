@@ -1,24 +1,25 @@
 const steem = require('dsteem');
 const steemjs = require('steem');
 const steemState = require('./processor');
+const stringify = require('json-stringify-deterministic')
 const IPFS = require('ipfs-api'); //consensus and auto restarts
 const ipfs = new IPFS({ //public gateway for uploads and downloads
     host: 'ipfs.infura.io',
     port: 5001,
     protocol: 'https'
 });
-const express = require('express')
+const express = require('express');
 const cors = require('cors')
 const config = require('./config');
 const VERSION = 'v0.0.1wip'
 const api = express()
 var http = require('http').Server(api);
-const wif = steemClient.auth.toWif(config.username, config.activeKey, 'active')
 const prefix = 'ACTDAO_';  //custom json prefix
 const multiname = 'dac.escrow'; //claimed multisig account
-const streamMode = args.mode || 'irreversible';
+const streamMode = 'irreversible';
 console.log("Streaming using mode", streamMode);
 var client = new steem.Client(config.clientURL);
+const wif = steemjs.auth.toWif(config.username, config.activeKey, 'active')
 var processor;
 
 //force https for heroku
@@ -39,7 +40,7 @@ api.use(cors())
 //state dump while building...
 api.get('/', (req, res, next) => {
   res.setHeader('Content-Type', 'application/json');
-  res.send(JSON.stringify(state, null, 3))
+  res.send(stringify(state, null, 3))
 });
 //api.listen(port, () => console.log(`DLUX token API listening on port ${port}!\nAvailible commands:\n/@username =>Balance\n/stats\n/markets`))
 http.listen(config.port, function() {
@@ -54,22 +55,28 @@ var plasma = {
   stats:{
     bu: 0,
     bi: 0,
-    bl: []    
+    bl: []
   },
   run: false
 }
 
 // constructor for agents
 class Agent {
-  constructor(account, domain, low, rrate, num) {
+  constructor(account, domain, low, rrate, num, spl, spr) {
     this.a = account;
     this.d = domain; //api
+    this.da = false; //domain active
     this.l = low; // lowest price accepted
     this.r = rrate; //release rate of inventory
     this.i = 0; //inventory -> populated by calls
     this.ir = 0; //inventory redeemed
+    this.sp = 0; //SP
+    this.spin = 0; //delegated in
+    this.spout = 0; //delegated out
+    this.spr = spr; //% of sp willing to delegate
+    this.spl = spl; //lowest APR to accept for delegations
     this.j = 0; //jsons sent for verification
-    this.p = '' //Public Active Key
+    this.p = ''; //Public Active Key
     this.h = 0; //last hash reported
     this.g = 0; //good standing
     this.hb = 0; //last block reported - online indicator
@@ -92,7 +99,9 @@ steemjs.api.getAccountHistory(config.username, -1, 100, function(err, result) {
   } else {
     let ebus = result.filter( tx => tx[1].op[1].id === 'ACTDAO_report' )
     for(i=ebus.length -1;i>=0;i--){
-      if(JSON.parse(ebus[i][1].op[1].json).stateHash !== null)var recents.push(JSON.parse(ebus[i][1].op[1].json).stateHash)
+      if(JSON.parse(ebus[i][1].op[1].json).stateHash !== null){
+        recents.push(JSON.parse(ebus[i][1].op[1].json).stateHash)
+      }
     }
     if(recents.length){ //build a list to pull from IPFS starting with most recent
         const mostRecent = recents.shift()
@@ -131,33 +140,31 @@ function startWith(hash, recents) {
         });
     } else { //initial conditions
         state = {
-          accounts: {},
-          agents: {},
-          bot: [],
-          contracts:{},
+          accounts: {}, //created accounts still recieving delegation
+          agents: {}, //agents
+          bot: [], //list of ops to include this block
+          contracts:{}, //scheduled delegation payouts
           feed: {},
-          market:{
-            aq:[],
-            dq:[],
-          },
-          queue: [],
+          qa: [], //account queue
+          qd: [], //delegation queue
           stats: {
-            bu: sh,
-            bi: 36010000,
-            auths: 1,
-            thresh: 1,
-            inv:[
-              {i:0,p:1200}
-            ],
-            di: [
-              {p:400,i:0}
-            ], //delegation inventory
+            bu: 0, //consensus backup
+            bi: 36010000, //starting block with backup
+            auths: 1, // number of owners
+            thresh: 1, // threshhold parseInt(2/3)*auths + 1
+            intadj: 3600, //block per period
+            inv:0, //total inventory
+            invp:0, //inventory period
+            so: 0, //sold out
+            pri: 1305, //price of accounts
+            di:0, //delegation inventory
+            prd: 295, //price for 30 days of 15_SP delegation
             auth: {}, //accounts holding authority
-            msi: {},
-            msp: {},
-            sigs: []
+            msi: {}, //multisig info
+            msp: {}, //multisig poll
+            sigs: [] //sigs for current block
           },
-          tx: {},
+          tx: {}, // op waiting for signatures
         }
         plasma.stats.bi = 36010000
         startApp()
@@ -166,14 +173,14 @@ function startWith(hash, recents) {
 
 
 function startApp() {
-    processor = steemState(client, steem, plasma.stats.bi, 10, prefix, streamMode); 
+    processor = steemState(client, steem, plasma.stats.bi, 10, prefix, streamMode);
 
 
     processor.onOperation('create_claimed_account', function(json) {
       //see if need to pay
       //adjust inventories
     });
-    
+
     processor.onOperation('claim_account', function(json) {
       if (state.agents[json.creator] != null){ //adjust inventories
         state.agents[json.creator].i++
@@ -243,26 +250,24 @@ function startApp() {
       state.stats.auths = {}
       for (i=0;i<json.owners.length;i++){ //json
         state.stats.auth[json.owner.key_auths[i][0]] = 1
-        
+
       }
-      //if agent 
+      //if agent
       //result[i].active.key_auths[0][0
     });
-       
+
     processor.onOperation('transfer', function(json) {
       if(json.to == multiname){
         //buying accounts
-        var const = JSON.parse(json.memo)
+        var info = JSON.parse(json.memo)
         var errortext = 'Incorrect price.', creator, delegator
-        if((parseInt(parseFloat(json.amount)*1000) == state.stats.inv[0].p || parseInt(parseFloat(json.amount)*1000) == state.stats.inv[1].p)&& json.amount.split(' ')[1] == 'STEEM'){
+        if((parseInt(parseFloat(json.amount)*1000)) > state.stats.pri && json.amount.split(' ')[1] == 'STEEM'){
           errortext = ''
         }
-        if(state.market.aq.length){
-          creator = state.market.aq.shift()
-        } else {
-          errorText = 'There are no more account availible. Try again later.'
+        if(plasma.bl.indexOf(json.from) >= 0){
+          errortext = 'This account is on our blacklist.'
         }
-        if(state.market.dq.length){
+        if(state.qd.length){
           delegator = state.market.dq.shift()
         } else {
           errorText = 'There are no more account availible. Try again later.'
@@ -271,6 +276,7 @@ function startApp() {
           errortext = 'Public keys invalid'
         }
         if (info.req == 'now' && !errortext){
+          creator = state.qa.shift()
           const buildAccountOp = [
                 "create_claimed_account",
                 {
@@ -307,7 +313,7 @@ function startApp() {
                     ]
                   },
                   "memo_key": info.m,
-                  "json_metadata": JSON.stringify({for:json.from,cost:json.amount})
+                  "json_metadata": stringify({for:json.from,cost:json.amount})
                 }
               ]
               if (state.agents[creator].bot[json.block_num + 20] == null){
@@ -337,7 +343,7 @@ function startApp() {
                   {
                     "to": creator,
                     "from": multiname,
-                    "amount": parseFloat(parseFloat(json.amount) - 0.295) + ' STEEM',
+                    "amount": state.stats.pri + ' STEEM',
                     "memo": `Thank you for creating @${info.n}`
                   }
                 ]
@@ -346,10 +352,12 @@ function startApp() {
                   {
                     "to": delegator,
                     "from": multiname,
-                    "amount": '0.295 STEEM',
+                    "amount": parseFloat(parseFloat(json.amount)-(state.stats.pri/1000)).toFixed(3) +' STEEM',
                     "memo": `Thank you for creating @${info.n}`
                   }
-                ] 
+                ]
+
+                // drop these into contracts
               state.feed[`${json.block_num}:${json.transaction_id}`] = `@${json.from} paid ${json.amount} to create @${info.n}. @${creator}/@${delegator} responsible.`
           } else {
             const refundOp = [
@@ -369,7 +377,9 @@ function startApp() {
       } else if (json.from == multiname){
         //verify payments
       }
-      
+      if(!state.qa.length){
+        setPrice(json.block_num)
+      }
     });
 
     processor.onBlock(function(num, block) {
@@ -381,6 +391,13 @@ function startApp() {
         if (num % 28800 === 0) { //time for daily magic
             dao(num)
         }
+        if (num % 3600 === 0) { //adjust price or reset periodicity
+            if(!state.stats.so){
+              setPrice(num)
+            } else {
+              state.stats.so = 0
+            }
+        }
         if (num % 100 === 0 && processor.isStreaming()) {
           plasma.agents = {}
           plasma.run = true
@@ -389,7 +406,7 @@ function startApp() {
             tally(processor.isStreaming());
         }
         if (num % 100 === 1 && processor.isStreaming()) {
-            const blockState = Buffer.from(JSON.stringify([num, state]))
+            const blockState = Buffer.from(stringify([num, state]))
             ipfsSaveState(num, blockState)
         }
 
@@ -411,7 +428,7 @@ function exit(consensus) { //restart after failing consensus
         stats:{
           bu: 0,
           bi: 0,
-          bl: []    
+          bl: []
         },
         run: false
       }
@@ -425,10 +442,10 @@ function getAccounts(arr, reason){ //polling for ACT inv and Active Public Key
       steemjs.api.getAccounts(arr, function(err, result) {
         for(i=0;i<result.length;i++){
           plasma.agents[result[i].name] = {i:result[i].pending_claimed_accounts,p:result[i].active.key_auths[0][0]} //not gonna find multi keys
-          
+
         }
       })
-    }  
+    }
   } catch(e){console.log(e)}
 }
 
@@ -442,7 +459,7 @@ function dac(num) { //daily ownership by numbers of ACTs held
   }
   var elect = [], spots = 1
   var candidates = Object.keys(state.agents) //election time
-  var auths - Object.keys(state.stats.auth) //whos a signer
+  var auths = Object.keys(state.stats.auth) //whos a signer
   for (i=0;i<auths.length;i++){
     candidates.splice(candidates.indexOf(auths[i],1,0)) //remove signers from candidacy
   }
@@ -574,11 +591,11 @@ function tally(num, streaming) { //consensus determining
       }
     ])
     var tx ={
-      state.stats.msi.exp,
-      [],
-      ops,
-      state.stats.msi.rbn,
-      state.stats.msi.rbp
+      expiration: state.stats.msi.exp,
+      extensions: [],
+      operations: ops,
+      ref_block_num: state.stats.msi.rbn,
+      ref_block_prefix: state.stats.msi.rbp
     }
     var stx = client.broadcast.sign(tx, steem.PrivateKey.from(config.activeKey))
     plasma.sig = stx.signatures[0]
@@ -619,8 +636,49 @@ function tally(num, streaming) { //consensus determining
   }
 }
 
-function updateAccount(cur,ele){ //build account update transaction and determin weights 
-  
+function setPrice (num){ //call every 3600 or out of inv
+  var out = 0, newPrice = 0, newInv = {ei:0,q:{},keys:[]}, qi = [], qd = []
+  if(num % 3600 != 0){ //see how early acounts have run out.
+    out = 3600 - (num % 3600)
+  }
+  if (out){
+    newPrice = parseInt(state.stats.pri *parseFloat(1 + ((out/3600)/40))) //increase price ... for 3 hour periods in a  day recharge window
+  } else {
+    newPrice = parseInt(state.stats.pri *(((state.stats.invp - state.qa.length)/state.stats.invp)/40)) //decrease price
+  }
+  state.stats.pri = newPrice
+  state.stats.so = out
+  for (var agent in state.agents){
+    if (state.agents[agent].l < newPrice){ //determine effective inventory and form the queue
+      newInv.q[agent] = parseInt((state.agents[agent].i * state.agents[agent].r)/8)
+      newInv.ei = parseInt(newInv.ei + newInv.q[agent])
+    }
+  }
+  state.stats.invp = newInv.ei
+  for(var i = 0; i < state.qi.length ; i++){ //queue continuation
+    if(newInv.q[state.qi[i]]){
+      qi.push(state.qi[i])
+      newInv.q[state.qi[i]]--
+      newInv.ei--
+    }
+  }
+  for(var a in newInv.q){ //remove empty qs
+    if(!newInv.q[a])
+    delete newInv.q[a]
+  }
+  newInv.keys = Object.keys(newInv.q)
+  for(var i = newInv.ei; i > 0; i--){
+    newInv.q[newInv.keys[i % newInv.keys.length]]--
+    qi.push(newInv.keys[i % newInv.keys.length])
+    if(!newInv.q[newInv.keys[i % newInv.keys.length]]){
+      newInv.keys.splice((i % newInv.keys.length),1,0)
+    }
+  }
+  state.qa = qi
+}
+
+function updateAccount(cur,ele){ //build account update transaction and determin weights
+
 }
 
 function updateBlacklist(){
@@ -652,7 +710,7 @@ function looksRight(pub){
 
 //poll for time and blockheader and prefix to build deterministic txs for multisig
 function ipfsSaveState(blocknum, hashable) {
-    ipfs.add(Buffer.from(JSON.stringify([blocknum, hashable]), 'ascii'), (err, IpFsHash) => {
+    ipfs.add(Buffer.from(stringify([blocknum, hashable]), 'ascii'), (err, IpFsHash) => {
         if (!err) {
             plasma.stats.bu = IpFsHash[0].hash
             plasma.stats.bi = blocknum
@@ -707,7 +765,7 @@ var bot = {
             required_auths: [username],
             required_posting_auths: [],
             id: prefix + id,
-            json: JSON.stringify(json),
+            json: stringify(json),
         }, wif).then(
             result => {
                 console.log('Signed ${json}')
