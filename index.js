@@ -464,9 +464,12 @@ steemjs.api.getAccountHistory(config.username, -1, 100, function(err, result) {
   } else {
     let ebus = result.filter( tx => tx[1].op[1].id === 'dlux_report' )
     for(i=ebus.length -1;i>=0;i--){
-      if(JSON.parse(ebus[i][1].op[1].json).hash !== null)recents.push(JSON.parse(ebus[i][1].op[1].json).hash)
+      if(JSON.parse(ebus[i][1].op[1].json).hash != null){
+          recents.push(JSON.parse(ebus[i][1].op[1].json).hash)
+          console.log(JSON.parse(ebus[i][1].op[1].json).hash)                                              
+      }
     }
-    if(recents.length && recents[0]){
+    if(recents.length){
         const mostRecent = recents.shift()
         console.log(mostRecent)
         startWith(mostRecent)
@@ -478,6 +481,7 @@ steemjs.api.getAccountHistory(config.username, -1, 100, function(err, result) {
 
 // Special Attention
 function startWith(hash) {
+    console.log(`${hash} inserted`)
     if (hash) {
         console.log(`Attempting to start from IPFS save state ${hash}`);
         ipfs.cat(hash, (err, file) => {
