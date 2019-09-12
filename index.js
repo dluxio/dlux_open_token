@@ -466,7 +466,7 @@ steemjs.api.getAccountHistory(config.username, -1, 100, function(err, result) {
     for(i=ebus.length -1;i>=0;i--){
       if(JSON.parse(ebus[i][1].op[1].json).hash !== null)recents.push(JSON.parse(ebus[i][1].op[1].json).hash)
     }
-    if(recents.length && mostRecent){
+    if(recents.length && recents[0]){
         const mostRecent = recents.shift()
         console.log(mostRecent)
         startWith(mostRecent)
