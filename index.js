@@ -484,18 +484,23 @@ function startWith(hash) {
             if (!err) {
                 var data = JSON.parse(file);
                 startingBlock = data[0]
-                plasma.hashBlock = data[0]
-                plasma.hashLastIBlock = hash
-                //store.batch([{type:'del',path:[]}])
-                store.del([],function(e){
-                  if(!e){
-                    if(hash){
-                      store.put([], data[1], function(err) {
-                          if(err){ console.log(err)} else{
-                            store.get(['balances','ra'],function(error,returns){
-                              if(!error){
-                                console.log('here' +returns)
-                              }
+                if (startingBlock == ''){
+                    startWith(sh)
+                } else {
+                    plasma.hashBlock = data[0]
+                    plasma.hashLastIBlock = hash
+                    //store.batch([{type:'del',path:[]}])
+                    store.del([],function(e){
+                    if(!e){
+                        if(hash){
+                            store.put([], data[1], function(err) {
+                            if(err){ 
+                                console.log(err)
+                            } else {
+                                store.get(['balances','ra'],function(error,returns){
+                                if(!error){
+                                    console.log('here' +returns)
+                                }
                             })
                             startApp()
                           }
@@ -514,6 +519,7 @@ function startWith(hash) {
                   }
                   } else {console.log(e)}
                 })
+                }
             } else {
                 startWith(config.engineCrank)
                 console.log(`${sh} failed to load, Replaying from genesis.\nYou may want to set the env var STARTHASH\nFind it at any token API such as token.dlux.io`)
