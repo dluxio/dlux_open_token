@@ -15,7 +15,7 @@ The following ENV Vars should be set
 * `low_price` : lowest price to sell ACTs for in millisteem. `1200` = 1.2 Steem
 * `release_rate` : How often to sell ACTs. `2000` is 20% per day and will eventually be equilibrium. Lower will tend to stockpile ACTs and higher will tend to lower your inventory.
 * `del_max` : `100` to `9500` is 1.00% to 95.00% availible SP to delegate to new accounts
-* `del_price` : `295` price for 15 SP delegation for 30 days in millisteem. .295 steem is 23.6% APY
+* `del_price` : `295` price for 15 SP delegation for 30 days in millisteem. .295 steem is 19.1% APY (7 day delegation return)
 
 * Set Manual or Auto Deploy
 
