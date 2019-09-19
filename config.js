@@ -13,9 +13,8 @@ const low = ENV.low_price || 1 //lowest sell price for ACTs
 const rrate = ENV.release_rate || 2000 //maximum percent of ACTs to redeem/sell per day
 const rcmin = ENV.rc_min || 2000 //lowest RC balance the auto ACT purchaser will achieve
 const autoclaim = ENV.auto_claim_act || true
-const del = ENV.del || true //willing to delegate SP
-const delmax = ENV.del_max || 2500 //max percent of SP willing to delegate
-const delprice = ENV.del_price || 'market'
+const delmax = ENV.del_max || 2500 //max percent of SP willing to delegate 1% 100, MAX 95% = 9500
+const delprice = ENV.del_price || 295 //price for 30 days of 15sp delegation 
 const delshare = ENV.del_share || true //future implementation
 const bl = ENV.bl || 'https://raw.githubusercontent.com/themarkymark-steem/buildawhaleblacklist/master/blacklist.txt'
 
