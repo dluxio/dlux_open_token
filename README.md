@@ -23,6 +23,6 @@ The following ENV Vars should be set
 
 Install Node.JS. Download ACT branch and adjust config.js with the above information. Run CMDs
 
-* cd <to location>
+* cd //to location
 * npm i
 * npm start
