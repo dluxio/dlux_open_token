@@ -40,7 +40,7 @@ api.use(cors())
 //state dump while building...
 api.get('/', (req, res, next) => {
   res.setHeader('Content-Type', 'application/json');
-  res.send(stringify({state,plasma.}, null, 3))
+  res.send(stringify({state,plasma}, null, 3))
 });
 //api.listen(port, () => console.log(`DLUX token API listening on port ${port}!\nAvailible commands:\n/@username =>Balance\n/stats\n/markets`))
 http.listen(config.port, function() {
@@ -145,7 +145,7 @@ function startWith(hash, recents) {
           bot: [], //list of ops to include this block
           contracts:{}, //scheduled delegation payouts
           feed: {},
-          keyPairs: {} //key:account
+          keyPairs: {}, //key:account
           qa: [], //account queue
           qd: [], //delegation queue
           stats: {
@@ -159,7 +159,7 @@ function startWith(hash, recents) {
             so: 0, //sold out
             pri: 1305, //price of accounts
             di:0, //delegation inventory
-            prd: 295, //price for 30 days of 15_SP delegation
+            prd: 295, //price for 30 days of 15_SP delegation 0.295 steem
             auth: {}, //accounts holding authority
             msi: {}, //multisig info
             msp: {}, //multisig poll
@@ -220,14 +220,20 @@ function startApp() {
 
     processor.on('node_add', function(json, from, active) { //auto joining the DAC
         if (active){
-            var low = json.low, rrate = json.rrate
+            var low = json.low, rrate = json.rrate, delpri = json.del_price, del = json.del_per
             if(parseInt(low) > 3000){low = 3000}
-            else if(parseInt(low) <= 3000){}
+            else if(parseInt(low) <= 3000){parseInt(low)}
             else {low = 0}
             if(parseInt(rrate) > 2000){rrate = 2000}
-            else if(parseInt(rrate) >= 0){}
+            else if(parseInt(rrate) >= 0){parseInt(rrate)}
             else {rrate = 0}
-            state.agents[from] = new Agent(from, json.domain, low, rrate, json.block_num)
+            if(parseInt(del) > 9500){del = 9500}
+            else if(parseInt(del) >= 100){parseInt(del)}
+            else {del = 0}
+            if(parseInt(delpri) > 2000){delpri = 2000}
+            else if(parseInt(delpri) >= 0){parseInt(delpri)}
+            else {delpri = 0}
+            state.agents[from] = new Agent(from, json.domain, low, rrate, json.block_num, del, delpri)
             getAccounts([from],'init')
         }
     });
@@ -506,7 +512,19 @@ function startApp() {
 
 
     processor.onStreamingStart(function() {
-
+      if (state.agents[config.username] == null) {
+                ["custom_json",
+                {
+                  "required_auths": [config.username],
+                  "required_posting_auths": [],
+                  "id": prefix + "node_add",
+                  "json": stringify({
+                    low: config.low,
+                    rrate: config.rrate,
+                    del_per: config.delmax,
+                    del_price: config.delprice
+                  })}]
+                }
     });
 
     processor.start();
@@ -637,7 +655,7 @@ function dac(num) { //daily ownership by numbers of ACTs held
 function tally(num, streaming) { //consensus determining
   var pagents =  [], freeze = true, agents = []
   for (var key in state.keyPairs){
-    pagents.push(state.keyPairs[key]) 
+    pagents.push(state.keyPairs[key])
   }
   for(i=0;i<pagents.length;i++){
     if(state.agents[pagents[i]].hb == num - 99){
@@ -782,7 +800,7 @@ function tally(num, streaming) { //consensus determining
 function setDelPrice(num){
   var picker = [999999,[]]
   for (var agent in state.agents){
-    const perDel = parseInt(10000 * parseInt((state.agents[agent].sp-state.agents[agent].spout)/state.agents[agent].sp)) 
+    const perDel = parseInt(10000 * parseInt((state.agents[agent].sp-state.agents[agent].spout)/state.agents[agent].sp))
     if(state.agents[agent].spl <= picker[0] && perDel < state.agents[agent].spr){
       picker[0] = state.agents[agent].spl
       picker[1].push(agent)
@@ -802,7 +820,7 @@ function setDelPrice(num){
     }
   }
   state.stats.prd = picker[0]
-  state.stats.qd = delMix
+  state.qd = delMix
 }
 
 function setPrice (num){ //call every 3600 or out of inv
