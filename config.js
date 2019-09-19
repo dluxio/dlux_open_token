@@ -15,11 +15,12 @@ const rcmin = ENV.rc_min || 2000 //lowest RC balance the auto ACT purchaser will
 const autoclaim = ENV.auto_claim_act || true
 const del = ENV.del || true //willing to delegate SP
 const delmax = ENV.del_max || 2500 //max percent of SP willing to delegate
+const delprice = ENV.del_price || 'market'
 const delshare = ENV.del_share || true //future implementation
 const bl = ENV.bl || 'https://raw.githubusercontent.com/themarkymark-steem/buildawhaleblacklist/master/blacklist.txt'
 
 let config = {
-    username, activeKey, memoKey, NODEDOMAIN, ec, port, clientURL, low, rrate, rcmin,autoclaim, del, delmax, delshare, bl
+    username, activeKey, memoKey, NODEDOMAIN, ec, port, clientURL, low, rrate, rcmin,autoclaim, del, delprice, delmax, delshare, bl
 };
 
 module.exports = config;
