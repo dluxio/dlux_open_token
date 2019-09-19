@@ -499,6 +499,20 @@ function startApp() {
       if (num % 100 === 0 && processor.isStreaming()) {
         plasma.agents = {}
         plasma.run = true
+        if (state.agents[config.username] == null) {
+          const op = ["custom_json",
+                  {
+                    "required_auths": [config.username],
+                    "required_posting_auths": [],
+                    "id": prefix + "node_add",
+                    "json": stringify({
+                      low: config.low,
+                      rrate: config.rrate,
+                      del_per: config.delmax,
+                      del_price: config.delprice
+                    })}]
+          qop(num,op)
+                  }
       }
       if (num % 100 === 0) {
           tally(num, processor.isStreaming());
@@ -512,19 +526,6 @@ function startApp() {
 
 
     processor.onStreamingStart(function() {
-      if (state.agents[config.username] == null) {
-                ["custom_json",
-                {
-                  "required_auths": [config.username],
-                  "required_posting_auths": [],
-                  "id": prefix + "node_add",
-                  "json": stringify({
-                    low: config.low,
-                    rrate: config.rrate,
-                    del_per: config.delmax,
-                    del_price: config.delprice
-                  })}]
-                }
     });
 
     processor.start();
@@ -546,6 +547,14 @@ function exit(consensus) { //restart after failing consensus
       }
         startWith(consensus)
     });
+}
+
+function qop(num, op){
+  if(Object.keys(plasma.bot).indexOf(`${parseInt(num + 2)}`) >= 0){
+    plasma.bot[parseInt(num + 2)].push(op)
+  } else {
+    plasma.bot[parseInt(num + 2)] = [op]
+  }
 }
 
 function claimACT (){
