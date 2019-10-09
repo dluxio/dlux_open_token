@@ -537,6 +537,7 @@ function startWith(hash) {
 
 function startApp() {
     processor = steemState(client, steem, startingBlock, 10, prefix, streamMode);
+    store.del(['sps'],function(e){})
 
     processor.on('send', function(json, from, active) {
         store.get(['balances', from], function(e, fbal) {
@@ -559,6 +560,7 @@ function startApp() {
         })
 
     });
+    /*
     processor.onOperation('update_proposal_votes', function(json) {
         store.get(['sps'], function(e, spsc) {
             store.del(['sps'],function(e){
@@ -585,6 +587,7 @@ function startApp() {
             })
         })
     });
+    */
     // power up tokens
     processor.on('power_up', function(json, from, active) {
         var amount = parseInt(json.amount),
