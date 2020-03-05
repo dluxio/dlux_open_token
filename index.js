@@ -464,7 +464,7 @@ steemjs.api.getAccountHistory(config.username, -1, 100, function(err, result) {
   } else {
     let ebus = result.filter( tx => tx[1].op[1].id === 'dlux_report' )
     for(i=ebus.length -1;i>=0;i--){
-      if(JSON.parse(ebus[i][1].op[1].json).hash && JSON.parse(ebus[i][1].op[1].json).block > config.override){
+      if(JSON.parse(ebus[i][1].op[1].json).hash && JSON.parse(ebus[i][1].op[1].json).block < config.override){
           recents.push(JSON.parse(ebus[i][1].op[1].json).hash)                                             
       }
     }
@@ -2281,14 +2281,23 @@ function tally(num) {
   for (var node in runners) {
       l++
       var forblock = 0
-      try{ forblock = nodes[node].report.block}catch(e){}
+      try {
+          if()
+          forblock = nodes[node].report.block
+      }catch(e){
+        console.log(e)
+      }
       if (tally.agreements.tally[node].votes / tally.agreements.votes >= 2 / 3 && nodes[node].report.block > num - 100) {
           consensus = tally.agreements.runners[node].report.hash
+          console.log(`${l} / ${node}  / ${consensus}`)
       } else if (l > 1 && forblock > num - 100) {
           delete runners[node]
           console.log('uh-oh:' + node + ' scored ' + tally.agreements.tally[node].votes + '/' + tally.agreements.votes)
       } else if (l == 1 && forblock > num - 100) {
           if (nodes[node].report.block > num - 100) consensus = nodes[node].report.hash
+      } else {
+          delete runners[node]
+          console.log('trash ${node} cleaned')
       }
       if (consensus === undefined) {
           for (var node in runners) {
