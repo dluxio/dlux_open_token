@@ -2282,7 +2282,6 @@ function tally(num) {
       l++
       var forblock = 0
       try {
-          if()
           forblock = nodes[node].report.block
       }catch(e){
         console.log(e)
