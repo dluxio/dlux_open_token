@@ -2348,8 +2348,12 @@ function tally(num) {
       stats.tokenSupply += mint
       rbal += mint
   }
-      console.log({stats, queue, runners, nodes, rbal})
   store.batch([
+      {type:'del', path:['stats']},
+      {type:'del', path:['queue']},
+      {type:'del', path:['runners']},
+      {type:'del', path:['markets','node']},
+      {type:'del', path:['balances','ra']},
     {type:'put', path:['stats'], data: stats},
     {type:'put', path:['queue'], data: queue},
     {type:'put', path:['runners'], data: runners},
