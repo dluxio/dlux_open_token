@@ -2142,15 +2142,17 @@ function startApp() {
         console.log("At real time.")
         store.get(['markets', 'node', config.username], function(e, a) {
             if (!a.domain && config.NODEDOMAIN) {
-                transactor.json(config.username, config.active, 'node_add', {
+                var op = ["custom_json",{
+                  required_auths:  [config.username],
+                  required_posting_auths: [],
+                  id: `${prefix}node_add`,
+                  json: JSON.stringify({
                     domain: config.NODEDOMAIN,
                     bidRate: config.bidRate,
                     escrow
-                }, function(err, result) {
-                    if (err) {
-                        console.error(err);
-                    }
-                })
+                    })
+                  }]
+                NodeOps.unshift([[0,0],op])
             }
         })
     });
