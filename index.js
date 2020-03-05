@@ -2286,7 +2286,7 @@ function tally(num) {
       }catch(e){
         console.log(e)
       }
-      console.log({node, runners, l, forBlock})
+      console.log({node, runners, l, forblock})
       if (tally.agreements.tally[node].votes / tally.agreements.votes >= 2 / 3 && nodes[node].report.block > num - 100) {
           consensus = tally.agreements.runners[node].report.hash
           console.log(`${l} / ${node}  / ${consensus}`)
