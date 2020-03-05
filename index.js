@@ -2204,7 +2204,14 @@ function tally(num) {
           if (err) {
               reject(err)
           } else {
-              resolve(obj)
+              store.del(['runners'],function(e){
+                if(!e){
+                    resolve(obj)
+                } else {
+                    console.log(e)
+                    resolve(obj)
+                }
+              })
           }
       });
   });
