@@ -474,6 +474,7 @@ steemjs.api.getAccountHistory(config.username, -1, 100, function(err, result) {
         startWith(mostRecent)
     } else {
         startWith(config.startingHash)
+        console.log('I did it')
     }
   }
 });
