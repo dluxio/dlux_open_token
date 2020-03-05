@@ -464,7 +464,7 @@ steemjs.api.getAccountHistory(config.username, -1, 100, function(err, result) {
   } else {
     let ebus = result.filter( tx => tx[1].op[1].id === 'dlux_report' )
     for(i=ebus.length -1;i>=0;i--){
-      if(JSON.parse(ebus[i][1].op[1].json).hash && JSON.parse(ebus[i][1].op[1].json).block < config.override){
+      if(JSON.parse(ebus[i][1].op[1].json).hash && parseInt(JSON.parse(ebus[i][1].op[1].json).block) > parseInt(config.override)){
           recents.push(JSON.parse(ebus[i][1].op[1].json).hash)                                             
       }
     }
