@@ -2286,17 +2286,15 @@ function tally(num) {
       }catch(e){
         console.log(e)
       }
+      console.log({node, runners, l, forBlock})
       if (tally.agreements.tally[node].votes / tally.agreements.votes >= 2 / 3 && nodes[node].report.block > num - 100) {
           consensus = tally.agreements.runners[node].report.hash
           console.log(`${l} / ${node}  / ${consensus}`)
-      } else if (l > 1 && forblock > num - 100) {
+      } else if (l > 1) {
           delete runners[node]
           console.log('uh-oh:' + node + ' scored ' + tally.agreements.tally[node].votes + '/' + tally.agreements.votes)
-      } else if (l == 1 && forblock > num - 100) {
+      } else if (l == 1) {
           if (nodes[node].report.block > num - 100) consensus = nodes[node].report.hash
-      } else if (runners.length > 1){
-          delete runners[node]
-          console.log(`${node} cleaned`)
       }
       if (consensus === undefined) {
           for (var node in runners) {
