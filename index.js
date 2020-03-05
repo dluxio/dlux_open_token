@@ -2294,9 +2294,9 @@ function tally(num) {
           console.log('uh-oh:' + node + ' scored ' + tally.agreements.tally[node].votes + '/' + tally.agreements.votes)
       } else if (l == 1 && forblock > num - 100) {
           if (nodes[node].report.block > num - 100) consensus = nodes[node].report.hash
-      } else {
+      } else if (runners.length > 1){
           delete runners[node]
-          console.log('trash ${node} cleaned')
+          console.log(`${node} cleaned`)
       }
       if (consensus === undefined) {
           for (var node in runners) {
