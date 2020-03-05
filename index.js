@@ -227,7 +227,7 @@ api.get('/feed', (req, res, next) => {
 api.get('/fresh', (req, res, next) => {
     let page = req.query.page || 0
     res.setHeader('Content-Type', 'application/json')
-    var ip = page && typeof page == 'number' ? plasma.page[page] : realtime
+    var ip = page && typeof page == 'number' ? plasma.page[page] : current
     store.someChildren(['postchron'],{lte:ip,gte:plasma.page[page]}, function(err, obj) {
         var feed = []
         for (i in obj){
