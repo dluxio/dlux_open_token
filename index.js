@@ -1009,7 +1009,7 @@ function startApp() {
         })
         var Pcontract = new Promise(function(resolve, reject) {
             store.get(['contracts', seller, meta], function(e, a) {
-                if (e) { reject(e) } else if (isEmpty(a)) { resolve(0) } else { resolve(a) }
+                if (e) { resolve(0) } else if (isEmpty(a)) { resolve(0) } else { resolve(a) }
             });
         })
         Promise.all([PfromBal,PtoBal,PtoNode,PagentNode,Pcontract]).then(function(v) {
@@ -2280,7 +2280,7 @@ function tally(num) {
         console.log(e)
       }
       console.log({node, runners, l, forblock})
-      if (tally.agreements.tally[node].votes / tally.agreements.votes >= 2 / 3 && nodes[node].report.block > num - 100) {
+      if (tally.agreements.tally[node].votes / tally.agreements.votes >= 2 / 3 && nodes[node].report.block > num - 150) {
           consensus = tally.agreements.runners[node].report.hash
           console.log(`${l} / ${node}  / ${consensus}`)
       } else if (l > 1) {
