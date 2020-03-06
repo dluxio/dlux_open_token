@@ -2279,22 +2279,25 @@ function tally(num) {
       }catch(e){
         console.log(e)
       }
-      console.log({node, runners, l, forblock, num})
-      if (tally.agreements.tally[node].votes / tally.agreements.votes >= 2 / 3 && nodes[node].report.block > num - 150) {
+      console.log({node, tally.agreements.tally[node].votes, tally.agreements.votes, l, nodes[node].report.block, numfor: num - 99})
+      if (tally.agreements.tally[node].votes / tally.agreements.votes >= 2 / 3 && nodes[node].report.block === num - 99) {
           consensus = tally.agreements.runners[node].report.hash
           console.log(`${l} / ${node}  / ${consensus}`)
-      } else if (l > 1 && nodes[node].report.block > num - 150) {
+      } else if (l > 1 && nodes[node].report.block === num - 99) {
           delete runners[node]
           console.log('uh-oh:' + node + ' scored ' + tally.agreements.tally[node].votes + '/' + tally.agreements.votes)
       } else if (l == 1) {
-          if (nodes[node].report.block > num - 100) consensus = nodes[node].report.hash
-          console.log('done did it')
+          if (nodes[node].report.block === num - 99) consensus = nodes[node].report.hash
+          console.log('done did it' + nodes[node].report.hash)
       } else {console.log('somehow')}
       if (consensus === undefined) {
           for (var node in runners) {
-              if (forblock > num - 100) {
+              if (forblock === num - 99) {
                   consensus = nodes[node].report.hash
-              } else {}
+                  console.log('undefined catch bad')
+              } else {
+                console.log('undefined catch good')
+              }
               break;
           }
       }
