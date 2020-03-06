@@ -2262,7 +2262,7 @@ function tally(num) {
     try{ags=tally.agreements.runners[node].report.agreements}catch(e){}
       for (var subnode in ags) {
           if (tally.agreements.tally[subnode]) {
-              if (tally.agreements.tally[subnode].hash == tally.agreements.tally[node].hash) {
+              if (tally.agreements.tally[subnode].hash == tally.agreements.tally[node].hash && nodes[node].report.block === num - 99) {
                   tally.agreements.tally[subnode].votes++
               }
           }
@@ -2270,7 +2270,7 @@ function tally(num) {
       tally.agreements.votes++
   }
   var l = 0
-  var consensus
+  var consensus, firstCatch, first
   for (var node in runners) {
       l++
       var forblock = 0
@@ -2279,19 +2279,20 @@ function tally(num) {
       }catch(e){
         console.log(e)
       }
-      console.log({node, votes:tally.agreements.tally[node].votes, total:tally.agreements.votes, l, block:nodes[node].report.block, numfor: num - 99})
-      if(tally.agreements.tally[node].votes / tally.agreements.votes >= 2 / 3)console.log('1st')
-      if(nodes[node].report.block === num - 99)console.log('2nd')
-      if (tally.agreements.tally[node].votes / tally.agreements.votes >= 2 / 3 && nodes[node].report.block === num - 99) {
+      if (tally.agreements.tally[node].votes / tally.agreements.votes >= 2 / 3) {
           consensus = tally.agreements.runners[node].report.hash
-          console.log(`${l} / ${node}  / ${consensus}`)
-      } else if (l > 1 && nodes[node].report.block === num - 99) {
-          delete runners[node]
+          if(firstCatch){firstCatch();firstCatch=null}
+      } else if (l > 1) {
+          remove(node)
           console.log('uh-oh:' + node + ' scored ' + tally.agreements.tally[node].votes + '/' + tally.agreements.votes)
       } else if (l == 1) {
           if (nodes[node].report.block === num - 99) consensus = nodes[node].report.hash
-          console.log('done did it' + nodes[node].report.hash)
-      } else {console.log('somehow')}
+          console.log('non-consensus catch scheduled for removal upon consensus: '+node)
+          first = node
+          firstCatch = () => {remove(first)}
+      }
+      function remove (node){delete runners[node]}
+      
       if (consensus === undefined) {
           for (var node in runners) {
               if (forblock === num - 99) {
