@@ -1008,7 +1008,7 @@ function startApp() {
             });
         })
         var Pcontract = new Promise(function(resolve, reject) {
-            store.get(['contracts', seller, meta], function(e, a) {
+            store.get(['contracts', seller, meta.split(':')[1]], function(e, a) {
                 if (e) { resolve(0) } else if (isEmpty(a)) { resolve(0) } else { resolve(a) }
             });
         })
