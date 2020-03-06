@@ -2292,7 +2292,7 @@ function tally(num) {
           }
       } else if (l == 1) {
           if (nodes[node].report.block === num - 99) consensus = nodes[node].report.hash
-          console.log('non-consensus catch scheduled for removal upon consensus: '+node)
+          console.log('old-consensus catch scheduled for removal upon consensus: '+node)
           first = [node]
           firstCatch = () => {for(i in first){remove(first[i])}}
       }
@@ -2372,6 +2372,7 @@ function tally(num) {
     {type:'put', path:['runners'], data: runners},
     {type:'put', path:['markets','node'], data: nodes},
     {type:'put', path:['balances','ra'], data: rbal}])
+  console.log(plasma)
   if (consensus && consensus != plasma.hashLastIBlock && processor.isStreaming()) {
       exit(consensus)
       var errors = ['failed Consensus']
