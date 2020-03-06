@@ -849,6 +849,7 @@ function startApp() {
         var buyAmount = parseInt(json.steem)
         store.get(['balances',from],function(e,a){
           if(!e){
+            console.log(`${from}, selling ${json.dlux} for ${json.steem}`)
             var b = a
             if (json.dlux <= b && typeof buyAmount == 'number' && active) {
                 var txid = 'DLUX' + hashThis(from + json.block_num)
@@ -974,7 +975,7 @@ function startApp() {
     })
 
     processor.onOperation('escrow_transfer', function(json) { //grab posts to reward
-        var op, dextx, contract, isAgent, isDAgent, dextxdlux, meta, done = 0,type='steem'
+        var op, dextx, seller, contract, isAgent, isDAgent, dextxdlux, meta, done = 0,type='steem'
         try {
             dextx = JSON.parse(json.json_meta).dextx
             dextxdlux = dextx.dlux
