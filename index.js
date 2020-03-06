@@ -989,12 +989,12 @@ function startApp() {
         } catch (e) {}
         var PfromBal = new Promise(function(resolve, reject) {
             store.get(['balances', json.from], function(e, a) {
-                if (e) { reject(e) } else if (isEmpty(a)) { resolve(0) } else { resolve(a) }
+                if (e) { reject(e) } else if (isEmpty(a)) { resolve(0);console.log('Balance', a, json.from) } else { resolve(a) }
             });
         })
         var PtoBal = new Promise(function(resolve, reject) {
             store.get(['balances', json.to], function(e, a) {
-                if (e) { reject(e) } else if (isEmpty(a)) { resolve(0) } else { resolve(a) }
+                if (e) { reject(e) } else if (isEmpty(a)) { resolve(0);console.log('Balance', a, json.to)  } else { resolve(a) }
             });
         })
         var PtoNode = new Promise(function(resolve, reject) {
@@ -2297,18 +2297,6 @@ function tally(num) {
           firstCatch = () => {for(i in first){remove(first[i])}}
       }
       function remove (node){delete runners[node]}
-      
-      if (consensus === undefined) {
-          for (var node in runners) {
-              if (forblock === num - 99) {
-                  consensus = nodes[node].report.hash
-                  console.log('undefined catch bad')
-              } else {
-                console.log('undefined catch good')
-              }
-              break;
-          }
-      }
   }
   console.log('Consensus: ' + consensus)
   stats.lastBlock = stats.hashLastIBlock
@@ -2372,7 +2360,6 @@ function tally(num) {
     {type:'put', path:['runners'], data: runners},
     {type:'put', path:['markets','node'], data: nodes},
     {type:'put', path:['balances','ra'], data: rbal}])
-  console.log(plasma)
   if (consensus && (consensus != plasma.hashLastIBlock || consensus != nodes[config.username].report.hash ) && processor.isStreaming()) {
       exit(consensus)
       var errors = ['failed Consensus']
