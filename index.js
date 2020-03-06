@@ -1012,6 +1012,7 @@ function startApp() {
             });
         })
         Promise.all([PfromBal,PtoBal,PtoNode,PagentNode,Pcontract]).then(function(v) {
+            console.log(v)
           var fromBal = v[0],toBal = v[1], toNode = v[2], agentNode = v[3], contract = v[4]
               isAgent = toNode.escrow
               isDAgent = agentNode.escrow
@@ -1063,18 +1064,8 @@ function startApp() {
                                         "who": json.agent,
                                         "reciever": json.to,
                                         "escrow_id": json.escrow_id,
-                                        "sbd_amount": {
-                                            "amount": parseInt(parseFloat(json.sbd_amount) * 1000)
-                                                .toFixed(0),
-                                            "precision": 3,
-                                            "nai": "@@000000013"
-                                        },
-                                        "steem_amount": {
-                                            "amount": parseInt(parseFloat(json.steem_amount) * 1000)
-                                                .toFixed(0),
-                                            "precision": 3,
-                                            "nai": "@@000000021"
-                                        }
+                                        "sbd_amount": json.sbd_amount,
+                                        "steem_amount": json.steem_amount
                                     }
                                 ]
                             ],
@@ -1272,7 +1263,7 @@ function startApp() {
                     ]})
               store.batch(ops)
             }
-        }).catch(function(e){console.log(e)})
+        }).catch(function(e){console.log('Failed Escrow:' +e)})
     });
 
     processor.onOperation('escrow_approve', function(json) {
