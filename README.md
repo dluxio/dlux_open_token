@@ -50,6 +50,6 @@ While it runs it verifies other nodes are operating correctly and confirms this 
 Deploy from heroku or similar and set ENV variables with a steem name and posting key.
 * `account`  dlux-io
 * `active` active posting key (will run escrow transactions for rewards) !! *caution while in testing* !!
-* `DOMAIN` https://something-personal.herokuapp.com
-* `BIDRATE` 1 to 20000
+* `domain` https://dlux-token-yourusername.herokuapp.com
+* `bidrate` 1 to 20000
 * `startingHash ` A hash from a recent block gets you up to speed in no time, automated... leave blank casually
