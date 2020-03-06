@@ -975,6 +975,7 @@ function startApp() {
     })
 
     processor.onOperation('escrow_transfer', function(json) { //grab posts to reward
+        console.log(json)
         var op, dextx, seller, contract, isAgent, isDAgent, dextxdlux, meta, done = 0,type='steem'
         try {
             dextx = JSON.parse(json.json_meta).dextx
