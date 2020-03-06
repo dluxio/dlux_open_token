@@ -2283,13 +2283,18 @@ function tally(num) {
           consensus = tally.agreements.runners[node].report.hash
           if(firstCatch){firstCatch();firstCatch=null}
       } else if (l > 1) {
-          remove(node)
-          console.log('uh-oh:' + node + ' scored ' + tally.agreements.tally[node].votes + '/' + tally.agreements.votes)
+          if(tally.agreements.runners[node].report.hash == tally.agreements.runners[first[0]].report.hash){
+              first.push(node)
+              console.log(node + ' also scheduled for removal')
+          } else {
+            remove(node)
+            console.log('uh-oh:' + node + ' scored ' + tally.agreements.tally[node].votes + '/' + tally.agreements.votes)
+          }
       } else if (l == 1) {
           if (nodes[node].report.block === num - 99) consensus = nodes[node].report.hash
           console.log('non-consensus catch scheduled for removal upon consensus: '+node)
-          first = node
-          firstCatch = () => {remove(first)}
+          first = [node]
+          firstCatch = () => {for(i in first){remove(first[i])}}
       }
       function remove (node){delete runners[node]}
       
