@@ -2279,7 +2279,9 @@ function tally(num) {
       }catch(e){
         console.log(e)
       }
-      console.log({node, votes:tally.agreements.tally[node].votes, total:tally.agreements.votes, l, bloack:nodes[node].report.block, numfor: num - 99})
+      console.log({node, votes:tally.agreements.tally[node].votes, total:tally.agreements.votes, l, block:nodes[node].report.block, numfor: num - 99})
+      if(tally.agreements.tally[node].votes / tally.agreements.votes >= 2 / 3)console.log('1st')
+      if(nodes[node].report.block === num - 99)console.log('2nd')
       if (tally.agreements.tally[node].votes / tally.agreements.votes >= 2 / 3 && nodes[node].report.block === num - 99) {
           consensus = tally.agreements.runners[node].report.hash
           console.log(`${l} / ${node}  / ${consensus}`)
