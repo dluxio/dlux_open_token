@@ -2373,7 +2373,7 @@ function tally(num) {
     {type:'put', path:['markets','node'], data: nodes},
     {type:'put', path:['balances','ra'], data: rbal}])
   console.log(plasma)
-  if (consensus && consensus != plasma.hashLastIBlock && processor.isStreaming()) {
+  if (consensus && (consensus != plasma.hashLastIBlock || consensus != nodes[config.username].report.hash ) && processor.isStreaming()) {
       exit(consensus)
       var errors = ['failed Consensus']
       if (VERSION != nodes[node].report.version) {
