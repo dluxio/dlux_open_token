@@ -2368,7 +2368,7 @@ function tally(num) {
     {type:'put', path:['markets','node'], data: nodes},
     {type:'put', path:['balances','ra'], data: rbal}])
   if (consensus && consensus != plasma.hashLastIBlock && processor.isStreaming()) {
-      //exit(consensus)
+      exit(consensus)
       var errors = ['failed Consensus']
       if (VERSION != nodes[node].report.version) {
           console.log(current + `:Abandoning ${plasma.hashLastIBlock} because ${errors[0]}`)
