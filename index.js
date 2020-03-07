@@ -1329,6 +1329,7 @@ function startApp() {
                                             }
                                             delete plasma.pending[c.txid + ':buyApprove']
                                         }
+                                        console.log(a.contract.split(':')[1])
                                         dataOps.push({ type: 'put', path: ['contracts', a.for, a.contract.split(':')[1]], data: c })
                                         store.batch(dataOps)
                                         credit(json.who)
@@ -1370,6 +1371,7 @@ function startApp() {
                                 }
                                 delete plasma.pending[c.txid + ':listApprove']
                             }
+                            console.log(a.contract.split(':')[1])
                             dataOps.push({ type: 'put', path: ['contracts', a.for, a.contract.split(':')[1]], data: c })
                             store.batch(dataOps)
                             credit(json.who)
