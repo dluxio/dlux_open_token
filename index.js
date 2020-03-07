@@ -1100,7 +1100,7 @@ function startApp() {
                                     "to": json.to,
                                     "agent": json.agent,
                                     "who": json.agent,
-                                    "reciever": json.to,
+                                    "receiver": json.to,
                                     "escrow_id": json.escrow_id,
                                     "sbd_amount": json.sbd_amount,
                                     "steem_amount": json.steem_amount
