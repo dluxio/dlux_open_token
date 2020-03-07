@@ -1044,7 +1044,7 @@ function startApp() {
                         fromBal += contract.amount // collateral held and therefore instant purchase
                         contract.escrow = contract.amount
                         contract.buyer = json.from
-                        contract.approved_agent = false
+                        contract.approvedAgent = false
                         contract.approved_to = false
                         var hisE = {
                             rate: contract.rate,
@@ -1310,10 +1310,9 @@ function startApp() {
                             { type: 'put', path: ['feed', `${json.block_num}:${json.transaction_id}`], data: `:@${json.who}| approved escrow for ${json.from}` }
                         ]
                         if (json.approve && c.buyer) {
-                            console.log(json.agent)
                             if (json.who == json.agent) {
-                                c.approve_agent = true
-                                store.put(['contracts', a.for, a.contract.split(':')[1], 'approved_agent'], true, function() {
+                                c.approveAgent = true
+                                store.put(['contracts', a.for, a.contract.split(':')[1], 'approvedAgent'], true, function() {
                                     store.get(['contracts', a.for, a.contract.split(':')[1], 'approved_to'], function(e, t) {
                                         if (t) {
                                             console.log('to then agent' + t)
@@ -1338,11 +1337,11 @@ function startApp() {
                             } else if (json.who == json.to) {
                                 c.approve_to = true
                                 store.put(['contracts', a.for, a.contract.split(':')[1], 'approved_to'], true, function() {
-                                    store.get(['contracts', a.for, a.contract.split(':')[1], 'approved_agent'], function(e, t) {
+                                    store.get(['contracts', a.for, a.contract.split(':')[1], 'approvedAgent'], function(e, t) {
                                         if (t) {
                                             console.log('agent then to' + t)
                                             c.pending = c.auths[0]
-                                            c.approve_agent = true
+                                            c.approveAgent = true
                                             dataOps.push({ type: 'put', path: ['escrow', c.pending[0], c.txid + ':dispute'], data: c.pending[1] })
 
                                         }
