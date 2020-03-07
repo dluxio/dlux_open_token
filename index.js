@@ -1314,7 +1314,7 @@ function startApp() {
                                 store.put(['contracts', a.for, a.contract.split(':')[1], 'approved_agent'], true, function() {
                                     store.get(['contracts', a.for, a.contract.split(':')[1], 'approved_to'], function(e, t) {
                                         if (t) {
-                                            c.pending = c.auth.shift()
+                                            c.pending = c.auths.shift()
                                             dataOps.push({ type: 'put', path: ['escrow'.c.pending[0], c.txid + ':dispute'], data: c.pending[1] })
                                             if (c.buyer) {
                                                 dataOps.push({ type: 'del', path: ['escrow', json.who, c.txid + ':buyApprove'] })
@@ -1337,7 +1337,7 @@ function startApp() {
                                 store.put(['contracts', a.for, a.contract.split(':')[1], 'approved_to'], true, function() {
                                     store.get(['contracts', a.for, a.contract.split(':')[1], 'approved_agent'], function(e, t) {
                                         if (t) {
-                                            c.pending = c.auth.shift()
+                                            c.pending = c.auths.shift()
                                             dataOps.push({ type: 'put', path: ['escrow'.c.pending[0], c.txid + ':dispute'], data: c.pending[1] })
                                             if (c.buyer) {
                                                 dataOps.push({ type: 'del', path: ['escrow', json.who, c.txid + ':buyApprove'] })
