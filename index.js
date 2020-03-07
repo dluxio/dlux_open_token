@@ -1110,7 +1110,7 @@ function startApp() {
                             {type:'put',path:['balances', json.to], data: toBal},
                             {type:'put',path:['dex', type, 'tick'], data:contract.rate},
                             //{type:'put',path:['chrono',`${json.block_num}`]},
-                            {type:'put',path:['dex', type, 'his', `${hisE.block}:${found.txid}`],data:hisE},
+                            {type:'put',path:['dex', type, 'his', `${hisE.block}:${json.transaction_id}`],data:hisE},
                             {type:'del',path:['dex',type, 'sellOrders', `${contract.rate}:${contract.txid}`]}
                           ]
                           store.batch(ops)
