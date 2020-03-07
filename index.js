@@ -1015,8 +1015,8 @@ function startApp() {
         Promise.all([PfromBal,PtoBal,PtoNode,PagentNode,Pcontract]).then(function(v) {
             console.log(v)
           var fromBal = v[0],toBal = v[1], toNode = v[2], agentNode = v[3], contract = v[4]
-              isAgent = toNode.escrow
-              isDAgent = agentNode.escrow
+              isAgent = (toNode.lastGood > json.block_num - 200)
+              isDAgent = (agentNode.lastGood > json.block_num - 200)
               buy = contract.amount
               console.log(buy, isAgent, isDAgent)
               if (typeof buy === 'number' && isAgent && isDAgent) { //{txid, from: from, buying: buyAmount, amount: json.dlux, [json.dlux]:buyAmount, rate:parseFloat((json.dlux)/(buyAmount)).toFixed(6), block:current, partial: json.partial || true
