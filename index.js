@@ -1311,51 +1311,52 @@ function startApp() {
                         ]
                         if (json.approve && c.buyer) {
                             if (json.who == json.agent) {
+                                c.approve_agent = true
                                 store.put(['contracts', a.for, a.contract.split(':')[1], 'approved_agent'], true, function() {
                                     store.get(['contracts', a.for, a.contract.split(':')[1], 'approved_to'], function(e, t) {
                                         if (t) {
                                             console.log('to then agent')
                                             c.pending = c.auths[0]
+                                            c.approved_to = true
                                             dataOps.push({ type: 'put', path: ['escrow', c.pending[0], c.txid + ':dispute'], data: c.pending[1] })
-                                            if (c.buyer) {
-                                                dataOps.push({ type: 'del', path: ['escrow', json.who, c.txid + ':buyApprove'] })
-                                                if (json.who == config.username) {
-                                                    for (var i = 0; i < NodeOps.length; i++) {
-                                                        if (NodeOps[i][1][1].from == json.from && NodeOps[i][1][1].escrow_id == json.escrow_id && NodeOps[i][1][0] == 'escrow_approve') {
-                                                            NodeOps.splice(i, 1)
-                                                        }
-                                                    }
-                                                    delete plasma.pending[c.txid + ':buyApprove']
-                                                }
-                                                dataOps.push({ type: 'put', path: ['contracts', a.for, a.contract.split(':')[1]], data: c })
-                                                store.batch(dataOps)
-                                                credit(json.who)
-                                            }
                                         }
+                                        dataOps.push({ type: 'del', path: ['escrow', json.who, c.txid + ':buyApprove'] })
+                                        if (json.who == config.username) {
+                                            for (var i = 0; i < NodeOps.length; i++) {
+                                                if (NodeOps[i][1][1].from == json.from && NodeOps[i][1][1].escrow_id == json.escrow_id && NodeOps[i][1][0] == 'escrow_approve') {
+                                                    NodeOps.splice(i, 1)
+                                                }
+                                            }
+                                            delete plasma.pending[c.txid + ':buyApprove']
+                                        }
+                                        dataOps.push({ type: 'put', path: ['contracts', a.for, a.contract.split(':')[1]], data: c })
+                                        store.batch(dataOps)
+                                        credit(json.who)
                                     })
                                 })
                             } else if (json.who == json.to) {
+                                c.approve_to = true
                                 store.put(['contracts', a.for, a.contract.split(':')[1], 'approved_to'], true, function() {
                                     store.get(['contracts', a.for, a.contract.split(':')[1], 'approved_agent'], function(e, t) {
                                         if (t) {
                                             console.log('agent then to')
                                             c.pending = c.auths[0]
+                                            c.approve_agent = true
                                             dataOps.push({ type: 'put', path: ['escrow', c.pending[0], c.txid + ':dispute'], data: c.pending[1] })
-                                            if (c.buyer) {
-                                                dataOps.push({ type: 'del', path: ['escrow', json.who, c.txid + ':buyApprove'] })
-                                                if (json.who == config.username) {
-                                                    for (var i = 0; i < NodeOps.length; i++) {
-                                                        if (NodeOps[i][1][1].from == json.from && NodeOps[i][1][1].escrow_id == json.escrow_id && NodeOps[i][1][0] == 'escrow_approve') {
-                                                            NodeOps.splice(i, 1)
-                                                        }
-                                                    }
-                                                    delete plasma.pending[c.txid + ':buyApprove']
-                                                }
-                                                dataOps.push({ type: 'put', path: ['contracts', a.for, a.contract.split(':')[1]], data: c })
-                                                store.batch(dataOps)
-                                                credit(json.who)
-                                            }
+
                                         }
+                                        dataOps.push({ type: 'del', path: ['escrow', json.who, c.txid + ':buyApprove'] })
+                                        if (json.who == config.username) {
+                                            for (var i = 0; i < NodeOps.length; i++) {
+                                                if (NodeOps[i][1][1].from == json.from && NodeOps[i][1][1].escrow_id == json.escrow_id && NodeOps[i][1][0] == 'escrow_approve') {
+                                                    NodeOps.splice(i, 1)
+                                                }
+                                            }
+                                            delete plasma.pending[c.txid + ':buyApprove']
+                                        }
+                                        dataOps.push({ type: 'put', path: ['contracts', a.for, a.contract.split(':')[1]], data: c })
+                                        store.batch(dataOps)
+                                        credit(json.who)
                                     })
                                 })
                             }
@@ -1373,20 +1374,21 @@ function startApp() {
                             store.batch(dataOps)
                             credit(json.who)
                             console.log(dataOps)
-                        } else if (c.pending[1].approve == false) {
-                            dataOps.push({ type: 'del', path: ['contracts', a.for, a.contract.split(':')[1]] })
-                            dataOps.push({ type: 'del', path: ['escrow', json.who, `deny${json.from}:${json.escrow_id}`] })
-                            if (json.who == config.username) {
-                                for (var i = 0; i < NodeOps.length; i++) {
-                                    if (NodeOps[i][1][1].from == json.from && NodeOps[i][1][1].escrow_id == json.escrow_id && NodeOps[i][1][0] == 'escrow_approve') {
-                                        NodeOps.splice(i, 1)
-                                    }
-                                }
-                                delete plasma.pending[`deny${json.from}:${json.escrow_id}`]
-                            }
-                            store.batch(dataOps)
-                            credit(json.who)
                         }
+                        /*else if (c.pending[1].approve == false) {
+                                                   dataOps.push({ type: 'del', path: ['contracts', a.for, a.contract.split(':')[1]] })
+                                                   dataOps.push({ type: 'del', path: ['escrow', json.who, `deny${json.from}:${json.escrow_id}`] })
+                                                   if (json.who == config.username) {
+                                                       for (var i = 0; i < NodeOps.length; i++) {
+                                                           if (NodeOps[i][1][1].from == json.from && NodeOps[i][1][1].escrow_id == json.escrow_id && NodeOps[i][1][0] == 'escrow_approve') {
+                                                               NodeOps.splice(i, 1)
+                                                           }
+                                                       }
+                                                       delete plasma.pending[`deny${json.from}:${json.escrow_id}`]
+                                                   }
+                                                   store.batch(dataOps)
+                                                   credit(json.who)
+                                               } */
                     }
                 });
             }
