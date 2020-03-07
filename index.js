@@ -1048,24 +1048,38 @@ function startApp() {
                           contract.auths = [
                             [json.to,
                                 [
-                                    "escrow_dispute",
+                                    "escrow_approve",
                                     {
                                         "from": json.from,
                                         "to": json.to,
                                         "agent": json.agent,
                                         "who": json.to,
-                                        "escrow_id": json.escrow_id
+                                        "escrow_id": json.escrow_id,
+                                        "approve": true
                                     }
                                 ]
                             ],
                             [json.agent,
+                                [
+                                    "escrow_approve",
+                                    {
+                                        "from": json.from,
+                                        "to": json.to,
+                                        "agent": json.agent,
+                                        "who": json.agent,
+                                        "escrow_id": json.escrow_id,
+                                        "approve": true
+                                    }
+                                ]
+                            ],
+                            [json.to,
                                 [
                                     "escrow_release",
                                     {
                                         "from": json.from,
                                         "to": json.to,
                                         "agent": json.agent,
-                                        "who": json.agent,
+                                        "who": json.to,
                                         "reciever": json.to,
                                         "escrow_id": json.escrow_id,
                                         "sbd_amount": json.sbd_amount,
@@ -1085,40 +1099,20 @@ function startApp() {
                                 ]
                             ]
                           ]
+                          contract.pending = [contract.auths[0],contract.auths[1]]
                           var ops = [
                             {type:'put',path:['feed',`${json.block_num}:${json.transaction_id}`],data:`@${json.from}| has bought ${meta}: ${parseFloat(contract.amount/1000).toFixed(3)} for ${samount}`},
                             {type:'put',path:['contracts', seller, meta], data: contract},
-                            {type:'put',path:['escrow', contract.pending[0][0],contract.txid], data: contract.pending[0][1]},
+                            {type:'put',path:['escrow', contract.auths[0][0], contract.txid], data: contract.auths[0][1]},
+                            {type:'put',path:['escrow', contract.auths[1][0], contract.txid], data: contract.auths[1][1]},
                             {type:'put',path:['escrow', json.escrow_id, json.from], data: {'for':seller,'contract':meta}},
                             {type:'put',path:['balances', json.from], data:fromBal},
                             {type:'put',path:['balances', json.to], data:balTo},
                             {type:'put',path:['dex', type, 'tick'], data:contract.rate},
-                            {type:'put',path:['chrono',`${json.block_num}`]},
+                            //{type:'put',path:['chrono',`${json.block_num}`]},
                             {type:'put',path:['dex', type, 'his', `${hisE.block}:${found.txid}`],data:hisE},
                             {type:'del',path:['dex',type, 'sellOrders', `${contract.rate}:${contract.txid}`]}
                           ]
-                          ops.push({type:'put',path:['escrow', json.to, contract.txid+':buyApprove'], data: [
-                              "escrow_approve",
-                              {
-                                  "from": json.from,
-                                  "to": json.to,
-                                  "agent": json.agent,
-                                  "who": json.to,
-                                  "escrow_id": json.escrow_id,
-                                  "approve": true
-                              }
-                          ]}),
-                          ops.push({type:'put',path:['escrow', json.agent, contract.txid+':buyApprove'], data:[
-                              "escrow_approve",
-                              {
-                                  "from": json.from,
-                                  "to": json.to,
-                                  "agent": json.agent,
-                                  "who": json.agent,
-                                  "escrow_id": json.escrow_id,
-                                  "approve": true
-                              }
-                          ]})
                           store.batch(ops)
                         }
                   if (!done) {
