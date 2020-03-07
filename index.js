@@ -1107,7 +1107,7 @@ function startApp() {
                             {type:'put',path:['escrow', contract.auths[1][0], contract.txid], data: contract.auths[1][1]},
                             {type:'put',path:['escrow', json.escrow_id, json.from], data: {'for':seller,'contract':meta}},
                             {type:'put',path:['balances', json.from], data:fromBal},
-                            {type:'put',path:['balances', json.to], data:balTo},
+                            {type:'put',path:['balances', json.to], data: toBal},
                             {type:'put',path:['dex', type, 'tick'], data:contract.rate},
                             //{type:'put',path:['chrono',`${json.block_num}`]},
                             {type:'put',path:['dex', type, 'his', `${hisE.block}:${found.txid}`],data:hisE},
