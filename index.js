@@ -2373,7 +2373,7 @@ function tally(num) {
             tally.agreements.votes++
         }
         var l = 0
-        var consensus, firstCatch, first
+        var consensus, firstCatch, first = []
         for (var node in runners) {
             l++
             var forblock = 0
