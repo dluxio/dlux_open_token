@@ -1911,7 +1911,7 @@ function startApp() {
     processor.onOperation('transfer', function(json) {
         store.get(['escrow', json.from, json.memo.split(' ')[0] + ':transfer'], function(e, a) {
             var ops = []
-            if (!e) {
+            if (!e && !isEmpty(a)) {
                 var auth = true,
                     terms = Object.keys(a[1])
                 for (i = 0; i < terms.length; i++) {
