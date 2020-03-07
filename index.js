@@ -1264,7 +1264,7 @@ function startApp() {
                         block: json.block_num,
                         escrow_id: json.escrow_id,
                         agent: json.agent,
-                        fee: json.fee.amount,
+                        fee: json.fee,
                         approvals: 0,
                         auths,
                         reject
