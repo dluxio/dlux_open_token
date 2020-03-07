@@ -992,7 +992,7 @@ function startApp() {
 
     processor.onOperation('escrow_transfer', function(json) { //grab posts to reward
         console.log(json)
-        var op, dextx, seller, contract, isAgent, isDAgent, dextxdlux, meta, done = 0,
+        var ops, dextx, seller, contract, isAgent, isDAgent, dextxdlux, meta, done = 0,
             type = 'steem'
         try {
             dextx = JSON.parse(json.json_meta).dextx
@@ -1027,7 +1027,7 @@ function startApp() {
         })
         var Pcontract = new Promise(function(resolve, reject) {
             store.get(['contracts', seller, contract], function(e, a) {
-                if (e) { resolve(NaN) } else if (isEmpty(a)) { resolve(NaN) } else { resolve(a) }
+                if (e) { resolve({}) } else if (isEmpty(a)) { resolve({}) } else { resolve(a) }
             });
         })
         Promise.all([PfromBal, PtoBal, PtoNode, PagentNode, Pcontract]).then(function(v) {
@@ -1126,7 +1126,7 @@ function startApp() {
                                 }
                             ]]
                         ]
-                        var ops = [
+                        ops = [
                             { type: 'put', path: ['feed', `${json.block_num}:${json.transaction_id}`], data: `@${json.from}| has bought ${meta}: ${parseFloat(contract.amount/1000).toFixed(3)} for ${samount}` },
                             { type: 'put', path: ['contracts', seller, meta.split(':')[1]], data: contract },
                             { type: 'put', path: ['escrow', contract.pending[0][0], contract.txid + ':buyApprove'], data: contract.pending[0][1] },
@@ -1180,6 +1180,7 @@ function startApp() {
             } else if (toBal > dextxdlux && typeof dextxdlux === 'number' && dextxdlux > 0 && isAgent && isDAgent) {
                 console.log(4)
                 var txid = 'DLUX' + hashThis(`${json.from}${json.block_num}`),
+                    rate = parseFloat(parseInt(parseFloat(json.steem_amount) * 1000) / dextx.dlux).toFixed(6)
                     ops = [{
                             type: 'put',
                             path: ['escrow', json.agent, txid + ':listApprove'],
@@ -1191,7 +1192,7 @@ function startApp() {
                                     "agent": json.agent,
                                     "who": json.agent,
                                     "escrow_id": json.escrow_id,
-                                    "approve": false
+                                    "approve": true
                                 }
                             ]
                         },
@@ -1213,7 +1214,7 @@ function startApp() {
                         {
                             type: 'put',
                             path: ['escrow', json.escrow_id, json.from],
-                            data: { 'for': json.from, contract: txid }
+                            data: { 'for': json.from, contract: `${rate}:${txid}` }
                         }
                     ],
                     auths = [
@@ -1259,8 +1260,7 @@ function startApp() {
                         steem: parseInt(parseFloat(json.steem_amount) * 1000),
                         sbd: parseInt(parseFloat(json.sbd_amount) * 1000),
                         amount: dextx.dlux,
-                        rate: parseFloat(parseInt(parseFloat(json.steem_amount) * 1000) / dextx.dlux)
-                            .toFixed(6),
+                        rate,
                         block: json.block_num,
                         escrow_id: json.escrow_id,
                         agent: json.agent,
