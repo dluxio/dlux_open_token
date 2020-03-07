@@ -1912,7 +1912,7 @@ function startApp() {
         store.get(['escrow', json.from, json.memo.split(' ')[0] + ':transfer'], function(e, a) {
             var ops = []
             if (!e && !isEmpty(a)) {
-                console.log('transfer inside')
+                console.log('transfer inside', json, a)
                 var auth = true,
                     terms = Object.keys(a[1])
                 for (i = 0; i < terms.length; i++) {
