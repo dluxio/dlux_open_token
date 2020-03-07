@@ -1916,7 +1916,7 @@ function startApp() {
                 var auth = true,
                     terms = Object.keys(a[1])
                 for (i = 0; i < terms.length; i++) {
-                    if (a[1][terms[i]] !== a[terms[i]]) {
+                    if (json[terms[i]] !== a[terms[i]]) {
                         auth = false
                         console.log(terms[i], false)
                     } else {
@@ -2206,9 +2206,8 @@ function startApp() {
                             NodeOps[i][0][0] = 0
                         }
                     }
-                    console.log('pending:', ops)
                     if (ops.length) {
-                        console.log(ops)
+                        console.log('attepting broadcast',ops)
                         steemClient.broadcast.send({
                             extensions: [],
                             operations: ops
