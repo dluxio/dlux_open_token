@@ -1027,7 +1027,7 @@ function startApp() {
         })
         var Pcontract = new Promise(function(resolve, reject) {
             store.get(['contracts', seller, contract], function(e, a) {
-                if (e) { resolve(0) } else if (isEmpty(a)) { resolve(0) } else { resolve(a) }
+                if (e) { resolve(NaN) } else if (isEmpty(a)) { resolve(NaN) } else { resolve(a) }
             });
         })
         Promise.all([PfromBal, PtoBal, PtoNode, PagentNode, Pcontract]).then(function(v) {
@@ -1036,7 +1036,7 @@ function startApp() {
                 toBal = v[1],
                 toNode = v[2],
                 agentNode = v[3],
-                contract = v[4]
+                contract = v[4] || {}
             isAgent = (toNode.lastGood > json.block_num - 200)
             isDAgent = (agentNode.lastGood > json.block_num - 200)
             buy = contract.amount
