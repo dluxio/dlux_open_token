@@ -59,6 +59,7 @@ Pathwise.prototype.batch = function(ops, fn) {
 };
 
 Pathwise.prototype.get = function(path, fn){
+  console.log(path)
   var ret = {};
   var el = ret;
 
