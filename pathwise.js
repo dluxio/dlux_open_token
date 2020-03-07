@@ -67,12 +67,11 @@ Pathwise.prototype.get = function(path, fn){
     end: path.concat(undefined)
   }), function(err, data){
     if (err) return fn(err);
-    if(path.length==0)console.log(path)
     data.forEach(function(kv){
       var segs = kv.key.slice(path.length);
       if (segs.length) {
         segs.forEach(function(seg, idx){
-          if(path.length==0||path[0] == 'escrow' && path[1] == 'epicdice')console.log(seg)
+          if(seg== 'agent')console.log({path, kv, segs, el})
           if (!el[seg]) {
             if (idx == segs.length - 1) {
               el[seg] = kv.value;
