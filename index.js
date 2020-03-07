@@ -1000,6 +1000,7 @@ function startApp() {
         } catch (e) {}
         try {
             meta = JSON.parse(json.json_meta).contract
+            contract = meta.split(':')[1]
         } catch (e) {}
         try {
             seller = JSON.parse(json.json_meta).for
@@ -1025,7 +1026,7 @@ function startApp() {
             });
         })
         var Pcontract = new Promise(function(resolve, reject) {
-            store.get(['contracts', seller, meta.split(':')[1]], function(e, a) {
+            store.get(['contracts', seller, contract, function(e, a) {
                 if (e) { resolve(0) } else if (isEmpty(a)) { resolve(0) } else { resolve(a) }
             });
         })
@@ -1209,7 +1210,11 @@ function startApp() {
                                 }
                             ]
                         },
-                        { type: 'put', path: ['escrow', json.escrow_id, json.from], data: { 'for': json.from, contract: txid } }
+                        { 
+                            type: 'put', 
+                            path: ['escrow', json.escrow_id, json.from], 
+                            data: { 'for': json.from, contract: txid } 
+                        }
                     ],
                     auths = [
                         [json.to, [
