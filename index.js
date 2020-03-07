@@ -1912,10 +1912,16 @@ function startApp() {
         store.get(['escrow', json.from, json.memo.split(' ')[0] + ':transfer'], function(e, a) {
             var ops = []
             if (!e && !isEmpty(a)) {
+                console.log('transfer inside')
                 var auth = true,
                     terms = Object.keys(a[1])
                 for (i = 0; i < terms.length; i++) {
-                    if (a[1][terms[i]] !== a[terms[i]]) auth = false
+                    if (a[1][terms[i]] !== a[terms[i]]) {
+                        auth = false
+                        console.log(terms[i], false)
+                    } else {
+                        console.log(terms[i], true)
+                    }
                 }
                 if (auth) {
                     ops.push({
@@ -1927,6 +1933,7 @@ function startApp() {
                     const seller = json.to
                     store.get(['contracts', seller, addr], function(e1, c) {
                         if (!e1) {
+                            console.log(c)
                             d = typeof c.escrow != 'number' ? 0 : c.escrow
                             store.get(['balances', json.from], function(e2, f) {
                                 if (!e2) {
