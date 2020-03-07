@@ -67,12 +67,12 @@ Pathwise.prototype.get = function(path, fn){
     end: path.concat(undefined)
   }), function(err, data){
     if (err) return fn(err);
-    if(path==[])console.log(path)
+    if(path=='[]')console.log(path)
     data.forEach(function(kv){
       var segs = kv.key.slice(path.length);
       if (segs.length) {
         segs.forEach(function(seg, idx){
-          if(path==[])console.log(seg)
+          if(path=='[]')console.log(seg)
           if (!el[seg]) {
             if (idx == segs.length - 1) {
               el[seg] = kv.value;
