@@ -1125,7 +1125,6 @@ function startApp() {
                                 }
                             ]]
                         ]
-                        contract.pending = [contract.auths[0], contract.auths[1]]
                         var ops = [
                             { type: 'put', path: ['feed', `${json.block_num}:${json.transaction_id}`], data: `@${json.from}| has bought ${meta}: ${parseFloat(contract.amount/1000).toFixed(3)} for ${samount}` },
                             { type: 'put', path: ['contracts', seller, meta.split(':')[1]], data: contract },
