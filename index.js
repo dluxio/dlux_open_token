@@ -1909,48 +1909,50 @@ function startApp() {
     })
 
     processor.onOperation('transfer', function(json) {
-        var found = 0
-        store.get(['escrow', json.from], function(e, a) {
+        store.get(['escrow', json.from, json.memo.split(' ')[0] + ':transfer'], function(e, a) {
             var ops = []
             if (!e) {
-                var b = a
-                for (i in b) {
-                    if (b[i][1].to == json.to && b[i][1].steem_amount == json.steem_amount && b[i][1].sbd_amount == json.sbd_amount) {
-                        ops.push({ type: 'put', path: ['feed', `${json.block_num}:${json.transaction_id}`], data: `@${json.from}| sent @${json.to} ${json.steem_amount}/${json.sbd_amount} for ${json.memo.split(' ')[0]}` })
-                        var escrow = b.splice(i, 1)
-                        found = 1
-                        const addr = escrow[1].memo.split(' ')[0]
-                        const seller = escrow[1].memo.split(' ')[2]
-                        store.get(['contracts', seller, addr, 'escrow'], function(e1, c) {
-                            if (!e1) {
-                                d = typeof c != 'number' ? 0 : c
-                                store.get(['balances', json.from], function(e2, f) {
-                                    if (!e2) {
-                                        g = typeof f != 'number' ? 0 : f
-                                        ops.push({ type: 'put', path: ['balances', json.from], data: parseInt(g + d) })
-                                        ops.push({ type: 'del', path: ['escrow', json.from, i + ':transfer'] })
-                                        ops.push({ type: 'del', path: ['contracts', seller, addr] })
-                                            //handle escrow id => contract pointer
-                                        if (json.from == config.username) {
-                                            delete plasma.pending[i + ':transfer']
-                                            for (var i = 0; i < NodeOps.length; i++) {
-                                                if (NodeOps[i][1][1].from == json.from && NodeOps[i][1][1].to == json.to && NodeOps[i][1][0] == 'transfer' && NodeOps[i][1][1].steem_amount == json.steem_amount && NodeOps[i][1][1].sbd_amount == json.sbd_amount) {
-                                                    NodeOps.splice(i, 1)
-                                                }
+                var auth = true,
+                    terms = Object.keys(a[1])
+                for (i = 0; i < terms.length; i++) {
+                    if (a[1][terms[i]] !== a[term[i]]) auth = false
+                }
+                if (auth) {
+                    ops.push({
+                        type: 'put',
+                        path: ['feed', `${json.block_num}:${json.transaction_id}`],
+                        data: `@${json.from}| sent @${json.to} ${json.steem_amount}/${json.sbd_amount} for ${json.memo.split(' ')[0]}`
+                    })
+                    const addr = json.memo.split(' ')[0]
+                    const seller = json.to
+                    store.get(['contracts', seller, addr], function(e1, c) {
+                        if (!e1) {
+                            d = typeof c.escrow != 'number' ? 0 : c.escrow
+                            store.get(['balances', json.from], function(e2, f) {
+                                if (!e2) {
+                                    g = typeof f != 'number' ? 0 : f
+                                    ops.push({ type: 'put', path: ['balances', json.from], data: parseInt(g + d) })
+                                    ops.push({ type: 'del', path: ['escrow', json.from, json.memo.split(' ')[0] + ':transfer'] })
+                                    ops.push({ type: 'del', path: ['contracts', seller, addr] })
+                                    deletePointer(c.auths[1][1][1].escrow_id, c.buyer)
+                                    if (json.from == config.username) {
+                                        delete plasma.pending[i + ':transfer']
+                                        for (var i = 0; i < NodeOps.length; i++) {
+                                            if (NodeOps[i][1][1].from == json.from && NodeOps[i][1][1].to == json.to && NodeOps[i][1][0] == 'transfer' && NodeOps[i][1][1].steem_amount == json.steem_amount && NodeOps[i][1][1].sbd_amount == json.sbd_amount) {
+                                                NodeOps.splice(i, 1)
                                             }
                                         }
-                                        credit(json.from)
-                                        store.batch(ops)
-                                    } else {
-                                        console.log(e2)
                                     }
-                                })
-                            } else {
-                                console.log(e1)
-                            }
-                        })
-                        break;
-                    }
+                                    credit(json.from)
+                                    store.batch(ops)
+                                } else {
+                                    console.log(e2)
+                                }
+                            })
+                        } else {
+                            console.log(e1)
+                        }
+                    })
                 }
             } else {
                 console.log(e)
@@ -3178,10 +3180,22 @@ function sortSellArray(array, key) { //seek insert instead
     });
 }
 
-function noi(t) { //node ops incrementer and cleaner... 3 retries and out
-    NodeOps[t][0][0] = 5
-    NodeOps[t][0][1]++
-        if (NodeOps[t][0][1] > 0) {
-            NodeOps.splice(t, 1)
+function deletePointer(escrowID, user) { //node ops incrementer and cleaner... 3 retries and out
+    store.get(['escrow', escrowID], function(e, a) {
+        if (!e) {
+            var found = false
+            const users = Object.keys(a)
+            for (i = 0; i < users.length; i++) {
+                if (user = users[i]) {
+                    found = true
+                    break
+                }
+            }
+            if (found && users.length == 1) {
+                store.del(['escrow', escrowID])
+            } else if (found) {
+                store.del(['escrow', escrowID, user])
+            }
         }
+    })
 }
