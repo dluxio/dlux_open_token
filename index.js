@@ -1930,7 +1930,7 @@ function startApp() {
                                         ops.push({ type: 'put', path: ['balances', json.from], data: parseInt(g + d) })
                                         ops.push({ type: 'del', path: ['escrow', json.from, i + ':transfer'] })
                                         ops.push({ type: 'del', path: ['contracts', seller, addr] })
-                                        //handle escrow id => contract pointer
+                                            //handle escrow id => contract pointer
                                         if (json.from == config.username) {
                                             delete plasma.pending[i + ':transfer']
                                             for (var i = 0; i < NodeOps.length; i++) {
@@ -2190,15 +2190,16 @@ function startApp() {
                     }
                     var ops = []
                     for (i = 0; i < NodeOps.length; i++) {
-                        if (NodeOps[i][0][1] == 0 && NodeOps[i][0][0] == 0) {
+                        if (NodeOps[i][0][1] == 0 && NodeOps[i][0][0] <= 100) {
                             ops.push(NodeOps[i][1])
-                            NodeOps[i][0][0] = 1
+                            NodeOps[i][0][1] = 1
                         } else if (NodeOps[i][0][0] < 100) {
                             NodeOps[i][0][0]++
                         } else if (NodeOps[i][0][0] == 100) {
                             NodeOps[i][0][0] = 0
                         }
                     }
+                    console.log('pending:', ops)
                     if (ops.length) {
                         console.log(ops)
                         steemClient.broadcast.send({
@@ -2209,13 +2210,14 @@ function startApp() {
                                 console.log(err)
                                 for (q = 0; q < ops.length; q++) {
                                     if (NodeOps[q][0][1] == 1) {
-                                        NodeOps[q][0][1] = 0
+                                        NodeOps[q][0][1] = 3
                                     }
                                 }
                             } else {
-                                for (q = 0; q < ops.length; q++) {
+                                console.log(result)
+                                for (q = ops.length - 1; q > -1; q--) {
                                     if (NodeOps[q][0][0] = 1) {
-                                        NodeOps[q][0][1] = 1
+                                        NodeOps.splice(q, 1)
                                     }
                                 }
                             }
@@ -3179,7 +3181,7 @@ function sortSellArray(array, key) { //seek insert instead
 function noi(t) { //node ops incrementer and cleaner... 3 retries and out
     NodeOps[t][0][0] = 5
     NodeOps[t][0][1]++
-        if (NodeOps[t][0][1] > 3) {
+        if (NodeOps[t][0][1] > 0) {
             NodeOps.splice(t, 1)
         }
 }
