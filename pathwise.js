@@ -71,7 +71,6 @@ Pathwise.prototype.get = function(path, fn){
       var segs = kv.key.slice(path.length);
       if (segs.length) {
         segs.forEach(function(seg, idx){
-          if(seg== 'agent')console.log({path, kv, segs, el})
           if (!el[seg]) {
             if (idx == segs.length - 1) {
               el[seg] = kv.value;
