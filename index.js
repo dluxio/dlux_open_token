@@ -1439,7 +1439,7 @@ function startApp() {
                             store.batch([
                                 { type: 'put', path: ['escrow', c.pending[0][0], c.txid + ':transfer'], data: c.pending[0][1] },
                                 { type: 'put', path: ['contracts', a.for, a.contract.split(':')[1]], data: c },
-                                { type: 'put', path: ['feed', `${json.block_num}:${json.transaction_id}`], data: `@${json.who}| released funds for @${owner}/${found}` },
+                                { type: 'put', path: ['feed', `${json.block_num}:${json.transaction_id}`], data: `@${json.who}| released funds for @${json.to} for ${c.txid}` },
                                 { type: 'del', path: ['escrow', json.who, c.txid + `:release`] }
                             ])
                             if (json.who == config.username) {
