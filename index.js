@@ -874,18 +874,23 @@ function startApp() {
                         rate: parseFloat((buyAmount) / (json.dlux)).toFixed(6),
                         block: json.block_num
                     }
-                    chronAssign(json.block_num + 86400, {
+                    var path = chronAssign(json.block_num + 86400, {
                         block: parseInt(json.block_num + 86400),
                         op: 'expire',
                         from: from,
                         txid
                     })
-                    store.batch([
-                        { type: 'put', path: ['dex', 'steem', 'sellOrders', `${contract.rate}:${contract.txid}`], data: contract },
-                        { type: 'put', path: ['balances', from], data: b - contract.amount },
-                        { type: 'put', path: ['contracts', from, contract.txid], data: contract },
-                        { type: 'put', path: ['feed', `${json.block_num}:${json.transaction_id}`], data: `@${from}| has placed order ${txid} to sell ${parseFloat(json.dlux/1000).toFixed(3)} for ${parseFloat(json.steem/1000).toFixed(3)} STEEM` }
-                    ])
+                    Promise.all([path])
+                        .then((r) => {
+                            contract.expire_path = r[0]
+                            store.batch([
+                                { type: 'put', path: ['dex', 'steem', 'sellOrders', `${contract.rate}:${contract.txid}`], data: contract },
+                                { type: 'put', path: ['balances', from], data: b - contract.amount },
+                                { type: 'put', path: ['contracts', from, contract.txid], data: contract },
+                                { type: 'put', path: ['feed', `${json.block_num}:${json.transaction_id}`], data: `@${from}| has placed order ${txid} to sell ${parseFloat(json.dlux/1000).toFixed(3)} for ${parseFloat(json.steem/1000).toFixed(3)} STEEM` }
+                            ])
+                        })
+                        .catch((e) => console.log(e))
                 } else {
                     store.batch([{ type: 'put', path: ['feed', `${json.block_num}:${json.transaction_id}`], data: `@${from}| tried to place an order to sell ${parseFloat(json.dlux/1000).toFixed(3)} for ${parseFloat(json.steem/1000).toFixed(3)} STEEM` }])
                 }
@@ -1942,6 +1947,7 @@ function startApp() {
                                     ops.push({ type: 'put', path: ['balances', json.from], data: parseInt(g + d) })
                                     ops.push({ type: 'del', path: ['escrow', json.from, json.memo.split(' ')[0] + ':transfer'] })
                                     ops.push({ type: 'del', path: ['contracts', seller, addr] })
+                                    ops.push({ type: 'del', path: ['chrono', c.expire_path] })
                                     deletePointer(c.auths[1][1][1].escrow_id, c.buyer)
                                     if (json.from == config.username) {
                                         delete plasma.pending[i + ':transfer']
@@ -3098,32 +3104,37 @@ function add(node, amount) {
 }
 
 function chronAssign(block, op) {
-    store.someChildren(['chrono'], {
-        gte: "" + parseInt(parseInt(block)),
-        lte: "" + parseInt((block) + 1)
-    }, function(e, a) {
-        if (e) {
-            console.log(e)
-        } else {
-            console.log(a)
-            var t
-            if (a.length && a.length < 10) {
-                t = a.length
-            } else if (a.length < 36) {
-                t = String.fromCharCode(a.length + 55)
-            } else if (a.length < 62) {
-                t = String.fromCharCode(a.length + 61)
-            } else if (a.length >= 62) {
-                chronAssign(block + 1, op)
-            }
-            if (!t) {
-                t = `${block}:0`
+    return new Promise((resolve, reject) => {
+        store.someChildren(['chrono'], {
+            gte: "" + parseInt(parseInt(block)),
+            lte: "" + parseInt((block) + 1)
+        }, function(e, a) {
+            if (e) {
+                reject(e)
+                console.log(e)
             } else {
-                var temp = t
-                t = `${block}:${temp}`
+                var keys = Object.keys(a)
+                var t
+                if (keys.length && keys.length < 10) {
+                    t = a.length
+                } else if (keys.length < 36) {
+                    t = String.fromCharCode(keys.length + 55)
+                } else if (a.length < 62) {
+                    t = String.fromCharCode(keys.length + 61)
+                } else if (a.length >= 62) {
+                    chronAssign(block + 1, op)
+                }
+                if (!t) {
+                    t = `${block}:0`
+                } else {
+                    var temp = t
+                    t = `${block}:${temp}`
+                }
+                store.batch([{ type: 'put', path: ['chrono', t], data: op }])
+                resolve(t)
             }
-            store.batch([{ type: 'put', path: ['chrono', t], data: op }])
-        }
+        })
+
     })
 }
 
