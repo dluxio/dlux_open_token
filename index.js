@@ -472,7 +472,11 @@ steemjs.api.getAccountHistory(config.username, -1, 100, function(err, result) {
         if (recents.length) {
             const mostRecent = recents.shift()
             console.log(mostRecent)
-            startWith(mostRecent)
+            if (config.override = 41500000) {
+                startWith('Qmchsj9eXDsvq1Qcy9VBDU4mcGjSkiMJvFybddnwniYZDf')
+            } else {
+                startWith(mostRecent)
+            }
         } else {
             startWith(config.engineCrank)
             console.log('I did it')
