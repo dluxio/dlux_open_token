@@ -1018,12 +1018,15 @@ function startApp() {
               isAgent = toNode.escrow
               isDAgent = agentNode.escrow
               buy = contract.amount
-              if (typeof buy == 'number' && isAgent && isDAgent) { //{txid, from: from, buying: buyAmount, amount: json.dlux, [json.dlux]:buyAmount, rate:parseFloat((json.dlux)/(buyAmount)).toFixed(6), block:current, partial: json.partial || true
+              console.log(buy, isAgent, isDAgent)
+              if (typeof buy === 'number' && isAgent && isDAgent) { //{txid, from: from, buying: buyAmount, amount: json.dlux, [json.dlux]:buyAmount, rate:parseFloat((json.dlux)/(buyAmount)).toFixed(6), block:current, partial: json.partial || true
                   const now = new Date()
                   const until = now.setHours(now.getHours() + 1)
                   const check = Date.parse(json.ratification_deadline)
                   if (contract.steem == parseInt(parseFloat(json.steem_amount) * 1000) && contract.sbd == parseInt(parseFloat(json.sbd_amount) * 1000) && check > until) {
+                      console.log(1)
                       if (toBal >= contract.amount) {
+                          console.log(2)
                           done = 1
                           toBal -= contract.amount // collateral withdraw of dlux
                           fromBal += contract.amount // collateral held and therefore instant purchase
@@ -1119,6 +1122,7 @@ function startApp() {
                           store.batch(ops)
                         }
                   if (!done) {
+                    console.log(3)
                     var out = []
                     out.push({type:'put',path:['escrow',json.to, json.escrow_id],data:[
                         "escrow_approve",
@@ -1146,6 +1150,7 @@ function startApp() {
                   }
               }
             } else if (toBal > dextxdlux && typeof dextxdlux === 'number' && dextxdlux > 0 && isAgent && isDAgent) {
+                console.log(4)
               var txid = 'DLUX' + hashThis(`${json.from}${json.block_num}`),
                   ops = [
                     {type:'put',path:['escrow',json.agent, txid+':listApprove'],data:[
