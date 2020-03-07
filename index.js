@@ -1954,8 +1954,6 @@ function startApp() {
                         }
                     })
                 }
-            } else {
-                console.log(e)
             }
         })
         if (json.to == 'robotolux' && json.amount.split(' ')[1] == 'STEEM') {
