@@ -1438,7 +1438,7 @@ function startApp() {
                             c.pending = [c.auths[2]]
                             store.batch([
                                 { type: 'put', path: ['escrow', c.pending[0][0], c.txid + ':transfer'], data: c.pending[0][1] },
-                                { type: 'put', path: ['contracts', a[i].for, a[i].contract], data: c },
+                                { type: 'put', path: ['contracts', a[i].for, a[i].contract.split(':')[1]], data: c },
                                 { type: 'put', path: ['feed', `${json.block_num}:${json.transaction_id}`], data: `@${json.who}| released funds for @${owner}/${found}` },
                                 { type: 'del', path: ['escrow', json.who, c.txid + `:release`] }
                             ])
@@ -2389,7 +2389,7 @@ function tally(num) {
                     firstCatch = null
                 }
             } else if (l > 1) {
-                if (tally.agreements.runners[node].report.hash == tally.agreements.runners[first[0]].report.hash) {
+                if (first[0] && tally.agreements.runners[node].report.hash == tally.agreements.runners[first[0]].report.hash) {
                     first.push(node)
                     console.log(node + ' also scheduled for removal')
                 } else {
