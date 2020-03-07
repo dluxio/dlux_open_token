@@ -2389,7 +2389,7 @@ function tally(num) {
                     firstCatch = null
                 }
             } else if (l > 1) {
-                if (first[0] && tally.agreements.runners[node].report.hash == tally.agreements.runners[first[0]].report.hash) {
+                if (first.length && tally.agreements.runners[node].report.hash == tally.agreements.runners[first[0]].report.hash) {
                     first.push(node)
                     console.log(node + ' also scheduled for removal')
                 } else {
