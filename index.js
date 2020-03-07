@@ -1272,7 +1272,7 @@ function startApp() {
                 chronAssign(json.block_num + 86400, {
                     block: parseInt(json.block_num + 86400),
                     op: 'expire',
-                    from: from,
+                    from: json.from,
                     txid
                 })
                 if (parseFloat(json.steem_amount) > 0) {
