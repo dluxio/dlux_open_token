@@ -1318,7 +1318,7 @@ function startApp() {
                                             console.log('to then agent' + t)
                                             c.pending = [c.auths[0]]
                                             c.approved_to = true
-                                            dataOps.push({ type: 'put', path: ['escrow', c.pending[0], c.txid + ':dispute'], data: c.pending[1] })
+                                            dataOps.push({ type: 'put', path: ['escrow', c.pending[0][0], c.txid + ':dispute'], data: c.pending[0][1] })
                                         }
                                         dataOps.push({ type: 'del', path: ['escrow', json.who, c.txid + ':buyApprove'] })
                                         if (json.who == config.username) {
@@ -1343,7 +1343,7 @@ function startApp() {
                                             console.log('agent then to' + t)
                                             c.pending = [c.auths[0]]
                                             c.approveAgent = true
-                                            dataOps.push({ type: 'put', path: ['escrow', c.pending[0], c.txid + ':dispute'], data: c.pending[1] })
+                                            dataOps.push({ type: 'put', path: ['escrow', c.pending[0][0], c.txid + ':dispute'], data: c.pending[0][1] })
 
                                         }
                                         dataOps.push({ type: 'del', path: ['escrow', json.who, c.txid + ':buyApprove'] })
@@ -1355,6 +1355,7 @@ function startApp() {
                                             }
                                             delete plasma.pending[c.txid + ':buyApprove']
                                         }
+                                        console.log(a.contract.split(':')[1], c)
                                         dataOps.push({ type: 'put', path: ['contracts', a.for, a.contract.split(':')[1]], data: c })
                                         store.batch(dataOps)
                                         credit(json.who)
