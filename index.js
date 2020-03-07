@@ -1405,9 +1405,9 @@ function startApp() {
                 store.get(['contracts', a.for, a.contract], function(e, b) {
                     if (e || Object.keys(b).length == 0) { console.log('empty record') } else {
                         var c = b
-                        c.pending = c.auths[1]
+                        c.pending = [c.auths[1]]
                         store.batch([
-                            { type: 'put', path: ['escrow'.c.pending[0], c.txid + ':release'], data: c.pending[1] },
+                            { type: 'put', path: ['escrow', c.pending[0][0], c.txid + ':release'], data: c.pending[0][1] },
                             { type: 'put', path: ['contracts', a[i].for, a[i].contract], data: c },
                             { type: 'put', path: ['feed', `${json.block_num}:${json.transaction_id}`], data: `@${json.who}| authorized ${json.agent} for ${c.txid}` },
                             { type: 'del', path: ['escrow', json.who, c.txid + `:dispute`] }
@@ -1435,9 +1435,9 @@ function startApp() {
                         console.log(json, b)
                         if (Object.keys(b).length) {
                             var c = b
-                            c.pending = c.auths[2]
+                            c.pending = [c.auths[2]]
                             store.batch([
-                                { type: 'put', path: ['escrow'.c.pending[0], c.txid + ':transfer'], data: c.pending[1] },
+                                { type: 'put', path: ['escrow', c.pending[0][0], c.txid + ':transfer'], data: c.pending[0][1] },
                                 { type: 'put', path: ['contracts', a[i].for, a[i].contract], data: c },
                                 { type: 'put', path: ['feed', `${json.block_num}:${json.transaction_id}`], data: `@${json.who}| released funds for @${owner}/${found}` },
                                 { type: 'del', path: ['escrow', json.who, c.txid + `:release`] }
@@ -1930,6 +1930,7 @@ function startApp() {
                                         ops.push({ type: 'put', path: ['balances', json.from], data: parseInt(g + d) })
                                         ops.push({ type: 'del', path: ['escrow', json.from, i + ':transfer'] })
                                         ops.push({ type: 'del', path: ['contracts', seller, addr] })
+                                        //handle escrow id => contract pointer
                                         if (json.from == config.username) {
                                             delete plasma.pending[i + ':transfer']
                                             for (var i = 0; i < NodeOps.length; i++) {
