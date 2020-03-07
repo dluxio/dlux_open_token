@@ -1918,9 +1918,6 @@ function startApp() {
                 for (i = 0; i < terms.length; i++) {
                     if (json[terms[i]] !== a[1][terms[i]]) {
                         auth = false
-                        console.log(terms[i], false)
-                    } else {
-                        console.log(terms[i], true)
                     }
                 }
                 if (auth) {
@@ -2207,7 +2204,7 @@ function startApp() {
                         }
                     }
                     if (ops.length) {
-                        console.log('attepting broadcast',ops)
+                        console.log('attepting broadcast', ops)
                         steemClient.broadcast.send({
                             extensions: [],
                             operations: ops
@@ -3196,9 +3193,9 @@ function deletePointer(escrowID, user) { //node ops incrementer and cleaner... 3
                 }
             }
             if (found && users.length == 1) {
-                store.del(['escrow', escrowID])
+                store.batch([{ type: 'del', path: ['escrow', escrowID] }])
             } else if (found) {
-                store.del(['escrow', escrowID, user])
+                store.batch([{ type: 'del', path: ['escrow', escrowID, user] }])
             }
         }
     })
