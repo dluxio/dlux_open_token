@@ -1275,7 +1275,6 @@ function startApp() {
                     from: json.from,
                     txid
                 })
-                console.log({ contract, txid })
                 if (parseFloat(json.steem_amount) > 0) {
                     contract.type = 'sb'
                     ops.push({ type: 'put', path: ['feed', `${json.block_num}:${json.transaction_id}`], data: `@${json.from}| signed a ${parseFloat(json.steem_amount).toFixed(3)} STEEM buy order for ${parseFloat(dextx.dlux).toFixed(3)} DLUX:${txid}` })
@@ -1286,6 +1285,7 @@ function startApp() {
                     ops.push({ type: 'put', path: ['dex', 'sbd', 'buyOrders', `${contract.rate}:${contract.txid}`], contract })
                 }
                 ops.push({ type: 'put', path: ['contracts', json.from, txid], contract })
+                console.log(ops)
                 store.batch(ops)
             } else if (isDAgent && isAgent) {
                 var ops = []
