@@ -1032,7 +1032,8 @@ function startApp() {
                           fromBal += contract.amount // collateral held and therefore instant purchase
                           contract.escrow = contract.amount
                           contract.buyer = json.from
-                          contract.approvals = 0
+                          contract.approved_agent = false
+                          contract.approved_to = false
                           var hisE = {
                               rate: contract.rate,
                               block: json.block_num,
@@ -1294,20 +1295,52 @@ function startApp() {
                       {type:'put',path:['feed', `${json.block_num}:${json.transaction_id}`], data: `:@${json.who}| approved escrow for ${json.from}`}
                     ]
                     if (json.approve){
-                      if(c.buyer){
-                          /* move to listener
-                        if(c.approvals==2){c.pending = c.auth.shift()
-                          dataOps.push({type:'put',path:['escrow'.c.pending[0],c.txid+':dispute'],data:c.pending[1]})
-                        }
-                        */
-                        dataOps.push({type:'del',path:['escrow',json.who,c.txid+':buyApprove']})
-                        if(json.who == config.username){
-                          for(var i = 0;i<NodeOps.length;i++){
-                            if(NodeOps[i][1][1].from == json.from && NodeOps[i][1][1].escrow_id == json.escrow_id && NodeOps[i][1][0] == 'escrow_approve'){
-                              NodeOps.splice(i,1)
-                            }
-                          }
-                          delete plasma.pending[c.txid+':buyApprove']
+                        if (json.who == json.agent){
+                            store.put(['contracts', a.for, a.contract.split(':')[1], 'approved_agent'], true, function(){
+                                store.get(['contracts', a.for, a.contract.split(':')[1], 'approved_to'],function(e,t){
+                                    if(t){
+                                        c.pending = c.auth.shift()
+                                        dataOps.push({type:'put',path:['escrow'.c.pending[0],c.txid+':dispute'],data:c.pending[1]})
+                                        if(c.buyer){
+                                            dataOps.push({type:'del',path:['escrow',json.who,c.txid+':buyApprove']})
+                                            if(json.who == config.username){
+                                                for(var i = 0;i<NodeOps.length;i++){
+                                                    if(NodeOps[i][1][1].from == json.from && NodeOps[i][1][1].escrow_id == json.escrow_id && NodeOps[i][1][0] == 'escrow_approve'){
+                                                        NodeOps.splice(i,1)
+                                                    }
+                                                }
+                                                delete plasma.pending[c.txid+':buyApprove']
+                                            }
+                                            dataOps.push({type:'put',path:['contracts',a.for,a.contract.split(':')[1]],data:c})
+                                            store.batch(dataOps)
+                                            credit(json.who)
+                                        }
+                                    }
+                                })
+                            })
+                        } else if (json.who == json.to){
+                            store.put(['contracts', a.for, a.contract.split(':')[1], 'approved_to'], true, function(){
+                                store.get(['contracts', a.for, a.contract.split(':')[1], 'approved_agent'],function(e,t){
+                                    if(t){
+                                        c.pending = c.auth.shift()
+                                        dataOps.push({type:'put',path:['escrow'.c.pending[0],c.txid+':dispute'],data:c.pending[1]})
+                                        if(c.buyer){
+                                            dataOps.push({type:'del',path:['escrow',json.who,c.txid+':buyApprove']})
+                                            if(json.who == config.username){
+                                                for(var i = 0;i<NodeOps.length;i++){
+                                                    if(NodeOps[i][1][1].from == json.from && NodeOps[i][1][1].escrow_id == json.escrow_id && NodeOps[i][1][0] == 'escrow_approve'){
+                                                        NodeOps.splice(i,1)
+                                                    }
+                                                }
+                                                delete plasma.pending[c.txid+':buyApprove']
+                                            }
+                                            dataOps.push({type:'put',path:['contracts',a.for,a.contract.split(':')[1]],data:c})
+                                            store.batch(dataOps)
+                                            credit(json.who)
+                                        }
+                                    }
+                                })
+                            })
                         }
                       } else {
                         dataOps.push({type:'del',path:['escrow',json.who,c.txid+':listApprove']})
@@ -1319,11 +1352,11 @@ function startApp() {
                           }
                           delete plasma.pending[c.txid+':listApprove']
                         }
-                      }
-                      dataOps.push({type:'put',path:['contracts',a.for,a.contract.split(':')[1]],data:c})
+                        dataOps.push({type:'put',path:['contracts',a.for,a.contract.split(':')[1]],data:c})
                       store.batch(dataOps)
                       credit(json.who)
                       console.log(dataOps)
+                      }
                   } else {
                     if (c.pending[1].approve == false){
                       dataOps.push({type:'del',path:['contracts', a.for, a.contract.split(':')[1]]})
