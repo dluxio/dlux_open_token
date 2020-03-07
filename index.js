@@ -1294,11 +1294,12 @@ function startApp() {
                       {type:'put',path:['feed', `${json.block_num}:${json.transaction_id}`], data: `:@${json.who}| approved escrow for ${json.from}`}
                     ]
                     if (json.approve){
-                      c.approvals++
                       if(c.buyer){
+                          /* move to listener
                         if(c.approvals==2){c.pending = c.auth.shift()
                           dataOps.push({type:'put',path:['escrow'.c.pending[0],c.txid+':dispute'],data:c.pending[1]})
                         }
+                        */
                         dataOps.push({type:'del',path:['escrow',json.who,c.txid+':buyApprove']})
                         if(json.who == config.username){
                           for(var i = 0;i<NodeOps.length;i++){
@@ -1319,13 +1320,13 @@ function startApp() {
                           delete plasma.pending[c.txid+':listApprove']
                         }
                       }
-                      dataOps.push({type:'put',path:['contracts',a.for,a.contract],data:c})
+                      dataOps.push({type:'put',path:['contracts',a.for,a.contract.split(':')[1]],data:c})
                       store.batch(dataOps)
                       credit(json.who)
                       console.log(dataOps)
                   } else {
                     if (c.pending[1].approve == false){
-                      dataOps.push({type:'del',path:['contracts', a.for, a.contract]})
+                      dataOps.push({type:'del',path:['contracts', a.for, a.contract.split(':')[1]]})
                       dataOps.push({type:'del',path:['escrow',json.who,`deny${json.from}:${json.escrow_id}`]})
                       if(json.who == config.username){
                         for(var i = 0;i<NodeOps.length;i++){
