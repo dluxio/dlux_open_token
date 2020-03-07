@@ -1310,12 +1310,13 @@ function startApp() {
                             { type: 'put', path: ['feed', `${json.block_num}:${json.transaction_id}`], data: `:@${json.who}| approved escrow for ${json.from}` }
                         ]
                         if (json.approve && c.buyer) {
+                            console.log(json.agent)
                             if (json.who == json.agent) {
                                 c.approve_agent = true
                                 store.put(['contracts', a.for, a.contract.split(':')[1], 'approved_agent'], true, function() {
                                     store.get(['contracts', a.for, a.contract.split(':')[1], 'approved_to'], function(e, t) {
                                         if (t) {
-                                            console.log('to then agent'+ t)
+                                            console.log('to then agent' + t)
                                             c.pending = c.auths[0]
                                             c.approved_to = true
                                             dataOps.push({ type: 'put', path: ['escrow', c.pending[0], c.txid + ':dispute'], data: c.pending[1] })
