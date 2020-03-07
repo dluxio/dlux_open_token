@@ -989,12 +989,12 @@ function startApp() {
         } catch (e) {}
         var PfromBal = new Promise(function(resolve, reject) {
             store.get(['balances', json.from], function(e, a) {
-                if (e) { reject(e) } else if (isEmpty(a)) { resolve(0);console.log('Balance', a, json.from) } else { resolve(a) }
+                if (e) { reject(e) } else { resolve(a) }
             });
         })
         var PtoBal = new Promise(function(resolve, reject) {
             store.get(['balances', json.to], function(e, a) {
-                if (e) { reject(e) } else if (isEmpty(a)) { resolve(0);console.log('Balance', a, json.to)  } else { resolve(a) }
+                if (e) { reject(e) } else { resolve(a) }
             });
         })
         var PtoNode = new Promise(function(resolve, reject) {
