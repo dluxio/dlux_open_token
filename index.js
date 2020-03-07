@@ -1281,12 +1281,15 @@ function startApp() {
     });
 
     processor.onOperation('escrow_approve', function(json) {
+    console.log('yes but...')
       store.get(['escrow',json.escrow_id,json.from],function(e,a){ // since escrow ids are unique to sender, store a list of pointers to the owner of the contract
         if(!e){
+            console.log(a)
               store.get(['contracts', a.for, a.contract.split(':')[1]],function(e,b){
                 if(e){console.log(e1)}
                   if(Object.keys(b).length){
                     var c = b
+                    console.log(c)
                     var dataOps = [
                       {type:'put',path:['feed', `${json.block_num}:${json.transaction_id}`], data: `:@${json.who}| approved escrow for ${json.from}`}
                     ]
@@ -1319,6 +1322,7 @@ function startApp() {
                       dataOps.push({type:'put',path:['contracts',a.for,a.contract],data:c})
                       store.batch(dataOps)
                       credit(json.who)
+                      console.log(dataOps)
                   } else {
                     if (c.pending[1].approve == false){
                       dataOps.push({type:'del',path:['contracts', a.for, a.contract]})
