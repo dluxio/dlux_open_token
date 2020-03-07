@@ -1915,7 +1915,7 @@ function startApp() {
                 var auth = true,
                     terms = Object.keys(a[1])
                 for (i = 0; i < terms.length; i++) {
-                    if (a[1][terms[i]] !== a[term[i]]) auth = false
+                    if (a[1][terms[i]] !== a[terms[i]]) auth = false
                 }
                 if (auth) {
                     ops.push({
