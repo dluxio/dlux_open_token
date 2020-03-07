@@ -1045,7 +1045,7 @@ function startApp() {
                               type = 'sbd'
                               samount = `${parseFloat(contract.sbd/1000).toFixed(3)} SBD`
                           }
-                          contract.auths = [
+                          contract.pending = [
                             [json.to,
                                 [
                                     "escrow_approve",
@@ -1071,15 +1071,29 @@ function startApp() {
                                         "approve": true
                                     }
                                 ]
-                            ],
+                            ]
+                          ]
+                          contract.auths = [
                             [json.to,
+                                [
+                                    "escrow_dispute",
+                                    {
+                                        "from": json.from,
+                                        "to": json.to,
+                                        "agent": json.agent,
+                                        "who": json.to,
+                                        "escrow_id": json.escrow_id
+                                    }
+                                ]
+                            ],
+                            [json.agent,
                                 [
                                     "escrow_release",
                                     {
                                         "from": json.from,
                                         "to": json.to,
                                         "agent": json.agent,
-                                        "who": json.to,
+                                        "who": json.agent,
                                         "reciever": json.to,
                                         "escrow_id": json.escrow_id,
                                         "sbd_amount": json.sbd_amount,
@@ -1102,9 +1116,9 @@ function startApp() {
                           contract.pending = [contract.auths[0],contract.auths[1]]
                           var ops = [
                             {type:'put',path:['feed',`${json.block_num}:${json.transaction_id}`],data:`@${json.from}| has bought ${meta}: ${parseFloat(contract.amount/1000).toFixed(3)} for ${samount}`},
-                            {type:'put',path:['contracts', seller, meta], data: contract},
-                            {type:'put',path:['escrow', contract.auths[0][0], contract.txid], data: contract.auths[0][1]},
-                            {type:'put',path:['escrow', contract.auths[1][0], contract.txid], data: contract.auths[1][1]},
+                            {type:'put',path:['contracts', seller, meta.split(':')[1]], data: contract},
+                            {type:'put',path:['escrow', contract.pending[0][0], contract.txid+':buyApprove'], data: contract.pending[0][1]},
+                            {type:'put',path:['escrow', contract.pending[1][0], contract.txid+':buyApprove'], data: contract.pending[1][1]},
                             {type:'put',path:['escrow', json.escrow_id, json.from], data: {'for':seller,'contract':meta}},
                             {type:'put',path:['balances', json.from], data:fromBal},
                             {type:'put',path:['balances', json.to], data: toBal},
@@ -1267,9 +1281,9 @@ function startApp() {
     });
 
     processor.onOperation('escrow_approve', function(json) {
-      store.get(['contracts',json.escrow_id,json.from],function(e,a){ // since escrow ids are unique to sender, store a list of pointers to the owner of the contract
+      store.get(['escrow',json.escrow_id,json.from],function(e,a){ // since escrow ids are unique to sender, store a list of pointers to the owner of the contract
         if(!e){
-              store.get(['contracts', a.for, a.contract],function(e,b){
+              store.get(['contracts', a.for, a.contract.split(':')[1]],function(e,b){
                 if(e){console.log(e1)}
                   if(Object.keys(b).length){
                     var c = b
@@ -1292,14 +1306,14 @@ function startApp() {
                           delete plasma.pending[c.txid+':buyApprove']
                         }
                       } else {
-                        dataOps.push({type:'del',path:['escrow',json.who,c.txid+'listApprove']})
+                        dataOps.push({type:'del',path:['escrow',json.who,c.txid+':listApprove']})
                         if(json.who == config.username){
                           for(var i = 0;i<NodeOps.length;i++){
                             if(NodeOps[i][1][1].from == json.from && NodeOps[i][1][1].escrow_id == json.escrow_id && NodeOps[i][1][0] == 'escrow_approve'){
                               NodeOps.splice(i,1)
                             }
                           }
-                          delete plasma.pending[c.txid+'listApprove']
+                          delete plasma.pending[c.txid+':listApprove']
                         }
                       }
                       dataOps.push({type:'put',path:['contracts',a.for,a.contract],data:c})
@@ -1328,12 +1342,12 @@ function startApp() {
     });
 
     processor.onOperation('escrow_dispute', function(json) {
-      store.get(['contracts',json.escrow_id,json.from],function(e,a){ // since escrow ids are unique to sender, store a list of pointers to the owner of the contract
+      store.get(['escrow',json.escrow_id,json.from],function(e,a){ // since escrow ids are unique to sender, store a list of pointers to the owner of the contract
         if(!e){
               store.get(['contracts', a.for, a.contract],function(e,b){
                 if(e || Object.keys(b).length == 0){console.log('empty record')} else {
                   var c = b
-                  c.pending = c.auth.shift()[0]
+                  c.pending = c.auth.shift()
                   store.batch([
                     {type:'put',path:['escrow'.c.pending[0],c.txid+':release'],data:c.pending[1]},
                     {type:'put',path:['contracts',a[i].for,a[i].contract],data:c},
@@ -1356,7 +1370,7 @@ function startApp() {
     });
 
     processor.onOperation('escrow_release', function(json) {
-        store.get(['contracts',json.escrow_id,json.from],function(e,a){ // since escrow ids are unique to sender, store a list of pointers to the owner of the contract
+        store.get(['escrow',json.escrow_id,json.from],function(e,a){ // since escrow ids are unique to sender, store a list of pointers to the owner of the contract
           if(!e){
                 store.get(['contracts', a.for, a.contract],function(e,b){
                   if(e){console.log(e1)} else {
