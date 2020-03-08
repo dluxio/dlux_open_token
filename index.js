@@ -796,8 +796,9 @@ function startApp() {
                             if (e) { reject(e) } else if (isEmpty(a)) { resolve(0) } else { resolve(a) }
                         });
                     })
-                    Promise.all([PbalTo, Pfound])
+                    Promise.all([PbalTo, PbalFor, Pdex])
                         .then(function(v) {
+                            console.log({v})
                             var toBal = v[0],
                                 fromBal = v[1],
                                 dex = v[2]
@@ -840,16 +841,18 @@ function startApp() {
                                 store.batch([
                                     ops[0],
                                     { type: 'put', path: ['contracts', json.for, json.contract], data: found },
-                                    { type: 'put', path: ['escrow', forward[0][0]], data: forward[0][1] },
+                                    { type: 'put', path: ['escrow', found.auths[0][0]], data: found.auths[0][1] },
                                     { type: 'put', path: ['balances', from], data: bal },
-                                    { type: 'put', path: ['balances', agent], data: balTo },
-                                    { type: 'put', path: ['balances', found.from], data: balFor },
+                                    { type: 'put', path: ['balances', agent], data: toBal },
+                                    { type: 'put', path: ['balances', found.from], data: fromBal },
                                     { type: 'put', path: ['dex', type, 'tick'], data: json.rate },
                                     { type: 'put', path: ['dex', type, 'his', `${hisE.block}:${json.contract}`], data: hisE },
                                     { type: 'del', path: ['dex', type, 'buyOrders', `${json.rate}:${json.contract}`] }
                                 ])
                             } else {
                                 ops.push({ type: 'put', path: ['feed', `${json.block_num}:${json.transaction_id}`], data: `@${from}| has insuficient liquidity to purchase ${found.txid}` })
+                                console.log(ops)
+                                store.batch(ops)
                             }
                         })
                 }
@@ -1181,7 +1184,7 @@ function startApp() {
                 console.log(4)
                 var txid = 'DLUX' + hashThis(`${json.from}${json.block_num}`),
                     rate = parseFloat(parseInt(parseFloat(json.steem_amount) * 1000) / dextx.dlux).toFixed(6)
-                    ops = [{
+                ops = [{
                             type: 'put',
                             path: ['escrow', json.agent, txid + ':listApprove'],
                             data: [
