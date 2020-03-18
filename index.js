@@ -1315,7 +1315,7 @@ function startApp() {
     processor.onOperation('escrow_approve', function(json) {
         console.log('yes but...')
         store.get(['escrow', json.escrow_id, json.from], function(e, a) { // since escrow ids are unique to sender, store a list of pointers to the owner of the contract
-            if (!e  && Object.keys(a).lenth) {
+            if (!e && Object.keys(a).lenth) {
                 console.log(a)
                 store.get(['contracts', a.for, a.contract.split(':')[1]], function(e, b) {
                     if (e) { console.log(e1) }
@@ -1445,7 +1445,7 @@ function startApp() {
 
     processor.onOperation('escrow_release', function(json) {
         store.get(['escrow', json.escrow_id, json.from], function(e, a) { // since escrow ids are unique to sender, store a list of pointers to the owner of the contract
-            if (!e) {
+            if (!e && Object.keys(a).lenth) {
                 console.log(a)
                 store.get(['contracts', a.for, a.contract.split(':')[1]], function(e, b) {
                     if (e) { console.log(e1) } else {
