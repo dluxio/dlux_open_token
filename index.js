@@ -472,8 +472,8 @@ steemjs.api.getAccountHistory(config.username, -1, 100, function(err, result) {
         if (recents.length) {
             const mostRecent = recents.shift()
             console.log(mostRecent)
-            if (config.override = 41500000) {
-                startWith('Qmchsj9eXDsvq1Qcy9VBDU4mcGjSkiMJvFybddnwniYZDf')
+            if (recents.length === 0) {
+                startWith(config.engineCrank)
             } else {
                 startWith(mostRecent)
             }
@@ -502,7 +502,14 @@ function startWith(hash) {
                     store.del([], function(e) {
                         if (!e) {
                             if (hash) {
-                                store.put([], data[1], function(err) {
+                                var cleanState = data[1]
+                                cleanState.contracts = {}
+                                cleanState.escrow = {}
+                                cleanState.dex.steem.buyOrders = {}
+                                cleanState.dex.steem.sellOrders = {}
+                                cleanState.postchron = {}
+                                cleanState.posts = {}
+                                store.put([], cleanState, function(err) {
                                     if (err) {
                                         console.log(err)
                                     } else {
