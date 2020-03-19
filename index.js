@@ -509,6 +509,7 @@ function startWith(hash) {
                                 cleanState.dex.steem.sellOrders = {}
                                 cleanState.postchron = {}
                                 cleanState.posts = {}
+                                cleanState.chrono = {}
                                 store.put([], cleanState, function(err) {
                                     if (err) {
                                         console.log(err)
