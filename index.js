@@ -1,5 +1,6 @@
 const steem = require('dsteem');
 const steemjs = require('steem');
+const fetch = require('node-fetch');
 const steemState = require('./processor');
 const readline = require('readline');
 const safeEval = require('safe-eval');
