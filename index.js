@@ -11,6 +11,7 @@ const ipfs = new IPFS({
     port: 5001,
     protocol: 'https'
 });
+const api_url = "https://anyx.io";
 const args = require('minimist')(process.argv.slice(2));
 const express = require('express')
 const cors = require('cors')
