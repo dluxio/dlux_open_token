@@ -126,6 +126,10 @@ api.get('/getblog/:un', (req, res, next) => {
         })
         .then(j => j.json())
         .then(r => {
+            var out = r
+            for(i in r.result){
+                r.result[i].media = {m: "https://ipfs.dlux.io/images/400X200.gif"}
+            }
             res.send(`(${JSON.stringify(r, null, 3)})`)
         })
 });
