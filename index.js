@@ -126,7 +126,7 @@ api.get('/getblog/:un', (req, res, next) => {
         })
         .then(j => j.json())
         .then(r => {
-            res.send(JSON.stringify(r, null, 3))
+            res.send(`(${JSON.stringify(r, null, 3)})`)
         })
 });
 api.get('/@:un', (req, res, next) => {
