@@ -111,6 +111,26 @@ api.get('/', (req, res, next) => {
             }, null, 3))
     });
 });
+api.get('/getblog/:un', (req, res, next) => {
+    let un = req.params.un
+    let start = req.query.s || 0
+    res.setHeader('Content-Type', 'application/json')
+    fetch(api_url, {
+            body: `{\"jsonrpc\":\"2.0\", \"method\":\"follow_api.get_blog_entries\", \"params\":{\"account\":\"${un}\",\"start_entry_id\":${start},\"limit\":10}, \"id\":1}`,
+            headers: {
+                "Content-Type": "application/x-www-form-urlencoded"
+            },
+            method: "POST"
+        })
+        .then(j => j.json())
+        .then(r => {
+            res.send(JSON.stringify({
+                [un]: r,
+                VERSION,
+                realtime: 0
+            }, null, 3))
+        })
+});
 api.get('/@:un', (req, res, next) => {
     let un = req.params.un
     var bal = new Promise(function(resolve, reject) {
