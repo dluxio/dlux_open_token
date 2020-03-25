@@ -128,7 +128,7 @@ api.get('/getblog/:un', (req, res, next) => {
         .then(r => {
             var out = r
             for(i in r.result){
-                r.result[i].media = {m: "https://ipfs.dlux.io/images/400X200.gif"}
+                r.result[i].media = {m: encodeURIComponent(JSON.stringify("https://ipfs.dlux.io/images/400X200.gif"))}
             }
             res.send(`(${JSON.stringify(r, null, 3)})`)
         })
