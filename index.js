@@ -130,7 +130,9 @@ api.get('/getblog/:un', (req, res, next) => {
             for(i in r.result){
                 r.result[i].media = {m:"https://ipfs.dlux.io/images/400X200.gif"}
             }
-            res.send(`(${JSON.stringify(r, null, 3)})`)
+            delete out.result
+            out.items = r.result
+            res.send(JSON.stringify(out, null, 3))
         })
 });
 api.get('/@:un', (req, res, next) => {
