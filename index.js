@@ -126,11 +126,12 @@ api.get('/getblog/:un', (req, res, next) => {
         })
         .then(j => j.json())
         .then(r => {
-            var out = r
+            var out = {items:[]}
             for(i in r.result){
                 r.result[i].media = {m:"https://ipfs.dlux.io/images/400X200.gif"}
             }
-            delete out.result
+            out.id = r.id
+            out.jsonrpc = r.jsonrpc
             out.items = r.result
             res.send(JSON.stringify(out, null, 3))
         })
