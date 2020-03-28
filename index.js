@@ -1,5 +1,5 @@
 const steem = require('dsteem');
-const steemjs = require('steem');
+const steemjs = require('steem-js-patched');
 const fetch = require('node-fetch');
 const steemState = require('./processor');
 const readline = require('readline');
@@ -15,7 +15,7 @@ const api_url = "https://anyx.io";
 const args = require('minimist')(process.argv.slice(2));
 const express = require('express')
 const cors = require('cors')
-const steemClient = require('steem')
+const steemClient = require('steem-js-patched')
 const fs = require('fs-extra');
 const XMLHttpRequest = require("xmlhttprequest").XMLHttpRequest
 const config = require('./config');
