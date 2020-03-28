@@ -10,10 +10,10 @@ const rtp = ENV.rtp || ''
 
 const bidRate = ENV.BIDRATE || 2500
 const port = ENV.PORT || 3000;
-const clientURL = ENV.APIURL || 'https://api.steemit.com'
+const clientURL = ENV.APIURL || 'https://anyx.io'
 
 
-const engineCrank = ENV.startingHash || 'QmWRJdREoTxYyUreshW4MCuttvxZaP7RUSGzDxLtdxyhWK'
+const engineCrank = ENV.startingHash || 'QmTwkiBz8jZGMQ7rTsSRrLUZVNNNoYZzjDg342gfLAFRRq'
 const acm = ENV.account_creator || false //account creation market
 
 let config = {
