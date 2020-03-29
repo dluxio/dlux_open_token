@@ -14,7 +14,7 @@ const ipfs = new IPFS({
 const args = require('minimist')(process.argv.slice(2));
 const express = require('express')
 const cors = require('cors')
-
+const config = require('./config');
 const steemClient = require('steem-js-patched')
 steemClient.api.setOptions({ url: config.clientURL });
 const fs = require('fs-extra');
