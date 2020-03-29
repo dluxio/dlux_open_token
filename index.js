@@ -11,14 +11,14 @@ const ipfs = new IPFS({
     port: 5001,
     protocol: 'https'
 });
-const api_url = "https://anyx.io";
 const args = require('minimist')(process.argv.slice(2));
 const express = require('express')
 const cors = require('cors')
+
 const steemClient = require('steem-js-patched')
+steemClient.api.setOptions({ url: config.clientURL });
 const fs = require('fs-extra');
 const XMLHttpRequest = require("xmlhttprequest").XMLHttpRequest
-const config = require('./config');
 const rtrades = require('./rtrades');
 var Pathwise = require('./pathwise');
 var level = require('level');
@@ -117,7 +117,7 @@ api.get('/getblog/:un', (req, res, next) => {
     let un = req.params.un
     let start = req.query.s || 0
     res.setHeader('Content-Type', 'application/json')
-    fetch(api_url, {
+    fetch(config.clientURL, {
             body: `{\"jsonrpc\":\"2.0\", \"method\":\"follow_api.get_blog_entries\", \"params\":{\"account\":\"${un}\",\"start_entry_id\":${start},\"limit\":10}, \"id\":1}`,
             headers: {
                 "Content-Type": "application/x-www-form-urlencoded"
