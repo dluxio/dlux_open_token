@@ -2761,7 +2761,7 @@ function dao(num) {
         }
         stats.marketingRate = parseInt(b / i)
         stats.nodeRate = parseInt(j / i)
-        post = `![Dlux Advert](https://camo.githubusercontent.com/954558e3ca2d68e0034cae13663d9807dcce3fcf/68747470733a2f2f697066732e627573792e6f72672f697066732f516d64354b78395548366a666e5a6748724a583339744172474e6b514253376359465032357a3467467132576f50)\n### [Approve Steem DAO Funding of 166 SBD per Day for Development](https://beta.steemconnect.com/sign/update-proposal-votes?proposal_ids=[11]&approve=true)\n[See the proposal](/steemdao/@dlux-io/sps)\n#### Daily Accounting\n`
+        post = `![Dlux Advert](https://camo.githubusercontent.com/954558e3ca2d68e0034cae13663d9807dcce3fcf/68747470733a2f2f697066732e627573792e6f72672f697066732f516d64354b78395548366a666e5a6748724a583339744172474e6b514253376359465032357a3467467132576f50)\n#### Daily Accounting\n`
         post = post + `Total Supply: ${parseFloat(parseInt(stats.tokenSupply)/1000).toFixed(3)} DLUX\n* ${parseFloat(parseInt(stats.tokenSupply-powBal-(bals.ra +bals.rb +bals.rc +bals.rd +bals.re +bals.ri +bals.rr +bals.rn+bals.rm))/1000).toFixed(3)} DLUX liquid\n`
         post = post + `* ${parseFloat(parseInt(powBal)/1000).toFixed(3)} DLUX Powered up for Voting\n`
         post = post + `* ${parseFloat(parseInt(bals.ra +bals.rb +bals.rc +bals.rd +bals.re +bals.ri +bals.rr +bals.rn+bals.rm)/1000).toFixed(3)} DLUX in distribution accounts\n`
@@ -2807,7 +2807,7 @@ function dao(num) {
             mnode[node].wins = 0
         }
         bals.rd += parseInt(t * stats.delegationRate / 10000) // 10% to delegators
-        post = post + `### ${parseFloat(parseInt(bals.rd)/1000).toFixed(3)} DLUX set aside for [@dlux-io delegators](https://app.steemconnect.com/sign/delegate-vesting-shares?delegatee=dlux-io&vesting_shares=100%20SP)\n`
+        post = post + `### ${parseFloat(parseInt(bals.rd)/1000).toFixed(3)} DLUX set aside for @dlux-io delegators\n`
         bals.ra -= parseInt(t * stats.delegationRate / 10000)
         b = bals.rd
         j = 0
@@ -2850,17 +2850,17 @@ function dao(num) {
                     ago = parseFloat(ago / 60)
                         .toFixed(1)
                 }
-                post = post + `### We sold out ${ago}${dil}\nThere are now ${parseFloat(bals.ri/1000).toFixed(3)} DLUX for sale from @robotolux for ${parseFloat(stats.icoPrice/1000).toFixed(3)} Steem each.\n`
+                post = post + `### We sold out ${ago}${dil}\nThere are now ${parseFloat(bals.ri/1000).toFixed(3)} DLUX for sale from @robotolux for ${parseFloat(stats.icoPrice/1000).toFixed(3)} HIVE each.\n`
             } else {
                 var left = bals.ri
                 stats.tokenSupply += 100000000 - left
                 bals.ri = 100000000
                 stats.icoPrice = stats.icoPrice - (left / 1000000000)
                 if (stats.icoPrice < 220) stats.icoPrice = 220
-                post = post + `### We Sold out ${100000000 - left} today.\nThere are now ${parseFloat(bals.ri/1000).toFixed(3)} DLUX for sale from @robotolux for ${parseFloat(stats.icoPrice/1000).toFixed(3)} Steem each.\n`
+                post = post + `### We Sold out ${100000000 - left} today.\nThere are now ${parseFloat(bals.ri/1000).toFixed(3)} DLUX for sale from @robotolux for ${parseFloat(stats.icoPrice/1000).toFixed(3)} HIVE each.\n`
             }
         } else {
-            post = post + `### We have ${parseFloat(parseInt(bals.ri - 100000000)/1000).toFixed(3)} DLUX left for sale at 0.22 STEEM in our Pre-ICO.\nOnce this is sold pricing feedback on our 3 year ICO starts.[Buy ${parseFloat(10/(parseInt(stats.icoPrice)/1000)).toFixed(3)} DLUX* with 10 Steem now!](https://app.steemconnect.com/sign/transfer?to=robotolux&amount=10.000%20STEEM)\n`
+            post = post + `### We have ${parseFloat(parseInt(bals.ri - 100000000)/1000).toFixed(3)} DLUX left for sale at 0.22 HIVE in our Pre-ICO.\n`
         }
         if (bals.rl) {
             var dailyICODistrobution = bals.rl,
@@ -2870,7 +2870,7 @@ function dao(num) {
                     y += ico[i][node]
                 }
             }
-            post = post + `### ICO Over Auction Results:\n${parseFloat(bals.rl/1000).toFixed(3)} DLUX was set aside from today's ICO to divide between people who didn't get a chance at fixed price tokens and donated ${parseFloat(y/1000).toFixed(3)} STEEM today.\n`
+            post = post + `### ICO Over Auction Results:\n${parseFloat(bals.rl/1000).toFixed(3)} DLUX was set aside from today's ICO to divide between people who didn't get a chance at fixed price tokens and donated ${parseFloat(y/1000).toFixed(3)} HIVE today.\n`
             for (i = 0; i < ico.length; i++) {
                 for (var node in ico[i]) {
                     if (!bals[node]) {
@@ -2949,7 +2949,7 @@ function dao(num) {
             }
             dex.sbd.days.push(hi)
         }
-        post = post + `*****\n### DEX Report\n#### Spot Information\n* Price: ${parseFloat(dex.steem.tick).toFixed(3)} STEEM per DLUX\n* Price: ${parseFloat(dex.sbd.tick).toFixed(3)} SBD per DLUX\n#### Daily Volume:\n* ${parseFloat(vol/1000).toFixed(3)} DLUX\n* ${parseFloat(vols/1000).toFixed(3)} STEEM\n* ${parseFloat(parseInt(volsbd)/1000).toFixed(3)} SBD\n*****\n`
+        post = post + `*****\n### DEX Report\n#### Spot Information\n* Price: ${parseFloat(dex.steem.tick).toFixed(3)} HIVE per DLUX\n* Price: ${parseFloat(dex.sbd.tick).toFixed(3)} HBD per DLUX\n#### Daily Volume:\n* ${parseFloat(vol/1000).toFixed(3)} DLUX\n* ${parseFloat(vols/1000).toFixed(3)} HIVE\n* ${parseFloat(parseInt(volsbd)/1000).toFixed(3)} HBD\n*****\n`
         bals.rc = bals.rc + bals.ra
         bals.ra = 0
         var q = 0,
@@ -3007,7 +3007,7 @@ function dao(num) {
             })
             steemVotes = steemVotes + `* [${vo[oo].title}](https://dlux.io/@${vo[oo].author}/${vo[oo].permlink}) by @${vo[oo].author} | ${parseFloat(weight/100).toFixed(3)}% \n`
         }
-        const footer = `[Visit dlux.io](https://dlux.io)\n[Find us on Discord](https://discord.gg/Beeb38j)\n[Visit our DEX/Wallet - Soon](https://dlux.io)\n[Learn how to use DLUX](https://github.com/dluxio/dluxio/wiki)\n[Turn off mentions for nodes and delegators](https://app.steemconnect.com/sign/custom-json?id=dlux_nomention&json=%7B%22mention%22%3Afalse%7D) or [back on](https://app.steemconnect.com/sign/custom-json?id=dlux_nomention&json=%7B%22mention%22%3Atrue%7D)\n*Price for 25.2 Hrs from posting or until daily 100,000.000 DLUX sold.`
+        const footer = `[Visit dlux.io](https://dlux.io)\n[Find us on Discord](https://discord.gg/Beeb38j)\n[Visit our DEX/Wallet - Soon](https://dlux.io)\n[Learn how to use DLUX](https://github.com/dluxio/dluxio/wiki)\n*Price for 25.2 Hrs from posting or until daily 100,000.000 DLUX sold.`
         if (steemVotes) steemVotes = `#### Community Voted DLUX Posts\n` + steemVotes + `*****\n`
         post = header + contentRewards + steemVotes + post + footer
         var op = ["comment",
@@ -3031,9 +3031,7 @@ function dao(num) {
         daops.push({ type: 'put', path: ['escrow', 'dlux-io', 'comment'], data: op })
         store.batch(daops)
     })
-}
-
-function report(num) {
+}function report(num) {
     agreements = {
         [config.username]: {
             node: config.username,
