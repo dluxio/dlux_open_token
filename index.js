@@ -1,7 +1,7 @@
-const steem = require('dsteem');
-const steemjs = require('steem-js-patched');
+const hive = require('dsteem');
+const hivejs = require('steem-js-patched');
 const fetch = require('node-fetch');
-const steemState = require('./processor');
+const hiveState = require('./processor');
 const readline = require('readline');
 const safeEval = require('safe-eval');
 const IPFS = require('ipfs-api');
@@ -15,8 +15,8 @@ const args = require('minimist')(process.argv.slice(2));
 const express = require('express')
 const cors = require('cors')
 const config = require('./config');
-const steemClient = require('steem-js-patched')
-steemClient.api.setOptions({ url: config.clientURL });
+const hiveClient = require('steem-js-patched')
+hiveClient.api.setOptions({ url: config.clientURL });
 const fs = require('fs-extra');
 const XMLHttpRequest = require("xmlhttprequest").XMLHttpRequest
 const rtrades = require('./rtrades');
@@ -43,15 +43,15 @@ var http = require('http').Server(api);
 //const io = require('socket.io')(http)
 var escrow = false
 var broadcast = 1
-const wif = steemClient.auth.toWif(config.username, config.active, 'active')
-const resteemAccount = 'dlux-io';
+const wif = hiveClient.auth.toWif(config.username, config.active, 'active')
+const reblogAccount = 'dlux-io';
 var startingBlock = 41372401;
-var current, dsteem, testString
+var current, dhive, testString
 
 const prefix = 'dlux_';
 const streamMode = args.mode || 'irreversible';
 console.log("Streaming using mode", streamMode);
-var client = new steem.Client(config.clientURL);
+var client = new hive.Client(config.clientURL);
 var processor;
 
 var pa = []
@@ -87,7 +87,7 @@ function cycleipfs(num) {
 
 if (config.active && config.NODEDOMAIN) {
     escrow = true
-    dsteem = new steem.Client(config.clientURL)
+    dhive = new hive.Client(config.clientURL)
 }
 var https_redirect = function(req, res, next) {
     if (process.env.NODE_ENV === 'production') {
@@ -126,9 +126,9 @@ api.get('/getblog/:un', (req, res, next) => {
         })
         .then(j => j.json())
         .then(r => {
-            var out = {items:[]}
-            for(i in r.result){
-                r.result[i].media = {m:"https://ipfs.dlux.io/images/400X200.gif"}
+            var out = { items: [] }
+            for (i in r.result) {
+                r.result[i].media = { m: "https://ipfs.dlux.io/images/400X200.gif" }
             }
             out.id = r.id
             out.jsonrpc = r.jsonrpc
@@ -483,7 +483,7 @@ if (config.rta && config.rtp) {
 }
 var recents = []
 
-steemjs.api.getAccountHistory(config.username, -1, 100, function(err, result) {
+hivejs.api.getAccountHistory(config.username, -1, 100, function(err, result) {
     if (err) {
         console.log(err)
         startWith(config.engineCrank)
@@ -528,13 +528,16 @@ function startWith(hash) {
                         if (!e) {
                             if (hash) {
                                 var cleanState = data[1]
-                                cleanState.contracts = {}
-                                cleanState.escrow = {}
-                                cleanState.dex.steem.buyOrders = {}
-                                cleanState.dex.steem.sellOrders = {}
-                                cleanState.postchron = {}
-                                cleanState.posts = {}
-                                cleanState.chrono = {}
+                                cleanState.dex = {
+                                    hive: {
+                                        his: {},
+                                        tick: "0.75000"
+                                    },
+                                    hbd: {
+                                        his: {},
+                                        tick: "0.25000"
+                                    }
+                                }
                                 store.put([], cleanState, function(err) {
                                     if (err) {
                                         console.log(err)
@@ -574,7 +577,7 @@ function startWith(hash) {
 
 
 function startApp() {
-    processor = steemState(client, steem, startingBlock, 10, prefix, streamMode);
+    processor = hiveState(client, hive, startingBlock, 10, prefix, streamMode);
     store.del(['sps'], function(e) {})
 
     processor.on('send', function(json, from, active) {
@@ -810,10 +813,10 @@ function startApp() {
             .then(function(v) {
                 var bal = v[0],
                     found = v[1],
-                    type = 'steem',
+                    type = 'hive',
                     agent = found.auths[0][1][1].to
                 if (found.amount && active && bal >= found.amount) {
-                    if (found.sbd) type = 'sbd'
+                    if (found.hbd) type = 'hbd'
                     var PbalTo = new Promise(function(resolve, reject) {
                         store.get(['balances', agent], function(e, a) {
                             if (e) { reject(e) } else if (isEmpty(a)) { resolve(0) } else { resolve(a) }
@@ -831,7 +834,7 @@ function startApp() {
                     })
                     Promise.all([PbalTo, PbalFor, Pdex])
                         .then(function(v) {
-                            console.log({v})
+                            console.log({ v })
                             var toBal = v[0],
                                 fromBal = v[1],
                                 dex = v[2]
@@ -848,25 +851,25 @@ function startApp() {
                                         amount: found.amount
                                     },
                                     ops = []
-                                if (found.steem) {
-                                    ops.push({ type: 'put', path: ['feed', `${json.block_num}:${json.transaction_id}`], data: `@${from}| purchased ${parseFloat(found.steem/1000).toFixed(3)} STEEM with ${parseFloat(found.amount/1000).toFixed(3)} DLUX via DEX` })
+                                if (found.hive) {
+                                    ops.push({ type: 'put', path: ['feed', `${json.block_num}:${json.transaction_id}`], data: `@${from}| purchased ${parseFloat(found.hive/1000).toFixed(3)} HIVE with ${parseFloat(found.amount/1000).toFixed(3)} DLUX via DEX` })
                                     found.auths.push([agent, [
                                         "transfer",
                                         {
                                             "from": agent,
                                             "to": from,
-                                            "amount": (found.steem / 1000).toFixed(3) + ' STEEM',
+                                            "amount": (found.hive / 1000).toFixed(3) + ' HIVE',
                                             "memo": `${json.contract} by ${found.from} purchased with ${found.amount} DLUX`
                                         }
                                     ]])
                                 } else {
-                                    ops.push({ type: 'put', path: ['feed', `${json.block_num}:${json.transaction_id}`], data: `@${from}| purchased ${parseFloat(found.sbd/1000).toFixed(3)} SBD via DEX` })
+                                    ops.push({ type: 'put', path: ['feed', `${json.block_num}:${json.transaction_id}`], data: `@${from}| purchased ${parseFloat(found.hbd/1000).toFixed(3)} HBD via DEX` })
                                     found.auths.push([agent, [
                                         "transfer",
                                         {
                                             "from": agent,
                                             "to": from,
-                                            "amount": (found.sbd / 1000).toFixed(3) + ' SBD',
+                                            "amount": (found.hbd / 1000).toFixed(3) + ' HBD',
                                             "memo": `${json.contract} by ${found.from} fulfilled with ${found.amount} DLUX`
                                         }
                                     ]])
@@ -892,11 +895,11 @@ function startApp() {
             })
     });
 
-    processor.on('dex_steem_sell', function(json, from, active) {
-        var buyAmount = parseInt(json.steem)
+    processor.on('dex_hive_sell', function(json, from, active) {
+        var buyAmount = parseInt(json.hive)
         store.get(['balances', from], function(e, a) {
             if (!e) {
-                console.log(`${from}, selling ${json.dlux} for ${json.steem}`)
+                console.log(`${from}, selling ${json.dlux} for ${json.hive}`)
                 var b = a
                 if (json.dlux <= b && typeof buyAmount == 'number' && active) {
                     var txid = 'DLUX' + hashThis(from + json.block_num)
@@ -904,8 +907,8 @@ function startApp() {
                         txid,
                         type: 'ss',
                         from: from,
-                        steem: buyAmount,
-                        sbd: 0,
+                        hive: buyAmount,
+                        hbd: 0,
                         amount: parseInt(json.dlux),
                         rate: parseFloat((buyAmount) / (json.dlux)).toFixed(6),
                         block: json.block_num
@@ -920,15 +923,15 @@ function startApp() {
                         .then((r) => {
                             contract.expire_path = r[0]
                             store.batch([
-                                { type: 'put', path: ['dex', 'steem', 'sellOrders', `${contract.rate}:${contract.txid}`], data: contract },
+                                { type: 'put', path: ['dex', 'hive', 'sellOrders', `${contract.rate}:${contract.txid}`], data: contract },
                                 { type: 'put', path: ['balances', from], data: b - contract.amount },
                                 { type: 'put', path: ['contracts', from, contract.txid], data: contract },
-                                { type: 'put', path: ['feed', `${json.block_num}:${json.transaction_id}`], data: `@${from}| has placed order ${txid} to sell ${parseFloat(json.dlux/1000).toFixed(3)} for ${parseFloat(json.steem/1000).toFixed(3)} STEEM` }
+                                { type: 'put', path: ['feed', `${json.block_num}:${json.transaction_id}`], data: `@${from}| has placed order ${txid} to sell ${parseFloat(json.dlux/1000).toFixed(3)} for ${parseFloat(json.hive/1000).toFixed(3)} HIVE` }
                             ])
                         })
                         .catch((e) => console.log(e))
                 } else {
-                    store.batch([{ type: 'put', path: ['feed', `${json.block_num}:${json.transaction_id}`], data: `@${from}| tried to place an order to sell ${parseFloat(json.dlux/1000).toFixed(3)} for ${parseFloat(json.steem/1000).toFixed(3)} STEEM` }])
+                    store.batch([{ type: 'put', path: ['feed', `${json.block_num}:${json.transaction_id}`], data: `@${from}| tried to place an order to sell ${parseFloat(json.dlux/1000).toFixed(3)} for ${parseFloat(json.hive/1000).toFixed(3)} HIVE` }])
                 }
             } else {
                 console.log(e)
@@ -936,8 +939,8 @@ function startApp() {
         })
     });
 
-    processor.on('dex_sbd_sell', function(json, from, active) {
-        var buyAmount = parseInt(json.sbd)
+    processor.on('dex_hbd_sell', function(json, from, active) {
+        var buyAmount = parseInt(json.hbd)
         store.get(['balances', from], function(e, a) {
             if (!e) {
                 var b = a
@@ -947,8 +950,8 @@ function startApp() {
                         txid,
                         type: 'ds',
                         from: from,
-                        steem: 0,
-                        sbd: buyAmount,
+                        hive: 0,
+                        hbd: buyAmount,
                         amount: json.dlux,
                         rate: parseFloat((buyAmount) / (json.dlux)).toFixed(6),
                         block: json.block_num
@@ -960,13 +963,13 @@ function startApp() {
                         txid
                     })
                     store.batch([
-                        { type: 'put', path: ['dex', 'sbd', 'sellOrders', `${contract.rate}:${contract.txid}`], data: contract },
+                        { type: 'put', path: ['dex', 'hbd', 'sellOrders', `${contract.rate}:${contract.txid}`], data: contract },
                         { type: 'put', path: ['balances', from], data: b - contract.amount },
                         { type: 'put', path: ['contracts', from, contract.txid], data: contract },
-                        { type: 'put', path: ['feed', `${json.block_num}:${json.transaction_id}`], data: `@${from}| has placed order ${txid} to sell ${parseFloat(json.dlux/1000).toFixed(3)} for ${parseFloat(json.sbd/1000).toFixed(3)} SBD` }
+                        { type: 'put', path: ['feed', `${json.block_num}:${json.transaction_id}`], data: `@${from}| has placed order ${txid} to sell ${parseFloat(json.dlux/1000).toFixed(3)} for ${parseFloat(json.hbd/1000).toFixed(3)} HBD` }
                     ])
                 } else {
-                    store.batch([{ type: 'put', path: ['feed', `${json.block_num}:${json.transaction_id}`], data: `@${from}| tried to place an order to sell ${parseFloat(json.dlux/1000).toFixed(3)} for ${parseFloat(json.sbd/1000).toFixed(3)} SBD` }])
+                    store.batch([{ type: 'put', path: ['feed', `${json.block_num}:${json.transaction_id}`], data: `@${from}| tried to place an order to sell ${parseFloat(json.dlux/1000).toFixed(3)} for ${parseFloat(json.hbd/1000).toFixed(3)} HBD` }])
                 }
             } else {
                 console.log(e)
@@ -988,28 +991,28 @@ function startApp() {
                         var b = a
                         switch (b.type) {
                             case 'ss':
-                                store.get(['dex', 'steem', 'sellOrders', `${b.rate}:${b.txid}`], function(e, a) {
+                                store.get(['dex', 'hive', 'sellOrders', `${b.rate}:${b.txid}`], function(e, a) {
                                     if (e) { console.log(e) } else if (isEmpty(a)) { console.log('Nothing here' + b.txid) } else {
                                         release(from, b.txid)
                                     }
                                 });
                                 break;
                             case 'ds':
-                                store.get(['dex', 'sbd', 'sellOrders', `${b.rate}:${b.txid}`], function(e, a) {
+                                store.get(['dex', 'hbd', 'sellOrders', `${b.rate}:${b.txid}`], function(e, a) {
                                     if (e) { console.log(e) } else if (isEmpty(a)) { console.log('Nothing here' + b.txid) } else {
                                         release(from, b.txid)
                                     }
                                 });
                                 break;
                             case 'sb':
-                                store.get(['dex', 'steem', 'buyOrders', `${b.rate}:${b.txid}`], function(e, a) {
+                                store.get(['dex', 'hive', 'buyOrders', `${b.rate}:${b.txid}`], function(e, a) {
                                     if (e) { console.log(e) } else if (isEmpty(a)) { console.log('Nothing here' + b.txid) } else {
                                         release(from, b.txid)
                                     }
                                 });
                                 break;
                             case 'db':
-                                store.get(['dex', 'sbd', 'buyOrders', `${b.rate}:${b.txid}`], function(e, a) {
+                                store.get(['dex', 'hbd', 'buyOrders', `${b.rate}:${b.txid}`], function(e, a) {
                                     if (e) { console.log(e) } else if (isEmpty(a)) { console.log('Nothing here' + b.txid) } else {
                                         release(from, b.txid)
                                     }
@@ -1029,7 +1032,7 @@ function startApp() {
     processor.onOperation('escrow_transfer', function(json) { //grab posts to reward
         console.log(json)
         var ops, dextx, seller, contract, isAgent, isDAgent, dextxdlux, meta, done = 0,
-            type = 'steem'
+            type = 'hive'
         try {
             dextx = JSON.parse(json.json_meta).dextx
             dextxdlux = dextx.dlux
@@ -1081,7 +1084,7 @@ function startApp() {
                 const now = new Date()
                 const until = now.setHours(now.getHours() + 1)
                 const check = Date.parse(json.ratification_deadline)
-                if (contract.steem == parseInt(parseFloat(json.steem_amount) * 1000) && contract.sbd == parseInt(parseFloat(json.sbd_amount) * 1000) && check > until) {
+                if (contract.hive == parseInt(parseFloat(json.hive_amount) * 1000) && contract.hbd == parseInt(parseFloat(json.hbd_amount) * 1000) && check > until) {
                     console.log(1)
                     if (toBal >= contract.amount) {
                         console.log(2)
@@ -1098,11 +1101,11 @@ function startApp() {
                             amount: contract.amount
                         }
                         var samount
-                        if (contract.steem) {
-                            samount = `${parseFloat(contract.steem/1000).toFixed(3)} STEEM`
+                        if (contract.hive) {
+                            samount = `${parseFloat(contract.hive/1000).toFixed(3)} HIVE`
                         } else {
-                            type = 'sbd'
-                            samount = `${parseFloat(contract.sbd/1000).toFixed(3)} SBD`
+                            type = 'hbd'
+                            samount = `${parseFloat(contract.hbd/1000).toFixed(3)} HBD`
                         }
                         contract.pending = [
                             [json.to, [
@@ -1148,8 +1151,8 @@ function startApp() {
                                     "who": json.agent,
                                     "receiver": json.to,
                                     "escrow_id": json.escrow_id,
-                                    "sbd_amount": json.sbd_amount,
-                                    "steem_amount": json.steem_amount
+                                    "hbd_amount": json.hbd_amount,
+                                    "hive_amount": json.hive_amount
                                 }
                             ]],
                             [json.to, [
@@ -1216,7 +1219,7 @@ function startApp() {
             } else if (toBal > dextxdlux && typeof dextxdlux === 'number' && dextxdlux > 0 && isAgent && isDAgent) {
                 console.log(4)
                 var txid = 'DLUX' + hashThis(`${json.from}${json.block_num}`),
-                    rate = parseFloat(parseInt(parseFloat(json.steem_amount) * 1000) / dextx.dlux).toFixed(6)
+                    rate = parseFloat(parseInt(parseFloat(json.hive_amount) * 1000) / dextx.dlux).toFixed(6)
                 ops = [{
                             type: 'put',
                             path: ['escrow', json.agent, txid + ':listApprove'],
@@ -1273,8 +1276,8 @@ function startApp() {
                                 "who": json.agent,
                                 "receiver": json.to,
                                 "escrow_id": json.escrow_id,
-                                "sbd_amount": json.sbd_amount,
-                                "steem_amount": json.steem_amount
+                                "hbd_amount": json.hbd_amount,
+                                "hive_amount": json.hive_amount
                             }
                         ]]
                     ],
@@ -1286,15 +1289,15 @@ function startApp() {
                             "agent": json.agent,
                             "who": json.to,
                             "escrow_id": json.escrow_id,
-                            "sbd_amount": json.sbd_amount,
-                            "steem_amount": json.steem_amount
+                            "hbd_amount": json.hbd_amount,
+                            "hive_amount": json.hive_amount
                         }
                     ]],
                     contract = {
                         txid,
                         from: json.from,
-                        steem: parseInt(parseFloat(json.steem_amount) * 1000),
-                        sbd: parseInt(parseFloat(json.sbd_amount) * 1000),
+                        hive: parseInt(parseFloat(json.hive_amount) * 1000),
+                        hbd: parseInt(parseFloat(json.hbd_amount) * 1000),
                         amount: dextx.dlux,
                         rate,
                         block: json.block_num,
@@ -1311,14 +1314,14 @@ function startApp() {
                     from: json.from,
                     txid
                 })
-                if (parseFloat(json.steem_amount) > 0) {
+                if (parseFloat(json.hive_amount) > 0) {
                     contract.type = 'sb'
-                    ops.push({ type: 'put', path: ['feed', `${json.block_num}:${json.transaction_id}`], data: `@${json.from}| signed a ${parseFloat(json.steem_amount).toFixed(3)} STEEM buy order for ${parseFloat(dextx.dlux).toFixed(3)} DLUX:${txid}` })
-                    ops.push({ type: 'put', path: ['dex', 'steem', 'buyOrders', `${contract.rate}:${contract.txid}`], data: contract })
-                } else if (parseFloat(json.sbd_amount) > 0) {
+                    ops.push({ type: 'put', path: ['feed', `${json.block_num}:${json.transaction_id}`], data: `@${json.from}| signed a ${parseFloat(json.hive_amount).toFixed(3)} HIVE buy order for ${parseFloat(dextx.dlux).toFixed(3)} DLUX:${txid}` })
+                    ops.push({ type: 'put', path: ['dex', 'hive', 'buyOrders', `${contract.rate}:${contract.txid}`], data: contract })
+                } else if (parseFloat(json.hbd_amount) > 0) {
                     contract.type = 'db'
-                    ops.push({ type: 'put', path: ['feed', `${json.block_num}:${json.transaction_id}`], data: `@${json.from}| signed a ${parseFloat(json.sbd_amount).toFixed(3)} SBD buy order for ${parseFloat(dextx.dlux).toFixed(3)} DLUX:${txid}` })
-                    ops.push({ type: 'put', path: ['dex', 'sbd', 'buyOrders', `${contract.rate}:${contract.txid}`], data: contract })
+                    ops.push({ type: 'put', path: ['feed', `${json.block_num}:${json.transaction_id}`], data: `@${json.from}| signed a ${parseFloat(json.hbd_amount).toFixed(3)} HBD buy order for ${parseFloat(dextx.dlux).toFixed(3)} DLUX:${txid}` })
+                    ops.push({ type: 'put', path: ['dex', 'hbd', 'buyOrders', `${contract.rate}:${contract.txid}`], data: contract })
                 }
                 ops.push({ type: 'put', path: ['contracts', json.from, txid], data: contract })
                 store.batch(ops)
@@ -1561,9 +1564,9 @@ function startApp() {
                     console.log(e)
                 }
             })
-            store.batch([{ type: 'put', path: ['feed', `${json.block_num}:${json.transaction_id}`], data: `@${from}| has bid the steem-state node ${json.domain} at ${json.bidRate}` }])
+            store.batch([{ type: 'put', path: ['feed', `${json.block_num}:${json.transaction_id}`], data: `@${from}| has bid the hive-state node ${json.domain} at ${json.bidRate}` }])
         } else {
-            store.batch([{ type: 'put', path: ['feed', `${json.block_num}:${json.transaction_id}`], data: `@${from}| sent and invalid steem-state node operation` }])
+            store.batch([{ type: 'put', path: ['feed', `${json.block_num}:${json.transaction_id}`], data: `@${from}| sent and invalid hive-state node operation` }])
         }
     });
 
@@ -1677,14 +1680,14 @@ function startApp() {
             })
         }
     })
-
-    processor.onNoPrefix('follow', function(json, from) { // Follow id includes both follow and resteem.
+/*
+    processor.onNoPrefix('follow', function(json, from) { // Follow id includes both follow and reblog.
         if (json[0] === 'reblog') {
             store.get(['posts', `${json[1].author}/${json[1].permlink}`], function(e, a) {
                 if (e) {
                     console.log(e)
                 } else {
-                    if (Object.keys(a).length) {
+                    if (Object.keys(a).length) {// 
                         console.log(json)
                         var o = a,
                             ops = []
@@ -1699,7 +1702,7 @@ function startApp() {
             })
         }
     });
-
+*/
 
 
     processor.onOperation('comment_options', function(json, from) { //grab posts to reward
@@ -1745,7 +1748,7 @@ function startApp() {
                             permlink: json.permlink,
                             totalWeight: 1,
                             voters: [],
-                            resteems: [],
+                            reblogs: [],
                             credentials: {},
                             signatures: {},
                             customJSON: {
@@ -1974,7 +1977,7 @@ function startApp() {
                     ops.push({
                         type: 'put',
                         path: ['feed', `${json.block_num}:${json.transaction_id}`],
-                        data: `@${json.from}| sent @${json.to} ${json.steem_amount}/${json.sbd_amount} for ${json.memo.split(' ')[0]}`
+                        data: `@${json.from}| sent @${json.to} ${json.hive_amount}/${json.hbd_amount} for ${json.memo.split(' ')[0]}`
                     })
                     const addr = json.memo.split(' ')[0]
                     const seller = json.to
@@ -1993,7 +1996,7 @@ function startApp() {
                                     if (json.from == config.username) {
                                         delete plasma.pending[i + ':transfer']
                                         for (var i = 0; i < NodeOps.length; i++) {
-                                            if (NodeOps[i][1][1].from == json.from && NodeOps[i][1][1].to == json.to && NodeOps[i][1][0] == 'transfer' && NodeOps[i][1][1].steem_amount == json.steem_amount && NodeOps[i][1][1].sbd_amount == json.sbd_amount) {
+                                            if (NodeOps[i][1][1].from == json.from && NodeOps[i][1][1].to == json.to && NodeOps[i][1][0] == 'transfer' && NodeOps[i][1][1].hive_amount == json.hive_amount && NodeOps[i][1][1].hbd_amount == json.hbd_amount) {
                                                 NodeOps.splice(i, 1)
                                             }
                                         }
@@ -2011,7 +2014,7 @@ function startApp() {
                 }
             }
         })
-        if (json.to == 'robotolux' && json.amount.split(' ')[1] == 'STEEM') {
+        if (json.to == 'robotolux' && json.amount.split(' ')[1] == 'HIVE') {
             const amount = parseInt(parseFloat(json.amount) * 1000)
             var purchase
             var Pstats = new Promise(function(resolve, reject) {
@@ -2052,7 +2055,7 @@ function startApp() {
                     if (purchase < i) {
                         i -= purchase
                         b += purchase
-                        store.batch([{ type: 'put', path: ['feed', `${json.block_num}:${json.transaction_id}`], data: `@${json.from}| bought ${parseFloat(purchase/1000).toFixed(3)} DLUX with ${parseFloat(amount/1000).toFixed(3)} STEEM` }])
+                        store.batch([{ type: 'put', path: ['feed', `${json.block_num}:${json.transaction_id}`], data: `@${json.from}| bought ${parseFloat(purchase/1000).toFixed(3)} DLUX with ${parseFloat(amount/1000).toFixed(3)} HIVE` }])
                     } else {
                         b += i
                         const left = purchase - i
@@ -2062,13 +2065,13 @@ function startApp() {
                             { type: 'put', path: ['balances', json.from], data: b },
                             { type: 'put', path: ['balances', 'ri'], data: i },
                             { type: 'put', path: ['stats'], data: stats },
-                            { type: 'put', path: ['feed', `${json.block_num}:${json.transaction_id}`], data: `@${json.from}| bought ALL ${parseFloat(parseInt(purchase - left)).toFixed(3)} DLUX with ${parseFloat(parseInt(amount)/1000).toFixed(3)} STEEM. And bid in the over-auction` }
+                            { type: 'put', path: ['feed', `${json.block_num}:${json.transaction_id}`], data: `@${json.from}| bought ALL ${parseFloat(parseInt(purchase - left)).toFixed(3)} DLUX with ${parseFloat(parseInt(amount)/1000).toFixed(3)} HIVE. And bid in the over-auction` }
                         ])
                     }
                 } else {
                     store.batch([
                         { type: 'put', path: ['ico', json.block_num, json.from], data: parseInt(amount) },
-                        { type: 'put', path: ['feed', `${json.block_num}:${json.transaction_id}`], data: `@${json.from}| bought ALL ${parseFloat(parseInt(purchase - left)).toFixed(3)} DLUX with ${parseFloat(parseInt(amount)/1000).toFixed(3)} STEEM. And bid in the over-auction` }
+                        { type: 'put', path: ['feed', `${json.block_num}:${json.transaction_id}`], data: `@${json.from}| bought ALL ${parseFloat(parseInt(purchase - left)).toFixed(3)} DLUX with ${parseFloat(parseInt(amount)/1000).toFixed(3)} HIVE. And bid in the over-auction` }
                     ])
                 }
             });
@@ -2256,7 +2259,7 @@ function startApp() {
                     }
                     if (ops.length) {
                         console.log('attepting broadcast', ops)
-                        steemClient.broadcast.send({
+                        hiveClient.broadcast.send({
                             extensions: [],
                             operations: ops
                         }, [config.active], (err, result) => {
@@ -2545,41 +2548,41 @@ function release(from, txid) {
             var ops = []
             switch (a.type) {
                 case 'ss':
-                    store.get(['dex', 'steem', 'sellOrders', `${a.rate}:${a.txid}`], function(e, r) {
+                    store.get(['dex', 'hive', 'sellOrders', `${a.rate}:${a.txid}`], function(e, r) {
                         if (e) { console.log(e) } else if (isEmpty(r)) { console.log('Nothing here' + a.txid) } else {
                             add(r.from, r.amount)
                             ops.push({ type: 'del', path: ['contracts', from, txid] })
-                            ops.push({ type: 'del', path: ['dex', 'steem', 'sellOrders', `${a.rate}:${a.txid}`] })
+                            ops.push({ type: 'del', path: ['dex', 'hive', 'sellOrders', `${a.rate}:${a.txid}`] })
                             store.batch(ops)
                         }
                     });
                     break;
                 case 'ds':
-                    store.get(['dex', 'sbd', 'sellOrders', `${a.rate}:${a.txid}`], function(e, r) {
+                    store.get(['dex', 'hbd', 'sellOrders', `${a.rate}:${a.txid}`], function(e, r) {
                         if (e) { console.log(e) } else if (isEmpty(r)) { console.log('Nothing here' + a.txid) } else {
                             add(r.from, r.amount)
                             ops.push({ type: 'del', path: ['contracts', from, txid] })
-                            ops.push({ type: 'del', path: ['dex', 'sbd', 'sellOrders', `${a.rate}:${a.txid}`] })
+                            ops.push({ type: 'del', path: ['dex', 'hbd', 'sellOrders', `${a.rate}:${a.txid}`] })
                             store.batch(ops)
                         }
                     });
                     break;
                 case 'sb':
-                    store.get(['dex', 'steem', 'buyOrders', `${a.rate}:${a.txid}`], function(e, r) {
+                    store.get(['dex', 'hive', 'buyOrders', `${a.rate}:${a.txid}`], function(e, r) {
                         if (e) { console.log(e) } else if (isEmpty(r)) { console.log('Nothing here' + a.txid) } else {
                             ops.push({ type: 'put', path: ['contract', from, txid, 'pending'], data: r.reject[0] })
                             ops.push({ type: 'put', path: ['escrow', r.reject[0][0], r.txid], data: r.reject[0][1] })
-                            ops.push({ type: 'del', path: ['dex', 'steem', 'buyOrders', `${a.rate}:${a.txid}`] })
+                            ops.push({ type: 'del', path: ['dex', 'hive', 'buyOrders', `${a.rate}:${a.txid}`] })
                             store.batch(ops)
                         }
                     });
                     break;
                 case 'db':
-                    store.get(['dex', 'sbd', 'buyOrders', `${a.rate}:${a.txid}`], function(e, r) {
+                    store.get(['dex', 'hbd', 'buyOrders', `${a.rate}:${a.txid}`], function(e, r) {
                         if (e) { console.log(e) } else if (isEmpty(r)) { console.log('Nothing here' + a.txid) } else {
                             ops.push({ type: 'put', path: ['contract', from, txid, 'pending'], data: r.reject[0] })
                             ops.push({ type: 'put', path: ['escrow', r.reject[0][0], r.txid], data: r.reject[0][1] })
-                            ops.push({ type: 'del', path: ['dex', 'sbd', 'buyOrders', `${a.rate}:${a.txid}`] })
+                            ops.push({ type: 'del', path: ['dex', 'hbd', 'buyOrders', `${a.rate}:${a.txid}`] })
                             store.batch(ops)
                         }
                     });
@@ -2891,27 +2894,27 @@ function dao(num) {
             ico = []
         }
         var vol = 0,
-            volsbd = 0,
+            volhbd = 0,
             vols = 0,
             his = [],
             hisb = [],
             hi = {},
-            len = dex.steem.his ? dex.steem.his.length : 0,
-            lenb = dex.sbd.his ? dex.sbd.his.length : 0
+            len = dex.hive.his ? dex.hive.his.length : 0,
+            lenb = dex.hbd.his ? dex.hbd.his.length : 0
         for (var int = 0; int < len; int++) {
-            if (dex.steem.his[int].block < num - 30240) {
-                his.push(dex.steem.his.splice(int, 1))
+            if (dex.hive.his[int].block < num - 30240) {
+                his.push(dex.hive.his.splice(int, 1))
             } else {
-                vol = parseInt(parseInt(dex.steem.his[int].amount) + vol)
-                vols = parseInt(parseInt(parseInt(dex.steem.his[int].amount) * parseFloat(dex.steem.his[int].rate)) + vols)
+                vol = parseInt(parseInt(dex.hive.his[int].amount) + vol)
+                vols = parseInt(parseInt(parseInt(dex.hive.his[int].amount) * parseFloat(dex.hive.his[int].rate)) + vols)
             }
         }
         for (var int = 0; int < lenb; int++) {
-            if (dex.sbd.his[int].block < num - 30240) {
-                hisb.push(dex.sbd.his.splice(int, 1))
+            if (dex.hbd.his[int].block < num - 30240) {
+                hisb.push(dex.hbd.his.splice(int, 1))
             } else {
-                vol = parseInt(parseInt(dex.sbd.his[int].amount) + vol)
-                volsbd = parseInt(parseInt(parseInt(dex.sbd.his[int].amount) * parseFloat(dex.sbd.his[int].rate)) + volsbd)
+                vol = parseInt(parseInt(dex.hbd.his[int].amount) + vol)
+                volhbd = parseInt(parseInt(parseInt(dex.hbd.his[int].amount) * parseFloat(dex.hbd.his[int].rate)) + volhbd)
             }
         }
         if (his.length) {
@@ -2930,7 +2933,7 @@ function dao(num) {
                 }
                 hi.vol = parseInt(hi.vol + parseInt(his[int].amount))
             }
-            dex.steem.days.push(hi)
+            dex.hive.days.push(hi)
         }
         if (hisb.length) {
             hi.open = parseFloat(hisb[0].rate)
@@ -2947,9 +2950,9 @@ function dao(num) {
                 }
                 hi.vol = parseInt(hi.vol + parseInt(hisb[int].amount))
             }
-            dex.sbd.days.push(hi)
+            dex.hbd.days.push(hi)
         }
-        post = post + `*****\n### DEX Report\n#### Spot Information\n* Price: ${parseFloat(dex.steem.tick).toFixed(3)} HIVE per DLUX\n* Price: ${parseFloat(dex.sbd.tick).toFixed(3)} HBD per DLUX\n#### Daily Volume:\n* ${parseFloat(vol/1000).toFixed(3)} DLUX\n* ${parseFloat(vols/1000).toFixed(3)} HIVE\n* ${parseFloat(parseInt(volsbd)/1000).toFixed(3)} HBD\n*****\n`
+        post = post + `*****\n### DEX Report\n#### Spot Information\n* Price: ${parseFloat(dex.hive.tick).toFixed(3)} HIVE per DLUX\n* Price: ${parseFloat(dex.hbd.tick).toFixed(3)} HBD per DLUX\n#### Daily Volume:\n* ${parseFloat(vol/1000).toFixed(3)} DLUX\n* ${parseFloat(vols/1000).toFixed(3)} HIVE\n* ${parseFloat(parseInt(volhbd)/1000).toFixed(3)} HBD\n*****\n`
         bals.rc = bals.rc + bals.ra
         bals.ra = 0
         var q = 0,
@@ -2975,7 +2978,7 @@ function dao(num) {
             tw = 0,
             ww = 0,
             ii = 100,
-            steemVotes = ''
+            hiveVotes = ''
         for (var po = 0; po < cpost.length; po++) {
             if (cpost[po].block < num - 90720 && cpost[po].block > num - 123960) {
                 vo.push(cpost[po])
@@ -3005,11 +3008,11 @@ function dao(num) {
                     }
                 ]
             })
-            steemVotes = steemVotes + `* [${vo[oo].title}](https://dlux.io/@${vo[oo].author}/${vo[oo].permlink}) by @${vo[oo].author} | ${parseFloat(weight/100).toFixed(3)}% \n`
+            hiveVotes = hiveVotes + `* [${vo[oo].title}](https://dlux.io/@${vo[oo].author}/${vo[oo].permlink}) by @${vo[oo].author} | ${parseFloat(weight/100).toFixed(3)}% \n`
         }
         const footer = `[Visit dlux.io](https://dlux.io)\n[Find us on Discord](https://discord.gg/Beeb38j)\n[Visit our DEX/Wallet - Soon](https://dlux.io)\n[Learn how to use DLUX](https://github.com/dluxio/dluxio/wiki)\n*Price for 25.2 Hrs from posting or until daily 100,000.000 DLUX sold.`
-        if (steemVotes) steemVotes = `#### Community Voted DLUX Posts\n` + steemVotes + `*****\n`
-        post = header + contentRewards + steemVotes + post + footer
+        if (hiveVotes) hiveVotes = `#### Community Voted DLUX Posts\n` + hiveVotes + `*****\n`
+        post = header + contentRewards + hiveVotes + post + footer
         var op = ["comment",
             {
                 "parent_author": "",
@@ -3031,7 +3034,9 @@ function dao(num) {
         daops.push({ type: 'put', path: ['escrow', 'dlux-io', 'comment'], data: op })
         store.batch(daops)
     })
-}function report(num) {
+}
+
+function report(num) {
     agreements = {
         [config.username]: {
             node: config.username,
