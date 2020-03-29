@@ -87,7 +87,7 @@ function cycleipfs(num) {
 
 if (config.active && config.NODEDOMAIN) {
     escrow = true
-    dsteem = new steem.Client('https://api.steemit.com')
+    dsteem = new steem.Client(config.clientURL)
 }
 var https_redirect = function(req, res, next) {
     if (process.env.NODE_ENV === 'production') {
