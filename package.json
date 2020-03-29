@@ -1,38 +1,38 @@
 {
-  "name": "dlux-token-node",
-  "version": "1.0.0",
-  "description": "dlux token steem-state instance",
-  "main": "index.js",
-  "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
-    "start": "node index.js"
-  },
-  "keywords": [
-    "dlux",
-    "steem",
-    "steem-state",
-    "token"
-  ],
-  "author": "disregardfiat",
-  "license": "MIT",
-  "dependencies": {
-    "aes-js": "^3.1.2",
-    "bs58": "^4.0.1",
-    "cors": "^2.8.5",
-    "crypto": "^1.0.1",
-    "crypto-js": "^3.1.9-1",
-    "dsteem": "^0.11.2",
-    "express": "^4.16.4",
-    "form-data": "^2.3.3",
-    "fs-extra": "^7.0.1",
-    "ipfs-api": "^26.1.2",
-    "ipfs-unixfs": "^0.1.16",
-    "ipld-dag-pb": "^0.15.3",
-    "level": "^5.0.1",
-    "level-pathwise": "^4.0.0",
-    "node-fetch": "^2.6.0",
-    "safe-eval": "^0.4.1",
-    "steem-js-patched": "^0.7.4",
-    "xmlhttprequest": "^1.8.0"
-  }
+    "name": "dlux-token-node",
+    "version": "1.0.0",
+    "description": "dlux token steem-state instance",
+    "main": "index.js",
+    "scripts": {
+        "test": "echo \"Error: no test specified\" && exit 1",
+        "start": "node index.js"
+    },
+    "keywords": [
+        "dlux",
+        "steem",
+        "steem-state",
+        "token"
+    ],
+    "author": "disregardfiat",
+    "license": "MIT",
+    "dependencies": {
+        "aes-js": "^3.1.2",
+        "bs58": "^4.0.1",
+        "cors": "^2.8.5",
+        "crypto": "^1.0.1",
+        "crypto-js": "^3.1.9-1",
+        "dsteem": "^0.11.3",
+        "express": "^4.16.4",
+        "form-data": "^2.3.3",
+        "fs-extra": "^7.0.1",
+        "ipfs-api": "^26.1.2",
+        "ipfs-unixfs": "^0.1.16",
+        "ipld-dag-pb": "^0.15.3",
+        "level": "^5.0.1",
+        "level-pathwise": "^4.0.0",
+        "node-fetch": "^2.6.0",
+        "safe-eval": "^0.4.1",
+        "steem-js-patched": "^1.0.0",
+        "xmlhttprequest": "^1.8.0"
+    }
 }
