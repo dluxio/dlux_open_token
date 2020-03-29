@@ -482,7 +482,19 @@ if (config.rta && config.rtp) {
     rtrades.handleLogin(config.rta, config.rtp)
 }
 var recents = []
-startApp()
+
+                                store.put([], statestart, function(err) {
+                                    if (err) {
+                                        console.log(err)
+                                    } else {
+                                        store.get(['balances', 'ra'], function(error, returns) {
+                                            if (!error) {
+                                                console.log('here' + returns)
+                                            }
+                                        })
+                                        startApp()
+                                    }
+                                })
 /*
 hivejs.api.getAccountHistory(config.username, -1, 100, function(err, result) {
     if (err) {
