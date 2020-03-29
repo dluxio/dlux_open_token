@@ -482,7 +482,8 @@ if (config.rta && config.rtp) {
     rtrades.handleLogin(config.rta, config.rtp)
 }
 var recents = []
-
+startApp()
+/*
 hivejs.api.getAccountHistory(config.username, -1, 100, function(err, result) {
     if (err) {
         console.log(err)
@@ -508,7 +509,7 @@ hivejs.api.getAccountHistory(config.username, -1, 100, function(err, result) {
         }
     }
 });
-
+*/
 // Special Attention
 function startWith(hash) {
     console.log(`${hash} inserted`)
