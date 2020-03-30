@@ -1,4 +1,5 @@
 const hive = require('dsteem');
+const decodeURIcomponent = require('decode-uri-component');
 const hivejs = require('steem-js-patched');
 const fetch = require('node-fetch');
 const hiveState = require('./processor');
