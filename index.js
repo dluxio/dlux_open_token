@@ -113,12 +113,18 @@ api.get('/', (req, res, next) => {
             }, null, 3))
     });
 });
-api.get('/getblog/:un', (req, res, next) => {
-    let un = req.params.un
-    let start = req.query.s || 0
+api.get('/getwrap', (req, res, next) => {
+    let method = req.params.method
+    let params = JSONreq.params.params
     res.setHeader('Content-Type', 'application/json')
+    let body = {
+        jsonrpc: "2.0",
+        method,
+        params,
+        id:1
+    }
     fetch(config.clientURL, {
-            body: `{\"jsonrpc\":\"2.0\", \"method\":\"follow_api.get_blog_entries\", \"params\":{\"account\":\"${un}\",\"start_entry_id\":${start},\"limit\":10}, \"id\":1}`,
+            body: JSON.stringify(body),
             headers: {
                 "Content-Type": "application/x-www-form-urlencoded"
             },
@@ -126,14 +132,7 @@ api.get('/getblog/:un', (req, res, next) => {
         })
         .then(j => j.json())
         .then(r => {
-            var out = { items: [] }
-            for (i in r.result) {
-                r.result[i].media = { m: "https://ipfs.dlux.io/images/400X200.gif" }
-            }
-            out.id = r.id
-            out.jsonrpc = r.jsonrpc
-            out.items = r.result
-            res.send(JSON.stringify(out, null, 3))
+            res.send(JSON.stringify(r, null, 3))
         })
 });
 api.get('/@:un', (req, res, next) => {
