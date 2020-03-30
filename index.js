@@ -115,7 +115,7 @@ api.get('/', (req, res, next) => {
 });
 api.get('/getwrap', (req, res, next) => {
     let method = req.query.method || 'condenser_api.get_discussions_by_blog'
-    let params = JSON.parse(req.query.params) || [{"tag":"robotolux","limit":1}]
+    let params = JSON.parse(decodeURIcomponent(req.query.params)) || [{"tag":"robotolux","limit":1}]
     res.setHeader('Content-Type', 'application/json')
     let body = {
         jsonrpc: "2.0",
