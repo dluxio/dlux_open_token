@@ -153,7 +153,12 @@ api.get('/getauthorpic/:un', (req, res, next) => {
         })
         .then(j => j.json())
         .then(r => {
-            let image = JSON.parse(r.posting_json_metadata).profile.profile_image || 'https://ipfs.dlux.io/images/user-icon.svg'
+	    let image = 'https://ipfs.dlux.io/images/user-icon.svg'
+	    try{
+	    	image = JSON.parse(r.result[0].json_metadata).profile.profile_image
+	    } catch (e){
+	    	console.log(e)
+	    }
             if (image){
 		        fetch(image)
 		        .then(response => {
