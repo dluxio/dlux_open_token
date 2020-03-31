@@ -162,11 +162,11 @@ api.get('/getauthorpic/:un', (req, res, next) => {
             if (image){
 		        fetch(image)
 		        .then(response => {
-		            res.body.pipe(res)
+		            response.body.pipe(res)
 		        })
 	        } else {
 	    	    res.status(404)
-		        res.send('Image not found')
+		    res.send('Image not found')
             }
         })
 });
