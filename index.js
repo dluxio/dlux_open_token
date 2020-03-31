@@ -137,7 +137,7 @@ api.get('/getwrap', (req, res, next) => {
         })
 });
 api.get('/getauthorpic/:un', (req, res, next) => {
-    let un = req.query.param || ''
+    let un = req.params.un || ''
     console.log(un)
     res.setHeader('Content-Type', 'application/json')
     let body = {
