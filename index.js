@@ -138,6 +138,7 @@ api.get('/getwrap', (req, res, next) => {
 });
 api.get('/getauthorpic/:un', (req, res, next) => {
     let un = req.query.param || ''
+    console.log(un)
     res.setHeader('Content-Type', 'application/json')
     let body = {
         jsonrpc: "2.0",
@@ -145,6 +146,7 @@ api.get('/getauthorpic/:un', (req, res, next) => {
         params: [[un]],
         id:1
     }
+    console.log(body)
     fetch(config.clientURL, {
             body: JSON.stringify(body),
             headers: {
@@ -154,7 +156,7 @@ api.get('/getauthorpic/:un', (req, res, next) => {
         })
         .then(j => j.json())
         .then(r => {
-        console.log(r.json_metadata)
+        console.log(r)
             let image = JSON.parse(r.json_metadata).image
             res.send(JSON.stringify(image, null, 3))
         })
