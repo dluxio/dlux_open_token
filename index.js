@@ -136,6 +136,29 @@ api.get('/getwrap', (req, res, next) => {
             res.send(JSON.stringify(r, null, 3))
         })
 });
+api.get('/getblog/:un', (req, res, next) => {
+    let un = req.params.un
+    let start = req.query.s || 0
+    res.setHeader('Content-Type', 'application/json')
+    fetch(config.clientURL, {
+            body: `{\"jsonrpc\":\"2.0\", \"method\":\"follow_api.get_blog_entries\", \"params\":{\"account\":\"${un}\",\"start_entry_id\":${start},\"limit\":10}, \"id\":1}`,
+            headers: {
+                "Content-Type": "application/x-www-form-urlencoded"
+            },
+            method: "POST"
+        })
+        .then(j => j.json())
+        .then(r => {
+            var out = { items: [] }
+            for (i in r.result) {
+                r.result[i].media = { m: "https://ipfs.dlux.io/images/400X200.gif" }
+            }
+            out.id = r.id
+            out.jsonrpc = r.jsonrpc
+            out.items = r.result
+            res.send(JSON.stringify(out, null, 3))
+        })
+});
 api.get('/@:un', (req, res, next) => {
     let un = req.params.un
     var bal = new Promise(function(resolve, reject) {
