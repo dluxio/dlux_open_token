@@ -138,15 +138,12 @@ api.get('/getwrap', (req, res, next) => {
 });
 api.get('/getauthorpic/:un', (req, res, next) => {
     let un = req.params.un || ''
-    console.log(un)
-    res.setHeader('Content-Type', 'application/json')
     let body = {
         jsonrpc: "2.0",
         method: 'condenser_api.get_accounts',
         params: [[un]],
         id:1
     }
-    console.log(body)
     fetch(config.clientURL, {
             body: JSON.stringify(body),
             headers: {
@@ -156,9 +153,16 @@ api.get('/getauthorpic/:un', (req, res, next) => {
         })
         .then(j => j.json())
         .then(r => {
-        console.log(r)
-            let image = JSON.parse(r.json_metadata).image
-            res.send(JSON.stringify(image, null, 3))
+            let image = JSON.parse(r.posting_json_metadata).profile.profile_image || 'https://ipfs.dlux.io/images/user-icon.svg'
+            if (image){
+		        fetch(image)
+		        .then(response => {
+		            res.body.pipe(res)
+		        })
+	        } else {
+	    	    res.status(404)
+		        res.send('Image not found')
+            }
         })
 });
 
