@@ -136,6 +136,30 @@ api.get('/getwrap', (req, res, next) => {
             res.send(JSON.stringify(r, null, 3))
         })
 });
+api.get('/getauthorpic/:un', (req, res, next) => {
+    let un = req.query.param || ''
+    res.setHeader('Content-Type', 'application/json')
+    let body = {
+        jsonrpc: "2.0",
+        method: 'condenser_api.get_accounts',
+        params: [[un]],
+        id:1
+    }
+    fetch(config.clientURL, {
+            body: JSON.stringify(body),
+            headers: {
+                "Content-Type": "application/x-www-form-urlencoded"
+            },
+            method: "POST"
+        })
+        .then(j => j.json())
+        .then(r => {
+        console.log(r.json_metadata)
+            let image = JSON.parse(r.json_metadata).image
+            res.send(JSON.stringify(image, null, 3))
+        })
+});
+
 api.get('/getblog/:un', (req, res, next) => {
     let un = req.params.un
     let start = req.query.s || 0
