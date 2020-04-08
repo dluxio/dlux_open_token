@@ -165,8 +165,14 @@ api.get('/getauthorpic/:un', (req, res, next) => {
 		            response.body.pipe(res)
 		        })
 		    	.catch(e =>{
+				fetch(JSON.parse(r.result[0].posting_json_metadata).profile.profile_image)
+		        .then(response => {
+		            response.body.pipe(res)
+		        })
+		    	.catch(e =>{
 				res.status(404)
 				res.send(e)
+			})
 			})
 	        } else {
 	    	    res.status(404)
