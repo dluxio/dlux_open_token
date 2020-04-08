@@ -153,11 +153,16 @@ api.get('/getauthorpic/:un', (req, res, next) => {
         })
         .then(j => j.json())
         .then(r => {
-	    let image = 'https://ipfs.dlux.io/images/user-icon.svg'
+	    let image, i = 0
 	    try{
 	    	image = JSON.parse(r.result[0].json_metadata).profile.profile_image
 	    } catch (e){
-	    	console.log(e)
+		try {
+			i = 1
+			image = JSON.parse(r.result[0].posting_json_metadata).profile.profile_image}
+		catch(e){
+			i = 2
+			image = 'https://ipfs.dlux.io/images/user-icon.svg'}
 	    }
             if (image){
 		        fetch(image)
@@ -165,14 +170,24 @@ api.get('/getauthorpic/:un', (req, res, next) => {
 		            response.body.pipe(res)
 		        })
 		    	.catch(e =>{
-				try {image = JSON.parse(r.result[0].posting_json_metadata).profile.profile_image}
-				catch(e){image = 'https://ipfs.dlux.io/images/user-icon.svg'}
+				if ( i == 0 ) {
+					try {
+						i = 1
+						image = JSON.parse(r.result[0].posting_json_metadata).profile.profile_image
+					} catch (e) {
+						i = 2
+						image = 'https://ipfs.dlux.io/images/user-icon.svg'
+					}
+				} else {
+					i = 2
+					image = 'https://ipfs.dlux.io/images/user-icon.svg'
+				}
 				fetch(image)
 		        	.then(response => {
 		           		 response.body.pipe(res)
 		        	})
 		    		.catch(e =>{
-					if (image !== 'https://ipfs.dlux.io/images/user-icon.svg'){
+					if (i == 1){
 						image = 'https://ipfs.dlux.io/images/user-icon.svg'
 						fetch(image)
 		        			.then(response => {
