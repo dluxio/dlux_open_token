@@ -165,14 +165,29 @@ api.get('/getauthorpic/:un', (req, res, next) => {
 		            response.body.pipe(res)
 		        })
 		    	.catch(e =>{
-				fetch(JSON.parse(r.result[0].posting_json_metadata).profile.profile_image)
-		        .then(response => {
-		            response.body.pipe(res)
-		        })
-		    	.catch(e =>{
-				res.status(404)
-				res.send(e)
-			})
+				try {image = JSON.parse(r.result[0].posting_json_metadata).profile.profile_image}
+				catch(e){image = 'https://ipfs.dlux.io/images/user-icon.svg'}
+				fetch(image)
+		        	.then(response => {
+		           		 response.body.pipe(res)
+		        	})
+		    		.catch(e =>{
+					if (image !== 'https://ipfs.dlux.io/images/user-icon.svg'){
+						image = 'https://ipfs.dlux.io/images/user-icon.svg'
+						fetch(image)
+		        			.then(response => {
+		           		 		response.body.pipe(res)
+		        			})
+		    				.catch(e =>{	
+							res.status(404)
+							res.send(e)
+					
+						})
+					} else {
+						res.status(404)
+						res.send(e)
+					}
+				})
 			})
 	        } else {
 	    	    res.status(404)
