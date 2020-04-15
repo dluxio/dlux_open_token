@@ -907,7 +907,7 @@ function startApp() {
                     type = 'hive',
                     agent = found.auths[0][1][1].to
                 if (found.hbd) type = 'hbd'
-                console.log({ bal, found, type, agent })
+                console.log({ bal, found, type, agent, from })
                 if (found.amount && active && bal >= found.amount && from != agent) {
                     var PbalTo = new Promise(function(resolve, reject) {
                         store.get(['balances', agent], function(e, a) {
@@ -1547,7 +1547,7 @@ function startApp() {
         store.get(['escrow', json.escrow_id, json.from], function(e, a) { // since escrow ids are unique to sender, store a list of pointers to the owner of the contract
             if (!e && Object.keys(a).length) {
                 store.get(['contracts', a.for, a.contract], function(e, b) {
-                    if (e || Object.keys(b).length == 0) { console.log('empty record') } else {
+                    if (e || Object.keys(b).length == 0 && b.auths[2]) { console.log('empty record') } else {
                         var c = b
                         store.batch([
                             { type: 'put', path: ['escrow', c.auths[1][0], c.txid + ':release'], data: c.auths[1][1] },
@@ -1586,7 +1586,7 @@ function startApp() {
                 store.get(['contracts', owner, contract], function(e1, b) {
                     if (e1) { console.log('err' + e1) } else {
                         console.log(json, b)
-                        if (Object.keys(b).length) {
+                        if (Object.keys(b).length && b.auths[2]) {
                             var c = b
                             store.batch([
                                 { type: 'put', path: ['escrow', c.auths[2][0], c.txid + ':transfer'], data: c.auths[2][1] },
