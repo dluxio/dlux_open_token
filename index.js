@@ -912,19 +912,20 @@ function startApp() {
                 if (found.amount && active && bal >= found.amount) {
                     var PbalTo = new Promise(function(resolve, reject) {
                         store.get(['balances', agent], function(e, a) {
-                            if (e) { reject(e) } else if (isEmpty(a)) { resolve(0) } else { resolve(a) }
+                            if (e) { reject(e) } else { resolve(a) }
                         });
                     })
                     var PbalFor = new Promise(function(resolve, reject) {
                         store.get(['balances', found.from], function(e, a) {
-                            if (e) { reject(e) } else if (isEmpty(a)) { resolve(0) } else { resolve(a) }
+                            if (e) { reject(e) } else { resolve(a) }
                         });
                     })
                     Promise.all([PbalTo, PbalFor])
                         .then(function(v) {
                             console.log({ v })
                             var toBal = v[0],
-                                fromBal = v[1]
+                                fromBal = v[1],
+                                ops = []
                             if (toBal > found.amount) {
                                 toBal -= found.amount
                                 found.escrow = found.amount
@@ -933,11 +934,10 @@ function startApp() {
                                 found.buyer = from
                                 found.pending = found.auths[0]
                                 var hisE = {
-                                        rate: found.rate,
-                                        block: json.block_num,
-                                        amount: found.amount
-                                    },
-                                    ops = []
+                                    rate: found.rate,
+                                    block: json.block_num,
+                                    amount: found.amount
+                                }
                                 if (found.hive) {
                                     ops.push({ type: 'put', path: ['feed', `${json.block_num}:${json.transaction_id}`], data: `@${from}| purchased ${parseFloat(found.hive/1000).toFixed(3)} HIVE with ${parseFloat(found.amount/1000).toFixed(3)} DLUX via DEX` })
                                     found.auths.push([agent, [
