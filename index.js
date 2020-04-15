@@ -1602,7 +1602,7 @@ function startApp() {
                             }
                         }
                     })
-                } catch (e) 3 { console.log(e3) }
+                } catch (e3) { console.log(e3) }
             } else { console.log('more error' + e) }
         })
     });
