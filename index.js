@@ -610,7 +610,7 @@ var recents = []
         }
     });
     */
-startWith('QmRYyRgMRkeLX7NshjJKGn9dEa9DtBxkA3s7oR6snhxLST')
+startWith('QmVRR3Te3QUcx2uhYz33abRAbnQe3hwJHf8q9hRw36MeXb')
     // Special Attention
 function startWith(hash) {
     console.log(`${hash} inserted`)
@@ -630,11 +630,6 @@ function startWith(hash) {
                         if (!e) {
                             if (hash) {
                                 var cleanState = data[1]
-                                cleanState.escrow = {}
-                                cleanState.chrono = {}
-                                cleanState.postchron = {}
-                                cleanState.feed = {}
-
                                 store.put([], cleanState, function(err) {
                                     if (err) {
                                         console.log(err)
@@ -1053,18 +1048,23 @@ function startApp() {
                         rate: parseFloat((buyAmount) / (json.dlux)).toFixed(6),
                         block: json.block_num
                     }
-                    chronAssign(json.block_num + 86400, {
+                    var path = chronAssign(json.block_num + 86400, {
                         block: parseInt(json.block_num + 86400),
                         op: 'expire',
                         from: from,
                         txid
                     })
-                    store.batch([
-                        { type: 'put', path: ['dex', 'hbd', 'sellOrders', `${contract.rate}:${contract.txid}`], data: contract },
-                        { type: 'put', path: ['balances', from], data: b - contract.amount },
-                        { type: 'put', path: ['contracts', from, contract.txid], data: contract },
-                        { type: 'put', path: ['feed', `${json.block_num}:${json.transaction_id}`], data: `@${from}| has placed order ${txid} to sell ${parseFloat(json.dlux/1000).toFixed(3)} for ${parseFloat(json.hbd/1000).toFixed(3)} HBD` }
-                    ])
+                    Promise.all([path])
+                        .then((r) => {
+                            contract.expire_path = r[0]
+                            store.batch([
+                                { type: 'put', path: ['dex', 'hbd', 'sellOrders', `${contract.rate}:${contract.txid}`], data: contract },
+                                { type: 'put', path: ['balances', from], data: b - contract.amount },
+                                { type: 'put', path: ['contracts', from, contract.txid], data: contract },
+                                { type: 'put', path: ['feed', `${json.block_num}:${json.transaction_id}`], data: `@${from}| has placed order ${txid} to sell ${parseFloat(json.dlux/1000).toFixed(3)} for ${parseFloat(json.hbd/1000).toFixed(3)} HBD` }
+                            ])
+                        })
+                        .catch((e) => console.log(e))
                 } else {
                     store.batch([{ type: 'put', path: ['feed', `${json.block_num}:${json.transaction_id}`], data: `@${from}| tried to place an order to sell ${parseFloat(json.dlux/1000).toFixed(3)} for ${parseFloat(json.hbd/1000).toFixed(3)} HBD` }])
                 }
