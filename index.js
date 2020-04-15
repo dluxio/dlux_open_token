@@ -897,7 +897,7 @@ function startApp() {
             });
         })
         var Pfound = new Promise(function(resolve, reject) {
-            store.get(['contracts', json.for, json.contract.split(':')[1]], function(e, a) {
+            store.get(['contracts', json.for, json.contract], function(e, a) {
                 if (e) { reject(e) } else if (isEmpty(a)) { resolve(0) } else { resolve(a) }
             });
         })
@@ -1521,8 +1521,7 @@ function startApp() {
                                 }
                                 delete plasma.pending[c.txid + ':listApprove']
                             }
-                            console.log(a.contract.split(':')[1])
-                            dataOps.push({ type: 'put', path: ['contracts', a.for, a.contract.split(':')[1]], data: c })
+                            dataOps.push({ type: 'put', path: ['contracts', a.for, a.contract], data: c })
                             store.batch(dataOps)
                             credit(json.who)
                             console.log(dataOps)
