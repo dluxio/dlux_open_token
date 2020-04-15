@@ -1350,7 +1350,7 @@ function startApp() {
                         {
                             type: 'put',
                             path: ['escrow', json.escrow_id, json.from],
-                            data: { 'for': json.from, contract: `${rate}:${txid}` }
+                            data: { 'for': json.from, contract: txid }
                         }
                     ],
                     auths = [
