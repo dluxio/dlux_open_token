@@ -1056,7 +1056,7 @@ function startApp() {
                             amount: contract.amount
                         }
                         var samount
-                        if (contract.hive) {
+                        if (parseFloat(contract.hive) > 0) {
                             samount = `${parseFloat(contract.hive/1000).toFixed(3)} HIVE`
                         } else {
                             type = 'hbd'
