@@ -238,55 +238,11 @@ api.get('/getblog/:un', (req, res, next) => {
         })
 });
 api.get('/@:un', (req, res, next) => {
-    let un = req.params.un
-    var bal = new Promise(function(resolve, reject) {
-        store.get(['balances', un], function(err, obj) {
-            if (err) {
-                reject(err)
-            } else {
-                if (typeof obj != 'number') {
-                    resolve(0)
-                } else {
-                    resolve(obj)
-                }
-            }
-        });
-    });
-    var pb = new Promise(function(resolve, reject) {
-        store.get(['pow', un], function(err, obj) {
-            if (err) {
-                reject(err)
-            } else {
-                if (typeof obj != 'number') {
-                    resolve(0)
-                } else {
-                    resolve(obj)
-                }
-            }
-        });
-    });
-    var lp = new Promise(function(resolve, reject) {
-        store.get(['pow', 'n', un], function(err, obj) {
-            if (err) {
-                reject(err)
-            } else {
-                if (typeof obj != 'number') {
-                    resolve(0)
-                } else {
-                    resolve(obj)
-                }
-            }
-        });
-    });
-    var contracts = new Promise(function(resolve, reject) {
-        store.get(['contracts', un], function(err, obj) {
-            if (err) {
-                reject(err)
-            } else {
-                resolve(obj)
-            }
-        });
-    });
+    let un = req.params.un,
+        bal = getPathNum(['balances', un]),
+        pb = getPathNum(['pow', un]),
+        lp = getPathNum(['pow', 'n', un]),
+        contracts = getPathObj(['contracts', un])
     res.setHeader('Content-Type', 'application/json');
     Promise.all([bal, pb, lp, contracts])
         .then(function(v) {
@@ -423,24 +379,8 @@ api.get('/freshncz', (req, res, next) => {
 });
 
 api.get('/markets', (req, res, next) => {
-    var markets = new Promise(function(resolve, reject) {
-        store.get(['markets'], function(err, obj) {
-            if (err) {
-                reject(err)
-            } else {
-                resolve(obj)
-            }
-        });
-    });
-    var stats = new Promise(function(resolve, reject) {
-        store.get(['stats'], function(err, obj) {
-            if (err) {
-                reject(err)
-            } else {
-                resolve(obj)
-            }
-        });
-    });
+    let markets = getPathObj(['markets']),
+        stats = getPathObj(['stats'])
     res.setHeader('Content-Type', 'application/json');
     Promise.all([markets, stats])
         .then(function(v) {
@@ -457,25 +397,8 @@ api.get('/markets', (req, res, next) => {
         })
 });
 api.get('/dex', (req, res, next) => {
-    res.setHeader('Content-Type', 'application/json');
-    var dex = new Promise(function(resolve, reject) {
-        store.get(['dex'], function(err, obj) {
-            if (err) {
-                reject(err)
-            } else {
-                resolve(obj)
-            }
-        });
-    });
-    var queue = new Promise(function(resolve, reject) {
-        store.get(['queue'], function(err, obj) {
-            if (err) {
-                reject(err)
-            } else {
-                resolve(obj)
-            }
-        });
-    });
+    var dex = getPathObj(['dex'])
+    var queue = getPathObj(['queue'])
     res.setHeader('Content-Type', 'application/json');
     Promise.all([dex, queue])
         .then(function(v) {
@@ -2070,7 +1993,7 @@ function startApp() {
                 lte: num + 1
             }, function(e, a) {
                 if (e) { console.log('chrono err: ' + e) }
-                console.log('chrono:' + a)
+                if (a) console.log('chrono:' + a)
                 for (i = 0; i < a.length; i++) {
                     store.get(['chrono', a[i]], function(e, b) {
                         switch (b.op) {
