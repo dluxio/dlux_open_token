@@ -610,7 +610,7 @@ var recents = []
         }
     });
     */
-startWith('QmYmMUk4tNHtBz7LFzjW4P3MpWkjUG5XSEvpJ6Yv729MK5')
+startWith('QmYPVY6zpizi1xTvpzPRJxBERrAC4pPUeiX1cFL5BXnEhZ')
     // Special Attention
 function startWith(hash) {
     console.log(`${hash} inserted`)
@@ -672,26 +672,25 @@ function startApp() {
     processor = hiveState(client, hive, startingBlock, 10, prefix, streamMode);
 
     processor.on('send', function(json, from, active) {
-        store.get(['balances', from], function(e, fbal) {
-            store.get(['balances', json.to], function(er, tb) {
-                if (er) {
-                    console.log(er)
-                } else {
+        let fbalp = getPathNum(['balances', from]),
+            tbp = getPathNum(['balances', json.to])
+        Promise.all([fbalp, tbp])
+            .then(bals => {
+                let fbal = bals[0],
+                    tb = bals[1],
                     tbal,
-                    ops = []
+                    ops = [],
                     tbal = typeof tb != 'number' ? 0 : tb
-                    if (json.to && typeof json.to == 'string' && typeof json.amount == 'number' && (json.amount | 0) === json.amount && json.amount >= 0 && fbal >= json.amount && active) {
-                        ops.push({ type: 'put', path: ['balances', from], data: (fbal - json.amount) })
-                        ops.push({ type: 'put', path: ['balances', json.to], data: (tbal + json.amount) })
-                        ops.push({ type: 'put', path: ['feed', `${json.block_num}:${json.transaction_id}`], data: `@${from}| Sent @${json.to} ${parseFloat(json.amount/1000).toFixed(3)}DLUX` })
-                    } else {
-                        ops.push({ type: 'put', path: ['feed', `${json.block_num}:${json.transaction_id}`], data: `@${from}| Invalid send operation` })
-                    }
-                    store.batch(ops)
+                if (json.to && typeof json.to == 'string' && typeof json.amount == 'number' && (json.amount | 0) === json.amount && json.amount >= 0 && fbal >= json.amount && active) {
+                    ops.push({ type: 'put', path: ['balances', from], data: (fbal - json.amount) })
+                    ops.push({ type: 'put', path: ['balances', json.to], data: (tbal + json.amount) })
+                    ops.push({ type: 'put', path: ['feed', `${json.block_num}:${json.transaction_id}`], data: `@${from}| Sent @${json.to} ${parseFloat(json.amount/1000).toFixed(3)}DLUX` })
+                } else {
+                    ops.push({ type: 'put', path: ['feed', `${json.block_num}:${json.transaction_id}`], data: `@${from}| Invalid send operation` })
                 }
-            });
-        })
-
+                store.batch(ops)
+            })
+            .catch(e => { console.log(e) })
     });
     /*
     processor.onOperation('update_proposal_votes', function(json) {
@@ -724,134 +723,109 @@ function startApp() {
     // power up tokens
     processor.on('power_up', function(json, from, active) {
         var amount = parseInt(json.amount),
-            lbal, pbal
-        store.get(['balances', from], function(e, lb) {
-            store.get(['pow', 't'], function(er, tpow) {
-                store.get(['pow', from], function(err, pow) {
-                    es = []
-                    if (e) es.push(e)
-                    if (er) es.push(er)
-                    if (err) es.push(err)
-                    if (es.length) {
-                        console.log({
-                            es
-                        })
+            lbal, pbal,
+            lpp = getPathNum(['balances', from]),
+            tpowp = getPathNum(['pow', 't']),
+            powp = getPathNum(['pow', from])
+
+        Promise.all([lpp, tpowp, powp])
+            .then(bals => {
+                let lb = bals[0],
+                    tpow = bals[1],
+                    pow = bals[2]
+                es = []
+                if (e) es.push(e)
+                if (er) es.push(er)
+                if (err) es.push(err)
+                if (es.length) {
+                    console.log({
+                        es
+                    })
+                } else {
+                    lbal = typeof lb != 'number' ? 0 : lb
+                    pbal = typeof pow != 'number' ? 0 : pow
+                    ops = []
+                    if (amount < lbal && active) {
+                        ops.push({ type: 'put', path: ['balances', from], data: lbal - amount })
+                        ops.push({ type: 'put', path: ['pow', from], data: pbal + amount })
+                        ops.push({ type: 'put', path: ['pow', 't'], data: tpow + amount })
+                        ops.push({ type: 'put', path: ['feed', `${json.block_num}:${json.transaction_id}`], data: `@${from}| Powered up ${parseFloat(json.amount/1000).toFixed(3)} DLUX` })
+                        ops.push({ type: 'put', path: ['feed', `${json.block_num}:${json.transaction_id}`], data: `@${from}| Powered up ${parseFloat(json.amount/1000).toFixed(3)} DLUX` })
                     } else {
-                        lbal = typeof lb != 'number' ? 0 : lb
-                        pbal = typeof pow != 'number' ? 0 : pow
-                        ops = []
-                        if (amount < lbal && active) {
-                            ops.push({ type: 'put', path: ['balances', from], data: lbal - amount })
-                            ops.push({ type: 'put', path: ['pow', from], data: pbal + amount })
-                            ops.push({ type: 'put', path: ['pow', 't'], data: tpow + amount })
-                            ops.push({ type: 'put', path: ['feed', `${json.block_num}:${json.transaction_id}`], data: `@${from}| Powered up ${parseFloat(json.amount/1000).toFixed(3)} DLUX` })
-                            ops.push({ type: 'put', path: ['feed', `${json.block_num}:${json.transaction_id}`], data: `@${from}| Powered up ${parseFloat(json.amount/1000).toFixed(3)} DLUX` })
-                        } else {
-                            ops.push({ type: 'put', path: ['feed', `${json.block_num}:${json.transaction_id}`], data: `@${from}| Invalid power up` })
-                        }
-                        store.batch(ops)
+                        ops.push({ type: 'put', path: ['feed', `${json.block_num}:${json.transaction_id}`], data: `@${from}| Invalid power up` })
                     }
-                });
-            });
-        })
+                    store.batch(ops)
+                }
+            })
+
+
     });
 
     // power down tokens
     processor.on('power_down', function(json, from, active) {
         var amount = parseInt(json.amount),
             p
-        store.get(['pow', from], function(e, o) {
-            if (e) console.log(e)
-            p = typeof o != 'number' ? 0 : o, ops = []
-            if (typeof amount == 'number' && amount >= 0 && p >= amount && active) {
-                var odd = parseInt(amount % 13),
-                    weekly = parseInt(amount / 13)
-                for (var i = 0; i < 13; i++) {
-                    if (i == 12) {
-                        weekly += odd
-                    }
-                    var chronAssign
-                    store.someChildren(['chrono'], {
-                        gte: "" + parseInt(json.block_num + 300000),
-                        lte: "" + parseInt((json.block_num + 300000) + 1)
-                    }, function(e, a) {
-                        if (e) {
-                            console.log(e)
-                        } else {
-                            if (a.length && a.length < 10) {
-                                chronAssign = a.length
-                            } else if (a.length < 36) {
-                                chronAssign = String.fromCharCode(a.length + 55)
-                            } else if (a.length < 62) {
-                                chronAssign = String.fromCharCode(a.length + 61)
-                            }
-                            if (!chronAssign) {
-                                chronAssign = `${json.block_num + (200000 * (i + 1))}:0`
-                            } else {
-                                var temp = chronAssign
-                                chronAssign = `${json.block_num + (200000 * (i + 1))}:${temp}`
-                            }
-                            ops.push({
-                                type: 'put',
-                                path: ['chrono', chronAssign],
-                                data: {
-                                    block: parseInt(json.block_num + (200000 * (i + 1))),
-                                    op: 'power_down',
-                                    amount: weekly,
-                                    by: from
-                                }
-                            })
+        getPathNum(['pow', from])
+            .then(o => {
+                let p = typeof o != 'number' ? 0 : o,
+                    ops = []
+                if (typeof amount == 'number' && amount >= 0 && p >= amount && active) {
+                    var odd = parseInt(amount % 13),
+                        weekly = parseInt(amount / 13)
+                    for (var i = 0; i < 13; i++) {
+                        if (i == 12) {
+                            weekly += odd
                         }
-                    })
+                        var chronAssign
+                        store.someChildren(['chrono'], {
+                            gte: "" + parseInt(json.block_num + 300000),
+                            lte: "" + parseInt((json.block_num + 300000) + 1)
+                        }, function(e, a) {
+                            if (e) {
+                                console.log(e)
+                            } else {
+                                if (a.length && a.length < 10) {
+                                    chronAssign = a.length
+                                } else if (a.length < 36) {
+                                    chronAssign = String.fromCharCode(a.length + 55)
+                                } else if (a.length < 62) {
+                                    chronAssign = String.fromCharCode(a.length + 61)
+                                }
+                                if (!chronAssign) {
+                                    chronAssign = `${json.block_num + (200000 * (i + 1))}:0`
+                                } else {
+                                    var temp = chronAssign
+                                    chronAssign = `${json.block_num + (200000 * (i + 1))}:${temp}`
+                                }
+                                ops.push({
+                                    type: 'put',
+                                    path: ['chrono', chronAssign],
+                                    data: {
+                                        block: parseInt(json.block_num + (200000 * (i + 1))),
+                                        op: 'power_down',
+                                        amount: weekly,
+                                        by: from
+                                    }
+                                })
+                            }
+                        })
+                    }
+                    ops.push({ type: 'put', path: ['feed', `${json.block_num}:${json.transaction_id}`], data: `@${from}| Powered down ${parseFloat(amount/1000).toFixed(3)} DLUX` })
+                } else {
+                    ops.push({ type: 'put', path: ['feed', `${json.block_num}:${json.transaction_id}`], data: `@${from}| Invalid Power Down` })
                 }
-                ops.push({ type: 'put', path: ['feed', `${json.block_num}:${json.transaction_id}`], data: `@${from}| Powered down ${parseFloat(amount/1000).toFixed(3)} DLUX` })
-            } else {
-                ops.push({ type: 'put', path: ['feed', `${json.block_num}:${json.transaction_id}`], data: `@${from}| Invalid Power Down` })
-            }
-            store.batch(ops)
-        })
+                store.batch(ops)
+            })
+            .catch(e => { console.log(e) })
+
     });
 
     // vote on content
     processor.on('vote_content', function(json, from, active) {
-        var powPromise = new Promise(function(resolve, reject) {
-            store.get(['pow', from], function(e, a) {
-                if (e) { reject(e) } else if (isEmpty(a) && typeof a != 'number') { resolve(0) } else { resolve(a) }
-            });
-        })
-        var postPromise = new Promise(function(resolve, reject) {
-            store.get(['posts', `${json.author}/${json.permlink}`], function(e, a) {
-                if (e) {
-                    reject(e)
-                } else if (isEmpty(a)) {
-                    resolve(0)
-                } else {
-                    resolve(a)
-                }
-            });
-        })
-        var rollingPromise = new Promise(function(resolve, reject) {
-            store.get(['rolling', from], function(e, a) {
-                if (e) {
-                    reject(e)
-                } else if (isEmpty(a)) {
-                    resolve(0)
-                } else {
-                    resolve(a)
-                }
-            });
-        })
-        var nftPromise = new Promise(function(resolve, reject) {
-            store.get(['pow', 'n', from], function(e, a) {
-                if (e) {
-                    reject(e)
-                } else if (isEmpty(a)) {
-                    resolve(0)
-                } else {
-                    resolve(a)
-                }
-            });
-        })
+        var powPromise = getPathNum(['pow', from]),
+            postPromise = getPathObj(['posts', `${json.author}/${json.permlink}`]),
+            rollingPromise = getPathNum(['rolling', from]),
+            nftPromise = getPathNum(['pow', 'n', from])
         Promise.all([powPromise, postPromise, rollingPromise, nftPromise])
             .then(function(v) {
                 var pow = v[0],
@@ -890,16 +864,8 @@ function startApp() {
     });
 
     processor.on('dex_buy', function(json, from, active) {
-        var Pbal = new Promise(function(resolve, reject) {
-            store.get(['balances', from], function(e, a) {
-                if (e) { reject(e) } else { resolve(a) }
-            });
-        })
-        var Pfound = new Promise(function(resolve, reject) {
-            store.get(['contracts', json.for, json.contract.split(':')[1]], function(e, a) {
-                if (e) { reject(e) } else if (isEmpty(a)) { resolve(0) } else { resolve(a) }
-            });
-        })
+        let Pbal = getPathNum(['balances', from]),
+            Pfound = getPathObj(['contracts', json.for, json.contract.split(':')[1]])
         Promise.all([Pbal, Pfound])
             .then(function(v) {
                 var bal = v[0],
@@ -909,16 +875,8 @@ function startApp() {
                 if (found.hbd) type = 'hbd'
                 console.log({ bal, found, type, agent, from })
                 if (found.amount && active && bal >= found.amount && from != agent) {
-                    var PbalTo = new Promise(function(resolve, reject) {
-                        store.get(['balances', agent], function(e, a) {
-                            if (e) { reject(e) } else { resolve(a) }
-                        });
-                    })
-                    var PbalFor = new Promise(function(resolve, reject) {
-                        store.get(['balances', found.from], function(e, a) {
-                            if (e) { reject(e) } else { resolve(a) }
-                        });
-                    })
+                    var PbalTo = getPathNum(['balances', agent]),
+                        PbalFor = getPathNum(['balances', found.from])
                     Promise.all([PbalTo, PbalFor])
                         .then(function(v) {
                             console.log({ v })
@@ -1120,7 +1078,6 @@ function startApp() {
     })
 
     processor.onOperation('escrow_transfer', function(json) { //grab posts to reward
-        console.log(json)
         var ops, dextx, seller, contract, isAgent, isDAgent, dextxdlux, meta, done = 0,
             type = 'hive'
         try {
@@ -1134,31 +1091,11 @@ function startApp() {
         try {
             seller = JSON.parse(json.json_meta).for
         } catch (e) {}
-        var PfromBal = new Promise(function(resolve, reject) {
-            store.get(['balances', json.from], function(e, a) {
-                if (e) { reject(e) } else { resolve(a) }
-            });
-        })
-        var PtoBal = new Promise(function(resolve, reject) {
-            store.get(['balances', json.to], function(e, a) {
-                if (e) { reject(e) } else { resolve(a) }
-            });
-        })
-        var PtoNode = new Promise(function(resolve, reject) {
-            store.get(['markets', 'node', json.to], function(e, a) {
-                if (e) { reject(e) } else if (isEmpty(a)) { resolve(0) } else { resolve(a) }
-            });
-        })
-        var PagentNode = new Promise(function(resolve, reject) {
-            store.get(['markets', 'node', json.agent], function(e, a) {
-                if (e) { reject(e) } else if (isEmpty(a)) { resolve(0) } else { resolve(a) }
-            });
-        })
-        var Pcontract = new Promise(function(resolve, reject) {
-            store.get(['contracts', seller, contract], function(e, a) {
-                if (e) { resolve({}) } else if (isEmpty(a)) { resolve({}) } else { resolve(a) }
-            });
-        })
+        let PfromBal = getPathNum(['balances', json.from]),
+            PtoBal = getPathNum(['balances', json.to]),
+            PtoNode = getPathObj(['markets', 'node', json.to]),
+            PagentNode = getPathObj(['markets', 'node', json.agent]),
+            Pcontract = getPathObj(['contracts', seller, contract])
         Promise.all([PfromBal, PtoBal, PtoNode, PagentNode, Pcontract]).then(function(v) {
             console.log(v)
             var fromBal = v[0],
@@ -1442,9 +1379,7 @@ function startApp() {
     });
 
     processor.onOperation('escrow_approve', function(json) {
-        console.log('yes but...')
         store.get(['escrow', json.escrow_id, json.from], function(e, a) { // since escrow ids are unique to sender, store a list of pointers to the owner of the contract
-            console.log(a)
             if (!e && Object.keys(a).length) {
                 store.get(['contracts', a.for, a.contract], function(e, b) {
                     if (e) { console.log(e1) }
@@ -1520,7 +1455,6 @@ function startApp() {
                             dataOps.push({ type: 'put', path: ['contracts', a.for, a.contract], data: c })
                             store.batch(dataOps)
                             credit(json.who)
-                            console.log(dataOps)
                         }
                         /*else if (c.pending[1].approve == false) {
                                                    dataOps.push({ type: 'del', path: ['contracts', a.for, a.contract.split(':')[1]] })
@@ -1544,50 +1478,39 @@ function startApp() {
     });
 
     processor.onOperation('escrow_dispute', function(json) {
-        store.get(['escrow', json.escrow_id, json.from], function(e, a) { // since escrow ids are unique to sender, store a list of pointers to the owner of the contract
-            if (!e && Object.keys(a).length) {
-                store.get(['contracts', a.for, a.contract], function(e, b) {
-                    if (e || Object.keys(b).length == 0 && b.auths[2]) { console.log('empty record') } else {
-                        var c = b
-                        store.batch([
-                            { type: 'put', path: ['escrow', c.auths[1][0], c.txid + ':release'], data: c.auths[1][1] },
-                            { type: 'put', path: ['contracts', a.for, a.contract], data: c },
-                            { type: 'put', path: ['feed', `${json.block_num}:${json.transaction_id}`], data: `@${json.who}| authorized ${json.agent} for ${c.txid}` },
-                            { type: 'del', path: ['escrow', json.who, c.txid + `:dispute`] }
-                        ])
-                        if (json.who == config.username) {
-                            for (var i = 0; i < NodeOps.length; i++) {
-                                if (NodeOps[i][1][1].from == json.from && NodeOps[i][1][1].escrow_id == json.escrow_id && NodeOps[i][1][0] == 'escrow_dispute') {
-                                    NodeOps.splice(i, 1)
+        getPathObj(['escrow', json.escrow_id, json.from])
+            .then(a => {
+                getPathObj(['contracts', a.for, a.contract])
+                    .then(c => {
+                        if (Object.keys(c).length == 0 && !c.auths[2]) { console.log('empty record') } else {
+                            store.batch([
+                                { type: 'put', path: ['escrow', c.auths[1][0], c.txid + ':release'], data: c.auths[1][1] },
+                                { type: 'put', path: ['contracts', a.for, a.contract], data: c },
+                                { type: 'put', path: ['feed', `${json.block_num}:${json.transaction_id}`], data: `@${json.who}| authorized ${json.agent} for ${c.txid}` },
+                                { type: 'del', path: ['escrow', json.who, c.txid + `:dispute`] }
+                            ])
+                            if (json.who == config.username) {
+                                for (var i = 0; i < NodeOps.length; i++) {
+                                    if (NodeOps[i][1][1].from == json.from && NodeOps[i][1][1].escrow_id == json.escrow_id && NodeOps[i][1][0] == 'escrow_dispute') {
+                                        NodeOps.splice(i, 1)
+                                    }
                                 }
+                                delete plasma.pending[c.txid + `:dispute`]
                             }
-                            delete plasma.pending[c.txid + `:dispute`]
+                            credit(json.who)
                         }
-                        credit(json.who)
-                    }
-                })
-            } else { console.log(e) }
-        })
+                    })
+                    .catch(e => { console.log(e) })
+            })
+            .catch(e => { console.log(e) })
     });
 
     processor.onOperation('escrow_release', function(json) {
-        console.log(json)
-        var apro = new Promise((res, rej) => {
-                store.get(['escrow', json.escrow_id, json.from], function(e, a) { // since escrow ids are unique to sender, store a list of pointers to the owner of the contract
-                    if (!e && Object.keys(a).length) {
-                        res(a)
-                    } else { rej(e) }
-                })
-            })
+        getPathObj(['escrow', json.escrow_id, json.from])
             .then(a => {
-                console.log(a)
-                let owner = a.for
-                let contract = a.contract
-                store.get(['contracts', owner, contract], function(e1, b) {
-                    if (e1) { console.log('err' + e1) } else {
-                        console.log(json, b)
-                        if (Object.keys(b).length && b.auths[2]) {
-                            var c = b
+                getPathObj(['contracts', a.for, a.contract])
+                    .then(c => {
+                        if (Object.keys(c).length && c.auths[2]) {
                             store.batch([
                                 { type: 'put', path: ['escrow', c.auths[2][0], c.txid + ':transfer'], data: c.auths[2][1] },
                                 { type: 'put', path: ['contracts', a.for, a.contract], data: c },
@@ -1604,8 +1527,8 @@ function startApp() {
                             }
                             credit(json.who)
                         }
-                    }
-                })
+                    })
+                    .catch(e => { console.log(e) })
             })
             .catch(e => { console.log(e) })
     });
@@ -1672,24 +1595,8 @@ function startApp() {
     processor.on('node_delete', function(json, from, active) {
         if (active) {
             var ops = []
-            var Pqueue = new Promise(function(resolve, reject) {
-                store.get(['queue'], function(err, obj) {
-                    if (err) {
-                        reject(err)
-                    } else {
-                        resolve(obj)
-                    }
-                });
-            });
-            var Pnode = new Promise(function(resolve, reject) {
-                store.get(['markets', 'node', from], function(err, obj) {
-                    if (err) {
-                        reject(err)
-                    } else {
-                        resolve(obj)
-                    }
-                });
-            });
+            var Pqueue = getPathObj(['queue']),
+                Pnode = getPathObj(['markets', 'node', from])
             Promise.all([Pqueue, Pnode, Prunners]).then(function(v) {
                 var q = v[0],
                     n = v[1],
@@ -1925,17 +1832,7 @@ function startApp() {
     });
 
     processor.on('cjv', function(json, from, active) {
-        var postPromise = new Promise(function(resolve, reject) {
-            store.get(['posts', `${json.a}/${json.p}`], function(e, a) {
-                if (e) {
-                    reject(e)
-                } else if (isEmpty(a)) {
-                    resolve(0)
-                } else {
-                    resolve(a)
-                }
-            });
-        })
+        var postPromise = getPathObj(['posts', `${json.a}/${json.p}`])
         Promise.all([postPromise])
             .then(function(v) {
                 var post = v[0]
@@ -1980,17 +1877,7 @@ function startApp() {
     });
 
     processor.on('sig', function(json, from, active) {
-        var postPromise = new Promise(function(resolve, reject) {
-            store.get(['posts', `${json.author}/${json.permlink}`], function(e, a) {
-                if (e) {
-                    reject(e)
-                } else if (isEmpty(a)) {
-                    resolve(0)
-                } else {
-                    resolve(a)
-                }
-            });
-        })
+        var postPromise = getPathObj(['posts', `${json.author}/${json.permlink}`])
         Promise.all([postPromise])
             .then(function(v) {
                 var post = v[0]
@@ -2008,17 +1895,7 @@ function startApp() {
     });
 
     processor.on('cert', function(json, from, active) {
-        var postPromise = new Promise(function(resolve, reject) {
-            store.get(['posts', `${json.author}/${json.permlink}`], function(e, a) {
-                if (e) {
-                    reject(e)
-                } else if (isEmpty(a)) {
-                    resolve(0)
-                } else {
-                    resolve(a)
-                }
-            });
-        })
+        var postPromise = getPathObj(['posts', `${json.author}/${json.permlink}`])
         Promise.all([postPromise])
             .then(function(v) {
                 var post = v[0]
@@ -2064,8 +1941,7 @@ function startApp() {
         store.get(['escrow', json.from, json.memo.split(' ')[0] + ':transfer'], function(e, a) {
             var ops = []
             if (!e && !isEmpty(a)) {
-                console.log('transfer inside', json, a)
-                var auth = true,
+                let auth = true,
                     terms = Object.keys(a[1])
                 for (i = 0; i < terms.length; i++) {
                     if (json[terms[i]] !== a[1][terms[i]]) {
@@ -2080,17 +1956,14 @@ function startApp() {
                         data: `@${json.from}| sent @${json.to} ${json.steem_amount}/${json.sbd_amount} for ${json.memo.split(' ')[0]}`
                     })
                     const addr = json.memo.split(' ')[0]
-                    const seller = json.to
-                    store.get(['contracts', seller, addr], function(e1, c) {
-                        if (!e1) {
-                            console.log(c)
-                            d = typeof c.escrow != 'number' ? 0 : c.escrow
-                            store.get(['balances', json.from], function(e2, f) {
-                                if (!e2) {
-                                    g = typeof f != 'number' ? 0 : f
+                    getPathObj(['contracts', json.to, addr])
+                        .then(c => {
+                            let d = typeof c.escrow != 'number' ? 0 : c.escrow
+                            getPathNum(['balances', json.from])
+                                .then(g => {
                                     ops.push({ type: 'put', path: ['balances', json.from], data: parseInt(g + d) })
                                     ops.push({ type: 'del', path: ['escrow', json.from, addr + ':transfer'] })
-                                    ops.push({ type: 'del', path: ['contracts', seller, addr] })
+                                    ops.push({ type: 'del', path: ['contracts', json.to, addr] })
                                     ops.push({ type: 'del', path: ['chrono', c.expire_path] })
                                     deletePointer(c.auths[1][1][1].escrow_id, c.buyer)
                                     if (json.from == config.username) {
@@ -2103,51 +1976,19 @@ function startApp() {
                                     }
                                     credit(json.from)
                                     store.batch(ops)
-                                } else {
-                                    console.log(e2)
-                                }
-                            })
-                        } else {
-                            console.log(e1)
-                        }
-                    })
+                                })
+                                .catch(e => { console.log(e) })
+                        })
+                        .catch(e => { console.log(e) })
                 }
             }
         })
-        if (json.to == 'robotolux' && json.amount.split(' ')[1] == 'STEEM') {
+        if (json.to == 'robotolux' && json.amount.split(' ')[1] == 'HIVE') {
             const amount = parseInt(parseFloat(json.amount) * 1000)
-            var purchase
-            var Pstats = new Promise(function(resolve, reject) {
-                store.get(['stats'], function(err, obj) {
-                    if (err) {
-                        reject(err)
-                    } else {
-                        resolve(obj)
-                    }
-                });
-            });
-            var Pbal = new Promise(function(resolve, reject) {
-                store.get(['balances', json.from], function(err, obj) {
-                    if (err) {
-                        reject(err)
-                    } else {
-                        if (typeof obj != 'number') {
-                            resolve(0)
-                        } else {
-                            resolve(obj)
-                        }
-                    }
-                });
-            });
-            var Pinv = new Promise(function(resolve, reject) {
-                store.get(['balances', 'ri'], function(err, obj) {
-                    if (err) {
-                        reject(err)
-                    } else {
-                        resolve(obj)
-                    }
-                });
-            });
+            var purchase,
+                Pstats = getPathObj(['stats']),
+                Pbal = getPathNum(['balances', json.from]),
+                Pinv = getPathNum(['balances', 'ri'])
             Promise.all([Pstats, Pbal, Pinv]).then(function(v) {
                 stats = v[0], b = v[1], i = v[2], ops = []
                 if (!stats.outOnBlock) {
@@ -2230,6 +2071,8 @@ function startApp() {
                 gte: num,
                 lte: num + 1
             }, function(e, a) {
+                if (e) { console.log('chrono err: ' + e) }
+                console.log('chrono:' + a)
                 for (i = 0; i < a.length; i++) {
                     store.get(['chrono', a[i]], function(e, b) {
                         switch (b.op) {
@@ -2237,31 +2080,23 @@ function startApp() {
                                 release(b.from, b.txid)
                                 break;
                             case 'power_down':
-                                store.get(['balances', from], function(e, lb) {
-                                    store.get(['pow', 't'], function(er, tpow) {
-                                        store.get(['pow', from], function(err, pow) {
-                                            es = []
-                                            if (e) es.push(e)
-                                            if (er) es.push(er)
-                                            if (err) es.push(err)
-                                            if (es.length) {
-                                                console.log({
-                                                    es
-                                                })
-                                            } else {
-                                                lbal = typeof lb != 'number' ? 0 : lb
-                                                pbal = typeof pow != 'number' ? 0 : pow
-                                                if (amount < lbal && active) {
-                                                    ops.push({ type: 'put', path: ['balances', from], data: lbal + b.amount })
-                                                    ops.push({ type: 'put', path: ['pow', from], data: pbal - b.amount })
-                                                    ops.push({ type: 'put', path: ['pow', 't'], data: tpow - b.amount })
-                                                    ops.push({ type: 'put', path: ['feed', `${json.block_num}:${json.transaction_id}`], data: `@${b.by}| powered down ${parseFloat(b.amount/1000).toFixed(3)} DLUX` })
-                                                    store.batch(ops)
-                                                }
-                                            }
-                                        });
-                                    });
-                                })
+                                let lbp = getPathNum(['balances', from]),
+                                    tpowp = getPathNum(['pow', 't']),
+                                    powp = getPathNum(['pow', from])
+                                Promise.all([lbp, tpowp, powp])
+                                    .then(bals => {
+                                        let lbal = bals[0],
+                                            tpow = bals[1],
+                                            pbal = bals[2]
+                                        if (amount < lbal && active) {
+                                            ops.push({ type: 'put', path: ['balances', from], data: lbal + b.amount })
+                                            ops.push({ type: 'put', path: ['pow', from], data: pbal - b.amount })
+                                            ops.push({ type: 'put', path: ['pow', 't'], data: tpow - b.amount })
+                                            ops.push({ type: 'put', path: ['feed', `${json.block_num}:${json.transaction_id}`], data: `@${b.by}| powered down ${parseFloat(b.amount/1000).toFixed(3)} DLUX` })
+                                            store.batch(ops)
+                                        }
+                                    })
+                                    .catch(e => { console.log(e) })
                                 break;
                             case 'post_reward':
                                 store.get(['posts', `${num}`, `${b.author}/${b.permlink}`], function(e, a) {
@@ -2418,6 +2253,37 @@ function check() {
         ipfss: {},
         relays: {}
     }
+    let sp = getPathObj(['stats']),
+        ap = getPathObj(['markets', 'node'])
+    Promise.all([sp, ap])
+        .then(ps => {
+            let s = ps[0],
+                b = ps[1]
+            for (var account in b) {
+                var self = b[account].self
+                plasma.markets.nodes[self] = {
+                    self: self,
+                    agreement: false,
+                }
+                var domain = b[self] ? b[self].domain : 0
+                if (domain && domain != config.NODEDOMAIN) {
+                    var domain = b[self].domain
+                    if (domain.slice(-1) == '/') {
+                        domain = domain.substring(0, domain.length - 1)
+                    }
+                    fetch(`${domain}/stats`)
+                        .then(function(response) {
+                            return response.json();
+                        })
+                        .then(function(myJson) {
+                            if (s.hashLastIBlock === myJson.stats.hashLastIBlock) {
+                                plasma.markets.nodes[myJson.node].agreement = true
+                            }
+                        }).catch(e => {})
+                }
+            }
+        })
+        .catch(e => { console.log(e) })
     store.get(['stats'], function(e, s) {
         store.get(['markets', 'node'], function(e, a) {
             var b = a
@@ -2450,49 +2316,10 @@ function check() {
 }
 
 function tally(num) {
-    var Prunners = new Promise(function(resolve, reject) {
-        store.get(['runners'], function(err, obj) {
-            if (err) {
-                reject(err)
-            } else {
-                store.del(['runners'], function(e) {
-                    if (!e) {
-                        resolve(obj)
-                    } else {
-                        console.log(e)
-                        resolve(obj)
-                    }
-                })
-            }
-        });
-    });
-    var Pnode = new Promise(function(resolve, reject) {
-        store.get(['markets', 'node'], function(err, obj) {
-            if (err) {
-                reject(err)
-            } else {
-                resolve(obj)
-            }
-        });
-    });
-    var Pstats = new Promise(function(resolve, reject) {
-        store.get(['stats'], function(err, obj) {
-            if (err) {
-                reject(err)
-            } else {
-                resolve(obj)
-            }
-        });
-    });
-    var Prb = new Promise(function(resolve, reject) {
-        store.get(['balances', 'ra'], function(err, obj) {
-            if (err) {
-                reject(err)
-            } else {
-                resolve(obj)
-            }
-        });
-    });
+    var Prunners = getPathObj(['runners']),
+        Pnode = getPathObj(['markets', 'node']),
+        Pstats = getPathObj(['stats']),
+        Prb = getPathNum(['balances', 'ra'])
     Promise.all([Prunners, Pnode, Pstats, Prb]).then(function(v) {
         var runners = v[0],
             nodes = v[1],
@@ -2694,131 +2521,35 @@ function release(from, txid) {
 }
 
 function dao(num) {
-    var post = `## DLUX DAO REPORT\n`,
+    let post = `## DLUX DAO REPORT\n`,
         news = '',
-        daops = []
-    var Pnews = new Promise(function(resolve, reject) {
-        store.get(['postQueue'], function(err, obj) {
-            if (err) {
-                reject(err)
-            } else {
-                var news = isEmpty(obj) ? '' : '*****\n### News from Humans!\n'
-                for (var title in obj) { //postQueue[title].{title,text}
-                    news = news + `#### ${title}\n`
-                    news = news + `${obj[title].text}\n\n`
+        daops = [],
+        Pnews = new Promise(function(resolve, reject) {
+            store.get(['postQueue'], function(err, obj) {
+                if (err) {
+                    reject(err)
+                } else {
+                    var news = isEmpty(obj) ? '' : '*****\n### News from Humans!\n'
+                    for (var title in obj) { //postQueue[title].{title,text}
+                        news = news + `#### ${title}\n`
+                        news = news + `${obj[title].text}\n\n`
+                    }
+                    resolve(news)
                 }
-                resolve(news)
-            }
-        });
-    });
-    var Pbals = new Promise(function(resolve, reject) { //put back
-        store.get(['balances'], function(err, obj) {
-            if (err) {
-                reject(err)
-            } else {
-                resolve(obj)
-            }
-        });
-    });
-    var Prunners = new Promise(function(resolve, reject) {
-        store.get(['runners'], function(err, obj) {
-            if (err) {
-                reject(err)
-            } else {
-                resolve(obj)
-            }
-        });
-    });
-    var Pnodes = new Promise(function(resolve, reject) { //put back
-        store.get(['markets', 'node'], function(err, obj) {
-            if (err) {
-                reject(err)
-            } else {
-                resolve(obj)
-            }
-        });
-    });
-    var Pstats = new Promise(function(resolve, reject) { //put back
-        store.get(['stats'], function(err, obj) {
-            if (err) {
-                reject(err)
-            } else {
-                resolve(obj)
-            }
-        });
-    });
-    var Pdelegations = new Promise(function(resolve, reject) { //put back
-        store.get(['delegations'], function(err, obj) {
-            if (err) {
-                reject(err)
-            } else {
-                resolve(obj)
-            }
-        });
-    });
-    var Pico = new Promise(function(resolve, reject) { //put back
-        store.get(['ico'], function(err, obj) {
-            if (err) {
-                reject(err)
-            } else {
-                resolve(obj)
-            }
-        });
-    });
-    var Pdex = new Promise(function(resolve, reject) { //put back
-        store.get(['dex'], function(err, obj) {
-            if (err) {
-                reject(err)
-            } else {
-                resolve(obj)
-            }
-        });
-    });
-    var Pbr = new Promise(function(resolve, reject) { //put back
-        store.get(['br'], function(err, obj) {
-            if (err) {
-                reject(err)
-            } else {
-                resolve(obj)
-            }
-        });
-    });
-    var Ppbal = new Promise(function(resolve, reject) { //put back
-        store.get(['pow', 't'], function(err, obj) {
-            if (err) {
-                reject(err)
-            } else {
-                resolve(obj)
-            }
-        });
-    });
-    var Pnomen = new Promise(function(resolve, reject) { //put back
-        store.get(['nomention'], function(err, obj) {
-            if (err) {
-                reject(err)
-            } else {
-                resolve(obj)
-            }
-        });
-    });
-    var Pposts = new Promise(function(resolve, reject) { //put back
-        store.get(['posts'], function(err, obj) {
-            if (err) {
-                reject(err)
-            } else {
-                resolve(obj)
-            }
-        });
-    });
-    var Pfeed = new Promise(function(resolve, reject) { //put back
-        store.get(['feed'], function(err, obj) {
-            if (err) {
-                reject(err)
-            } else {
-                resolve(obj)
-            }
-        });
-    });
+            });
+        }),
+        Pbals = getPathObj(['balances']),
+        Prunners = getPathObj(['runners']),
+        Pnodes = getPathObj(['markets', 'node']),
+        Pstats = getPathObj(['stats']),
+        Pdelegations = getPathObj(['delegations']),
+        Pico = getPathObj(['ico']),
+        Pdex = getPathObj(['dex']),
+        Pbr = getPathObj(['br']),
+        Ppbal = getPathNum(['pow', 't']),
+        Pnomen = getPathObj(['nomention']),
+        Pposts = getPathObj(['posts']),
+        Pfeed = getPathObj(['feed'])
     Promise.all([Pnews, Pbals, Prunners, Pnodes, Pstats, Pdelegations, Pico, Pdex, Pbr, Ppbal, Pnomen, Pposts, Pfeed]).then(function(v) {
         daops.push({ type: 'del', path: ['postQueue'] })
         daops.push({ type: 'del', path: ['br'] })
@@ -3184,7 +2915,6 @@ function report(num) {
                     id: 'dlux_report',
                     json: JSON.stringify({
                         feed: feed,
-                        agreements: agreements,
                         hash: plasma.hashLastIBlock,
                         block: plasma.hashBlock,
                         version: VERSION,
@@ -3226,14 +2956,11 @@ function exit(consensus) {
 }
 
 function credit(node) {
-    store.get(['markets', 'node', node, 'wins'], function(e, a) {
-        if (!e) {
-            const a2 = typeof a != 'number' ? 1 : a + 1
-            store.batch([{ type: 'put', path: ['markets', 'node', node, 'wins'], data: a2 }])
-        } else {
-            console.log(e)
-        }
-    })
+    getPathNum(['markets', 'node', node, 'wins'])
+        .then(a => {
+            store.batch([{ type: 'put', path: ['markets', 'node', node, 'wins'], data: a++ }])
+        })
+        .catch(e => { console.log(e) })
 }
 
 function add(node, amount) {
@@ -3326,6 +3053,34 @@ function asyncIpfsSaveState(blocknum, hashable) {
         })
     })
 };
+
+function getPathObj(path) {
+    return new Promise(function(resolve, reject) { //put back
+        store.get(path, function(err, obj) {
+            if (err) {
+                reject(err)
+            } else {
+                resolve(obj)
+            }
+        });
+    });
+}
+
+function getPathNum(path) {
+    return new Promise(function(resolve, reject) {
+        store.get(path, function(err, obj) {
+            if (err) {
+                reject(err)
+            } else {
+                if (typeof obj != 'number') {
+                    resolve(0)
+                } else {
+                    resolve(obj)
+                }
+            }
+        });
+    });
+}
 
 function isEmpty(obj) { for (var key in obj) { if (obj.hasOwnProperty(key)) return false; } return true; }
 
