@@ -1446,135 +1446,136 @@ function startApp() {
     });
 
     processor.onOperation('escrow_approve', function(json) {
-            console.log('yes but...')
-            store.get(['escrow', json.escrow_id, json.from], function(e, a) { // since escrow ids are unique to sender, store a list of pointers to the owner of the contract
-                    console.log(a)
-                    if (!e && Object.keys(a).length) {
-                        store.get(['contracts', a.for, a.contract, function(e, b) {
-                                if (e) { console.log(e1) }
-                                if (Object.keys(b).length) {
-                                    var c = b
-                                    console.log(c)
-                                    var dataOps = [
-                                        { type: 'put', path: ['feed', `${json.block_num}:${json.transaction_id}`], data: `:@${json.who}| approved escrow for ${json.from}` }
-                                    ]
-                                    if (json.approve && c.buyer) {
-                                        if (json.who == json.agent) {
-                                            c.approveAgent = true
-                                            store.put(['contracts', a.for, a.contract.split(':')[1], 'approvedAgent'], true, function() {
-                                                store.get(['contracts', a.for, a.contract.split(':')[1], 'approved_to'], function(e, t) {
-                                                    if (t) {
-                                                        console.log('to then agent' + t)
-                                                        c.pending = [c.auths[0]]
-                                                        c.approved_to = true
-                                                        dataOps.push({ type: 'put', path: ['escrow', c.pending[0][0], c.txid + ':dispute'], data: c.pending[0][1] })
-                                                    }
-                                                    dataOps.push({ type: 'del', path: ['escrow', json.who, c.txid + ':buyApprove'] })
-                                                    if (json.who == config.username) {
-                                                        for (var i = 0; i < NodeOps.length; i++) {
-                                                            if (NodeOps[i][1][1].from == json.from && NodeOps[i][1][1].escrow_id == json.escrow_id && NodeOps[i][1][0] == 'escrow_approve') {
-                                                                NodeOps.splice(i, 1)
-                                                            }
-                                                        }
-                                                        delete plasma.pending[c.txid + ':buyApprove']
-                                                    }
-                                                    console.log(a.contract.split(':')[1])
-                                                    dataOps.push({ type: 'put', path: ['contracts', a.for, a.contract.split(':')[1]], data: c })
-                                                    store.batch(dataOps)
-                                                    credit(json.who)
-                                                })
-                                            })
-                                        } else if (json.who == json.to) {
-                                            c.approve_to = true
-                                            store.put(['contracts', a.for, a.contract.split(':')[1], 'approved_to'], true, function() {
-                                                store.get(['contracts', a.for, a.contract.split(':')[1], 'approvedAgent'], function(e, t) {
-                                                    if (t) {
-                                                        console.log('agent then to' + t)
-                                                        c.pending = [c.auths[0]]
-                                                        c.approveAgent = true
-                                                        dataOps.push({ type: 'put', path: ['escrow', c.pending[0][0], c.txid + ':dispute'], data: c.pending[0][1] })
-
-                                                    }
-                                                    dataOps.push({ type: 'del', path: ['escrow', json.who, c.txid + ':buyApprove'] })
-                                                    if (json.who == config.username) {
-                                                        for (var i = 0; i < NodeOps.length; i++) {
-                                                            if (NodeOps[i][1][1].from == json.from && NodeOps[i][1][1].escrow_id == json.escrow_id && NodeOps[i][1][0] == 'escrow_approve') {
-                                                                NodeOps.splice(i, 1)
-                                                            }
-                                                        }
-                                                        delete plasma.pending[c.txid + ':buyApprove']
-                                                    }
-                                                    console.log(a.contract.split(':')[1], c)
-                                                    dataOps.push({ type: 'put', path: ['contracts', a.for, a.contract.split(':')[1]], data: c })
-                                                    store.batch(dataOps)
-                                                    credit(json.who)
-                                                })
-                                            })
+        console.log('yes but...')
+        store.get(['escrow', json.escrow_id, json.from], function(e, a) { // since escrow ids are unique to sender, store a list of pointers to the owner of the contract
+            console.log(a)
+            if (!e && Object.keys(a).length) {
+                store.get(['contracts', a.for, a.contract], function(e, b) {
+                    if (e) { console.log(e1) }
+                    if (Object.keys(b).length) {
+                        var c = b
+                        console.log(c)
+                        var dataOps = [
+                            { type: 'put', path: ['feed', `${json.block_num}:${json.transaction_id}`], data: `:@${json.who}| approved escrow for ${json.from}` }
+                        ]
+                        if (json.approve && c.buyer) {
+                            if (json.who == json.agent) {
+                                c.approveAgent = true
+                                store.put(['contracts', a.for, a.contract.split(':')[1], 'approvedAgent'], true, function() {
+                                    store.get(['contracts', a.for, a.contract.split(':')[1], 'approved_to'], function(e, t) {
+                                        if (t) {
+                                            console.log('to then agent' + t)
+                                            c.pending = [c.auths[0]]
+                                            c.approved_to = true
+                                            dataOps.push({ type: 'put', path: ['escrow', c.pending[0][0], c.txid + ':dispute'], data: c.pending[0][1] })
                                         }
-                                    } else if (json.approve) {
-                                        dataOps.push({ type: 'del', path: ['escrow', json.who, c.txid + ':listApprove'] })
+                                        dataOps.push({ type: 'del', path: ['escrow', json.who, c.txid + ':buyApprove'] })
                                         if (json.who == config.username) {
                                             for (var i = 0; i < NodeOps.length; i++) {
                                                 if (NodeOps[i][1][1].from == json.from && NodeOps[i][1][1].escrow_id == json.escrow_id && NodeOps[i][1][0] == 'escrow_approve') {
                                                     NodeOps.splice(i, 1)
                                                 }
                                             }
-                                            delete plasma.pending[c.txid + ':listApprove']
+                                            delete plasma.pending[c.txid + ':buyApprove']
                                         }
                                         console.log(a.contract.split(':')[1])
                                         dataOps.push({ type: 'put', path: ['contracts', a.for, a.contract.split(':')[1]], data: c })
                                         store.batch(dataOps)
                                         credit(json.who)
-                                        console.log(dataOps)
-                                    }
-                                    /*else if (c.pending[1].approve == false) {
-                                                               dataOps.push({ type: 'del', path: ['contracts', a.for, a.contract.split(':')[1]] })
-                                                               dataOps.push({ type: 'del', path: ['escrow', json.who, `deny${json.from}:${json.escrow_id}`] })
-                                                               if (json.who == config.username) {
-                                                                   for (var i = 0; i < NodeOps.length; i++) {
-                                                                       if (NodeOps[i][1][1].from == json.from && NodeOps[i][1][1].escrow_id == json.escrow_id && NodeOps[i][1][0] == 'escrow_approve') {
-                                                                           NodeOps.splice(i, 1)
-                                                                       }
-                                                                   }
-                                                                   delete plasma.pending[`deny${json.from}:${json.escrow_id}`]
-                                                               }
-                                                               store.batch(dataOps)
-                                                               credit(json.who)
-                                                           } */
-                                }
-                            });
-                        }
-                    })
+                                    })
+                                })
+                            } else if (json.who == json.to) {
+                                c.approve_to = true
+                                store.put(['contracts', a.for, a.contract.split(':')[1], 'approved_to'], true, function() {
+                                    store.get(['contracts', a.for, a.contract.split(':')[1], 'approvedAgent'], function(e, t) {
+                                        if (t) {
+                                            console.log('agent then to' + t)
+                                            c.pending = [c.auths[0]]
+                                            c.approveAgent = true
+                                            dataOps.push({ type: 'put', path: ['escrow', c.pending[0][0], c.txid + ':dispute'], data: c.pending[0][1] })
 
-            });
-
-        processor.onOperation('escrow_dispute', function(json) {
-            store.get(['escrow', json.escrow_id, json.from], function(e, a) { // since escrow ids are unique to sender, store a list of pointers to the owner of the contract
-                if (!e && Object.keys(a).length) {
-                    store.get(['contracts', a.for, a.contract.split(':')[1]], function(e, b) {
-                        if (e || Object.keys(b).length == 0) { console.log('empty record') } else {
-                            var c = b
-                            c.pending = [c.auths[1]]
-                            store.batch([
-                                { type: 'put', path: ['escrow', c.pending[0][0], c.txid + ':release'], data: c.pending[0][1] },
-                                { type: 'put', path: ['contracts', a.for, a.contract.split(':')[1]], data: c },
-                                { type: 'put', path: ['feed', `${json.block_num}:${json.transaction_id}`], data: `@${json.who}| authorized ${json.agent} for ${c.txid}` },
-                                { type: 'del', path: ['escrow', json.who, c.txid + `:dispute`] }
-                            ])
+                                        }
+                                        dataOps.push({ type: 'del', path: ['escrow', json.who, c.txid + ':buyApprove'] })
+                                        if (json.who == config.username) {
+                                            for (var i = 0; i < NodeOps.length; i++) {
+                                                if (NodeOps[i][1][1].from == json.from && NodeOps[i][1][1].escrow_id == json.escrow_id && NodeOps[i][1][0] == 'escrow_approve') {
+                                                    NodeOps.splice(i, 1)
+                                                }
+                                            }
+                                            delete plasma.pending[c.txid + ':buyApprove']
+                                        }
+                                        console.log(a.contract.split(':')[1], c)
+                                        dataOps.push({ type: 'put', path: ['contracts', a.for, a.contract.split(':')[1]], data: c })
+                                        store.batch(dataOps)
+                                        credit(json.who)
+                                    })
+                                })
+                            }
+                        } else if (json.approve) {
+                            dataOps.push({ type: 'del', path: ['escrow', json.who, c.txid + ':listApprove'] })
                             if (json.who == config.username) {
                                 for (var i = 0; i < NodeOps.length; i++) {
-                                    if (NodeOps[i][1][1].from == json.from && NodeOps[i][1][1].escrow_id == json.escrow_id && NodeOps[i][1][0] == 'escrow_dispute') {
+                                    if (NodeOps[i][1][1].from == json.from && NodeOps[i][1][1].escrow_id == json.escrow_id && NodeOps[i][1][0] == 'escrow_approve') {
                                         NodeOps.splice(i, 1)
                                     }
                                 }
-                                delete plasma.pending[c.txid + `:dispute`]
+                                delete plasma.pending[c.txid + ':listApprove']
                             }
+                            console.log(a.contract.split(':')[1])
+                            dataOps.push({ type: 'put', path: ['contracts', a.for, a.contract.split(':')[1]], data: c })
+                            store.batch(dataOps)
                             credit(json.who)
+                            console.log(dataOps)
                         }
+                        /*else if (c.pending[1].approve == false) {
+                                                   dataOps.push({ type: 'del', path: ['contracts', a.for, a.contract.split(':')[1]] })
+                                                   dataOps.push({ type: 'del', path: ['escrow', json.who, `deny${json.from}:${json.escrow_id}`] })
+                                                   if (json.who == config.username) {
+                                                       for (var i = 0; i < NodeOps.length; i++) {
+                                                           if (NodeOps[i][1][1].from == json.from && NodeOps[i][1][1].escrow_id == json.escrow_id && NodeOps[i][1][0] == 'escrow_approve') {
+                                                               NodeOps.splice(i, 1)
+                                                           }
+                                                       }
+                                                       delete plasma.pending[`deny${json.from}:${json.escrow_id}`]
+                                                   }
+                                                   store.batch(dataOps)
+                                                   credit(json.who)
+                                               } */
+                    }
+                });
+            }
+        })
+
+    });
+
+    processor.onOperation('escrow_dispute', function(json) {
+            store.get(['escrow', json.escrow_id, json.from], function(e, a) { // since escrow ids are unique to sender, store a list of pointers to the owner of the contract
+                    if (!e && Object.keys(a).length) {
+                        store.get(['contracts', a.for, a.contract, function(e, b) {
+                                if (e || Object.keys(b).length == 0) { console.log('empty record') } else {
+                                    var c = b
+                                    c.pending = [c.auths[1]]
+                                    store.batch([
+                                        { type: 'put', path: ['escrow', c.pending[0][0], c.txid + ':release'], data: c.pending[0][1] },
+                                        { type: 'put', path: ['contracts', a.for, a.contract.split(':')[1]], data: c },
+                                        { type: 'put', path: ['feed', `${json.block_num}:${json.transaction_id}`], data: `@${json.who}| authorized ${json.agent} for ${c.txid}` },
+                                        { type: 'del', path: ['escrow', json.who, c.txid + `:dispute`] }
+                                    ])
+                                    if (json.who == config.username) {
+                                        for (var i = 0; i < NodeOps.length; i++) {
+                                            if (NodeOps[i][1][1].from == json.from && NodeOps[i][1][1].escrow_id == json.escrow_id && NodeOps[i][1][0] == 'escrow_dispute') {
+                                                NodeOps.splice(i, 1)
+                                            }
+                                        }
+                                        delete plasma.pending[c.txid + `:dispute`]
+                                    }
+                                    credit(json.who)
+                                }
+                            })
+                        }
+                        else { console.log(e) }
                     })
-                } else { console.log(e) }
-            })
-        });
+            });
 
         processor.onOperation('escrow_release', function(json) {
             store.get(['escrow', json.escrow_id, json.from], function(e, a) { // since escrow ids are unique to sender, store a list of pointers to the owner of the contract
