@@ -931,7 +931,6 @@ function startApp() {
                                 bal -= found.amount
                                 fromBal += found.amount
                                 found.buyer = from
-                                found.pending = found.auths[0]
                                 var hisE = {
                                     rate: found.rate,
                                     block: json.block_num,
@@ -1462,9 +1461,9 @@ function startApp() {
                                     store.get(['contracts', a.for, a.contract, 'approve_to'], function(e, t) {
                                         if (t) {
                                             console.log('to then agent' + t)
-                                            c.pending = [c.auths[0]]
+                                            c.pending = c.auths[0]
                                             c.approve_to = true
-                                            dataOps.push({ type: 'put', path: ['escrow', c.pending[0][0], c.txid + ':dispute'], data: c.pending[0][1] })
+                                            dataOps.push({ type: 'put', path: ['escrow', c.pending[0], c.txid + ':dispute'], data: c.pending[1] })
                                         }
                                         dataOps.push({ type: 'del', path: ['escrow', json.who, c.txid + ':buyApprove'] })
                                         if (json.who == config.username) {
@@ -1487,9 +1486,9 @@ function startApp() {
                                     store.get(['contracts', a.for, a.contract, 'approveAgent'], function(e, t) {
                                         if (t) {
                                             console.log('agent then to' + t)
-                                            c.pending = [c.auths[0]]
+                                            c.pending = c.auths[0]
                                             c.approveAgent = true
-                                            dataOps.push({ type: 'put', path: ['escrow', c.pending[0][0], c.txid + ':dispute'], data: c.pending[0][1] })
+                                            dataOps.push({ type: 'put', path: ['escrow', c.pending[0], c.txid + ':dispute'], data: c.pending[1] })
 
                                         }
                                         dataOps.push({ type: 'del', path: ['escrow', json.who, c.txid + ':buyApprove'] })
@@ -1550,9 +1549,8 @@ function startApp() {
                 store.get(['contracts', a.for, a.contract], function(e, b) {
                     if (e || Object.keys(b).length == 0) { console.log('empty record') } else {
                         var c = b
-                        c.pending = [c.auths[1]]
                         store.batch([
-                            { type: 'put', path: ['escrow', c.pending[0][0], c.txid + ':release'], data: c.pending[0][1] },
+                            { type: 'put', path: ['escrow', c.auths[2][0], c.txid + ':release'], data: c.auths[2][1] },
                             { type: 'put', path: ['contracts', a.for, a.contract], data: c },
                             { type: 'put', path: ['feed', `${json.block_num}:${json.transaction_id}`], data: `@${json.who}| authorized ${json.agent} for ${c.txid}` },
                             { type: 'del', path: ['escrow', json.who, c.txid + `:dispute`] }
