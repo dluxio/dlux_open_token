@@ -116,13 +116,13 @@ api.get('/', (req, res, next) => {
 });
 api.get('/getwrap', (req, res, next) => {
     let method = req.query.method || 'condenser_api.get_discussions_by_blog'
-    let params = JSON.parse(decodeURIcomponent(req.query.params)) || [{"tag":"robotolux","limit":1}]
+    let params = JSON.parse(decodeURIcomponent(req.query.params)) || [{ "tag": "robotolux", "limit": 1 }]
     res.setHeader('Content-Type', 'application/json')
     let body = {
         jsonrpc: "2.0",
         method,
         params,
-        id:1
+        id: 1
     }
     fetch(config.clientURL, {
             body: JSON.stringify(body),
@@ -141,8 +141,10 @@ api.get('/getauthorpic/:un', (req, res, next) => {
     let body = {
         jsonrpc: "2.0",
         method: 'condenser_api.get_accounts',
-        params: [[un]],
-        id:1
+        params: [
+            [un]
+        ],
+        id: 1
     }
     fetch(config.clientURL, {
             body: JSON.stringify(body),
@@ -153,60 +155,61 @@ api.get('/getauthorpic/:un', (req, res, next) => {
         })
         .then(j => j.json())
         .then(r => {
-	    let image, i = 0
-	    try{
-	    	image = JSON.parse(r.result[0].json_metadata).profile.profile_image
-	    } catch (e){
-		try {
-			i = 1
-			image = JSON.parse(r.result[0].posting_json_metadata).profile.profile_image}
-		catch(e){
-			i = 2
-			image = 'https://ipfs.dlux.io/images/user-icon.svg'}
-	    }
-            if (image){
-		        fetch(image)
-		        .then(response => {
-		            response.body.pipe(res)
-		        })
-		    	.catch(e =>{
-				if ( i == 0 ) {
-					try {
-						i = 1
-						image = JSON.parse(r.result[0].posting_json_metadata).profile.profile_image
-					} catch (e) {
-						i = 2
-						image = 'https://ipfs.dlux.io/images/user-icon.svg'
-					}
-				} else {
-					i = 2
-					image = 'https://ipfs.dlux.io/images/user-icon.svg'
-				}
-				fetch(image)
-		        	.then(response => {
-		           		 response.body.pipe(res)
-		        	})
-		    		.catch(e =>{
-					if (i == 1){
-						image = 'https://ipfs.dlux.io/images/user-icon.svg'
-						fetch(image)
-		        			.then(response => {
-		           		 		response.body.pipe(res)
-		        			})
-		    				.catch(e =>{	
-							res.status(404)
-							res.send(e)
-					
-						})
-					} else {
-						res.status(404)
-						res.send(e)
-					}
-				})
-			})
-	        } else {
-	    	    res.status(404)
-		    res.send('Image not found')
+            let image, i = 0
+            try {
+                image = JSON.parse(r.result[0].json_metadata).profile.profile_image
+            } catch (e) {
+                try {
+                    i = 1
+                    image = JSON.parse(r.result[0].posting_json_metadata).profile.profile_image
+                } catch (e) {
+                    i = 2
+                    image = 'https://ipfs.dlux.io/images/user-icon.svg'
+                }
+            }
+            if (image) {
+                fetch(image)
+                    .then(response => {
+                        response.body.pipe(res)
+                    })
+                    .catch(e => {
+                        if (i == 0) {
+                            try {
+                                i = 1
+                                image = JSON.parse(r.result[0].posting_json_metadata).profile.profile_image
+                            } catch (e) {
+                                i = 2
+                                image = 'https://ipfs.dlux.io/images/user-icon.svg'
+                            }
+                        } else {
+                            i = 2
+                            image = 'https://ipfs.dlux.io/images/user-icon.svg'
+                        }
+                        fetch(image)
+                            .then(response => {
+                                response.body.pipe(res)
+                            })
+                            .catch(e => {
+                                if (i == 1) {
+                                    image = 'https://ipfs.dlux.io/images/user-icon.svg'
+                                    fetch(image)
+                                        .then(response => {
+                                            response.body.pipe(res)
+                                        })
+                                        .catch(e => {
+                                            res.status(404)
+                                            res.send(e)
+
+                                        })
+                                } else {
+                                    res.status(404)
+                                    res.send(e)
+                                }
+                            })
+                    })
+            } else {
+                res.status(404)
+                res.send('Image not found')
             }
         })
 });
@@ -580,35 +583,35 @@ if (config.rta && config.rtp) {
     rtrades.handleLogin(config.rta, config.rtp)
 }
 var recents = []
-/*
-hivejs.api.getAccountHistory(config.username, -1, 100, function(err, result) {
-    if (err) {
-        console.log(err)
-        startWith(config.engineCrank)
-    } else {
-        let ebus = result.filter(tx => tx[1].op[1].id === 'dlux_report')
-        for (i = ebus.length - 1; i >= 0; i--) {
-            if (JSON.parse(ebus[i][1].op[1].json).hash && parseInt(JSON.parse(ebus[i][1].op[1].json).block) > parseInt(config.override)) {
-                recents.push(JSON.parse(ebus[i][1].op[1].json).hash)
-            }
-        }
-        if (recents.length) {
-            const mostRecent = recents.shift()
-            console.log(mostRecent)
-            if (recents.length === 0) {
-                startWith(config.engineCrank)
-            } else {
-                startWith(mostRecent)
-            }
-        } else {
+    /*
+    hivejs.api.getAccountHistory(config.username, -1, 100, function(err, result) {
+        if (err) {
+            console.log(err)
             startWith(config.engineCrank)
-            console.log('I did it')
+        } else {
+            let ebus = result.filter(tx => tx[1].op[1].id === 'dlux_report')
+            for (i = ebus.length - 1; i >= 0; i--) {
+                if (JSON.parse(ebus[i][1].op[1].json).hash && parseInt(JSON.parse(ebus[i][1].op[1].json).block) > parseInt(config.override)) {
+                    recents.push(JSON.parse(ebus[i][1].op[1].json).hash)
+                }
+            }
+            if (recents.length) {
+                const mostRecent = recents.shift()
+                console.log(mostRecent)
+                if (recents.length === 0) {
+                    startWith(config.engineCrank)
+                } else {
+                    startWith(mostRecent)
+                }
+            } else {
+                startWith(config.engineCrank)
+                console.log('I did it')
+            }
         }
-    }
-});
-*/
+    });
+    */
 startWith('QmRYyRgMRkeLX7NshjJKGn9dEa9DtBxkA3s7oR6snhxLST')
-// Special Attention
+    // Special Attention
 function startWith(hash) {
     console.log(`${hash} inserted`)
     if (hash) {
@@ -628,10 +631,10 @@ function startWith(hash) {
                             if (hash) {
                                 var cleanState = data[1]
                                 cleanState.escrow = {}
-				cleanState.chrono = {}
-				cleanState.postchron = {}
-				cleanState.feed = {}
-				
+                                cleanState.chrono = {}
+                                cleanState.postchron = {}
+                                cleanState.feed = {}
+
                                 store.put([], cleanState, function(err) {
                                     if (err) {
                                         console.log(err)
@@ -1762,41 +1765,41 @@ function startApp() {
     })
 
     processor.on('nomention', function(json, from, active) {
-        if (typeof json.nomention == 'boolean') {
-            store.get(['delegations', from], function(e, a) {
-                var ops = []
-                if (!e && json.nomention) {
-                    ops.push({ type: 'put', path: ['nomention', from], data: true })
-                } else if (!e && !json.nomention) {
-                    ops.push({ type: 'del', path: ['nomention', from] })
-                }
-                store.batch(ops)
-            })
-        }
-    })
-/*
-    processor.onNoPrefix('follow', function(json, from) { // Follow id includes both follow and reblog.
-        if (json[0] === 'reblog') {
-            store.get(['posts', `${json[1].author}/${json[1].permlink}`], function(e, a) {
-                if (e) {
-                    console.log(e)
-                } else {
-                    if (Object.keys(a).length) {// 
-                        console.log(json)
-                        var o = a,
-                            ops = []
-                        o.resteems.push({
-                            from,
-                            block: json.block_num,
-                        })
-                        ops.push({ type: 'put', path: ['posts', `${json[1].author}/${json[1].permlink}`], data: o })
-                        store.batch(ops)
+            if (typeof json.nomention == 'boolean') {
+                store.get(['delegations', from], function(e, a) {
+                    var ops = []
+                    if (!e && json.nomention) {
+                        ops.push({ type: 'put', path: ['nomention', from], data: true })
+                    } else if (!e && !json.nomention) {
+                        ops.push({ type: 'del', path: ['nomention', from] })
                     }
+                    store.batch(ops)
+                })
+            }
+        })
+        /*
+            processor.onNoPrefix('follow', function(json, from) { // Follow id includes both follow and reblog.
+                if (json[0] === 'reblog') {
+                    store.get(['posts', `${json[1].author}/${json[1].permlink}`], function(e, a) {
+                        if (e) {
+                            console.log(e)
+                        } else {
+                            if (Object.keys(a).length) {// 
+                                console.log(json)
+                                var o = a,
+                                    ops = []
+                                o.resteems.push({
+                                    from,
+                                    block: json.block_num,
+                                })
+                                ops.push({ type: 'put', path: ['posts', `${json[1].author}/${json[1].permlink}`], data: o })
+                                store.batch(ops)
+                            }
+                        }
+                    })
                 }
-            })
-        }
-    });
-*/
+            });
+        */
 
 
     processor.onOperation('comment_options', function(json, from) { //grab posts to reward
