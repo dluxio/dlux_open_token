@@ -1575,8 +1575,14 @@ function startApp() {
 
     processor.onOperation('escrow_release', function(json) {
         console.log(json)
-        store.get(['escrow', json.escrow_id, json.from], function(e, a) { // since escrow ids are unique to sender, store a list of pointers to the owner of the contract
-            if (!e && Object.keys(a).length) {
+        var apro = new Promise((res, rej) => {
+                store.get(['escrow', json.escrow_id, json.from], function(e, a) { // since escrow ids are unique to sender, store a list of pointers to the owner of the contract
+                    if (!e && Object.keys(a).length) {
+                        res(a)
+                    } else { rej(e) }
+                })
+            })
+            .then(a => {
                 console.log(a)
                 let owner = a.for
                 let contract = a.contract
@@ -1604,8 +1610,8 @@ function startApp() {
                         }
                     }
                 })
-            } else { console.log('more error' + e) }
-        })
+            })
+            .catch(e => { console.log(e) })
     });
 
     processor.on('node_add', function(json, from, active) {
