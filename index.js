@@ -964,7 +964,7 @@ function startApp() {
                                 store.batch([
                                     ops[0],
                                     { type: 'put', path: ['contracts', json.for, json.contract.split(':')[1]], data: found },
-                                    { type: 'put', path: ['escrow', found.auths[0][0]], data: found.auths[0][1] },
+                                    { type: 'put', path: ['escrow', found.auths[0][0], found.txid + ':dispute'], data: found.auths[0][1] },
                                     { type: 'put', path: ['balances', from], data: bal },
                                     { type: 'put', path: ['balances', agent], data: toBal },
                                     { type: 'put', path: ['balances', found.from], data: fromBal },
