@@ -1190,8 +1190,8 @@ function startApp() {
                         fromBal += contract.amount // collateral held and therefore instant purchase
                         contract.escrow = contract.amount
                         contract.buyer = json.from
-                        contract.approvedAgent = false
-                        contract.approved_to = false
+                        contract.approveAgent = false
+                        contract.approve_to = false
                         var hisE = {
                             rate: contract.rate,
                             block: json.block_num,
@@ -1199,10 +1199,10 @@ function startApp() {
                         }
                         var samount
                         if (contract.hive) {
-                            samount = `${parseFloat(contract.hive/1000).toFixed(3)} STEEM`
+                            samount = `${parseFloat(contract.hive/1000).toFixed(3)} HIVE`
                         } else {
                             type = 'hbd'
-                            samount = `${parseFloat(contract.hbd/1000).toFixed(3)} SBD`
+                            samount = `${parseFloat(contract.hbd/1000).toFixed(3)} HBD`
                         }
                         contract.pending = [
                             [json.to, [
@@ -1466,7 +1466,7 @@ function startApp() {
                                         if (t) {
                                             console.log('to then agent' + t)
                                             c.pending = [c.auths[0]]
-                                            c.approved_to = true
+                                            c.approve_to = true
                                             dataOps.push({ type: 'put', path: ['escrow', c.pending[0][0], c.txid + ':dispute'], data: c.pending[0][1] })
                                         }
                                         dataOps.push({ type: 'del', path: ['escrow', json.who, c.txid + ':buyApprove'] })
@@ -2070,6 +2070,7 @@ function startApp() {
                         auth = false
                     }
                 }
+                console.log('authed ' + auth)
                 if (auth) {
                     ops.push({
                         type: 'put',
@@ -2086,7 +2087,7 @@ function startApp() {
                                 if (!e2) {
                                     g = typeof f != 'number' ? 0 : f
                                     ops.push({ type: 'put', path: ['balances', json.from], data: parseInt(g + d) })
-                                    ops.push({ type: 'del', path: ['escrow', json.from, json.memo.split(' ')[0] + ':transfer'] })
+                                    ops.push({ type: 'del', path: ['escrow', json.from, addr + ':transfer'] })
                                     ops.push({ type: 'del', path: ['contracts', seller, addr] })
                                     ops.push({ type: 'del', path: ['chrono', c.expire_path] })
                                     deletePointer(c.auths[1][1][1].escrow_id, c.buyer)
