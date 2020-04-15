@@ -670,7 +670,6 @@ function startWith(hash) {
 
 function startApp() {
     processor = hiveState(client, hive, startingBlock, 10, prefix, streamMode);
-    store.del(['sps'], function(e) {})
 
     processor.on('send', function(json, from, active) {
         store.get(['balances', from], function(e, fbal) {
@@ -1566,7 +1565,7 @@ function startApp() {
                             }
                             delete plasma.pending[c.txid + `:dispute`]
                         }
-                        credit(json.who)
+                        //credit(json.who)
                     }
                 })
             } else { console.log(e) }
