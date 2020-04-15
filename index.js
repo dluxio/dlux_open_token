@@ -610,7 +610,7 @@ var recents = []
         }
     });
     */
-startWith('QmVRR3Te3QUcx2uhYz33abRAbnQe3hwJHf8q9hRw36MeXb')
+startWith('QmYmMUk4tNHtBz7LFzjW4P3MpWkjUG5XSEvpJ6Yv729MK5')
     // Special Attention
 function startWith(hash) {
     console.log(`${hash} inserted`)
@@ -1316,7 +1316,7 @@ function startApp() {
             } else if (toBal > dextxdlux && typeof dextxdlux === 'number' && dextxdlux > 0 && isAgent && isDAgent) {
                 console.log(4)
                 var txid = 'DLUX' + hashThis(`${json.from}${json.block_num}`),
-                    rate = parseFloat(parseInt(parseFloat(json.hive_amount) * 1000) / dextx.dlux).toFixed(6)
+                    rate = parseFloat(parseInt(parseFloat(json.steem_amount) * 1000) / dextx.dlux).toFixed(6)
                 ops = [{
                             type: 'put',
                             path: ['escrow', json.agent, txid + ':listApprove'],
@@ -2094,7 +2094,7 @@ function startApp() {
                                     if (json.from == config.username) {
                                         delete plasma.pending[i + ':transfer']
                                         for (var i = 0; i < NodeOps.length; i++) {
-                                            if (NodeOps[i][1][1].from == json.from && NodeOps[i][1][1].to == json.to && NodeOps[i][1][0] == 'transfer' && NodeOps[i][1][1].hive_amount == json.hive_amount && NodeOps[i][1][1].hbd_amount == json.hbd_amount) {
+                                            if (NodeOps[i][1][1].from == json.from && NodeOps[i][1][1].to == json.to && NodeOps[i][1][0] == 'transfer' && NodeOps[i][1][1].steem_amount == json.steem_amount && NodeOps[i][1][1].sbd_amount == json.sbd_amount) {
                                                 NodeOps.splice(i, 1)
                                             }
                                         }
