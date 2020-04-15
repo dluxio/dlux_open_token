@@ -893,7 +893,7 @@ function startApp() {
     processor.on('dex_buy', function(json, from, active) {
         var Pbal = new Promise(function(resolve, reject) {
             store.get(['balances', from], function(e, a) {
-                if (e) { reject(e) } else if (isEmpty(a)) { resolve(0) } else { resolve(a) }
+                if (e) { reject(e) } else { resolve(a) }
             });
         })
         var Pfound = new Promise(function(resolve, reject) {
