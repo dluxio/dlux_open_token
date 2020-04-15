@@ -1267,7 +1267,7 @@ function startApp() {
                             { type: 'put', path: ['contracts', seller, meta.split(':')[1]], data: contract },
                             { type: 'put', path: ['escrow', contract.pending[0][0], contract.txid + ':buyApprove'], data: contract.pending[0][1] },
                             { type: 'put', path: ['escrow', contract.pending[1][0], contract.txid + ':buyApprove'], data: contract.pending[1][1] },
-                            { type: 'put', path: ['escrow', json.escrow_id, json.from], data: { 'for': seller, 'contract': meta } },
+                            { type: 'put', path: ['escrow', json.escrow_id, json.from], data: { 'for': seller, 'contract': meta.split(':')[1] } },
                             { type: 'put', path: ['balances', json.from], data: fromBal },
                             { type: 'put', path: ['balances', json.to], data: toBal },
                             { type: 'put', path: ['dex', type, 'tick'], data: contract.rate },
