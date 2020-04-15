@@ -1565,7 +1565,7 @@ function startApp() {
                             }
                             delete plasma.pending[c.txid + `:dispute`]
                         }
-                        //credit(json.who)
+                        credit(json.who)
                     }
                 })
             } else { console.log(e) }
@@ -1590,9 +1590,8 @@ function startApp() {
                         console.log(json, b)
                         if (Object.keys(b).length) {
                             var c = b
-                            c.pending = [c.auths[2]]
                             store.batch([
-                                { type: 'put', path: ['escrow', c.pending[0][0], c.txid + ':transfer'], data: c.pending[0][1] },
+                                { type: 'put', path: ['escrow', c.auths[2][0], c.txid + ':transfer'], data: c.auths[2][1] },
                                 { type: 'put', path: ['contracts', a.for, a.contract], data: c },
                                 { type: 'put', path: ['feed', `${json.block_num}:${json.transaction_id}`], data: `@${json.who}| released funds for @${json.to} for ${c.txid}` },
                                 { type: 'del', path: ['escrow', json.who, c.txid + `:release`] }
