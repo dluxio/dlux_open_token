@@ -907,9 +907,9 @@ function startApp() {
                     found = v[1],
                     type = 'hive',
                     agent = found.auths[0][1][1].to
-                console.log({ agent })
+                if (found.hbd) type = 'hbd'
+                console.log({ bal, found, type, agent })
                 if (found.amount && active && bal >= found.amount) {
-                    if (found.hbd) type = 'hbd'
                     var PbalTo = new Promise(function(resolve, reject) {
                         store.get(['balances', agent], function(e, a) {
                             if (e) { reject(e) } else if (isEmpty(a)) { resolve(0) } else { resolve(a) }
