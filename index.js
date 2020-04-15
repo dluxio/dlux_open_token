@@ -1461,8 +1461,8 @@ function startApp() {
                         if (json.approve && c.buyer) {
                             if (json.who == json.agent) {
                                 c.approveAgent = true
-                                store.put(['contracts', a.for, a.contract.split(':')[1], 'approvedAgent'], true, function() {
-                                    store.get(['contracts', a.for, a.contract.split(':')[1], 'approved_to'], function(e, t) {
+                                store.put(['contracts', a.for, a.contract, 'approveAgent'], true, function() {
+                                    store.get(['contracts', a.for, a.contract, 'approve_to'], function(e, t) {
                                         if (t) {
                                             console.log('to then agent' + t)
                                             c.pending = [c.auths[0]]
@@ -1478,16 +1478,16 @@ function startApp() {
                                             }
                                             delete plasma.pending[c.txid + ':buyApprove']
                                         }
-                                        console.log(a.contract.split(':')[1])
-                                        dataOps.push({ type: 'put', path: ['contracts', a.for, a.contract.split(':')[1]], data: c })
+                                        console.log(a.contract)
+                                        dataOps.push({ type: 'put', path: ['contracts', a.for, a.contract], data: c })
                                         store.batch(dataOps)
                                         credit(json.who)
                                     })
                                 })
                             } else if (json.who == json.to) {
                                 c.approve_to = true
-                                store.put(['contracts', a.for, a.contract.split(':')[1], 'approved_to'], true, function() {
-                                    store.get(['contracts', a.for, a.contract.split(':')[1], 'approvedAgent'], function(e, t) {
+                                store.put(['contracts', a.for, a.contract, 'approve_to'], true, function() {
+                                    store.get(['contracts', a.for, a.contract, 'approveAgent'], function(e, t) {
                                         if (t) {
                                             console.log('agent then to' + t)
                                             c.pending = [c.auths[0]]
@@ -1504,8 +1504,8 @@ function startApp() {
                                             }
                                             delete plasma.pending[c.txid + ':buyApprove']
                                         }
-                                        console.log(a.contract.split(':')[1], c)
-                                        dataOps.push({ type: 'put', path: ['contracts', a.for, a.contract.split(':')[1]], data: c })
+                                        console.log(a.contract, c)
+                                        dataOps.push({ type: 'put', path: ['contracts', a.for, a.contract], data: c })
                                         store.batch(dataOps)
                                         credit(json.who)
                                     })
