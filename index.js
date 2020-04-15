@@ -629,6 +629,9 @@ function startWith(hash) {
                                 var cleanState = data[1]
                                 cleanState.escrow = {}
 				cleanState.chrono = {}
+				cleanState.postchron = {}
+				cleanState.feed = {}
+				
                                 store.put([], cleanState, function(err) {
                                     if (err) {
                                         console.log(err)
@@ -949,7 +952,7 @@ function startApp() {
                                         {
                                             "from": agent,
                                             "to": from,
-                                            "amount": (found.hive / 1000).toFixed(3) + ' HIVE',
+                                            "amount": (found.hive / 1000).toFixed(3) + ' STEEM',
                                             "memo": `${json.contract} by ${found.from} purchased with ${found.amount} DLUX`
                                         }
                                     ]])
@@ -960,7 +963,7 @@ function startApp() {
                                         {
                                             "from": agent,
                                             "to": from,
-                                            "amount": (found.hbd / 1000).toFixed(3) + ' HBD',
+                                            "amount": (found.hbd / 1000).toFixed(3) + ' SBD',
                                             "memo": `${json.contract} by ${found.from} fulfilled with ${found.amount} DLUX`
                                         }
                                     ]])
@@ -1175,7 +1178,7 @@ function startApp() {
                 const now = new Date()
                 const until = now.setHours(now.getHours() + 1)
                 const check = Date.parse(json.ratification_deadline)
-                if (contract.hive == parseInt(parseFloat(json.hive_amount) * 1000) && contract.hbd == parseInt(parseFloat(json.hbd_amount) * 1000) && check > until) {
+                if (contract.hive == parseInt(parseFloat(json.steem_amount) * 1000) && contract.hbd == parseInt(parseFloat(json.sbd_amount) * 1000) && check > until) {
                     console.log(1)
                     if (toBal >= contract.amount) {
                         console.log(2)
@@ -1193,10 +1196,10 @@ function startApp() {
                         }
                         var samount
                         if (contract.hive) {
-                            samount = `${parseFloat(contract.hive/1000).toFixed(3)} HIVE`
+                            samount = `${parseFloat(contract.hive/1000).toFixed(3)} STEEM`
                         } else {
                             type = 'hbd'
-                            samount = `${parseFloat(contract.hbd/1000).toFixed(3)} HBD`
+                            samount = `${parseFloat(contract.hbd/1000).toFixed(3)} SBD`
                         }
                         contract.pending = [
                             [json.to, [
@@ -1242,8 +1245,8 @@ function startApp() {
                                     "who": json.agent,
                                     "receiver": json.to,
                                     "escrow_id": json.escrow_id,
-                                    "hbd_amount": json.hbd_amount,
-                                    "hive_amount": json.hive_amount
+                                    "sbd_amount": json.sbd_amount,
+                                    "steem_amount": json.steem_amount
                                 }
                             ]],
                             [json.to, [
@@ -1367,8 +1370,8 @@ function startApp() {
                                 "who": json.agent,
                                 "receiver": json.to,
                                 "escrow_id": json.escrow_id,
-                                "hbd_amount": json.hbd_amount,
-                                "hive_amount": json.hive_amount
+                                "sbd_amount": json.sbd_amount,
+                                "steem_amount": json.steem_amount
                             }
                         ]]
                     ],
@@ -1380,15 +1383,15 @@ function startApp() {
                             "agent": json.agent,
                             "who": json.to,
                             "escrow_id": json.escrow_id,
-                            "hbd_amount": json.hbd_amount,
-                            "hive_amount": json.hive_amount
+                            "sbd_amount": json.sbd_amount,
+                            "steem_amount": json.steem_amount
                         }
                     ]],
                     contract = {
                         txid,
                         from: json.from,
-                        hive: parseInt(parseFloat(json.hive_amount) * 1000),
-                        hbd: parseInt(parseFloat(json.hbd_amount) * 1000),
+                        hive: parseInt(parseFloat(json.steem_amount) * 1000),
+                        hbd: parseInt(parseFloat(json.sbd_amount) * 1000),
                         amount: dextx.dlux,
                         rate,
                         block: json.block_num,
@@ -1405,13 +1408,13 @@ function startApp() {
                     from: json.from,
                     txid
                 })
-                if (parseFloat(json.hive_amount) > 0) {
+                if (parseFloat(json.steem_amount) > 0) {
                     contract.type = 'sb'
-                    ops.push({ type: 'put', path: ['feed', `${json.block_num}:${json.transaction_id}`], data: `@${json.from}| signed a ${parseFloat(json.hive_amount).toFixed(3)} HIVE buy order for ${parseFloat(dextx.dlux).toFixed(3)} DLUX:${txid}` })
+                    ops.push({ type: 'put', path: ['feed', `${json.block_num}:${json.transaction_id}`], data: `@${json.from}| signed a ${parseFloat(json.steem_amount).toFixed(3)} HIVE buy order for ${parseFloat(dextx.dlux).toFixed(3)} DLUX:${txid}` })
                     ops.push({ type: 'put', path: ['dex', 'hive', 'buyOrders', `${contract.rate}:${contract.txid}`], data: contract })
                 } else if (parseFloat(json.hbd_amount) > 0) {
                     contract.type = 'db'
-                    ops.push({ type: 'put', path: ['feed', `${json.block_num}:${json.transaction_id}`], data: `@${json.from}| signed a ${parseFloat(json.hbd_amount).toFixed(3)} HBD buy order for ${parseFloat(dextx.dlux).toFixed(3)} DLUX:${txid}` })
+                    ops.push({ type: 'put', path: ['feed', `${json.block_num}:${json.transaction_id}`], data: `@${json.from}| signed a ${parseFloat(json.sbd_amount).toFixed(3)} HBD buy order for ${parseFloat(dextx.dlux).toFixed(3)} DLUX:${txid}` })
                     ops.push({ type: 'put', path: ['dex', 'hbd', 'buyOrders', `${contract.rate}:${contract.txid}`], data: contract })
                 }
                 ops.push({ type: 'put', path: ['contracts', json.from, txid], data: contract })
@@ -2105,7 +2108,7 @@ function startApp() {
                 }
             }
         })
-        if (json.to == 'robotolux' && json.amount.split(' ')[1] == 'HIVE') {
+        if (json.to == 'robotolux' && json.amount.split(' ')[1] == 'STEEM') {
             const amount = parseInt(parseFloat(json.amount) * 1000)
             var purchase
             var Pstats = new Promise(function(resolve, reject) {
