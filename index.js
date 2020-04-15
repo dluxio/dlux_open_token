@@ -968,7 +968,7 @@ function startApp() {
                                     { type: 'put', path: ['balances', from], data: bal },
                                     { type: 'put', path: ['balances', agent], data: toBal },
                                     { type: 'put', path: ['balances', found.from], data: fromBal },
-                                    { type: 'put', path: ['dex', type, 'tick'], data: json.rate },
+                                    { type: 'put', path: ['dex', type, 'tick'], data: json.contract.split(':')[0] },
                                     { type: 'put', path: ['dex', type, 'his', `${hisE.block}:${json.contract.split(':')[1]}`], data: hisE },
                                     { type: 'del', path: ['dex', type, 'buyOrders', `${json.contract}`] }
                                 ])
