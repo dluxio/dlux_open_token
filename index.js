@@ -908,7 +908,7 @@ function startApp() {
                     agent = found.auths[0][1][1].to
                 if (found.hbd) type = 'hbd'
                 console.log({ bal, found, type, agent })
-                if (found.amount && active && bal >= found.amount) {
+                if (found.amount && active && bal >= found.amount && from != agent) {
                     var PbalTo = new Promise(function(resolve, reject) {
                         store.get(['balances', agent], function(e, a) {
                             if (e) { reject(e) } else { resolve(a) }
