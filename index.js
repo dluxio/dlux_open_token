@@ -1398,25 +1398,28 @@ function startApp() {
                         fee: json.fee,
                         approvals: 0,
                         auths,
-                        reject,
-                        expire_path: chronAssign(json.block_num + 86400, {
-                            block: parseInt(json.block_num + 86400),
-                            op: 'expire',
-                            from: json.from,
-                            txid
-                        })
+                        reject
                     }
-                if (parseFloat(json.steem_amount) > 0) {
-                    contract.type = 'sb'
-                    ops.push({ type: 'put', path: ['feed', `${json.block_num}:${json.transaction_id}`], data: `@${json.from}| signed a ${parseFloat(json.steem_amount).toFixed(3)} HIVE buy order for ${parseFloat(dextx.dlux).toFixed(3)} DLUX:${txid}` })
-                    ops.push({ type: 'put', path: ['dex', 'hive', 'buyOrders', `${contract.rate}:${contract.txid}`], data: contract })
-                } else if (parseFloat(json.hbd_amount) > 0) {
-                    contract.type = 'db'
-                    ops.push({ type: 'put', path: ['feed', `${json.block_num}:${json.transaction_id}`], data: `@${json.from}| signed a ${parseFloat(json.sbd_amount).toFixed(3)} HBD buy order for ${parseFloat(dextx.dlux).toFixed(3)} DLUX:${txid}` })
-                    ops.push({ type: 'put', path: ['dex', 'hbd', 'buyOrders', `${contract.rate}:${contract.txid}`], data: contract })
-                }
-                ops.push({ type: 'put', path: ['contracts', json.from, txid], data: contract })
-                store.batch(ops)
+                chronAssign(json.block_num + 86400, {
+                        block: parseInt(json.block_num + 86400),
+                        op: 'expire',
+                        from: json.from,
+                        txid
+                    })
+                    .then(expire_path => {
+                        contract.expire_path = expire_path
+                        if (parseFloat(json.steem_amount) > 0) {
+                            contract.type = 'sb'
+                            ops.push({ type: 'put', path: ['feed', `${json.block_num}:${json.transaction_id}`], data: `@${json.from}| signed a ${parseFloat(json.steem_amount).toFixed(3)} HIVE buy order for ${parseFloat(dextx.dlux).toFixed(3)} DLUX:${txid}` })
+                            ops.push({ type: 'put', path: ['dex', 'hive', 'buyOrders', `${contract.rate}:${contract.txid}`], data: contract })
+                        } else if (parseFloat(json.hbd_amount) > 0) {
+                            contract.type = 'db'
+                            ops.push({ type: 'put', path: ['feed', `${json.block_num}:${json.transaction_id}`], data: `@${json.from}| signed a ${parseFloat(json.sbd_amount).toFixed(3)} HBD buy order for ${parseFloat(dextx.dlux).toFixed(3)} DLUX:${txid}` })
+                            ops.push({ type: 'put', path: ['dex', 'hbd', 'buyOrders', `${contract.rate}:${contract.txid}`], data: contract })
+                        }
+                        ops.push({ type: 'put', path: ['contracts', json.from, txid], data: contract })
+                        store.batch(ops)
+                    })
             } else if (isDAgent && isAgent) {
                 var ops = []
                 ops.push({ type: 'put', path: ['feed', `${json.block_num}:${json.transaction_id}`], data: `@${json.from}| improperly attempted to use the escrow network. Attempting escrow deny.` })
