@@ -1577,33 +1577,30 @@ function startApp() {
     processor.onOperation('escrow_release', function(json) {
         store.get(['escrow', json.escrow_id, json.from], function(e, a) { // since escrow ids are unique to sender, store a list of pointers to the owner of the contract
             if (!e && Object.keys(a).length) {
-                console.log(a)
-                try {
-                    store.get(['contracts', a.for, a.contract], function(e1, b) {
-                        if (e1) { console.log('err' + e1) } else {
-                            console.log(json, b)
-                            if (Object.keys(b).length) {
-                                var c = b
-                                c.pending = [c.auths[2]]
-                                store.batch([
-                                    { type: 'put', path: ['escrow', c.pending[0][0], c.txid + ':transfer'], data: c.pending[0][1] },
-                                    { type: 'put', path: ['contracts', a.for, a.contract], data: c },
-                                    { type: 'put', path: ['feed', `${json.block_num}:${json.transaction_id}`], data: `@${json.who}| released funds for @${json.to} for ${c.txid}` },
-                                    { type: 'del', path: ['escrow', json.who, c.txid + `:release`] }
-                                ])
-                                if (json.who == config.username) {
-                                    for (var i = 0; i < NodeOps.length; i++) {
-                                        if (NodeOps[i][1][1].from == json.from && NodeOps[i][1][1].escrow_id == json.escrow_id && NodeOps[i][1][0] == 'escrow_release') {
-                                            NodeOps.splice(i, 1)
-                                        }
+                store.get(['contracts', a.for], function(e1, b) {
+                    if (e1) { console.log('err' + e1) } else {
+                        console.log(json, b)
+                        if (Object.keys(b).length) {
+                            var c = b
+                            c.pending = [c.auths[2]]
+                            store.batch([
+                                { type: 'put', path: ['escrow', c.pending[0][0], c.txid + ':transfer'], data: c.pending[0][1] },
+                                { type: 'put', path: ['contracts', a.for, a.contract], data: c },
+                                { type: 'put', path: ['feed', `${json.block_num}:${json.transaction_id}`], data: `@${json.who}| released funds for @${json.to} for ${c.txid}` },
+                                { type: 'del', path: ['escrow', json.who, c.txid + `:release`] }
+                            ])
+                            if (json.who == config.username) {
+                                for (var i = 0; i < NodeOps.length; i++) {
+                                    if (NodeOps[i][1][1].from == json.from && NodeOps[i][1][1].escrow_id == json.escrow_id && NodeOps[i][1][0] == 'escrow_release') {
+                                        NodeOps.splice(i, 1)
                                     }
-                                    delete plasma.pending[c.txid + `:release`]
                                 }
-                                credit(json.who)
+                                delete plasma.pending[c.txid + `:release`]
                             }
+                            credit(json.who)
                         }
-                    })
-                } catch (e3) { console.log(e3) }
+                    }
+                })
             } else { console.log('more error' + e) }
         })
     });
