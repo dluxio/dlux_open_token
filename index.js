@@ -940,15 +940,15 @@ function startApp() {
                                 }
                                 if (found.hive) {
                                     ops.push({ type: 'put', path: ['feed', `${json.block_num}:${json.transaction_id}`], data: `@${from}| purchased ${parseFloat(found.hive/1000).toFixed(3)} HIVE with ${parseFloat(found.amount/1000).toFixed(3)} DLUX via DEX` })
-                                    found.auths.push([agent, [
+                                    found.auths[2] = [agent, [
                                         "transfer",
                                         {
                                             "from": agent,
                                             "to": from,
-                                            "amount": (found.hive / 1000).toFixed(3) + ' STEEM',
+                                            "amount": (found.hive / 1000).toFixed(3) + ' HIVE',
                                             "memo": `${json.contract} by ${found.from} purchased with ${found.amount} DLUX`
                                         }
-                                    ]])
+                                    ]]
                                 } else {
                                     ops.push({ type: 'put', path: ['feed', `${json.block_num}:${json.transaction_id}`], data: `@${from}| purchased ${parseFloat(found.hbd/1000).toFixed(3)} HBD via DEX` })
                                     found.auths[2] = [agent, [
@@ -956,7 +956,7 @@ function startApp() {
                                         {
                                             "from": agent,
                                             "to": from,
-                                            "amount": (found.hbd / 1000).toFixed(3) + ' SBD',
+                                            "amount": (found.hbd / 1000).toFixed(3) + ' HBD',
                                             "memo": `${json.contract} by ${found.from} fulfilled with ${found.amount} DLUX`
                                         }
                                     ]]
