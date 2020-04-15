@@ -580,7 +580,7 @@ if (config.rta && config.rtp) {
     rtrades.handleLogin(config.rta, config.rtp)
 }
 var recents = []
-
+/*
 hivejs.api.getAccountHistory(config.username, -1, 100, function(err, result) {
     if (err) {
         console.log(err)
@@ -606,6 +606,8 @@ hivejs.api.getAccountHistory(config.username, -1, 100, function(err, result) {
         }
     }
 });
+*/
+startWith('QmRYyRgMRkeLX7NshjJKGn9dEa9DtBxkA3s7oR6snhxLST')
 // Special Attention
 function startWith(hash) {
     console.log(`${hash} inserted`)
@@ -625,16 +627,8 @@ function startWith(hash) {
                         if (!e) {
                             if (hash) {
                                 var cleanState = data[1]
-                                cleanState.dex = {
-                                    hive: {
-                                        his: {},
-                                        tick: "0.75000"
-                                    },
-                                    hbd: {
-                                        his: {},
-                                        tick: "0.25000"
-                                    }
-                                }
+                                cleanState.escrow = {}
+				cleanState.chrono = {}
                                 store.put([], cleanState, function(err) {
                                     if (err) {
                                         console.log(err)
