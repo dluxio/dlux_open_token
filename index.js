@@ -798,7 +798,8 @@ function startApp() {
                 var bal = v[0],
                     found = v[1],
                     type = 'hive',
-                    agent = found.auths[0][1][1].to
+                    agent
+                if (found.auths) agent = found.auths[0][1][1].to
                 if (found.hbd) type = 'hbd'
                 console.log({ bal, found, type, agent, from })
                 if (found.amount && active && bal >= found.amount && from != agent) {
