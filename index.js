@@ -1550,7 +1550,7 @@ function startApp() {
                     if (e || Object.keys(b).length == 0) { console.log('empty record') } else {
                         var c = b
                         store.batch([
-                            { type: 'put', path: ['escrow', c.auths[2][0], c.txid + ':release'], data: c.auths[2][1] },
+                            { type: 'put', path: ['escrow', c.auths[1][0], c.txid + ':release'], data: c.auths[1][1] },
                             { type: 'put', path: ['contracts', a.for, a.contract], data: c },
                             { type: 'put', path: ['feed', `${json.block_num}:${json.transaction_id}`], data: `@${json.who}| authorized ${json.agent} for ${c.txid}` },
                             { type: 'del', path: ['escrow', json.who, c.txid + `:dispute`] }
