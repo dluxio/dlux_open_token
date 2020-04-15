@@ -907,6 +907,7 @@ function startApp() {
                     found = v[1],
                     type = 'hive',
                     agent = found.auths[0][1][1].to
+                console.log({ agent })
                 if (found.amount && active && bal >= found.amount) {
                     if (found.hbd) type = 'hbd'
                     var PbalTo = new Promise(function(resolve, reject) {
@@ -919,24 +920,18 @@ function startApp() {
                             if (e) { reject(e) } else if (isEmpty(a)) { resolve(0) } else { resolve(a) }
                         });
                     })
-                    var Pdex = new Promise(function(resolve, reject) {
-                        store.get(['dex', type], function(e, a) {
-                            if (e) { reject(e) } else if (isEmpty(a)) { resolve(0) } else { resolve(a) }
-                        });
-                    })
-                    Promise.all([PbalTo, PbalFor, Pdex])
+                    Promise.all([PbalTo, PbalFor])
                         .then(function(v) {
                             console.log({ v })
                             var toBal = v[0],
-                                fromBal = v[1],
-                                dex = v[2]
+                                fromBal = v[1]
                             if (toBal > found.amount) {
                                 toBal -= found.amount
                                 found.escrow = found.amount
                                 bal -= found.amount
                                 fromBal += found.amount
                                 found.buyer = from
-                                found.auths.pending = found.auths.shift()
+                                found.pending = found.auths[0]
                                 var hisE = {
                                         rate: found.rate,
                                         block: json.block_num,
@@ -956,7 +951,7 @@ function startApp() {
                                     ]])
                                 } else {
                                     ops.push({ type: 'put', path: ['feed', `${json.block_num}:${json.transaction_id}`], data: `@${from}| purchased ${parseFloat(found.hbd/1000).toFixed(3)} HBD via DEX` })
-                                    found.auths.push([agent, [
+                                    found.auths[2] = [agent, [
                                         "transfer",
                                         {
                                             "from": agent,
@@ -964,18 +959,18 @@ function startApp() {
                                             "amount": (found.hbd / 1000).toFixed(3) + ' SBD',
                                             "memo": `${json.contract} by ${found.from} fulfilled with ${found.amount} DLUX`
                                         }
-                                    ]])
+                                    ]]
                                 }
                                 store.batch([
                                     ops[0],
-                                    { type: 'put', path: ['contracts', json.for, json.contract], data: found },
+                                    { type: 'put', path: ['contracts', json.for, json.contract.split(':')[1]], data: found },
                                     { type: 'put', path: ['escrow', found.auths[0][0]], data: found.auths[0][1] },
                                     { type: 'put', path: ['balances', from], data: bal },
                                     { type: 'put', path: ['balances', agent], data: toBal },
                                     { type: 'put', path: ['balances', found.from], data: fromBal },
                                     { type: 'put', path: ['dex', type, 'tick'], data: json.rate },
-                                    { type: 'put', path: ['dex', type, 'his', `${hisE.block}:${json.contract}`], data: hisE },
-                                    { type: 'del', path: ['dex', type, 'buyOrders', `${json.rate}:${json.contract}`] }
+                                    { type: 'put', path: ['dex', type, 'his', `${hisE.block}:${json.contract.split(':')[1]}`], data: hisE },
+                                    { type: 'del', path: ['dex', type, 'buyOrders', `${json.contract}`] }
                                 ])
                             } else {
                                 ops.push({ type: 'put', path: ['feed', `${json.block_num}:${json.transaction_id}`], data: `@${from}| has insuficient liquidity to purchase ${found.txid}` })
