@@ -1580,8 +1580,7 @@ function startApp() {
                 console.log(a)
                 let owner = a.for
                 let contract = a.contract
-                store.get(['contracts' //, owner, contract
-                ], function(e1, b) {
+                store.get([], function(e1, b) {
                     if (e1) { console.log('err' + e1) } else {
                         console.log(json, b)
                         if (Object.keys(b).length) {
