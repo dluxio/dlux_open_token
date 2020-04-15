@@ -679,8 +679,8 @@ function startApp() {
                 let fbal = bals[0],
                     tb = bals[1],
                     tbal,
-                    ops = [],
-                    tbal = typeof tb != 'number' ? 0 : tb
+                    ops = []
+                var tbal = typeof tb != 'number' ? 0 : tb
                 if (json.to && typeof json.to == 'string' && typeof json.amount == 'number' && (json.amount | 0) === json.amount && json.amount >= 0 && fbal >= json.amount && active) {
                     ops.push({ type: 'put', path: ['balances', from], data: (fbal - json.amount) })
                     ops.push({ type: 'put', path: ['balances', json.to], data: (tbal + json.amount) })
