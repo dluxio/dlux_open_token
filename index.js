@@ -1398,14 +1398,14 @@ function startApp() {
                         fee: json.fee,
                         approvals: 0,
                         auths,
-                        reject
+                        reject,
+                        expire_path: chronAssign(json.block_num + 86400, {
+                            block: parseInt(json.block_num + 86400),
+                            op: 'expire',
+                            from: json.from,
+                            txid
+                        })
                     }
-                contract.expire_path = chronAssign(json.block_num + 86400, {
-                    block: parseInt(json.block_num + 86400),
-                    op: 'expire',
-                    from: json.from,
-                    txid
-                })
                 if (parseFloat(json.steem_amount) > 0) {
                     contract.type = 'sb'
                     ops.push({ type: 'put', path: ['feed', `${json.block_num}:${json.transaction_id}`], data: `@${json.from}| signed a ${parseFloat(json.steem_amount).toFixed(3)} HIVE buy order for ${parseFloat(dextx.dlux).toFixed(3)} DLUX:${txid}` })
