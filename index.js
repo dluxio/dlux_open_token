@@ -1405,7 +1405,7 @@ function startApp() {
                         auths,
                         reject
                     }
-                chronAssign(json.block_num + 86400, {
+                contract.expire_path = chronAssign(json.block_num + 86400, {
                     block: parseInt(json.block_num + 86400),
                     op: 'expire',
                     from: json.from,
