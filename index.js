@@ -1552,7 +1552,6 @@ function startApp() {
                     if (e || Object.keys(b).length == 0) { console.log('empty record') } else {
                         var c = b
                         c.pending = [c.auths[1]]
-                        console.log(c)
                         store.batch([
                             { type: 'put', path: ['escrow', c.pending[0][0], c.txid + ':release'], data: c.pending[0][1] },
                             { type: 'put', path: ['contracts', a.for, a.contract], data: c },
@@ -1575,6 +1574,7 @@ function startApp() {
     });
 
     processor.onOperation('escrow_release', function(json) {
+        console.log(json)
         store.get([ //'escrow', json.escrow_id, json.from
         ], function(e, a) { // since escrow ids are unique to sender, store a list of pointers to the owner of the contract
             if (!e && Object.keys(a).length) {
