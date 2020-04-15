@@ -1456,7 +1456,7 @@ function startApp() {
                         var c = b
                         console.log(c)
                         var dataOps = [
-                            { type: 'put', path: ['feed', `${json.block_num}:${json.transaction_id}`], data: `:@${json.who}| approved escrow for ${json.from}` }
+                            { type: 'put', path: ['feed', `${json.block_num}:${json.transaction_id}`], data: `@${json.who}| approved escrow for ${json.from}` }
                         ]
                         if (json.approve && c.buyer) {
                             if (json.who == json.agent) {
@@ -2075,7 +2075,7 @@ function startApp() {
                     ops.push({
                         type: 'put',
                         path: ['feed', `${json.block_num}:${json.transaction_id}`],
-                        data: `@${json.from}| sent @${json.to} ${json.hive_amount}/${json.hbd_amount} for ${json.memo.split(' ')[0]}`
+                        data: `@${json.from}| sent @${json.to} ${json.steem_amount}/${json.sbd_amount} for ${json.memo.split(' ')[0]}`
                     })
                     const addr = json.memo.split(' ')[0]
                     const seller = json.to
