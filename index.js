@@ -1993,7 +1993,7 @@ function startApp() {
                 lte: num + 1
             }, function(e, a) {
                 if (e) { console.log('chrono err: ' + e) }
-                if (a) console.log('chrono:' + a)
+                //if (a) console.log('chrono:' + a)
                 for (i = 0; i < a.length; i++) {
                     store.get(['chrono', a[i]], function(e, b) {
                         switch (b.op) {
