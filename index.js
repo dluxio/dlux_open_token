@@ -553,6 +553,12 @@ function startWith(hash) {
                         if (!e) {
                             if (hash) {
                                 var cleanState = data[1]
+                                cleanState.posts = {}
+                                cleanState.escrow = {}
+                                cleanState.chrono = {}
+                                cleanState.contracts = {}
+                                delete cleanState.agents
+                                cleanState.feed = {}
                                 store.put([], cleanState, function(err) {
                                     if (err) {
                                         console.log(err)
