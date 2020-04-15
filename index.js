@@ -1557,7 +1557,7 @@ function startApp() {
                         c.pending = [c.auths[1]]
                         store.batch([
                             { type: 'put', path: ['escrow', c.pending[0][0], c.txid + ':release'], data: c.pending[0][1] },
-                            { type: 'put', path: ['contracts', a.for, a.contract.split(':')[1]], data: c },
+                            { type: 'put', path: ['contracts', a.for, a.contract], data: c },
                             { type: 'put', path: ['feed', `${json.block_num}:${json.transaction_id}`], data: `@${json.who}| authorized ${json.agent} for ${c.txid}` },
                             { type: 'del', path: ['escrow', json.who, c.txid + `:dispute`] }
                         ])
