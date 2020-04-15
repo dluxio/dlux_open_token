@@ -1577,8 +1577,8 @@ function startApp() {
         store.get(['escrow', json.escrow_id, json.from], function(e, a) { // since escrow ids are unique to sender, store a list of pointers to the owner of the contract
             if (!e && Object.keys(a).length) {
                 console.log(a)
-                store.get(['contracts', a.for, a.contract], function(e, b) {
-                    if (e) { console.log(e1) } else {
+                store.get(['contracts', a.for, a.contract], function(e1, b) {
+                    if (e1) { console.log(e1) } else {
                         console.log(json, b)
                         if (Object.keys(b).length) {
                             var c = b
