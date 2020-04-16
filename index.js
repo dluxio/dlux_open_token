@@ -1458,7 +1458,7 @@ function startApp() {
                                 delete plasma.pending[c.txid + `:release`]
                             }
                             credit(json.who)
-                        } else if (c.cancel) {
+                        } else if (c.cancel && json.receiver == a.for) {
                             store.batch([
                                 { type: 'del', path: ['contracts', a.for, a.contract], data: c },
                                 { type: 'put', path: ['feed', `${json.block_num}:${json.transaction_id}`], data: `@${json.from}| canceled ${c.txid}` },
@@ -2424,6 +2424,7 @@ function release(from, txid) {
                         if (e) { console.log(e) } else if (isEmpty(r)) { console.log('Nothing here' + a.txid) } else {
                             add(r.from, r.amount)
                             ops.push({ type: 'del', path: ['contracts', from, txid] })
+                            ops.push({ type: 'del', path: ['chrono', a.expire_path] })
                             ops.push({ type: 'del', path: ['dex', 'hive', 'sellOrders', `${a.rate}:${a.txid}`] })
                             store.batch(ops)
                         }
@@ -2434,6 +2435,7 @@ function release(from, txid) {
                         if (e) { console.log(e) } else if (isEmpty(r)) { console.log('Nothing here' + a.txid) } else {
                             add(r.from, r.amount)
                             ops.push({ type: 'del', path: ['contracts', from, txid] })
+                            ops.push({ type: 'del', path: ['chrono', a.expire_path] })
                             ops.push({ type: 'del', path: ['dex', 'hbd', 'sellOrders', `${a.rate}:${a.txid}`] })
                             store.batch(ops)
                         }
