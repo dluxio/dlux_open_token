@@ -2441,7 +2441,9 @@ function release(from, txid) {
                 case 'sb':
                     store.get(['dex', 'hive', 'buyOrders', `${a.rate}:${a.txid}`], function(e, r) {
                         if (e) { console.log(e) } else if (isEmpty(r)) { console.log('Nothing here' + a.txid) } else {
+                            a.cancel = true
                             ops.push({ type: 'put', path: ['escrow', r.reject[0][0], r.txid + ':cancel'], data: r.reject[0][1] })
+                            ops.push({ type: 'put', path: ['contracts', from, r.txid], data: a })
                             ops.push({ type: 'del', path: ['dex', 'hive', 'buyOrders', `${a.rate}:${a.txid}`] })
                             store.batch(ops)
                         }
@@ -2450,6 +2452,8 @@ function release(from, txid) {
                 case 'db':
                     store.get(['dex', 'hbd', 'buyOrders', `${a.rate}:${a.txid}`], function(e, r) {
                         if (e) { console.log(e) } else if (isEmpty(r)) { console.log('Nothing here' + a.txid) } else {
+                            a.cancel = true
+                            ops.push({ type: 'put', path: ['contracts', from, r.txid], data: a })
                             ops.push({ type: 'put', path: ['escrow', r.reject[0][0], r.txid + ':cancel'], data: r.reject[0][1] })
                             ops.push({ type: 'del', path: ['dex', 'hbd', 'buyOrders', `${a.rate}:${a.txid}`] })
                             store.batch(ops)
