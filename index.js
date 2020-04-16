@@ -1883,14 +1883,14 @@ function startApp() {
                         path: ['feed', `${json.block_num}:${json.transaction_id}`],
                         data: `@${json.from}| sent @${json.to} ${json.steem_amount}/${json.sbd_amount} for ${json.memo.split(' ')[0]}`
                     })
-                    const addr = json.memo.split(' ')[0]
-                    let cp = getPathObj(['contracts', json.to, addr]),
+                    const addr = json.memo.split(' ')[0],
+                        co = json.memo.split(' ')[0]
+                    let cp = getPathObj(['contracts', a.for, addr]),
                         gp = getPathNum(['balances', json.from])
                     Promise.all([cp, gp])
                         .then(ret => {
                             let d = ret[1],
                                 c = ret[0],
-                                co = c.from,
                                 eo = c.buyer,
                                 g = c.escrow
                             if (c.type === 'sb' || c.type === 'db') eo = c.from
