@@ -1457,6 +1457,15 @@ function startApp() {
                                 delete plasma.pending[c.txid + `:release`]
                             }
                             credit(json.who)
+                        } else if (c.cancel) {
+                            store.batch([
+                                { type: 'del', path: ['contracts', a.for, a.contract], data: c },
+                                { type: 'put', path: ['feed', `${json.block_num}:${json.transaction_id}`], data: `@${json.from}| canceled ${c.txid}` },
+                                { type: 'del', path: ['chrono', c.expire_path] },
+                                { type: 'del', path: ['escrow', json.who, c.txid + `:cancel`] }
+                            ])
+                            deletePointer(c.escrow_id, a.for)
+                            credit(json.who)
                         }
                     })
                     .catch(e => { console.log(e) })
@@ -2432,8 +2441,7 @@ function release(from, txid) {
                 case 'sb':
                     store.get(['dex', 'hive', 'buyOrders', `${a.rate}:${a.txid}`], function(e, r) {
                         if (e) { console.log(e) } else if (isEmpty(r)) { console.log('Nothing here' + a.txid) } else {
-                            ops.push({ type: 'put', path: ['contract', from, txid, 'pending'], data: r.reject[0] })
-                            ops.push({ type: 'put', path: ['escrow', r.reject[0][0], r.txid], data: r.reject[0][1] })
+                            ops.push({ type: 'put', path: ['escrow', r.reject[0][0], r.txid + ':cancel'], data: r.reject[0][1] })
                             ops.push({ type: 'del', path: ['dex', 'hive', 'buyOrders', `${a.rate}:${a.txid}`] })
                             store.batch(ops)
                         }
@@ -2442,8 +2450,7 @@ function release(from, txid) {
                 case 'db':
                     store.get(['dex', 'hbd', 'buyOrders', `${a.rate}:${a.txid}`], function(e, r) {
                         if (e) { console.log(e) } else if (isEmpty(r)) { console.log('Nothing here' + a.txid) } else {
-                            ops.push({ type: 'put', path: ['contract', from, txid, 'pending'], data: r.reject[0] })
-                            ops.push({ type: 'put', path: ['escrow', r.reject[0][0], r.txid], data: r.reject[0][1] })
+                            ops.push({ type: 'put', path: ['escrow', r.reject[0][0], r.txid + ':cancel'], data: r.reject[0][1] })
                             ops.push({ type: 'del', path: ['dex', 'hbd', 'buyOrders', `${a.rate}:${a.txid}`] })
                             store.batch(ops)
                         }
