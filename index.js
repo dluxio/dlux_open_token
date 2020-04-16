@@ -1905,6 +1905,7 @@ function startApp() {
                                             }
                                         }
                                     }
+                                    console.log(ops)
                                     credit(json.from)
                                     store.batch(ops)
                                 })
