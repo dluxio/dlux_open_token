@@ -533,7 +533,7 @@ var recents = []
         }
     });
     */
-startWith('QmfJDV1SXLrkxugQszY4iyY29UQ4DaC9vvNJKE5tZruyk4')
+startWith('QmVaESVVjqbRnGvbZGGecPGqDr8zBU4Kfi3iXmigu7GX5F')
     // Special Attention
 function startWith(hash) {
     console.log(`${hash} inserted`)
@@ -1169,7 +1169,7 @@ function startApp() {
                 console.log(4)
                 var txid = 'DLUX' + hashThis(`${json.from}${json.block_num}`),
                     rate = parseFloat(parseInt(parseFloat(json.steem_amount) * 1000) / dextx.dlux).toFixed(6)
-                if (!rate) rate = parseFloat(parseInt(parseFloat(json.sbd_amount) * 1000) / dextx.dlux).toFixed(6)
+                if (!parseFloat(rate)) rate = parseFloat(parseInt(parseFloat(json.sbd_amount) * 1000) / dextx.dlux).toFixed(6)
                 ops = [{
                             type: 'put',
                             path: ['escrow', json.agent, txid + ':listApprove'],
