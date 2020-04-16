@@ -559,6 +559,7 @@ function startWith(hash) {
                                 cleanState.contracts = {}
                                 delete cleanState.agents
                                 cleanState.feed = {}
+                                delete cleanState.dex.hive.buyOrders
                                 store.put([], cleanState, function(err) {
                                     if (err) {
                                         console.log(err)
