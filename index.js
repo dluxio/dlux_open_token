@@ -1893,7 +1893,7 @@ function startApp() {
                         .then(ret => {
                             let d = ret[1],
                                 c = ret[0],
-                                eo = json.from,
+                                eo = c.buyer,
                                 g = c.escrow
                             if (c.type === 'sb' || c.type === 'db') eo = c.from
                             ops.push({ type: 'put', path: ['balances', json.from], data: parseInt(g + d) })
