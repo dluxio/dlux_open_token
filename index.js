@@ -1050,6 +1050,7 @@ function startApp() {
                         fromBal += contract.amount // collateral held and therefore instant purchase
                         contract.escrow = contract.amount
                         contract.buyer = json.from
+                        contract.escrow_id = json.escrow_id
                         contract.approveAgent = false
                         contract.approve_to = false
                         var hisE = {
