@@ -1894,7 +1894,7 @@ function startApp() {
                                     ops.push({ type: 'del', path: ['escrow', json.from, addr + ':transfer'] })
                                     ops.push({ type: 'del', path: ['contracts', json.to, addr] })
                                     ops.push({ type: 'del', path: ['chrono', c.expire_path] })
-                                    deletePointer(c.auths[1][1][1].escrow_id, c.buyer)
+                                    deletePointer(c.escrow_id, c.buyer)
                                     if (json.from == config.username) {
                                         delete plasma.pending[i + ':transfer']
                                         for (var i = 0; i < NodeOps.length; i++) {
