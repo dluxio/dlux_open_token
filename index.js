@@ -1884,32 +1884,31 @@ function startApp() {
                         data: `@${json.from}| sent @${json.to} ${json.steem_amount}/${json.sbd_amount} for ${json.memo.split(' ')[0]}`
                     })
                     const addr = json.memo.split(' ')[0]
-                    getPathObj(['contracts', json.to, addr])
-                        .then(c => {
-                            let d = typeof c.escrow != 'number' ? 0 : c.escrow
-                            getPathNum(['balances', json.from])
-                                .then(g => {
-                                    let co = c.from,
-                                        eo = c.buyer
-                                    if (c.type === 'sb' || c.type === 'db') eo = c.from
-                                    ops.push({ type: 'put', path: ['balances', json.from], data: parseInt(g + d) })
-                                    ops.push({ type: 'del', path: ['escrow', json.from, addr + ':transfer'] })
-                                    ops.push({ type: 'del', path: ['contracts', co, addr] })
-                                    ops.push({ type: 'del', path: ['chrono', c.expire_path] })
-                                    deletePointer(c.escrow_id, eo)
-                                    if (json.from == config.username) {
-                                        delete plasma.pending[i + ':transfer']
-                                        for (var i = 0; i < NodeOps.length; i++) {
-                                            if (NodeOps[i][1][1].from == json.from && NodeOps[i][1][1].to == json.to && NodeOps[i][1][0] == 'transfer' && NodeOps[i][1][1].steem_amount == json.steem_amount && NodeOps[i][1][1].sbd_amount == json.sbd_amount) {
-                                                NodeOps.splice(i, 1)
-                                            }
-                                        }
+                    let cp = getPathObj(['contracts', json.to, addr]),
+                        gp = getPathNum(['balances', json.from])
+                    Promise.all([cp, gp])
+                        .then(ret => {
+                            let d = ret[1]
+                            c = ret[0]
+                            co = c.from,
+                                eo = c.buyer
+                            if (c.type === 'sb' || c.type === 'db') eo = c.from
+                            ops.push({ type: 'put', path: ['balances', json.from], data: parseInt(g + d) })
+                            ops.push({ type: 'del', path: ['escrow', json.from, addr + ':transfer'] })
+                            ops.push({ type: 'del', path: ['contracts', co, addr] })
+                            ops.push({ type: 'del', path: ['chrono', c.expire_path] })
+                            deletePointer(c.escrow_id, eo)
+                            if (json.from == config.username) {
+                                delete plasma.pending[i + ':transfer']
+                                for (var i = 0; i < NodeOps.length; i++) {
+                                    if (NodeOps[i][1][1].from == json.from && NodeOps[i][1][1].to == json.to && NodeOps[i][1][0] == 'transfer' && NodeOps[i][1][1].steem_amount == json.steem_amount && NodeOps[i][1][1].sbd_amount == json.sbd_amount) {
+                                        NodeOps.splice(i, 1)
                                     }
-                                    console.log(ops)
-                                    credit(json.from)
-                                    store.batch(ops)
-                                })
-                                .catch(e => { console.log(e) })
+                                }
+                            }
+                            console.log(ops)
+                            credit(json.from)
+                            store.batch(ops)
                         })
                         .catch(e => { console.log(e) })
                 }
