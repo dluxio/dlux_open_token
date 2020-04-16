@@ -1889,11 +1889,14 @@ function startApp() {
                             let d = typeof c.escrow != 'number' ? 0 : c.escrow
                             getPathNum(['balances', json.from])
                                 .then(g => {
+                                    let co = c.from,
+                                        eo = c.buyer
+                                    if (c.type === 'sb' || c.type === 'db') eo = c.from
                                     ops.push({ type: 'put', path: ['balances', json.from], data: parseInt(g + d) })
                                     ops.push({ type: 'del', path: ['escrow', json.from, addr + ':transfer'] })
-                                    ops.push({ type: 'del', path: ['contracts', json.to, addr] })
+                                    ops.push({ type: 'del', path: ['contracts', co, addr] })
                                     ops.push({ type: 'del', path: ['chrono', c.expire_path] })
-                                    deletePointer(c.escrow_id, c.buyer)
+                                    deletePointer(c.escrow_id, eo)
                                     if (json.from == config.username) {
                                         delete plasma.pending[i + ':transfer']
                                         for (var i = 0; i < NodeOps.length; i++) {
