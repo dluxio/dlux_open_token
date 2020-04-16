@@ -533,7 +533,7 @@ var recents = []
         }
     });
     */
-startWith('QmVaESVVjqbRnGvbZGGecPGqDr8zBU4Kfi3iXmigu7GX5F')
+startWith('QmcxvtjCcTCzv6ZMShUW6wp7zf6VPjEg5rK2pr13gRPqTi')
     // Special Attention
 function startWith(hash) {
     console.log(`${hash} inserted`)
@@ -831,7 +831,7 @@ function startApp() {
                                             "from": agent,
                                             "to": from,
                                             "amount": (found.hive / 1000).toFixed(3) + ' HIVE',
-                                            "memo": `${json.contract} by ${found.from} purchased with ${found.amount} DLUX`
+                                            "memo": `${json.contract.split(':')[1]} by ${found.from} purchased with ${found.amount} DLUX`
                                         }
                                     ]]
                                 } else {
@@ -842,7 +842,7 @@ function startApp() {
                                             "from": agent,
                                             "to": from,
                                             "amount": (found.hbd / 1000).toFixed(3) + ' HBD',
-                                            "memo": `${json.contract} by ${found.from} fulfilled with ${parseFloat(found.amount/1000).toFixed(3)} DLUX`
+                                            "memo": `${json.contract.split(':')[1]} by ${found.from} fulfilled with ${parseFloat(found.amount/1000).toFixed(3)} DLUX`
                                         }
                                     ]]
                                 }
