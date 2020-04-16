@@ -1881,11 +1881,11 @@ function startApp() {
                     ops.push({
                         type: 'put',
                         path: ['feed', `${json.block_num}:${json.transaction_id}`],
-                        data: `@${json.from}| sent @${json.to} ${json.steem_amount}/${json.sbd_amount} for ${json.memo.split(' ')[0]}`
+                        data: `@${json.from}| sent @${json.to} ${json.amount} for ${json.memo.split(' ')[0]}`
                     })
                     const addr = json.memo.split(' ')[0],
-                        co = json.memo.split(' ')[0]
-                    let cp = getPathObj(['contracts', a.for, addr]),
+                        co = json.memo.split(' ')[2]
+                    let cp = getPathObj(['contracts', co, addr]),
                         gp = getPathNum(['balances', json.from])
                     Promise.all([cp, gp])
                         .then(ret => {
