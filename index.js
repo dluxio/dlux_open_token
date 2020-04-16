@@ -533,7 +533,7 @@ var recents = []
         }
     });
     */
-startWith('QmWHAyigG2nmRc2ZRcgPsR9Ca5TUVWrBsHdhJ17TgWYTtR')
+startWith('QmWNNx3P66u1YGcEL2hpY785ivxtmbqdrhvHkJZHeYCPuw')
     // Special Attention
 function startWith(hash) {
     console.log(`${hash} inserted`)
@@ -1893,7 +1893,7 @@ function startApp() {
                         .then(ret => {
                             let d = ret[1],
                                 c = ret[0],
-                                eo = c.buyer,
+                                eo = json.from,
                                 g = c.escrow
                             if (c.type === 'sb' || c.type === 'db') eo = c.from
                             ops.push({ type: 'put', path: ['balances', json.from], data: parseInt(g + d) })
