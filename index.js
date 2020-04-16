@@ -533,7 +533,7 @@ var recents = []
         }
     });
     */
-startWith('QmcxvtjCcTCzv6ZMShUW6wp7zf6VPjEg5rK2pr13gRPqTi')
+startWith('QmSfVjiDiHb1xJwaUH1QdzYEaV24Yt1BAecNu4GyzToFRG')
     // Special Attention
 function startWith(hash) {
     console.log(`${hash} inserted`)
@@ -555,7 +555,6 @@ function startWith(hash) {
                                 var cleanState = data[1]
                                 delete cleanState.dex.hive.buyOrders
                                 cleanState.chrono = {}
-                                delete cleanState.agents
                                 cleanState.posts = {}
                                 cleanState.escrow = {}
                                 cleanState.feed = {}
