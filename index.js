@@ -533,7 +533,7 @@ var recents = []
         }
     });
     */
-startWith('QmVaESVVjqbRnGvbZGGecPGqDr8zBU4Kfi3iXmigu7GX5F')
+startWith('QmfJDV1SXLrkxugQszY4iyY29UQ4DaC9vvNJKE5tZruyk4')
     // Special Attention
 function startWith(hash) {
     console.log(`${hash} inserted`)
@@ -553,13 +553,6 @@ function startWith(hash) {
                         if (!e) {
                             if (hash) {
                                 var cleanState = data[1]
-                                cleanState.posts = {}
-                                cleanState.escrow = {}
-                                cleanState.chrono = {}
-                                cleanState.contracts = {}
-                                delete cleanState.agents
-                                cleanState.feed = {}
-                                delete cleanState.dex.hive.buyOrders
                                 store.put([], cleanState, function(err) {
                                     if (err) {
                                         console.log(err)
