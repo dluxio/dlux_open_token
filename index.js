@@ -1056,7 +1056,7 @@ function startApp() {
                             amount: contract.amount
                         }
                         var samount
-                        if (parseFloat(contract.hive) > 0) {
+                        if (contract.hive) {
                             samount = `${parseFloat(contract.hive/1000).toFixed(3)} HIVE`
                         } else {
                             type = 'hbd'
@@ -1275,11 +1275,12 @@ function startApp() {
                             contract.type = 'sb'
                             ops.push({ type: 'put', path: ['feed', `${json.block_num}:${json.transaction_id}`], data: `@${json.from}| signed a ${parseFloat(json.steem_amount).toFixed(3)} HIVE buy order for ${parseFloat(dextx.dlux).toFixed(3)} DLUX:${txid}` })
                             ops.push({ type: 'put', path: ['dex', 'hive', 'buyOrders', `${contract.rate}:${contract.txid}`], data: contract })
-                        } else if (parseFloat(json.hbd_amount) > 0) {
+                        } else if (parseFloat(json.sbd_amount) > 0) {
                             contract.type = 'db'
                             ops.push({ type: 'put', path: ['feed', `${json.block_num}:${json.transaction_id}`], data: `@${json.from}| signed a ${parseFloat(json.sbd_amount).toFixed(3)} HBD buy order for ${parseFloat(dextx.dlux).toFixed(3)} DLUX:${txid}` })
                             ops.push({ type: 'put', path: ['dex', 'hbd', 'buyOrders', `${contract.rate}:${contract.txid}`], data: contract })
                         }
+                        console.log(contract.type)
                         ops.push({ type: 'put', path: ['contracts', json.from, txid], data: contract })
                         store.batch(ops)
                     })
