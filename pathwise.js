@@ -123,11 +123,12 @@ Pathwise.prototype.children = function(path, fn) {
 }
 
 Pathwise.prototype.someChildren = function(path, opts, fn) {
-    var end = path.concat(undefined)
-    if (opts.lte) end = path + opts.lte.concat(undefined)
+    let start = path.push(opts.gte)
+    let end = path.push(opts.lte)
+    console.log(path, opts)
     streamToArray(this._db.createReadStream({
-        start: path + opts.gte.concat(undefined),
-        end: end
+        start,
+        end
     }), function(err, kv) {
         if (err) return fn(err);
         fn(null, kv.map(function(_kv) {
@@ -135,7 +136,6 @@ Pathwise.prototype.someChildren = function(path, opts, fn) {
         }));
     });
 }
-
 
 function arrToObj(arr) {
     var obj = {};
