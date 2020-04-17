@@ -2013,11 +2013,11 @@ function startApp() {
         current = num
         chronoProcess = true
         store.someChildren(['chrono'], {
-                gte: num,
-                lte: num + 1
+                gte: "" + num,
+                lte: "" + (num + 1)
             }, function(e, a) {
                 if (e) { console.log('chrono err: ' + e) }
-                //if (a) console.log('chrono:' + a)
+                if (a) console.log('chrono:' + a)
                 for (i = 0; i < a.length; i++) {
                     store.get(['chrono', a[i]], function(e, b) {
                         switch (b.op) {
