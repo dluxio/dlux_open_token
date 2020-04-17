@@ -123,7 +123,6 @@ Pathwise.prototype.children = function(path, fn) {
 }
 
 Pathwise.prototype.someChildren = function(path, opts, fn) {
-    console.log(start,end, opts)
     streamToArray(this._db.createReadStream({
         start: [...path, opts.gte],
         end: [...path, opts.lte].concat(undefined)
