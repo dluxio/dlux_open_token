@@ -124,9 +124,9 @@ Pathwise.prototype.children = function(path, fn) {
 
 Pathwise.prototype.someChildren = function(path, opts, fn) {
     var end = path.concat(undefined)
-    if (opts.lte) end = path + opts.lte
+    if (opts.lte) end = path + opts.lte.concat(undefined)
     streamToArray(this._db.createReadStream({
-        start: path + opts.gte,
+        start: path + opts.gte.concat(undefined),
         end: end
     }), function(err, kv) {
         if (err) return fn(err);
