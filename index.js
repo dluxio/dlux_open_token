@@ -2017,7 +2017,7 @@ function startApp() {
                 lte: "" + (num + 1)
             }, function(e, a) {
                 if (e) { console.log('chrono err: ' + e) }
-                let chrops =     
+                let chrops = {}  
                 for (var i in a){
                     chrops[i] = i
                 }
