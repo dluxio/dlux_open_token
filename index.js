@@ -533,7 +533,7 @@ var recents = []
         }
     });
     */
-startWith('QmaehAUryBSak4FdEuABJpBaTbfG5z72gF8huykYmGkhQx')
+startWith('QmW6QceJ2RfReYhq8YYJwucXTK5fkFcEhdV19gsQ2ovLpW')
     // Special Attention
 function startWith(hash) {
     console.log(`${hash} inserted`)
@@ -1268,8 +1268,8 @@ function startApp() {
                         auths,
                         reject
                     }
-                chronAssign(json.block_num + parseInt((Date.parse(json.escrow_expiration) - Date.parse(json.ratification_deadline)) / 24000), {
-                        block: parseInt(json.block_num + parseInt((Date.parse(json.escrow_expiration) - Date.parse(json.ratification_deadline)) / 24000)),
+                chronAssign(json.block_num + parseInt((Date.parse(json.escrow_expiration) - Date.parse(json.ratification_deadline)) / 3000), {
+                        block: parseInt(json.block_num + parseInt((Date.parse(json.escrow_expiration) - Date.parse(json.ratification_deadline)) / 3000)),
                         op: 'expire',
                         from: json.from,
                         txid
