@@ -2933,14 +2933,14 @@ function chronAssign(block, op) {
                 reject(e)
                 console.log(e)
             } else {
-                console.log(a)
-                var keys = a
+                console.log('chron assign:', a)
+                var keys = Object.keys(a)
                 var t
                 if (keys.length && keys.length < 10) {
                     t = keys.length
-                } else if (keys.length < 36) {
+                } else if (keys.length && keys.length < 36) {
                     t = String.fromCharCode(keys.length + 55)
-                } else if (keys.length < 62) {
+                } else if (keys.length && keys.length < 62) {
                     t = String.fromCharCode(keys.length + 61)
                 } else if (keys.length >= 62) {
                     chronAssign(block + 1, op)
