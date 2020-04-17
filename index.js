@@ -2934,7 +2934,7 @@ function chronAssign(block, op) {
                 console.log(e)
             } else {
                 console.log(a)
-                var keys = Object.keys(a)
+                var keys = a
                 var t
                 if (keys.length && keys.length < 10) {
                     t = keys.length
