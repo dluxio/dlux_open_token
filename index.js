@@ -595,6 +595,8 @@ function startWith(hash) {
                         if (!e) {
                             if (hash) {
                                 var cleanState = data[1]
+                                cleanState.agents = cleanState.markets.node
+                                delete cleanState.markets
                                 store.put([], cleanState, function(err) {
                                     if (err) {
                                         console.log(err)
@@ -651,6 +653,8 @@ function startApp() {
                 } else {
                     ops.push({ type: 'put', path: ['feed', `${json.block_num}:${json.transaction_id}`], data: `@${from}| Invalid send operation` })
                 }
+                console.log({ ops, on: 'send' })
+                console.log(ops);
                 store.batch(ops)
             })
             .catch(e => { console.log(e) })
@@ -678,7 +682,7 @@ function startApp() {
                     }
                 }
                 var ops=[{type:'put',path:['sps'], data: sps}]
-                store.batch(ops)
+                console.log(ops);store.batch(ops)
             })
         })
     });
@@ -717,6 +721,7 @@ function startApp() {
                     } else {
                         ops.push({ type: 'put', path: ['feed', `${json.block_num}:${json.transaction_id}`], data: `@${from}| Invalid power up` })
                     }
+                    console.log(ops);
                     store.batch(ops)
                 }
             })
@@ -777,6 +782,7 @@ function startApp() {
                 } else {
                     ops.push({ type: 'put', path: ['feed', `${json.block_num}:${json.transaction_id}`], data: `@${from}| Invalid Power Down` })
                 }
+                console.log(ops);
                 store.batch(ops)
             })
             .catch(e => { console.log(e) })
@@ -819,6 +825,7 @@ function startApp() {
                 } else {
                     ops.push({ type: 'put', path: ['feed', `${json.block_num}:${json.transaction_id}`], data: `@${from}| doesn't have the dlux power to vote` })
                 }
+                console.log(ops);
                 store.batch(ops)
             })
             .catch(function(e) {
@@ -881,7 +888,7 @@ function startApp() {
                                         }
                                     ]]
                                 }
-                                store.batch([
+                                let ops = [
                                     ops[0],
                                     { type: 'put', path: ['contracts', json.for, json.contract.split(':')[1]], data: found },
                                     { type: 'put', path: ['escrow', found.auths[0][0], found.txid + ':dispute'], data: found.auths[0][1] },
@@ -891,7 +898,9 @@ function startApp() {
                                     { type: 'put', path: ['dex', type, 'tick'], data: json.contract.split(':')[0] },
                                     { type: 'put', path: ['dex', type, 'his', `${hisE.block}:${json.contract.split(':')[1]}`], data: hisE },
                                     { type: 'del', path: ['dex', type, 'buyOrders', `${json.contract}`] }
-                                ])
+                                ]
+                                console.log(ops);
+                                store.batch(ops)
                             } else {
                                 ops.push({ type: 'put', path: ['feed', `${json.block_num}:${json.transaction_id}`], data: `@${from}| has insuficient liquidity to purchase ${found.txid}` })
                                 console.log(ops)
@@ -929,12 +938,14 @@ function startApp() {
                     Promise.all([path])
                         .then((r) => {
                             contract.expire_path = r[0]
-                            store.batch([
+                            let ops = [
                                 { type: 'put', path: ['dex', 'hive', 'sellOrders', `${contract.rate}:${contract.txid}`], data: contract },
                                 { type: 'put', path: ['balances', from], data: b - contract.amount },
                                 { type: 'put', path: ['contracts', from, contract.txid], data: contract },
                                 { type: 'put', path: ['feed', `${json.block_num}:${json.transaction_id}`], data: `@${from}| has placed order ${txid} to sell ${parseFloat(json.dlux/1000).toFixed(3)} for ${parseFloat(json.hive/1000).toFixed(3)} HIVE` }
-                            ])
+                            ]
+                            console.log(ops)
+                            store.batch(ops)
                         })
                         .catch((e) => console.log(e))
                 } else {
@@ -972,16 +983,20 @@ function startApp() {
                     Promise.all([path])
                         .then((r) => {
                             contract.expire_path = r[0]
-                            store.batch([
+                            let ops = [
                                 { type: 'put', path: ['dex', 'hbd', 'sellOrders', `${contract.rate}:${contract.txid}`], data: contract },
                                 { type: 'put', path: ['balances', from], data: b - contract.amount },
                                 { type: 'put', path: ['contracts', from, contract.txid], data: contract },
                                 { type: 'put', path: ['feed', `${json.block_num}:${json.transaction_id}`], data: `@${from}| has placed order ${txid} to sell ${parseFloat(json.dlux/1000).toFixed(3)} for ${parseFloat(json.hbd/1000).toFixed(3)} HBD` }
-                            ])
+                            ]
+                            console.log(ops)
+                            store.batch(ops)
                         })
                         .catch((e) => console.log(e))
                 } else {
-                    store.batch([{ type: 'put', path: ['feed', `${json.block_num}:${json.transaction_id}`], data: `@${from}| tried to place an order to sell ${parseFloat(json.dlux/1000).toFixed(3)} for ${parseFloat(json.hbd/1000).toFixed(3)} HBD` }])
+                    let ops = [{ type: 'put', path: ['feed', `${json.block_num}:${json.transaction_id}`], data: `@${from}| tried to place an order to sell ${parseFloat(json.dlux/1000).toFixed(3)} for ${parseFloat(json.hbd/1000).toFixed(3)} HBD` }]
+                    console.log(ops)
+                    store.batch(ops)
                 }
             } else {
                 console.log(e)
@@ -1170,6 +1185,7 @@ function startApp() {
                             { type: 'put', path: ['dex', type, 'his', `${hisE.block}:${json.transaction_id}`], data: hisE },
                             { type: 'del', path: ['dex', type, 'sellOrders', `${contract.rate}:${contract.txid}`] }
                         ]
+                        console.log(ops);
                         store.batch(ops)
                     }
                     if (!done) {
@@ -1205,6 +1221,7 @@ function startApp() {
                                 }
                             ]
                         })
+                        if (loggingPuts) console.log(out)
                         store.batch(out)
                     }
                 }
@@ -1322,6 +1339,7 @@ function startApp() {
                         }
                         console.log(contract.type)
                         ops.push({ type: 'put', path: ['contracts', json.from, txid], data: contract })
+                        console.log(ops);
                         store.batch(ops)
                     })
             } else if (isDAgent && isAgent) {
@@ -1342,6 +1360,7 @@ function startApp() {
                         }
                     ]
                 })
+                console.log(ops);
                 store.batch(ops)
             }
         }).catch(function(e) { console.log('Failed Escrow:' + e) })
@@ -1379,6 +1398,7 @@ function startApp() {
                                         }
                                         console.log(a.contract)
                                         dataOps.push({ type: 'put', path: ['contracts', a.for, a.contract], data: c })
+                                        console.log(dataOps)
                                         store.batch(dataOps)
                                         credit(json.who)
                                     })
@@ -1404,6 +1424,7 @@ function startApp() {
                                         }
                                         console.log(a.contract, c)
                                         dataOps.push({ type: 'put', path: ['contracts', a.for, a.contract], data: c })
+                                        console.log(dataOps)
                                         store.batch(dataOps)
                                         credit(json.who)
                                     })
@@ -1420,6 +1441,7 @@ function startApp() {
                                 delete plasma.pending[c.txid + ':listApprove']
                             }
                             dataOps.push({ type: 'put', path: ['contracts', a.for, a.contract], data: c })
+                            console.log(dataOps)
                             store.batch(dataOps)
                             credit(json.who)
                         }
@@ -1450,12 +1472,14 @@ function startApp() {
                 getPathObj(['contracts', a.for, a.contract])
                     .then(c => {
                         if (Object.keys(c).length == 0 && !c.auths[2]) { console.log('empty record') } else {
-                            store.batch([
+                            let ops = [
                                 { type: 'put', path: ['escrow', c.auths[1][0], c.txid + ':release'], data: c.auths[1][1] },
                                 { type: 'put', path: ['contracts', a.for, a.contract], data: c },
                                 { type: 'put', path: ['feed', `${json.block_num}:${json.transaction_id}`], data: `@${json.who}| authorized ${json.agent} for ${c.txid}` },
                                 { type: 'del', path: ['escrow', json.who, c.txid + `:dispute`] }
-                            ])
+                            ]
+                            console.log(ops)
+                            store.batch(ops)
                             if (json.who == config.username) {
                                 for (var i = 0; i < NodeOps.length; i++) {
                                     if (NodeOps[i][1][1].from == json.from && NodeOps[i][1][1].escrow_id == json.escrow_id && NodeOps[i][1][0] == 'escrow_dispute') {
@@ -1478,12 +1502,14 @@ function startApp() {
                 getPathObj(['contracts', a.for, a.contract])
                     .then(c => {
                         if (Object.keys(c).length && c.auths[2]) {
-                            store.batch([
+                            let ops = [
                                 { type: 'put', path: ['escrow', c.auths[2][0], c.txid + ':transfer'], data: c.auths[2][1] },
                                 { type: 'put', path: ['contracts', a.for, a.contract], data: c },
                                 { type: 'put', path: ['feed', `${json.block_num}:${json.transaction_id}`], data: `@${json.who}| released funds for @${json.to} for ${c.txid}` },
                                 { type: 'del', path: ['escrow', json.who, c.txid + `:release`] }
-                            ])
+                            ]
+                            console.log(ops)
+                            store.batch(ops)
                             if (json.who == config.username) {
                                 for (var i = 0; i < NodeOps.length; i++) {
                                     if (NodeOps[i][1][1].from == json.from && NodeOps[i][1][1].escrow_id == json.escrow_id && NodeOps[i][1][0] == 'escrow_release') {
@@ -1494,12 +1520,14 @@ function startApp() {
                             }
                             credit(json.who)
                         } else if (c.cancel && json.receiver == a.for) {
-                            store.batch([
+                            let ops = [
                                 { type: 'del', path: ['contracts', a.for, a.contract], data: c },
                                 { type: 'put', path: ['feed', `${json.block_num}:${json.transaction_id}`], data: `@${json.from}| canceled ${c.txid}` },
                                 { type: 'del', path: ['chrono', c.expire_path] },
                                 { type: 'del', path: ['escrow', json.who, c.txid + `:cancel`] }
-                            ])
+                            ]
+                            console.log(ops)
+                            store.batch(ops)
                             deletePointer(c.escrow_id, a.for)
                             credit(json.who)
                         }
@@ -1546,11 +1574,13 @@ function startApp() {
             store.get(['agents', from], function(e, a) {
                 if (!e) {
                     if (isEmpty(a)) {
-                        store.batch([{
+                        let ops = [{
                             type: 'put',
                             path: ['agents', from],
                             data: new Agent(from, json.domain, low, rrate, json.block_num, del, delpri, z, t, int)
-                        }])
+                        }]
+                        console.log({ msg: 'node add', ops })
+                        store.batch(ops)
                     } else {
                         var b = a;
                         b.domain = json.domain
@@ -1558,7 +1588,9 @@ function startApp() {
                         b.escrow = z
                         b.marketingRate = t
                             //maybe a weird placce to do updates
-                        store.batch([{ type: 'put', path: ['agents', from], data: b }])
+                        let ops = [{ type: 'put', path: ['agents', from], data: b }]
+                        console.log({ mgs: 'node add catch', ops })
+                        store.batch(ops)
                     }
                 } else {
                     console.log(e)
@@ -1615,6 +1647,7 @@ function startApp() {
                     ops.push({ type: 'put', path: ['agents', from], data: b })
                 }
                 ops.push({ type: 'put', path: ['feed', `${json.block_num}:${json.transaction_id}`], data: `@${from}| has signed off their dlux node` })
+                console.log({ mgs: 'node delete', ops });
                 store.batch(ops)
             }).catch(function(e) { console.log(e) })
         }
@@ -1629,23 +1662,26 @@ function startApp() {
                     agents = a[1],
                     ops = []
                 if (active) {
-                    agents[from].h = json.stateHash
-                    agents[from].hb = json.block_num
+                    if (json.polls == null) { json.polls = [] }
+                    b.h = json.stateHash || json.hash
+                    b.hb = json.block_num
                     if (json.polls.length) {
                         for (i = 0; i < json.polls.length; i++) {
                             agents[json.polls[i].split(':')[0]].pi[from] = json.polls[i].split(':')[1] //invtory of ACT
                             agents[json.polls[i].split(':')[0]].pp[from] = json.polls[i].split(':')[2] //Pubic Active Key
                         }
                     }
-                    ops.push({ type: 'put', path: ['agents'], data: agents })
-                        //SP polls
+                    //SP polls
                     if (agents[from] != null && agents[from].o) {
                         ops.push({ type: 'put', path: ['stats', 'msp', from], data: json.msi })
                     }
                 }
                 if (from == b.self && b.domain) {
                     b.report = json
-                    ops.push({ type: 'put', path: ['agents', from], data: b }, { type: 'put', path: ['feed', `${json.block_num}:${json.transaction_id}`], data: `@${from}| Report processed` })
+                    agents[from] = b
+                    ops.push({ type: 'put', path: ['agents'], data: agents })
+                    ops.push({ type: 'put', path: ['feed', `${json.block_num}:${json.transaction_id}`], data: `@${from}| Report processed` })
+                    console.log(ops);
                     store.batch(ops)
                 } else {
                     if (from === config.username && config.NODEDOMAIN) {
@@ -1693,6 +1729,7 @@ function startApp() {
                     } else if (!e && !json.nomention) {
                         ops.push({ type: 'del', path: ['nomention', from] })
                     }
+                    console.log(ops);
                     store.batch(ops)
                 })
             }
@@ -1775,6 +1812,7 @@ function startApp() {
                     })
                     ops.push({ type: 'put', path: ['queue'], data: queue })
                     ops.push({ type: 'put', path: ['feed', `${json.block_num}:${json.transaction_id}`], data: `@${json.author}|${json.permlink} added to dlux rewardable content` })
+                    console.log(ops);
                     store.batch(ops)
                     if (assignments[0] || assignments[1] || assignments[2] || assignments[3]) {
                         client.database.call('get_content', [json.author, json.permlink])
@@ -1878,6 +1916,7 @@ function startApp() {
                                 }
                         }
                         ops.push({ type: 'put', path: ['posts', `${json.author}/${json.permlink}`], data: post })
+                        console.log(ops);
                         store.batch(ops)
                     }
                 }
@@ -1897,6 +1936,7 @@ function startApp() {
                     post.signatures[from] = json.sig
                     ops.push({ type: 'put', path: ['posts', `${json.author}/${json.permlink}`], data: post })
                     ops.push({ type: 'put', path: ['feed', `${json.block_num}:${json.transaction_id}`], data: `@${from}| Signed on ${json.author}/${json.permlink}` })
+                    console.log(ops);
                     store.batch(ops)
                 }
             })
@@ -1915,6 +1955,7 @@ function startApp() {
                     post.cert[from] = json.cert
                     ops.push({ type: 'put', path: ['posts', `${json.author}/${json.permlink}`], data: post })
                     ops.push({ type: 'put', path: ['feed', `${json.block_num}:${json.transaction_id}`], data: `@${from}| Signed a certificate on ${json.author}/${json.permlink}` })
+                    console.log(ops);
                     store.batch(ops)
                 }
             })
@@ -1973,12 +2014,14 @@ function startApp() {
                         stats.auth[json.owner.key_auths[i][0]] = 1
                         agents[keyPairs[json.owner.key_auths[i][0]]].o = 1
                     }
-                } //auto update active public keys
-                ops.push({ type: 'put', path: ['stats'], data: stats })
-                ops.push({ type: 'put', path: ['agents'], data: agents })
+                    //auto update active public keys
+                    ops.push({ type: 'put', path: ['stats'], data: stats })
+                    ops.push({ type: 'put', path: ['agents'], data: agents })
+                }
                 if (agents[json.account] != null && json.active != null) {
                     ops.push({ type: 'put', path: ['agents', json.account, 'p'], data: json.active.key_auths[0][0] }, { type: 'put', path: ['keyPairs', json.active.key_auths[0][0]], data: json.account })
                 }
+                console.log(ops);
                 store.batch(ops)
             })
             .catch(e => { console.log(e) })
@@ -2179,12 +2222,185 @@ function startApp() {
                                 }
                             }
                             credit(json.from)
+                            console.log(ops);
                             store.batch(ops)
                         })
                         .catch(e => { console.log(e) })
                 }
             }
         })
+        if (json.to == multiname) {
+            let statsP = getPathObj(['stats']),
+                agentsP = getPathObj(['agents']),
+                qdP = getPathObj(['qd']),
+                qaP = getPathObj(['qa'])
+            Promise.all([statsP, agentsP, qdP, qaP])
+                .then(a => {
+                    let stats = a[0],
+                        agents = a[1],
+                        qdo = a[2],
+                        qd = {},
+                        qao = a[3],
+                        qa = {},
+                        ops = []
+                        //buying accounts
+                    var info = JSON.parse(json.memo)
+                    var errortext = 'Incorrect price.',
+                        creator, delegator
+                    if ((parseInt(parseFloat(json.amount) * 1000)) > stats.pri && json.amount.split(' ')[1] == 'HIVE') {
+                        errortext = ''
+                    }
+                    if (plasma.bl.indexOf(json.from) >= 0) {
+                        errortext = 'This account is on our blacklist.'
+                    }
+                    if (Object.keys(qd).length) {
+                        delegator = qdo[0]
+                        for (i in qd) {
+                            if (i) qd[i - 1] = qdo[i]
+                        }
+                    }
+                    if (!looksRight(info.o) && !looksRight(info.p) && !looksRight(info.a) && !looksRight(info.m)) {
+                        errortext = 'Public keys invalid'
+                    }
+                    if (info.req == 'now' && !errortext) {
+                        if (Object.keys(qa).length) {
+                            creator = qao[0]
+                            for (i in qa) {
+                                if (i) qa[i - 1] = qao[i]
+                            }
+                        }
+                        const buildAccountOp = [
+                                "create_claimed_account",
+                                {
+                                    "creator": creator,
+                                    "new_account_name": info.n,
+                                    "owner": {
+                                        "weight_threshold": 1,
+                                        "account_auths": [],
+                                        "key_auths": [
+                                            [
+                                                info.o,
+                                                1
+                                            ]
+                                        ]
+                                    },
+                                    "active": {
+                                        "weight_threshold": 1,
+                                        "account_auths": [],
+                                        "key_auths": [
+                                            [
+                                                info.a,
+                                                1
+                                            ]
+                                        ]
+                                    },
+                                    "posting": {
+                                        "weight_threshold": 1,
+                                        "account_auths": [],
+                                        "key_auths": [
+                                            [
+                                                info.p,
+                                                1
+                                            ]
+                                        ]
+                                    },
+                                    "memo_key": info.m,
+                                    "json_metadata": stringify({ for: json.from, cost: json.amount })
+                                }
+                            ] //this assignment could use some work
+                        if (agents[creator].bot[json.block_num + 20] == null) {
+                            agents[creator].bot[json.block_num + 20] = [buildAccountOp]
+                        } else {
+                            agents[creator].bot[json.block_num + 20].push(buildAccountOp)
+                        }
+                        const delOp = [
+                            "delegate_vesting_shares",
+                            {
+                                "delegator": delegator,
+                                "delegatee": info.n,
+                                "vesting_shares": {
+                                    "amount": "30000000", //this right?
+                                    "precision": 6,
+                                    "nai": "@@000000037"
+                                }
+                            }
+                        ]
+                        const unDelOp = [
+                            "delegate_vesting_shares",
+                            {
+                                "delegator": delegator,
+                                "delegatee": info.n,
+                                "vesting_shares": {
+                                    "amount": "0",
+                                    "precision": 6,
+                                    "nai": "@@000000037"
+                                }
+                            }
+                        ]
+                        const term = parseInt(((parseInt(parseInt(parseFloat(json.amount) * 1000)) - stats.pri) / stats.prd) * 864000)
+                        if (agents[delegator].bot[json.block_num + 30] == null) {
+                            agents[delegator].bot[json.block_num + 30] = [delOp]
+                        } else {
+                            agents[delegator].bot[json.block_num + 30].push(delOp)
+                        }
+                        if (agents[delegator].bot[json.block_num + term] == null) {
+                            agents[delegator].bot[json.block_num + term] = [unDelOp]
+                        } else {
+                            agents[delegator].bot[json.block_num + term].push(unDelOp)
+                        }
+                        const actOpPay = [
+                            "transfer",
+                            {
+                                "to": creator,
+                                "from": multiname,
+                                "amount": state.stats.pri + ' STEEM',
+                                "memo": `Thank you for creating @${info.n} per contract`
+                            }
+                        ]
+                        const delOpPay = [
+                            "transfer",
+                            {
+                                "to": delegator,
+                                "from": multiname,
+                                "amount": parseFloat(parseFloat(json.amount) - (state.stats.pri / 1000)).toFixed(3) + ' STEEM',
+                                "memo": `Thank you for funding @${info.n} per contract`
+                            }
+                        ]
+                        if (contracts[creator] == null) {
+                            contracts[creator] = {}
+                        }
+                        state.contracts[creator][`${info.n}:c`] = actOpPay
+                        if (state.contracts[delegator] == null) {
+                            state.contract
+                            s[delegator] = {}
+                        }
+                        state.contracts[delegator][`${info.n}:d:${parseInt(num + term - 1200)}`] = delOpPay
+                        state.feed[`${json.block_num}:${json.transaction_id}`] = `@${json.from} paid ${json.amount} to create @${info.n}. @${creator}/@${delegator} responsible.`
+                    } else {
+                        const refundOp = [
+                            "transfer",
+                            {
+                                "to": json.from,
+                                "from": json.to,
+                                "amount": json.amount,
+                                "memo": `The was an error is creating your new account:${errortext}`
+                            }
+                        ]
+                        state.bot.push(refundOp)
+                        state.feed[`${json.block_num}:${json.transaction_id}`] = `@${json.from}'s transfer is being refunded.`
+                    }
+                    if (!Object.keys(qa).length) {
+                        setPrice(json.block_num)
+                    }
+                    if (!Object.keys(qd).length) {
+                        setDelPrice(json.block_num)
+                    }
+                })
+                .catch(e => { console.log(e) })
+
+        } else if (json.from == multiname) {
+            //verify payments
+        }
         if (json.to == 'robotolux' && json.amount.split(' ')[1] == 'HIVE') {
             const amount = parseInt(parseFloat(json.amount) * 1000)
             var purchase,
@@ -2235,7 +2451,7 @@ function startApp() {
             .then(del => {
                 if (Object.keys(del).length) {
                     getAccounts([json.delegator], 'sp')
-                    for (i = 0; i < del.bot.length; i++) {
+                    for (i = 0; i < del.bot.length; i++) { //needs work
                         for (j = 0; j < del.bot[i].length; j++) {
                             //cancel payment if undelegated too quick
                             if (del.bot[i][j][0] == 'delegate_vesting_shares' && del.bot[i][j][1].delegatee == json.delegatee && del.bot[i][j][1].vesting_shares == json.vesting_shares) {
@@ -2246,9 +2462,10 @@ function startApp() {
                             }
                         }
                     }
-                    ops.push({ type: 'put', path['agents', json.delegator], data: del })
+                    ops.push({ type: 'put', path: ['agents', json.delegator], data: del })
+                    console.log({ msg: 'delegation', ops });
+                    store.batch(ops)
                 }
-                store.batch(ops)
             })
             .catch(e => { console.log(e) })
     });
@@ -2262,6 +2479,7 @@ function startApp() {
                     r.i++
                         ops.push({ type: 'put', path: ['agents', json.creator], data: r })
                     ops.push({ type: 'put', path: ['feed', `${json.block_num}:${json.transaction_id}`], data: `${json.creator} claimed an ACT` })
+                    console.log({ msg: 'claim', ops });
                     store.batch(ops)
                 }
             })
@@ -2281,13 +2499,14 @@ function startApp() {
                         ops.push({ type: 'put', path: ['agents', json.creator], data: r })
                     ops.push({ type: 'put', path: ['feed', `${json.block_num}:${json.transaction_id}`], data: `@${json.creator} redeemed DACT for ${json.new_account_name}` })
                 }
-                if (con != null) { //if a contract account
+                if (Object.keys(con).length) { //if a contract account
                     if (con[`${json.new_account_name}:c`] != null) {
                         r.ir++ //update redeemed total
                             //state.bot.push(con[`${json.new_account_name}:c`]) //push payment to multisig bot build a thing for this
                             ops.push({ type: 'del', path: ['contracts', json.creator, json.new_account_name + ':c'] })
                     }
                     ops.push({ type: 'put', path: ['agents', json.creator], data: r })
+                    console.log(ops, 'create'); //needs more work
                     store.batch(ops)
                 }
             })
@@ -2310,6 +2529,7 @@ function startApp() {
                                 }
                                 delete plasma.pending[b]
                             }
+                            console.log(ops);
                             store.batch(ops)
                             break;
                         }
@@ -2350,6 +2570,7 @@ function startApp() {
                                             ops.push({ type: 'put', path: ['pow', from], data: pbal - b.amount })
                                             ops.push({ type: 'put', path: ['pow', 't'], data: tpow - b.amount })
                                             ops.push({ type: 'put', path: ['feed', `${json.block_num}:${json.transaction_id}`], data: `@${b.by}| powered down ${parseFloat(b.amount/1000).toFixed(3)} DLUX` })
+                                            console.log(ops);
                                             store.batch(ops)
                                         }
                                     })
@@ -2371,6 +2592,7 @@ function startApp() {
                                         }
                                     })
                                     ops.push({ type: 'del', path: ['posts', `${b.author}/${b.permlink}`] })
+                                    console.log(ops);
                                     store.batch(ops)
                                 })
                                 console.log(current + `:${post.author}/${post.permlink} voting expired and queued for payout`)
@@ -2908,13 +3130,15 @@ function tally(num) {
             stats.tokenSupply += mint
             rbal += mint
         }
-        store.batch([
+        let ops = [
             { type: 'put', path: ['stats'], data: stats },
             { type: 'put', path: ['queue'], data: queue },
             { type: 'put', path: ['runners'], data: runners },
             { type: 'put', path: ['agents'], data: nodes },
             { type: 'put', path: ['balances', 'ra'], data: rbal }
-        ])
+        ]
+        console.log(ops)
+        store.batch(ops)
         if (consensus && (consensus != plasma.hashLastIBlock || consensus != nodes[config.username].report.hash) && processor.isStreaming()) {
             exit(consensus)
             var errors = ['failed Consensus']
@@ -3672,7 +3896,7 @@ function setDelPrice(num) { //blockNum
         .then(a => {
             let qa = a[0],
                 agents = a[1],
-                var picker = [999999, []]
+                picker = [999999, []]
             for (var agent in agents) {
                 const perDel = parseInt(10000 * parseInt((agents[agent].sp - agents[agent].spout) / agents[agent].sp))
                 if (agents[agent].spl <= picker[0] && perDel < agents[agent].spr) {
@@ -3842,29 +4066,39 @@ function asyncIpfsSaveState(blocknum, hashable) {
 */
 
 function getAccounts(arr, reason) { //polling for ACT inv and Active Public Key
-    getPathObj(['agents'])
-        .then(agents => {
-            if (arr.length && reason == 'init' && agents[config.username].o) {
-                hive.api.getAccounts(arr, function(err, result) {
-                    for (i = 0; i < result.length; i++) {
-                        plasma.agents[result[i].name] = {
-                                i: result[i].pending_claimed_accounts,
-                                p: result[i].active.key_auths[0][0]
-                            } //not gonna find multi keys
-                    }
-                })
-            } else if (arr.length && reason == 'sp' && agents[config.username].o) { //polling for SP availible
-                hive.api.getAccounts(arr, function(err, result) {
-                    for (i = 0; i < result.length; i++) {
-                        plasma.dsp[result[i].name] = {
-                                v: parseInt(result[i].vesting_shares),
-                                vout: parseInt(result[i].delegated_vesting_shares)
-                            } //vests poll
-                    }
-                })
-            }
-        })
-        .catch(e => { console.log(e) })
+    return new Promise((resolve, reject) => {
+        getPathObj(['agents'])
+            .then(agents => {
+                if (arr.length && reason == 'init' && agents[config.username].o) {
+                    hive.api.getAccounts(arr, function(err, result) {
+                        if (err) reject(err)
+                        let res = []
+                        for (i = 0; i < result.length; i++) {
+                            plasma.agents[result[i].name] = {
+                                    i: result[i].pending_claimed_accounts,
+                                    p: result[i].active.key_auths[0][0]
+                                } //not gonna find multi keys
+                            res.push(plasma.agents[result[i].name])
+                        }
+                        resolve(res)
+                    })
+                } else if (arr.length && reason == 'sp' && agents[config.username].o) { //polling for SP availible
+                    hive.api.getAccounts(arr, function(err, result) {
+                        if (err) reject(err)
+                        let res = []
+                        for (i = 0; i < result.length; i++) {
+                            plasma.dsp[result[i].name] = {
+                                    v: parseInt(result[i].vesting_shares),
+                                    vout: parseInt(result[i].delegated_vesting_shares)
+                                } //vests poll
+                            res.push(plasma.dsp[result[i].name])
+                            resolve(res)
+                        }
+                    })
+                }
+            })
+            .catch(e => { console.log(e) })
+    })
 }
 
 function updateAccount(cur, ele) { //build account update transaction and determin weights current, elected
