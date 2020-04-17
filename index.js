@@ -2019,7 +2019,7 @@ function startApp() {
                 if (e) { console.log('chrono err: ' + e) }
                 let chrops = {}  
                 for (var i in a){
-                    chrops[i] = i
+                    chrops[a[i]] = a[i]
                 }
                 if (a.length) console.log('chrono:', chrops)
                 for (var i in chrops) {
