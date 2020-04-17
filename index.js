@@ -1268,8 +1268,8 @@ function startApp() {
                         auths,
                         reject
                     }
-                chronAssign(json.block_num + parseInt((Date.parse(json.escrow_expiration) - Date.parse(json.ratification_deadline)) / 3000), {
-                        block: parseInt(json.block_num + parseInt((Date.parse(json.escrow_expiration) - Date.parse(json.ratification_deadline)) / 3000)),
+                chronAssign(json.block_num + parseInt((Date.parse(json.escrow_expiration) - Date.parse(json.ratification_deadline)) / 24000), {
+                        block: parseInt(json.block_num + parseInt((Date.parse(json.escrow_expiration) - Date.parse(json.ratification_deadline)) / 24000)),
                         op: 'expire',
                         from: json.from,
                         txid
