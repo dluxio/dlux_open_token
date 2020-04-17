@@ -2021,8 +2021,8 @@ function startApp() {
                 for (var i in a){
                     chrops[i] = i
                 }
-                if (a.length) console.log('chrono:' + chrops)
-                for (i = 0; i < chrops.length; i++) {
+                if (a.length) console.log('chrono:', chrops)
+                for (var i in chrops) {
                     let delKey = chrops[i]
                     store.get(['chrono', chrops[i]], function(e, b) {
                         console.log(b)
