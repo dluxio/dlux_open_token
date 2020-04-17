@@ -2017,12 +2017,19 @@ function startApp() {
                 lte: "" + (num + 1)
             }, function(e, a) {
                 if (e) { console.log('chrono err: ' + e) }
-                if (a.length) console.log('chrono:' + a)
-                for (i = 0; i < a.length; i++) {
-                    store.get(['chrono', a[i]], function(e, b) {
+                let chrops =     
+                for (var i in a){
+                    chrops[i] = i
+                }
+                if (a.length) console.log('chrono:' + chrops)
+                for (i = 0; i < chrops.length; i++) {
+                    let delKey = chrops[i]
+                    store.get(['chrono', chrops[i]], function(e, b) {
+                        console.log(b)
                         switch (b.op) {
                             case 'expire':
                                 release(b.from, b.txid)
+                                store.batch([{ type: 'del', path: ['chrono', delKey] }])
                                 break;
                             case 'power_down':
                                 let lbp = getPathNum(['balances', from]),
@@ -2038,6 +2045,7 @@ function startApp() {
                                             ops.push({ type: 'put', path: ['pow', from], data: pbal - b.amount })
                                             ops.push({ type: 'put', path: ['pow', 't'], data: tpow - b.amount })
                                             ops.push({ type: 'put', path: ['feed', `${json.block_num}:${json.transaction_id}`], data: `@${b.by}| powered down ${parseFloat(b.amount/1000).toFixed(3)} DLUX` })
+                                            ops.push({ type: 'del', path: ['chrono', delKey] })
                                             store.batch(ops)
                                         }
                                     })
@@ -2058,6 +2066,7 @@ function startApp() {
                                             totalWeight: w
                                         }
                                     })
+                                    ops.push({ type: 'del', path: ['chrono', delKey] })
                                     ops.push({ type: 'del', path: ['posts', `${b.author}/${b.permlink}`] })
                                     store.batch(ops)
                                 })
@@ -2066,7 +2075,7 @@ function startApp() {
                             default:
 
                         }
-                        store.batch({ type: 'del', path: ['chrono', a[i]] })
+                        
                     })
                 }
 
