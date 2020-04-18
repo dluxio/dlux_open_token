@@ -2055,6 +2055,7 @@ function startApp() {
                                 break;
                             case 'post_reward':
                                 store.get(['posts', `${b.author}/${b.permlink}`], function(e, a) {
+                                    let ops = []
                                     ops.push({
                                         type: 'put',
                                         path: ['br', `${b.author}/${b.permlink}`],
