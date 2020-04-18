@@ -1780,8 +1780,9 @@ function startApp() {
                 var post = v[0]
                 ops = [],
                     auth = false
+            console.log('cjv',post)
                 if (post) {
-                    for (i = 0; i < post.customJSON.assignments.length; i++) {
+                    for (i in post.customJSON.assignments) {
                         if (from == post.customJSON.assignments[i]) {
                             auth = trusted
                             if (i == 0) { post.customJSON.b = json.b }
