@@ -1809,7 +1809,7 @@ function startApp() {
                                 }
                         }
                         ops.push({ type: 'put', path: ['posts', `${json.author}/${json.permlink}`], data: post })
-                        consol.log(ops)
+                        console.log(ops)
                         store.batch(ops)
                     }
                 }
