@@ -2046,7 +2046,7 @@ function startApp() {
                                             ops.push({ type: 'put', path: ['balances', from], data: lbal + b.amount })
                                             ops.push({ type: 'put', path: ['pow', from], data: pbal - b.amount })
                                             ops.push({ type: 'put', path: ['pow', 't'], data: tpow - b.amount })
-                                            ops.push({ type: 'put', path: ['feed', `${json.block_num}:${json.transaction_id}`], data: `@${b.by}| powered down ${parseFloat(b.amount/1000).toFixed(3)} DLUX` })
+                                            ops.push({ type: 'put', path: ['feed', `${num}:vop_${chrops[i].split(':')[1]}`], data: `@${b.by}| powered down ${parseFloat(b.amount/1000).toFixed(3)} DLUX` })
                                             ops.push({ type: 'del', path: ['chrono', delKey] })
                                             store.batch(ops)
                                         }
@@ -2065,11 +2065,10 @@ function startApp() {
                                         }
                                     })
                                     ops.push({ type: 'del', path: ['chrono', delKey] })
+                                    ops.push({ type: 'put', path: ['feed', `${num}:vop_${chrops[i].split(':')[1]}`], data: `@${b.author}/${b.permlink} voting has expired.` })
                                     ops.push({ type: 'del', path: ['posts', `${b.author}/${b.permlink}`] })
-                                    console.log(ops)
                                     store.batch(ops)
                                 })
-                                console.log(current + `:${b.author}/${b.permlink} voting expired and queued for payout`)
                                 break;
                             default:
 
