@@ -1685,7 +1685,6 @@ function startApp() {
                         queue.push(assignments[2])
                         queue.push(assignments[3])
                     }
-                    ops.push({ type: 'put', path: ['postchron', `${json.block_num}:`], data: `${json.author}/${json.permlink}` })
                     ops.push({
                         type: 'put',
                         path: ['posts', `${json.author}/${json.permlink}`],
@@ -2055,18 +2054,13 @@ function startApp() {
                                     .catch(e => { console.log(e) })
                                 break;
                             case 'post_reward':
-                                store.get(['posts', `${num}`, `${b.author}/${b.permlink}`], function(e, a) {
-                                    var w = 0
-                                    for (i in a.voters) {
-                                        w += a.voters[i].weight
-                                    }
+                                store.get(['posts', `${b.author}/${b.permlink}`], function(e, a) {
                                     ops.push({
                                         type: 'put',
                                         path: ['br', `${b.author}/${b.permlink}`],
                                         data: {
                                             op: 'dao_content',
-                                            post: b,
-                                            totalWeight: w
+                                            post: a
                                         }
                                     })
                                     ops.push({ type: 'del', path: ['chrono', delKey] })
