@@ -1808,7 +1808,7 @@ function startApp() {
                                     post.customJSON.sw = temp
                                 }
                         }
-                        ops.push({ type: 'put', path: ['posts', `${json.author}/${json.permlink}`], data: post })
+                        ops.push({ type: 'put', path: ['posts', `${json.a}/${json.p}`], data: post })
                         console.log(ops)
                         store.batch(ops)
                     }
