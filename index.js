@@ -533,7 +533,7 @@ var recents = []
         }
     });
     */
-startWith('QmY7mg4BdZLe99wijoBD4w6CiUBTbVQckKbnQRjAowFMUB')
+startWith('QmQACbDspzmsdyw49Eh9bgF6bQoqTmFT6j8wbnGvWuiXXH')
     // Special Attention
 function startWith(hash) {
     console.log(`${hash} inserted`)
@@ -1707,8 +1707,9 @@ function startApp() {
                     ops.push({ type: 'put', path: ['feed', `${json.block_num}:${json.transaction_id}`], data: `@${json.author}|${json.permlink} added to dlux rewardable content` })
                     store.batch(ops)
                     if (assignments[0] || assignments[1] || assignments[2] || assignments[3]) {
-                        client.database.call('get_content', [json.author, json.permlink])
+                        hiveClient.database.call('get_content', [json.author, json.permlink])
                             .then(result => {
+                                console.log('hive content', result)
                                 var trimmed = JSON.parse(result.json_metadata),
                                     final = { a: [] }
                                 for (j in trimmed.assets) {
