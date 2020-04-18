@@ -533,7 +533,7 @@ var recents = []
         }
     });
     */
-startWith('QmWqEesx5kd8F8eiKAXymxFtYNa8pP17bTJX7vNmuHo3DK')
+startWith('QmY7mg4BdZLe99wijoBD4w6CiUBTbVQckKbnQRjAowFMUB')
     // Special Attention
 function startWith(hash) {
     console.log(`${hash} inserted`)
@@ -763,7 +763,7 @@ function startApp() {
                     nft = v[3],
                     ops = []
                 if (pow >= 1) {
-                    if (post) {
+                    if (Object.keys(post).length) {
                         console.log(post)
                         if (!post.voters) { post.voters = {} }
                         if (!rolling) {
