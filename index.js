@@ -1707,7 +1707,7 @@ function startApp() {
                     ops.push({ type: 'put', path: ['feed', `${json.block_num}:${json.transaction_id}`], data: `@${json.author}|${json.permlink} added to dlux rewardable content` })
                     store.batch(ops)
                     if (assignments[0] || assignments[1] || assignments[2] || assignments[3]) {
-                        hiveClient.database.call('get_content', [json.author, json.permlink])
+                        client.database.call('get_content', [json.author, json.permlink])
                             .then(result => {
                                 console.log('hive content', result)
                                 var trimmed = JSON.parse(result.json_metadata),
