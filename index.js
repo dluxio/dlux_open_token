@@ -776,7 +776,7 @@ function startApp() {
                             weight: w
                         }
                         ops.push({ type: 'put', path: ['posts', `${json.author}/${json.permlink}`], data: post })
-                        ops.push({ type: 'put', path: ['feed', `${json.block_num}:${json.transaction_id}`], data: `${from}| voted for @${json.author}/${json.permlink}` })
+                        ops.push({ type: 'put', path: ['feed', `${json.block_num}:${json.transaction_id}`], data: `@${from}| voted for @${json.author}/${json.permlink}` })
                         rolling -= w
                         ops.push({ type: 'put', path: ['rolling', from], data: rolling })
                     } else {
@@ -2065,7 +2065,7 @@ function startApp() {
                                         }
                                     })
                                     ops.push({ type: 'del', path: ['chrono', delKey] })
-                                    ops.push({ type: 'put', path: ['feed', `${num}:vop_${chrops[i].split(':')[1]}`], data: `@${b.author}/${b.permlink} voting has expired.` })
+                                    ops.push({ type: 'put', path: ['feed', `${num}:vop_${chrops[i].split(':')[1]}`], data: `@${b.author}| Post:${b.permlink} voting expired.` })
                                     ops.push({ type: 'del', path: ['posts', `${b.author}/${b.permlink}`] })
                                     store.batch(ops)
                                 })
