@@ -533,7 +533,7 @@ var recents = []
         }
     });
     */
-startWith('QmW6QceJ2RfReYhq8YYJwucXTK5fkFcEhdV19gsQ2ovLpW')
+startWith('QmWqEesx5kd8F8eiKAXymxFtYNa8pP17bTJX7vNmuHo3DK')
     // Special Attention
 function startWith(hash) {
     console.log(`${hash} inserted`)
@@ -1667,8 +1667,8 @@ function startApp() {
                     for (var numb in a) {
                         queue.push(a[numb])
                     }
-                    chronAssign(json.block_num + 300000, {
-                        block: parseInt(json.block_num + 300000),
+                    chronAssign(json.block_num + 3600, {
+                        block: parseInt(json.block_num + 3600),
                         op: 'post_reward',
                         author: json.author,
                         permlink: json.permlink
@@ -1694,8 +1694,8 @@ function startApp() {
                             author: json.author,
                             permlink: json.permlink,
                             totalWeight: 1,
-                            voters: [],
-                            reblogs: [],
+                            voters: {},
+                            reblogs: {},
                             credentials: {},
                             signatures: {},
                             customJSON: {
