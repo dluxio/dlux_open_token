@@ -533,7 +533,7 @@ var recents = []
         }
     });
     */
-startWith('QmeQr4sT9Ra61WZGk14sFBhYLJ7YLPCab1iqUfhbMaSA4t')
+startWith('QmS2K7j8xF5dtneDvB8GysyPMtz251e53Bg3Fo3fcp4tK8')
     // Special Attention
 function startWith(hash) {
     console.log(`${hash} inserted`)
@@ -2496,7 +2496,7 @@ function dao(num) {
         }),
         Pbals = getPathObj(['balances']),
         Prunners = getPathObj(['runners']),
-        Pnodes = getPathObj(['markets', 'node']),
+        Pnodes = getPathObj(['agents']),
         Pstats = getPathObj(['stats']),
         Pdelegations = getPathObj(['delegations']),
         Pico = getPathObj(['ico']),
@@ -2744,22 +2744,28 @@ function dao(num) {
         bals.ra = 0
         var q = 0,
             r = bals.rc
-        for (var i = 0; i < br.length; i++) {
-            q += br[i].totalWeight
+        for (var i in br) {
+            q += br[i].post.totalWeight
         }
         var contentRewards = ``
-        if (br.length) contentRewards = `#### Top Paid Posts\n`
-        const compa = bals.rc
-        for (var i = 0; i < br.length; i++) {
-            for (var j = 0; j < br[i].post.voters.length; j++) {
-                bals[br[i].post.author] += parseInt(br[i].post.voters[j].weight * 2 / q * 3)
-                bals.rc -= parseInt(br[i].post.voters[j].weight / q * 3)
-                bals[br[i].post.voters[j].from] += parseInt(br[i].post.voters[j].weight / q * 3)
-                bals.rc -= parseInt(br[i].post.voters[j].weight * 2 / q * 3)
+        if (Object.keys(br).length) {
+            bucket = parseInt(bals.rc / 100)
+            bals.rc = bals.rc - bucket
+            contentRewards = `#### Top Paid Posts\n`
+            const compa = bucket
+            for (var i in br) {
+                var dif = bucket
+                for (var j in br[i].post.voters) {
+                    bals[br[i].post.author] += parseInt((br[i].post.voters[j].weight * 2 / q * 3) * compa)
+                    bucket -= parseInt((br[i].post.voters[j].weight / q * 3) * compa)
+                    bals[br[i].post.voters[j].from] += parseInt((br[i].post.voters[j].weight / q * 3) * compa)
+                    bucket -= parseInt((br[i].post.voters[j].weight * 2 / q * 3) * compa)
+                }
+                contentRewards = contentRewards + `* [${br[i].post.title}](https://ipfs.dlux.io/dlux/@${br[i].post.author}/${br[i].post.permlink}) awarded ${parseFloat(parseInt(dif - bucket)/1000).toFixed(3)} DLUX\n`
             }
-            contentRewards = contentRewards + `* [${br[i].title}](https://dlux.io/@${br[i].post.author}/${br[i].post.permlink}) awarded ${parseFloat(parseInt(compa) - parseInt(bals.rc)).toFixed(3)} DLUX\n`
+            bals.rc += bucket
+            contentRewards = contentRewards + `\n*****\n`
         }
-        if (contentRewards) contentRewards = contentRewards + `\n*****\n`
         var vo = [],
             breaker = 0,
             tw = 0,
@@ -2786,7 +2792,7 @@ function dao(num) {
             daops.push({
                 type: 'put',
                 path: ['escrow', 'dlux-io', `vote:${vo[oo].author}:${vo[oo].permlink}`],
-                data: op[
+                data: [
                     "vote", {
                         "voter": "dlux-io",
                         "author": vo[oo].author,
@@ -2797,7 +2803,7 @@ function dao(num) {
             })
             hiveVotes = hiveVotes + `* [${vo[oo].title}](https://dlux.io/@${vo[oo].author}/${vo[oo].permlink}) by @${vo[oo].author} | ${parseFloat(weight/100).toFixed(3)}% \n`
         }
-        const footer = `[Visit dlux.io](https://dlux.io)\n[Find us on Discord](https://discord.gg/Beeb38j)\n[Visit our DEX/Wallet - Soon](https://dlux.io)\n[Learn how to use DLUX](https://github.com/dluxio/dluxio/wiki)\n*Price for 25.2 Hrs from posting or until daily 100,000.000 DLUX sold.`
+        const footer = `[Visit dlux.io](https://dlux.io)\n[Find us on Discord](https://discord.gg/Beeb38j)\n[Visit our DEX/Wallet](https://ipfs.dlux.io/dex)\n[Learn how to use DLUX](https://github.com/dluxio/dluxio/wiki)\n*Price for 25.2 Hrs from posting or until daily 100,000.000 DLUX sold.`
         if (hiveVotes) hiveVotes = `#### Community Voted DLUX Posts\n` + hiveVotes + `*****\n`
         post = header + contentRewards + hiveVotes + post + footer
         var op = ["comment",
@@ -2806,7 +2812,7 @@ function dao(num) {
                 "parent_permlink": "dlux",
                 "author": "dlux-io",
                 "permlink": 'dlux' + num,
-                "title": `DLUX DAO | Automated Report ${num}`,
+                "title": `DLUX DAO | Block Report ${num}`,
                 "body": post,
                 "json_metadata": JSON.stringify({
                     tags: ["dlux", "ico", "dex", "cryptocurrency"]
@@ -2816,14 +2822,13 @@ function dao(num) {
         daops.push({ type: 'put', path: ['dex'], data: dex })
         daops.push({ type: 'put', path: ['stats'], data: stats })
         daops.push({ type: 'put', path: ['balances'], data: bals })
-        daops.push({ type: 'put', path: ['markets', 'node'], data: mnode })
+        daops.push({ type: 'put', path: ['agents'], data: mnode })
         daops.push({ type: 'put', path: ['delegations'], data: deles })
         daops.push({ type: 'put', path: ['escrow', 'dlux-io', 'comment'], data: op })
+        console.log(daops)
         store.batch(daops)
     })
-}
-
-function report(num) {
+}function report(num) {
     agreements = {
         [config.username]: {
             node: config.username,
