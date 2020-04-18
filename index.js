@@ -1719,11 +1719,11 @@ function startApp() {
                                     final.p = trimmed.app
                                 }
                                 try {
-                                    if (trimmed.Hash360.length == 32) { //s for surround
+                                    if (trimmed.Hash360.length == 46) { //s for surround
                                         final.s = trimmed.Hash360
                                     }
                                 } catch (e) {}
-                                if (trimmed.vrHash.length == 32) { //e for executable
+                                if (trimmed.vrHash.length == 46) { //e for executable
                                     final.e = trimmed.vrHash
                                 }
                                 try {
