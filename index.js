@@ -533,7 +533,7 @@ var recents = []
         }
     });
     */
-startWith('QmQACbDspzmsdyw49Eh9bgF6bQoqTmFT6j8wbnGvWuiXXH')
+startWith('QmeQr4sT9Ra61WZGk14sFBhYLJ7YLPCab1iqUfhbMaSA4t')
     // Special Attention
 function startWith(hash) {
     console.log(`${hash} inserted`)
@@ -2065,9 +2065,10 @@ function startApp() {
                                     })
                                     ops.push({ type: 'del', path: ['chrono', delKey] })
                                     ops.push({ type: 'del', path: ['posts', `${b.author}/${b.permlink}`] })
+                                    console.log(ops)
                                     store.batch(ops)
                                 })
-                                console.log(current + `:${post.author}/${post.permlink} voting expired and queued for payout`)
+                                console.log(current + `:${b.author}/${b.permlink} voting expired and queued for payout`)
                                 break;
                             default:
 
