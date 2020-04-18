@@ -1783,7 +1783,7 @@ function startApp() {
                 if (post) {
                     for (i in post.customJSON.assignments) {
                         if (from == post.customJSON.assignments[i]) {
-                            auth = trusted
+                            auth = true
                             if (i == 0) { post.customJSON.b = json.b }
                             break;
                         }
