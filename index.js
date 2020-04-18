@@ -612,12 +612,13 @@ function startApp() {
                     ops = []
                     send = parseInt(json.amount)
                 if (json.to && typeof json.to == 'string' && send >= 0 && fbal >= send && active) {
-                    ops.push({ type: 'put', path: ['balances', from], data: (fbal - send) })
-                    ops.push({ type: 'put', path: ['balances', json.to], data: (tbal + send) })
+                    ops.push({ type: 'put', path: ['balances', from], data: parseInt(fbal - send) })
+                    ops.push({ type: 'put', path: ['balances', json.to], data: parseInt(tbal + send) })
                     ops.push({ type: 'put', path: ['feed', `${json.block_num}:${json.transaction_id}`], data: `@${from}| Sent @${json.to} ${parseFloat(parseInt(json.amount)/1000).toFixed(3)}DLUX` })
                 } else {
                     ops.push({ type: 'put', path: ['feed', `${json.block_num}:${json.transaction_id}`], data: `@${from}| Invalid send operation` })
                 }
+            console.log(ops)
                 store.batch(ops)
             })
             .catch(e => { console.log(e) })
