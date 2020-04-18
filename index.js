@@ -1713,7 +1713,7 @@ function startApp() {
                                 var trimmed = JSON.parse(result.json_metadata),
                                     final = { a: [] }
                                 for (j in trimmed.assets) {
-                                    if (trimmed.assets[j].hash.length == 32) final.a.push(trimmed.assets[j].hash) //a for assets
+                                    if (trimmed.assets[j].hash.length == 46) final.a.push(trimmed.assets[j].hash) //a for assets
                                 }
                                 if (trimmed.app.length < 33) { //p for process
                                     final.p = trimmed.app
@@ -1809,6 +1809,7 @@ function startApp() {
                                 }
                         }
                         ops.push({ type: 'put', path: ['posts', `${json.author}/${json.permlink}`], data: post })
+                        consol.log(ops)
                         store.batch(ops)
                     }
                 }
