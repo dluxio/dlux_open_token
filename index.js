@@ -2735,7 +2735,7 @@ function dao(num) {
                 }
                 
                 hi.v += parseInt(parseInt(his[int].amount)*parseInt(his[int].rate))
-                hi.d = parseInt(hi.vol + parseInt(his[int].amount))
+                hi.d += parseInt(his[int].amount)
             }
             if(!dex.hive.days)dex.hive.days ={}
             dex.hive.days[num] = hi
@@ -2755,7 +2755,7 @@ function dao(num) {
                     hib.b = parseFloat(hisb[int].rate)
                 }
                 hib.v += parseInt(parseInt(hisb[int].amount)*parseInt(hisb[int].rate))
-                hib.d = parseInt(hib.vol + parseInt(hisb[int].amount))
+                hib.d += parseInt(hisb[int].amount)
             }
             if(!dex.hbd.days)dex.hbd.days ={}
             dex.hbd.days[num] = hib
