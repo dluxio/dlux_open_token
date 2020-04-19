@@ -2081,7 +2081,8 @@ function startApp() {
 
             })
             //*
-        if (num % 100 === 0 && !processor.isStreaming()) {
+        if (num % 100 === 0// && processor.isStreaming()
+           ) {
             client.database.getDynamicGlobalProperties()
                 .then(function(result) {
                     console.log('At block', num, 'with', result.head_block_number - num, `left until real-time. DAO @ ${(num - 20000) % 30240}`)
