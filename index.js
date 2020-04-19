@@ -2704,7 +2704,7 @@ function dao(num) {
         for (var int in dex.hive.his) {
             if (dex.hive.his[int].block < num - 30240) {
                 his.push(dex.hive.his[int])
-                daops.push({type: 'del', path: ['dex', 'hive', his, int]})
+                daops.push({type: 'del', path: ['dex', 'hive', 'his', int]})
             } else {
                 vol = parseInt(parseInt(dex.hive.his[int].amount) + vol)
                 vols = parseInt(parseInt(parseInt(dex.hive.his[int].amount) * parseFloat(dex.hive.his[int].rate)) + vols)
@@ -2713,7 +2713,7 @@ function dao(num) {
         for (var int in dex.hbd.his) {
             if (dex.hbd.his[int].block < num - 30240) {
                 hisb.push(dex.hbd.his[int])
-                 daops.push({type: 'del', path: ['dex', 'hbd', his, int]})
+                 daops.push({type: 'del', path: ['dex', 'hbd', 'his', int]})
             } else {
                 vol = parseInt(parseInt(dex.hbd.his[int].amount) + vol)
                 volhbd = parseInt(parseInt(parseInt(dex.hbd.his[int].amount) * parseFloat(dex.hbd.his[int].rate)) + volhbd)
