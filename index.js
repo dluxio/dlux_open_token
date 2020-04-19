@@ -1733,6 +1733,7 @@ function startApp() {
                                     }
                                 } catch (e) {}
                                 final.t = trimmed.tags
+                                final.d = result.title
                                 if (assignments[0]) {
                                     var bytes = rtrades.checkNpin(JSON.parse(result.json_metadata)
                                         .assets)
@@ -2058,6 +2059,13 @@ function startApp() {
                             case 'post_reward':
                                 store.get(['posts', `${b.author}/${b.permlink}`], function(e, a) {
                                     let ops = []
+                                    a.title = a.p.d
+                                    delete a.p.d
+                                    a.c = a.p
+                                    delete a.p
+                                    delete a.s
+                                    delete a.sw
+                                    delete a.pw
                                     ops.push({
                                         type: 'put',
                                         path: ['br', `${b.author}/${b.permlink}`],
@@ -2765,7 +2773,7 @@ function dao(num) {
                     bucket -= parseInt((br[i].post.voters[j].weight * 2 / q * 3) * compa)
                     vo.push(br[i].post)
                 }
-                contentRewards = contentRewards + `* [${br[i].post.title || 'DLUX Content'}](https://ipfs.dlux.io/dlux/@${br[i].post.author}/${br[i].post.permlink}) awarded ${parseFloat(parseInt(dif - bucket)/1000).toFixed(3)} DLUX\n`
+                contentRewards = contentRewards + `* [${br[i].post.title || 'DLUX Content'}](https://ipfs.dlux.io/dlux/@${br[i].post.author}/${br[i].post.permlink}) by @${br[i].post.author} awarded ${parseFloat(parseInt(dif - bucket)/1000).toFixed(3)} DLUX\n`
             }
             bals.rc += bucket
             contentRewards = contentRewards + `\n*****\n`
