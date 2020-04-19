@@ -2720,43 +2720,42 @@ function dao(num) {
             }
         }
         if (his.length) {
-            hi.block = num - 60480
-            hi.open = parseFloat(his[0].rate)
-            hi.close = parseFloat(his[his.length - 1].rate)
-            hi.top = 0
-            hi.bottom = hi.open
-            hi.vol = 0
-            hi.vols = 0
+            hi.o = parseFloat(his[0].rate) // open, close, top bottom, dlux, volumepair
+            hi.c = parseFloat(his[his.length - 1].rate)
+            hi.t = 0
+            hi.b = hi.open
+            hi.d = 0
+            hi.v = 0
             for (var int = 0; int < his.length; int++) {
-                if (hi.top < parseFloat(his[int].rate)) {
-                    hi.top = parseFloat(his[int].rate)
+                if (hi.t < parseFloat(his[int].rate)) {
+                    hi.t = parseFloat(his[int].rate)
                 }
-                if (hi.bottom > parseFloat(his[int].rate)) {
-                    hi.bottom = parseFloat(his[int].rate)
+                if (hi.b > parseFloat(his[int].rate)) {
+                    hi.b = parseFloat(his[int].rate)
                 }
                 
-                hi.vols += parseInt(parseInt(his[int].amount)*parseInt(his[int].rate))
-                hi.vol = parseInt(hi.vol + parseInt(his[int].amount))
+                hi.v += parseInt(parseInt(his[int].amount)*parseInt(his[int].rate))
+                hi.d = parseInt(hi.vol + parseInt(his[int].amount))
             }
             if(!dex.hive.days)dex.hive.days ={}
             dex.hive.days[num] = hi
         }
         if (hisb.length) {
-            hib.open = parseFloat(hisb[0].rate)
-            hib.close = parseFloat(hisb[hisb.length - 1].rate)
-            hib.top = 0
-            hib.bottom = hib.open
-            hib.vol = 0
-            hib.vold = 0
+            hib.o = parseFloat(hisb[0].rate) // open, close, top bottom, dlux, volumepair
+            hib.c = parseFloat(hisb[hisb.length - 1].rate)
+            hib.t = 0
+            hib.b = hib.open
+            hib.v = 0
+            hib.d = 0
             for (var int = 0; int < hisb.length; int++) {
-                if (hib.top < parseFloat(hisb[int].rate)) {
-                    hib.top = parseFloat(hisb[int].rate)
+                if (hib.t < parseFloat(hisb[int].rate)) {
+                    hib.t = parseFloat(hisb[int].rate)
                 }
-                if (hib.bottom > parseFloat(hisb[int].rate)) {
-                    hib.bottom = parseFloat(hisb[int].rate)
+                if (hib.b > parseFloat(hisb[int].rate)) {
+                    hib.b = parseFloat(hisb[int].rate)
                 }
-                hib.vold += parseInt(parseInt(hisb[int].amount)*parseInt(hisb[int].rate))
-                hib.vol = parseInt(hib.vol + parseInt(hisb[int].amount))
+                hib.v += parseInt(parseInt(hisb[int].amount)*parseInt(hisb[int].rate))
+                hib.d = parseInt(hib.vol + parseInt(hisb[int].amount))
             }
             if(!dex.hbd.days)dex.hbd.days ={}
             dex.hbd.days[num] = hib
