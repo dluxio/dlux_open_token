@@ -2733,7 +2733,7 @@ function dao(num) {
                     hi.bottom = parseFloat(his[int].rate)
                 }
                 
-                hib.vols += parseInt(parseInt(his[int].amount)*parseInt(his[int].rate))
+                hi.vols += parseInt(parseInt(his[int].amount)*parseInt(his[int].rate))
                 hi.vol = parseInt(hi.vol + parseInt(his[int].amount))
             }
             if(!dex.hive.days)dex.hive.days ={}
