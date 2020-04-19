@@ -2712,7 +2712,7 @@ function dao(num) {
         }
         for (var int in lenb) {
             if (dex.hbd.his[int].block < num - 30240) {
-                hisb.push(dex.hbd.his[int]))
+                hisb.push(dex.hbd.his[int])
             } else {
                 vol = parseInt(parseInt(dex.hbd.his[int].amount) + vol)
                 volhbd = parseInt(parseInt(parseInt(dex.hbd.his[int].amount) * parseFloat(dex.hbd.his[int].rate)) + volhbd)
