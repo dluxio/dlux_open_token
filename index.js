@@ -2699,7 +2699,8 @@ function dao(num) {
             vols = 0,
             his = [],
             hisb = [],
-            hi = {}
+            hi = {},
+            hib = {}
         for (var int in dex.hive.his) {
             if (dex.hive.his[int].block < num - 30240) {
                 his.push(dex.hive.his[int])
@@ -2732,26 +2733,26 @@ function dao(num) {
                 }
                 hi.vol = parseInt(hi.vol + parseInt(his[int].amount))
             }
-            if(!dex.hive.days)dex.hive.days = []
-            dex.hive.days.push(hi)
+            if(!dex.hive.days)dex.hive.days ={}
+            dex.hive.days[num] = hi
         }
         if (hisb.length) {
-            hi.open = parseFloat(hisb[0].rate)
-            hi.close = parseFloat(hisb[hisb.length - 1].rate)
-            hi.top = hi.open
-            hi.bottom = hi.open
-            hi.vol = 0
+            hib.open = parseFloat(hisb[0].rate)
+            hib.close = parseFloat(hisb[hisb.length - 1].rate)
+            hib.top = hib.open
+            hib.bottom = hib.open
+            hib.vol = 0
             for (var int = 0; int < hisb.length; int++) {
-                if (hi.top < parseFloat(hisb[int])) {
-                    hi.top = parseFloat(hisb[int].rate)
+                if (hib.top < parseFloat(hisb[int])) {
+                    hib.top = parseFloat(hisb[int].rate)
                 }
-                if (hi.bottom > parseFloat(hisb[int])) {
-                    hi.bottom = parseFloat(hisb[int].rate)
+                if (hib.bottom > parseFloat(hisb[int])) {
+                    hib.bottom = parseFloat(hisb[int].rate)
                 }
-                hi.vol = parseInt(hi.vol + parseInt(hisb[int].amount))
+                hib.vol = parseInt(hib.vol + parseInt(hisb[int].amount))
             }
-            if(!dex.hbd.days)dex.hbd.days = []
-            dex.hbd.days.push(hi)
+            if(!dex.hbd.days)dex.hbd.days ={}
+            dex.hbd.days[num] = hib
         }
         post = post + `*****\n### DEX Report\n#### Spot Information\n* Price: ${parseFloat(dex.hive.tick).toFixed(3)} HIVE per DLUX\n* Price: ${parseFloat(dex.hbd.tick).toFixed(3)} HBD per DLUX\n#### Daily Volume:\n* ${parseFloat(vol/1000).toFixed(3)} DLUX\n* ${parseFloat(vols/1000).toFixed(3)} HIVE\n* ${parseFloat(parseInt(volhbd)/1000).toFixed(3)} HBD\n*****\n`
         bals.rc = bals.rc + bals.ra
