@@ -1860,11 +1860,15 @@ function startApp() {
 
     processor.onOperation('vote', function(json) {
         if (json.voter == 'dlux-io') {
+            console.log('the vote')
             store.get(['escrow', json.voter], function(e, a) {
                 if (!e) {
                     for (b in a) {
+                        console.log(a,b,json)
                         if (a[b][1].permlink == json.permlink) {
-                            store.batch([{ type: 'del', path: ['escrow', json.voter, b] }])
+                            let ops = [{ type: 'del', path: ['escrow', json.voter, b] }]
+                            console.log(ops)
+                            store.batch(ops)
                             if (json.voter == config.username) {
                                 delete plasma.pending[b]
                                 for (var i = 0; i < NodeOps.length; i++) {
@@ -2522,7 +2526,6 @@ function dao(num) {
         daops.push({ type: 'del', path: ['br'] })
         daops.push({ type: 'del', path: ['rolling'] })
         daops.push({ type: 'del', path: ['ico'] })
-        daops = []
         news = v[0] + '*****\n'
         const header = post + news
         var bals = v[1],
@@ -2780,7 +2783,7 @@ function dao(num) {
         }
             tw = 0,
             ww = 0,
-            ii = 100,
+            ii = 100, //max number of votes
             hiveVotes = ''
         for (var po = 0; po < vo.length; po++) {
             tw = tw + vo[po].totalWeight
