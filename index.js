@@ -2732,6 +2732,7 @@ function dao(num) {
                 }
                 hi.vol = parseInt(hi.vol + parseInt(his[int].amount))
             }
+            if(!dex.hive.days)dex.hive.days = []
             dex.hive.days.push(hi)
         }
         if (hisb.length) {
@@ -2749,6 +2750,7 @@ function dao(num) {
                 }
                 hi.vol = parseInt(hi.vol + parseInt(hisb[int].amount))
             }
+            if(!dex.hbd.days)dex.hbd.days = []
             dex.hbd.days.push(hi)
         }
         post = post + `*****\n### DEX Report\n#### Spot Information\n* Price: ${parseFloat(dex.hive.tick).toFixed(3)} HIVE per DLUX\n* Price: ${parseFloat(dex.hbd.tick).toFixed(3)} HBD per DLUX\n#### Daily Volume:\n* ${parseFloat(vol/1000).toFixed(3)} DLUX\n* ${parseFloat(vols/1000).toFixed(3)} HIVE\n* ${parseFloat(parseInt(volhbd)/1000).toFixed(3)} HBD\n*****\n`
