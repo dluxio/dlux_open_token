@@ -2724,6 +2724,7 @@ function dao(num) {
             hi.top = 0
             hi.bottom = hi.open
             hi.vol = 0
+            hi.vols = 0
             for (var int = 0; int < his.length; int++) {
                 if (hi.top < parseFloat(his[int])) {
                     hi.top = parseFloat(his[int].rate)
@@ -2731,6 +2732,8 @@ function dao(num) {
                 if (hi.bottom > parseFloat(his[int])) {
                     hi.bottom = parseFloat(his[int].rate)
                 }
+                
+                hib.vols += parseInt(parseInt(his[int].amount)*parseInt(his[int].rate))
                 hi.vol = parseInt(hi.vol + parseInt(his[int].amount))
             }
             if(!dex.hive.days)dex.hive.days ={}
@@ -2742,7 +2745,7 @@ function dao(num) {
             hib.top = 0
             hib.bottom = hib.open
             hib.vol = 0
-            hib.vold
+            hib.vold = 0
             for (var int = 0; int < hisb.length; int++) {
                 if (hib.top < parseFloat(hisb[int])) {
                     hib.top = parseFloat(hisb[int].rate)
@@ -2750,6 +2753,7 @@ function dao(num) {
                 if (hib.bottom > parseFloat(hisb[int])) {
                     hib.bottom = parseFloat(hisb[int].rate)
                 }
+                hib.vold += parseInt(parseInt(hisb[int].amount)*parseInt(hisb[int].rate))
                 hib.vol = parseInt(hib.vol + parseInt(hisb[int].amount))
             }
             if(!dex.hbd.days)dex.hbd.days ={}
