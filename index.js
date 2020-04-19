@@ -2750,7 +2750,7 @@ function dao(num) {
         for (var i in br) {
             q += br[i].post.totalWeight
         }
-        var contentRewards = ``
+        var contentRewards = ``, vo = []
         if (Object.keys(br).length) {
             bucket = parseInt(bals.rc / 100)
             bals.rc = bals.rc - bucket
@@ -2763,26 +2763,17 @@ function dao(num) {
                     bucket -= parseInt((br[i].post.voters[j].weight / q * 3) * compa)
                     bals[br[i].post.voters[j].from] += parseInt((br[i].post.voters[j].weight / q * 3) * compa)
                     bucket -= parseInt((br[i].post.voters[j].weight * 2 / q * 3) * compa)
+                    vo.push(br[i].post)
                 }
-                contentRewards = contentRewards + `* [${br[i].post.title}](https://ipfs.dlux.io/dlux/@${br[i].post.author}/${br[i].post.permlink}) awarded ${parseFloat(parseInt(dif - bucket)/1000).toFixed(3)} DLUX\n`
+                contentRewards = contentRewards + `* [${br[i].post.title || 'DLUX Content'}](https://ipfs.dlux.io/dlux/@${br[i].post.author}/${br[i].post.permlink}) awarded ${parseFloat(parseInt(dif - bucket)/1000).toFixed(3)} DLUX\n`
             }
             bals.rc += bucket
             contentRewards = contentRewards + `\n*****\n`
         }
-        var vo = [],
-            breaker = 0,
             tw = 0,
             ww = 0,
             ii = 100,
             hiveVotes = ''
-        for (var po = 0; po < cpost.length; po++) {
-            if (cpost[po].block < num - 90720 && cpost[po].block > num - 123960) {
-                vo.push(cpost[po])
-                breaker = 1
-            } else if (breaker) {
-                break;
-            }
-        }
         for (var po = 0; po < vo.length; po++) {
             tw = tw + vo[po].totalWeight
         }
