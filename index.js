@@ -2721,7 +2721,7 @@ function dao(num) {
             hi.block = num - 60480
             hi.open = parseFloat(his[0].rate)
             hi.close = parseFloat(his[his.length - 1].rate)
-            hi.top = hi.open
+            hi.top = 0
             hi.bottom = hi.open
             hi.vol = 0
             for (var int = 0; int < his.length; int++) {
@@ -2739,9 +2739,10 @@ function dao(num) {
         if (hisb.length) {
             hib.open = parseFloat(hisb[0].rate)
             hib.close = parseFloat(hisb[hisb.length - 1].rate)
-            hib.top = hib.open
+            hib.top = 0
             hib.bottom = hib.open
             hib.vol = 0
+            hib.vold
             for (var int = 0; int < hisb.length; int++) {
                 if (hib.top < parseFloat(hisb[int])) {
                     hib.top = parseFloat(hisb[int].rate)
@@ -2754,7 +2755,7 @@ function dao(num) {
             if(!dex.hbd.days)dex.hbd.days ={}
             dex.hbd.days[num] = hib
         }
-        post = post + `*****\n### DEX Report\n#### Spot Information\n* Price: ${parseFloat(dex.hive.tick).toFixed(3)} HIVE per DLUX\n* Price: ${parseFloat(dex.hbd.tick).toFixed(3)} HBD per DLUX\n#### Daily Volume:\n* ${parseFloat(vol/1000).toFixed(3)} DLUX\n* ${parseFloat(vols/1000).toFixed(3)} HIVE\n* ${parseFloat(parseInt(volhbd)/1000).toFixed(3)} HBD\n*****\n`
+        post = post + `*****\n### DEX Report\n#### Spot Information\n* Price: ${parseFloat(dex.hive.tick).toFixed(3)} HIVE per DLUX\n* Price: ${parseFloat(dex.hbd.tick).toFixed(3)} HBD per DLUX\n#### Daily Volume:\n* ${parseFloat((hi.vol+hib.vol)/1000).toFixed(3)} DLUX\n* ${parseFloat(hi.hive/1000).toFixed(3)} HIVE\n* ${parseFloat(parseInt(hib.hbd)/1000).toFixed(3)} HBD\n*****\n`
         bals.rc = bals.rc + bals.ra
         bals.ra = 0
         var q = 0,
