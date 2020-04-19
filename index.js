@@ -2700,8 +2700,8 @@ function dao(num) {
             his = [],
             hisb = [],
             hi = {},
-            len = dex.hive.his ? dex.hive.his.length : 0,
-            lenb = dex.hbd.his ? dex.hbd.his.length : 0
+            len = Object.keys(dex.hive.his),
+            lenb = Object.keys(dex.hbd.his)
         for (var int in len) {
             if (dex.hive.his[int].block < num - 30240) {
                 his.push(dex.hive.his[int])
