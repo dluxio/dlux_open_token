@@ -2723,7 +2723,7 @@ function dao(num) {
             hi.o = parseFloat(his[0].rate) // open, close, top bottom, dlux, volumepair
             hi.c = parseFloat(his[his.length - 1].rate)
             hi.t = 0
-            hi.b = hi.open
+            hi.b = hi.o
             hi.d = 0
             hi.v = 0
             for (var int = 0; int < his.length; int++) {
@@ -2744,7 +2744,7 @@ function dao(num) {
             hib.o = parseFloat(hisb[0].rate) // open, close, top bottom, dlux, volumepair
             hib.c = parseFloat(hisb[hisb.length - 1].rate)
             hib.t = 0
-            hib.b = hib.open
+            hib.b = hib.o
             hib.v = 0
             hib.d = 0
             for (var int = 0; int < hisb.length; int++) {
