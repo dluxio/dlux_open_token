@@ -2499,7 +2499,7 @@ function dao(num) {
         }),
         Pbals = getPathObj(['balances']),
         Prunners = getPathObj(['runners']),
-        Pnodes = getPathObj(['agents']),
+        Pnodes = getPathObj(['markets', 'node']),
         Pstats = getPathObj(['stats']),
         Pdelegations = getPathObj(['delegations']),
         Pico = getPathObj(['ico']),
@@ -2825,7 +2825,7 @@ function dao(num) {
         daops.push({ type: 'put', path: ['dex'], data: dex })
         daops.push({ type: 'put', path: ['stats'], data: stats })
         daops.push({ type: 'put', path: ['balances'], data: bals })
-        daops.push({ type: 'put', path: ['agents'], data: mnode })
+        daops.push({ type: 'put', path: ['markets', 'node'], data: mnode })
         daops.push({ type: 'put', path: ['delegations'], data: deles })
         daops.push({ type: 'put', path: ['escrow', 'dlux-io', 'comment'], data: op })
         console.log(daops)
