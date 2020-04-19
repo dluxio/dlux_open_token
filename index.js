@@ -2700,9 +2700,7 @@ function dao(num) {
             his = [],
             hisb = [],
             hi = {},
-            len = Object.keys(dex.hive.his),
-            lenb = Object.keys(dex.hbd.his)
-        for (var int in len) {
+        for (var int in dex.hive.his) {
             if (dex.hive.his[int].block < num - 30240) {
                 his.push(dex.hive.his[int])
             } else {
@@ -2710,7 +2708,7 @@ function dao(num) {
                 vols = parseInt(parseInt(parseInt(dex.hive.his[int].amount) * parseFloat(dex.hive.his[int].rate)) + vols)
             }
         }
-        for (var int in lenb) {
+        for (var int in dex.hbd.his) {
             if (dex.hbd.his[int].block < num - 30240) {
                 hisb.push(dex.hbd.his[int])
             } else {
