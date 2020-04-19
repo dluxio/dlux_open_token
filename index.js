@@ -2702,17 +2702,17 @@ function dao(num) {
             hi = {},
             len = dex.hive.his ? dex.hive.his.length : 0,
             lenb = dex.hbd.his ? dex.hbd.his.length : 0
-        for (var int = 0; int < len; int++) {
+        for (var int in len) {
             if (dex.hive.his[int].block < num - 30240) {
-                his.push(dex.hive.his.splice(int, 1))
+                his.push(dex.hive.his[int])
             } else {
                 vol = parseInt(parseInt(dex.hive.his[int].amount) + vol)
                 vols = parseInt(parseInt(parseInt(dex.hive.his[int].amount) * parseFloat(dex.hive.his[int].rate)) + vols)
             }
         }
-        for (var int = 0; int < lenb; int++) {
+        for (var int in lenb) {
             if (dex.hbd.his[int].block < num - 30240) {
-                hisb.push(dex.hbd.his.splice(int, 1))
+                hisb.push(dex.hbd.his[int]))
             } else {
                 vol = parseInt(parseInt(dex.hbd.his[int].amount) + vol)
                 volhbd = parseInt(parseInt(parseInt(dex.hbd.his[int].amount) * parseFloat(dex.hbd.his[int].rate)) + volhbd)
