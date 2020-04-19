@@ -2751,7 +2751,6 @@ function dao(num) {
             q += br[i].post.totalWeight
         }
         var contentRewards = ``
-        console.log('br', br)
         if (Object.keys(br).length) {
             bucket = parseInt(bals.rc / 100)
             bals.rc = bals.rc - bucket
