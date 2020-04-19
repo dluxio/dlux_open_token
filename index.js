@@ -2699,7 +2699,7 @@ function dao(num) {
             vols = 0,
             his = [],
             hisb = [],
-            hi = {},
+            hi = {}
         for (var int in dex.hive.his) {
             if (dex.hive.his[int].block < num - 30240) {
                 his.push(dex.hive.his[int])
