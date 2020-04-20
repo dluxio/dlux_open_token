@@ -663,32 +663,22 @@ function startApp() {
             .then(bals => {
                 let lb = bals[0],
                     tpow = bals[1],
-                    pow = bals[2]
-                es = []
-                if (e) es.push(e)
-                if (er) es.push(er)
-                if (err) es.push(err)
-                if (es.length) {
-                    console.log({
-                        es
-                    })
-                } else {
-                    lbal = typeof lb != 'number' ? 0 : lb
-                    pbal = typeof pow != 'number' ? 0 : pow
+                    pow = bals[2],
+                    lbal = typeof lb != 'number' ? 0 : lb,
+                    pbal = typeof pow != 'number' ? 0 : pow,
                     ops = []
-                    if (amount < lbal && active) {
-                        ops.push({ type: 'put', path: ['balances', from], data: lbal - amount })
-                        ops.push({ type: 'put', path: ['pow', from], data: pbal + amount })
-                        ops.push({ type: 'put', path: ['pow', 't'], data: tpow + amount })
-                        ops.push({ type: 'put', path: ['feed', `${json.block_num}:${json.transaction_id}`], data: `@${from}| Powered up ${parseFloat(json.amount/1000).toFixed(3)} DLUX` })
-                        ops.push({ type: 'put', path: ['feed', `${json.block_num}:${json.transaction_id}`], data: `@${from}| Powered up ${parseFloat(json.amount/1000).toFixed(3)} DLUX` })
-                    } else {
-                        ops.push({ type: 'put', path: ['feed', `${json.block_num}:${json.transaction_id}`], data: `@${from}| Invalid power up` })
-                    }
+                if (amount < lbal && active) {
+                    ops.push({ type: 'put', path: ['balances', from], data: lbal - amount })
+                    ops.push({ type: 'put', path: ['pow', from], data: pbal + amount })
+                    ops.push({ type: 'put', path: ['pow', 't'], data: tpow + amount })
+                    ops.push({ type: 'put', path: ['feed', `${json.block_num}:${json.transaction_id}`], data: `@${from}| Powered up ${parseFloat(json.amount/1000).toFixed(3)} DLUX` })
+                } else {
+                    ops.push({ type: 'put', path: ['feed', `${json.block_num}:${json.transaction_id}`], data: `@${from}| Invalid power up` })
+                }
                     store.batch(ops)
                 }
             })
-
+            .catch(e=>{console.log(e)})
 
     });
 
