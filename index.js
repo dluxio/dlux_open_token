@@ -533,7 +533,7 @@ var recents = []
         }
     });
     */
-startWith('Qma8RsPWroCYbGyMPpziboBLFs6hrJgvBW2adrWYvSBrSC')
+startWith('QmcLNQC33n3zpP2DmD4qXNKrxgdch1fruCjEGxQ79jR582')
     // Special Attention
 function startWith(hash) {
     console.log(`${hash} inserted`)
@@ -707,39 +707,12 @@ function startApp() {
                         if (i == 12) {
                             weekly += odd
                         }
-                        var chronAssign
-                        store.someChildren(['chrono'], {
-                            gte: "" + parseInt(json.block_num + 300000),
-                            lte: "" + parseInt((json.block_num + 300000) + 1)
-                        }, function(e, a) {
-                            if (e) {
-                                console.log(e)
-                            } else {
-                                if (a.length && a.length < 10) {
-                                    chronAssign = a.length
-                                } else if (a.length < 36) {
-                                    chronAssign = String.fromCharCode(a.length + 55)
-                                } else if (a.length < 62) {
-                                    chronAssign = String.fromCharCode(a.length + 61)
-                                }
-                                if (!chronAssign) {
-                                    chronAssign = `${json.block_num + (200000 * (i + 1))}:0`
-                                } else {
-                                    var temp = chronAssign
-                                    chronAssign = `${json.block_num + (200000 * (i + 1))}:${temp}`
-                                }
-                                ops.push({
-                                    type: 'put',
-                                    path: ['chrono', chronAssign],
-                                    data: {
+                        chronAssign( parseInt(json.block_num + (200000 * (i + 1))), {
                                         block: parseInt(json.block_num + (200000 * (i + 1))),
                                         op: 'power_down',
                                         amount: weekly,
                                         by: from
-                                    }
-                                })
-                            }
-                        })
+                                    })
                     }
                     ops.push({ type: 'put', path: ['feed', `${json.block_num}:${json.transaction_id}`], data: `@${from}| Powered down ${parseFloat(amount/1000).toFixed(3)} DLUX` })
                 } else {
