@@ -653,66 +653,65 @@ function startApp() {
     */
     // power up tokens
     processor.on('power_up', function(json, from, active) {
-        var amount = parseInt(json.amount),
-            lbal, pbal,
-            lpp = getPathNum(['balances', from]),
-            tpowp = getPathNum(['pow', 't']),
-            powp = getPathNum(['pow', from])
+     var amount = parseInt(json.amount),
+         lbal, pbal,
+         lpp = getPathNum(['balances', from]),
+         tpowp = getPathNum(['pow', 't']),
+         powp = getPathNum(['pow', from])
 
-        Promise.all([lpp, tpowp, powp])
-            .then(bals => {
-                let lb = bals[0],
-                    tpow = bals[1],
-                    pow = bals[2],
-                    lbal = typeof lb != 'number' ? 0 : lb,
-                    pbal = typeof pow != 'number' ? 0 : pow,
-                    ops = []
-                if (amount < lbal && active) {
-                    ops.push({ type: 'put', path: ['balances', from], data: lbal - amount })
-                    ops.push({ type: 'put', path: ['pow', from], data: pbal + amount })
-                    ops.push({ type: 'put', path: ['pow', 't'], data: tpow + amount })
-                    ops.push({ type: 'put', path: ['feed', `${json.block_num}:${json.transaction_id}`], data: `@${from}| Powered up ${parseFloat(json.amount/1000).toFixed(3)} DLUX` })
-                } else {
-                    ops.push({ type: 'put', path: ['feed', `${json.block_num}:${json.transaction_id}`], data: `@${from}| Invalid power up` })
-                }
-                    store.batch(ops)
-                }
-            })
-            .catch(e=>{console.log(e)})
+     Promise.all([lpp, tpowp, powp])
+         .then(bals => {
+             let lb = bals[0],
+                 tpow = bals[1],
+                 pow = bals[2],
+                 lbal = typeof lb != 'number' ? 0 : lb,
+                 pbal = typeof pow != 'number' ? 0 : pow,
+                 ops = []
+             if (amount < lbal && active) {
+                 ops.push({ type: 'put', path: ['balances', from], data: lbal - amount })
+                 ops.push({ type: 'put', path: ['pow', from], data: pbal + amount })
+                 ops.push({ type: 'put', path: ['pow', 't'], data: tpow + amount })
+                 ops.push({ type: 'put', path: ['feed', `${json.block_num}:${json.transaction_id}`], data: `@${from}| Powered up ${parseFloat(json.amount/1000).toFixed(3)} DLUX` })
+             } else {
+                 ops.push({ type: 'put', path: ['feed', `${json.block_num}:${json.transaction_id}`], data: `@${from}| Invalid power up` })
+             }
+             store.batch(ops)
+         })
+         .catch(e => { console.log(e) })
 
-    });
+ });
 
-    // power down tokens
-    processor.on('power_down', function(json, from, active) {
-        var amount = parseInt(json.amount),
-            p
-        getPathNum(['pow', from])
-            .then(o => {
-                let p = typeof o != 'number' ? 0 : o,
-                    ops = []
-                if (typeof amount == 'number' && amount >= 0 && p >= amount && active) {
-                    var odd = parseInt(amount % 13),
-                        weekly = parseInt(amount / 13)
-                    for (var i = 0; i < 13; i++) {
-                        if (i == 12) {
-                            weekly += odd
-                        }
-                        chronAssign( parseInt(json.block_num + (200000 * (i + 1))), {
-                                        block: parseInt(json.block_num + (200000 * (i + 1))),
-                                        op: 'power_down',
-                                        amount: weekly,
-                                        by: from
-                                    })
-                    }
-                    ops.push({ type: 'put', path: ['feed', `${json.block_num}:${json.transaction_id}`], data: `@${from}| Powered down ${parseFloat(amount/1000).toFixed(3)} DLUX` })
-                } else {
-                    ops.push({ type: 'put', path: ['feed', `${json.block_num}:${json.transaction_id}`], data: `@${from}| Invalid Power Down` })
-                }
-                store.batch(ops)
-            })
-            .catch(e => { console.log(e) })
+ // power down tokens
+ processor.on('power_down', function(json, from, active) {
+     var amount = parseInt(json.amount),
+         p
+     getPathNum(['pow', from])
+         .then(o => {
+             let p = typeof o != 'number' ? 0 : o,
+                 ops = []
+             if (typeof amount == 'number' && amount >= 0 && p >= amount && active) {
+                 var odd = parseInt(amount % 13),
+                     weekly = parseInt(amount / 13)
+                 for (var i = 0; i < 13; i++) {
+                     if (i == 12) {
+                         weekly += odd
+                     }
+                     chronAssign(parseInt(json.block_num + (200000 * (i + 1))), {
+                         block: parseInt(json.block_num + (200000 * (i + 1))),
+                         op: 'power_down',
+                         amount: weekly,
+                         by: from
+                     })
+                 }
+                 ops.push({ type: 'put', path: ['feed', `${json.block_num}:${json.transaction_id}`], data: `@${from}| Powered down ${parseFloat(amount/1000).toFixed(3)} DLUX` })
+             } else {
+                 ops.push({ type: 'put', path: ['feed', `${json.block_num}:${json.transaction_id}`], data: `@${from}| Invalid Power Down` })
+             }
+             store.batch(ops)
+         })
+         .catch(e => { console.log(e) })
 
-    });
+ })
 
     // vote on content
     processor.on('vote_content', function(json, from, active) {
