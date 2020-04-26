@@ -1423,12 +1423,12 @@ function startApp() {
                                 delete plasma.pending[c.txid + `:release`]
                             }
                             credit(json.who)
-                        } else if (c.cancel && json.receiver == a.for) {
+                        } else if (c.cancel && json.receiver == c.from) {
                             store.batch([
                                 { type: 'del', path: ['contracts', a.for, a.contract], data: c },
                                 { type: 'put', path: ['feed', `${json.block_num}:${json.transaction_id}`], data: `@${json.from}| canceled ${c.txid}` },
                                 { type: 'del', path: ['chrono', c.expire_path] },
-                                { type: 'del', path: ['escrow', json.from, c.txid + `:cancel`] }
+                                { type: 'del', path: ['escrow', json.who, c.txid + `:cancel`] }
                             ])
                             deletePointer(c.escrow_id, a.for)
                             credit(json.who)
