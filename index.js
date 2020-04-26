@@ -1003,7 +1003,7 @@ function startApp() {
             console.log(buy, isAgent, isDAgent)
             if (typeof buy === 'number' && isAgent && isDAgent) { //{txid, from: from, buying: buyAmount, amount: json.dlux, [json.dlux]:buyAmount, rate:parseFloat((json.dlux)/(buyAmount)).toFixed(6), block:current, partial: json.partial || true
                 const now = new Date()
-                const until = now.setHours(now.getHours() + 1)
+                const until = now.setHours(now.getHours())
                 const check = Date.parse(json.ratification_deadline)
                 console.log(contract.hive, parseInt(parseFloat(json.steem_amount) * 1000),  contract.hbd , contract.hbd,  parseInt(parseFloat(json.sbd_amount) * 1000), check, until)
                 if (contract.hive == parseInt(parseFloat(json.steem_amount) * 1000) && contract.hbd == parseInt(parseFloat(json.sbd_amount) * 1000) && check > until) {
