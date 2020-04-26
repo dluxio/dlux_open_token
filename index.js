@@ -1428,7 +1428,7 @@ function startApp() {
                                 { type: 'del', path: ['contracts', a.for, a.contract], data: c },
                                 { type: 'put', path: ['feed', `${json.block_num}:${json.transaction_id}`], data: `@${json.from}| canceled ${c.txid}` },
                                 { type: 'del', path: ['chrono', c.expire_path] },
-                                { type: 'del', path: ['escrow', json.who, c.txid + `:cancel`] }
+                                { type: 'del', path: ['escrow', json.from, c.txid + `:cancel`] }
                             ])
                             deletePointer(c.escrow_id, a.for)
                             credit(json.who)
