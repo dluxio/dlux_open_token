@@ -533,7 +533,7 @@ var recents = []
         }
     });
     */
-startWith('QmVvRjx6H6iLJLKrkwdyRdkjuLCANThQibZAKKejr2jwgr')
+startWith('QmVy8rsXgWtdfMXX7w89MM567sZ2RJdyvW1Hk42CGW4px1')
     // Special Attention
 function startWith(hash) {
     console.log(`${hash} inserted`)
@@ -553,13 +553,14 @@ function startWith(hash) {
                         if (!e) {
                             if (hash) {
                                 var cleanState = data[1]
-                                if (hash == 'QmVvRjx6H6iLJLKrkwdyRdkjuLCANThQibZAKKejr2jwgr') {
+                                if (hash == 'QmVy8rsXgWtdfMXX7w89MM567sZ2RJdyvW1Hk42CGW4px1') {
                                     //delete cleanState.dex.hive.buyOrders
-                                    //cleanState.chrono = {}
+                                    cleanState.chrono = {}
                                     //cleanState.posts = {}
                                     delete cleanState.escrow.inconceivable 
                                     //cleanState.feed = {}
-                                    //cleanState.contracts = {}
+                                    cleanState.contracts = {}
+                                    cleanState.escrow = {}
                                 }
                                 store.put([], cleanState, function(err) {
                                     if (err) {
