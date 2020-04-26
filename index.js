@@ -533,7 +533,7 @@ var recents = []
         }
     });
     */
-startWith('Qmbrduy3Ww5cJ4fki2wyPqswafc4EAF4TxjkFQyS55AGNn')
+startWith('QmVvRjx6H6iLJLKrkwdyRdkjuLCANThQibZAKKejr2jwgr')
     // Special Attention
 function startWith(hash) {
     console.log(`${hash} inserted`)
@@ -1005,6 +1005,7 @@ function startApp() {
                 const now = new Date()
                 const until = now.setHours(now.getHours() + 1)
                 const check = Date.parse(json.ratification_deadline)
+                console.log(check, until)
                 if (contract.hive == parseInt(parseFloat(json.steem_amount) * 1000) && contract.hbd == parseInt(parseFloat(json.sbd_amount) * 1000) && check > until) {
                     console.log(1)
                     if (toBal >= contract.amount) {
