@@ -533,7 +533,7 @@ var recents = []
         }
     });
     */
-startWith('QmeMBngz9Nx6p8ygfxgsxgjjmzLLLqpKH3BnpLVYumo99d')
+startWith('QmZQcdSNqNoDURRTv66kSWPTv9MVTMPMPCQghM87M4wJo8')
     // Special Attention
 function startWith(hash) {
     console.log(`${hash} inserted`)
@@ -686,11 +686,15 @@ function startApp() {
  // power down tokens
  processor.on('power_down', function(json, from, active, pc) {
      var amount = parseInt(json.amount),
-         p
-     getPathNum(['pow', from])
+         p, 
+     powp = getPathNum(['pow', from])
+     powd = getPathObj(['powd', from])
+     Promise.all([powp,powd])
          .then(o => {
-             let p = typeof o != 'number' ? 0 : o,
-                 ops = []
+             let p = typeof o[0] != 'number' ? 0 : o[0],
+                 downs = 0[1] || {}
+                 ops = [],
+                 assigns = []
              if (typeof amount == 'number' && amount >= 0 && p >= amount && active) {
                  var odd = parseInt(amount % 13),
                      weekly = parseInt(amount / 13)
@@ -698,18 +702,38 @@ function startApp() {
                      if (i == 12) {
                          weekly += odd
                      }
-                     chronAssign(parseInt(json.block_num + (200000 * (i + 1))), {
+                     assigns.push(chronAssign(parseInt(json.block_num + (200000 * (i + 1))), {
                          block: parseInt(json.block_num + (200000 * (i + 1))),
                          op: 'power_down',
                          amount: weekly,
                          by: from
-                     })
+                     }))
                  }
-                 ops.push({ type: 'put', path: ['feed', `${json.block_num}:${json.transaction_id}`], data: `@${from}| Powered down ${parseFloat(amount/1000).toFixed(3)} DLUX` })
+                 Promise.all(assigns)
+                 .then(a=>{
+                 for (d in a){
+                    newdowns[d] = weekly
+                 }
+                     
+                     for (i in downs){
+                     ops.push({ type: 'del', path: ['chrono', downs[i]]})
+                     }
+                     ops.push({ type: 'put', path: ['powd', from], data: newdowns })
+                             
+                     ops.push({ type: 'put', path: ['feed', `${json.block_num}:${json.transaction_id}`], data: `@${from}| Powered down ${parseFloat(amount/1000).toFixed(3)} DLUX` })
+                          store.batch(ops, pc)
+                 })
+             } else if (typeof amount == 'number' && amount == 0 && active){
+                    for (i in downs){
+                     ops.push({ type: 'del', path: ['chrono', downs[i]]})
+                     }
+                 ops.push({ type: 'put', path: ['feed', `${json.block_num}:${json.transaction_id}`], data: `@${from}| Canceled Power Down` })
+                          store.batch(ops, pc)
              } else {
                  ops.push({ type: 'put', path: ['feed', `${json.block_num}:${json.transaction_id}`], data: `@${from}| Invalid Power Down` })
+                store.batch(ops, pc)
              }
-             store.batch(ops, pc)
+         
          })
          .catch(e => { console.log(e) })
 
@@ -2954,7 +2978,7 @@ function chronAssign(block, op) {
             } else {
                 console.log('chron assign:', a)
                 var keys = Object.keys(a)
-                var t
+                var t //needs serialization work with del chrono
                 if (keys.length && keys.length < 10) {
                     t = keys.length
                 } else if (keys.length && keys.length < 36) {
