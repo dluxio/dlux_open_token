@@ -45,12 +45,12 @@ Pathwise.prototype._write = function(batch, key, obj, fn) {
     }
 };
 
-Pathwise.prototype.batch = function(ops, fn) {
+Pathwise.prototype.batch = function(ops, pc) { // promise chain[resolve(), reject()]
     var self = this;
     var batch = this._db.batch();
     var next = after(ops.length, function(err) {
-        if (err) return fn(err);
-        batch.write(fn);
+        if (err) {pc[1](err)}
+        else {pc[0]()}
     });
     ops.forEach(function(op) {
         if (op.type == 'put') self.put(op.path, op.data, { batch: batch }, next);
