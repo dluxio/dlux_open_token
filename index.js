@@ -1756,15 +1756,26 @@ function startApp() {
                         }
                     }
                     if (auth) {
+                        let same = true, othersame = true
+                        for(i in json.c){
+                            if (post.customJSON.p[i] != json.c[i]){
+                                same = false
+                            }
+                        }
+                        for(i in json.c){
+                            if (post.customJSON.s[i] != json.c[i]){
+                                othersame = false
+                            }
+                        }
                         if (!post.customJSON.p) {
                             post.customJSON.p = json.c
                             post.customJSON.pw = 1
-                        } else if (JSON.stringify(post.customJSON.p) == JSON.stringify(json.c)) {
+                        } else if (same) {
                             post.customJSON.pw++
-                        } else if (!post.customJSON.s) {
+                        } else if (!othersame) {
                             post.customJSON.s = json.c
                             post.customJSON.sw = 1
-                        } else if (JSON.stringify(post.customJSON.s) == JSON.stringify(json.c)) {
+                        } else if (othersame) {
                             post.customJSON.sw++
                                 if (post.customJSON.sw > post.customJSON.pw) {
                                     var temp = post.customJSON.p
@@ -2028,8 +2039,8 @@ function startApp() {
                                 store.get(['posts', `${b.author}/${b.permlink}`], function(e, a) {
                                     let ops = []
                                     console.log(a)
-                                    //a.title = a.p.d
-                                    //delete a.p.d
+                                    a.title = a.customJSON.p.d
+                                    delete a.p.d
                                     a.c = a.p
                                     delete a.p
                                     delete a.s
