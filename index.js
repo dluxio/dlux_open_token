@@ -603,7 +603,8 @@ function startWith(hash) {
 function startApp() {
     processor = hiveState(client, hive, startingBlock, 10, prefix, streamMode);
 
-    processor.on('send', function(json, from, active) {
+
+    processor.on('send', function(json, from, active, pc) {
         let fbalp = getPathNum(['balances', from]),
             tbp = getPathNum(['balances', json.to])
         Promise.all([fbalp, tbp])
@@ -620,7 +621,7 @@ function startApp() {
                     ops.push({ type: 'put', path: ['feed', `${json.block_num}:${json.transaction_id}`], data: `@${from}| Invalid send operation` })
                 }
             console.log(ops)
-                store.batch(ops)
+                store.batch(ops, pc)
             })
             .catch(e => { console.log(e) })
     });
@@ -647,13 +648,13 @@ function startApp() {
                     }
                 }
                 var ops=[{type:'put',path:['sps'], data: sps}]
-                store.batch(ops)
+                store.batch(ops, pc)
             })
         })
     });
     */
     // power up tokens
-    processor.on('power_up', function(json, from, active) {
+    processor.on('power_up', function(json, from, active, pc) {
      var amount = parseInt(json.amount),
          lbal, pbal,
          lpp = getPathNum(['balances', from]),
@@ -676,14 +677,14 @@ function startApp() {
              } else {
                  ops.push({ type: 'put', path: ['feed', `${json.block_num}:${json.transaction_id}`], data: `@${from}| Invalid power up` })
              }
-             store.batch(ops)
+             store.batch(ops, pc)
          })
          .catch(e => { console.log(e) })
 
  });
 
  // power down tokens
- processor.on('power_down', function(json, from, active) {
+ processor.on('power_down', function(json, from, active, pc) {
      var amount = parseInt(json.amount),
          p
      getPathNum(['pow', from])
@@ -708,14 +709,14 @@ function startApp() {
              } else {
                  ops.push({ type: 'put', path: ['feed', `${json.block_num}:${json.transaction_id}`], data: `@${from}| Invalid Power Down` })
              }
-             store.batch(ops)
+             store.batch(ops, pc)
          })
          .catch(e => { console.log(e) })
 
  })
 
     // vote on content
-    processor.on('vote_content', function(json, from, active) {
+    processor.on('vote_content', function(json, from, active, pc) {
         var powPromise = getPathNum(['pow', from]),
             postPromise = getPathObj(['posts', `${json.author}/${json.permlink}`]),
             rollingPromise = getPathNum(['rolling', from]),
@@ -750,14 +751,14 @@ function startApp() {
                 } else {
                     ops.push({ type: 'put', path: ['feed', `${json.block_num}:${json.transaction_id}`], data: `@${from}| doesn't have the dlux power to vote` })
                 }
-                store.batch(ops)
+                store.batch(ops, pc)
             })
             .catch(function(e) {
                 console.log(e)
             });
     });
 
-    processor.on('dex_buy', function(json, from, active) {
+    processor.on('dex_buy', function(json, from, active, pc) {
         let Pbal = getPathNum(['balances', from]),
             Pfound = getPathObj(['contracts', json.for, json.contract.split(':')[1]])
         Promise.all([Pbal, Pfound])
@@ -822,18 +823,18 @@ function startApp() {
                                     { type: 'put', path: ['dex', type, 'tick'], data: json.contract.split(':')[0] },
                                     { type: 'put', path: ['dex', type, 'his', `${hisE.block}:${json.contract.split(':')[1]}`], data: hisE },
                                     { type: 'del', path: ['dex', type, 'buyOrders', `${json.contract}`] }
-                                ])
+                                ], pc)
                             } else {
                                 ops.push({ type: 'put', path: ['feed', `${json.block_num}:${json.transaction_id}`], data: `@${from}| has insuficient liquidity to purchase ${found.txid}` })
                                 console.log(ops)
-                                store.batch(ops)
+                                store.batch(ops, pc)
                             }
                         })
                 }
             })
     });
 
-    processor.on('dex_hive_sell', function(json, from, active) {
+    processor.on('dex_hive_sell', function(json, from, active, pc) {
         var buyAmount = parseInt(json.hive)
         store.get(['balances', from], function(e, a) {
             if (!e) {
@@ -865,19 +866,20 @@ function startApp() {
                                 { type: 'put', path: ['balances', from], data: b - contract.amount },
                                 { type: 'put', path: ['contracts', from, contract.txid], data: contract },
                                 { type: 'put', path: ['feed', `${json.block_num}:${json.transaction_id}`], data: `@${from}| has placed order ${txid} to sell ${parseFloat(json.dlux/1000).toFixed(3)} for ${parseFloat(json.hive/1000).toFixed(3)} HIVE` }
-                            ])
+                            ], pc)
                         })
                         .catch((e) => console.log(e))
                 } else {
-                    store.batch([{ type: 'put', path: ['feed', `${json.block_num}:${json.transaction_id}`], data: `@${from}| tried to place an order to sell ${parseFloat(json.dlux/1000).toFixed(3)} for ${parseFloat(json.hive/1000).toFixed(3)} HIVE` }])
+                    store.batch([{ type: 'put', path: ['feed', `${json.block_num}:${json.transaction_id}`], data: `@${from}| tried to place an order to sell ${parseFloat(json.dlux/1000).toFixed(3)} for ${parseFloat(json.hive/1000).toFixed(3)} HIVE` }], pc)
                 }
             } else {
                 console.log(e)
+                pc[0]()
             }
         })
     });
 
-    processor.on('dex_hbd_sell', function(json, from, active) {
+    processor.on('dex_hbd_sell', function(json, from, active, pc) {
         var buyAmount = parseInt(json.hbd)
         store.get(['balances', from], function(e, a) {
             if (!e) {
@@ -908,19 +910,20 @@ function startApp() {
                                 { type: 'put', path: ['balances', from], data: b - contract.amount },
                                 { type: 'put', path: ['contracts', from, contract.txid], data: contract },
                                 { type: 'put', path: ['feed', `${json.block_num}:${json.transaction_id}`], data: `@${from}| has placed order ${txid} to sell ${parseFloat(json.dlux/1000).toFixed(3)} for ${parseFloat(json.hbd/1000).toFixed(3)} HBD` }
-                            ])
+                            ], pc)
                         })
                         .catch((e) => console.log(e))
                 } else {
-                    store.batch([{ type: 'put', path: ['feed', `${json.block_num}:${json.transaction_id}`], data: `@${from}| tried to place an order to sell ${parseFloat(json.dlux/1000).toFixed(3)} for ${parseFloat(json.hbd/1000).toFixed(3)} HBD` }])
+                    store.batch([{ type: 'put', path: ['feed', `${json.block_num}:${json.transaction_id}`], data: `@${from}| tried to place an order to sell ${parseFloat(json.dlux/1000).toFixed(3)} for ${parseFloat(json.hbd/1000).toFixed(3)} HBD` }], pc)
                 }
             } else {
+                pc[0]()
                 console.log(e)
             }
         })
     });
 
-    processor.on('dex_clear', function(json, from, active) {
+    processor.on('dex_clear', function(json, from, active, pc) {
         if (active) {
             var q = []
             if (typeof json.txid == 'string') {
@@ -972,7 +975,7 @@ function startApp() {
         }
     })
 
-    processor.onOperation('escrow_transfer', function(json) { //grab posts to reward
+    processor.onOperation('escrow_transfer', function(json, pc) { //grab posts to reward
         var ops, dextx, seller, contract, isAgent, isDAgent, dextxdlux, meta, done = 0,
             type = 'hive'
         try {
@@ -1102,7 +1105,7 @@ function startApp() {
                             { type: 'put', path: ['dex', type, 'his', `${hisE.block}:${json.transaction_id}`], data: hisE },
                             { type: 'del', path: ['dex', type, 'sellOrders', `${contract.rate}:${contract.txid}`] }
                         ]
-                        store.batch(ops)
+                        store.batch(ops, pc)
                     }
                     if (!done) {
                         console.log(3)
@@ -1253,7 +1256,7 @@ function startApp() {
                         }
                         console.log(contract.type)
                         ops.push({ type: 'put', path: ['contracts', json.from, txid], data: contract })
-                        store.batch(ops)
+                        store.batch(ops, pc)
                     })
             } else if (isDAgent && isAgent) {
                 var ops = []
@@ -1273,12 +1276,12 @@ function startApp() {
                         }
                     ]
                 })
-                store.batch(ops)
+                store.batch(ops, pc)
             }
         }).catch(function(e) { console.log('Failed Escrow:' + e) })
     });
 
-    processor.onOperation('escrow_approve', function(json) {
+    processor.onOperation('escrow_approve', function(json, pc) {
         store.get(['escrow', json.escrow_id, json.from], function(e, a) { // since escrow ids are unique to sender, store a list of pointers to the owner of the contract
             if (!e && Object.keys(a).length) {
                 store.get(['contracts', a.for, a.contract], function(e, b) {
@@ -1375,7 +1378,7 @@ function startApp() {
 
     });
 
-    processor.onOperation('escrow_dispute', function(json) {
+    processor.onOperation('escrow_dispute', function(json, pc) {
         getPathObj(['escrow', json.escrow_id, json.from])
             .then(a => {
                 getPathObj(['contracts', a.for, a.contract])
@@ -1386,7 +1389,7 @@ function startApp() {
                                 { type: 'put', path: ['contracts', a.for, a.contract], data: c },
                                 { type: 'put', path: ['feed', `${json.block_num}:${json.transaction_id}`], data: `@${json.who}| authorized ${json.agent} for ${c.txid}` },
                                 { type: 'del', path: ['escrow', json.who, c.txid + `:dispute`] }
-                            ])
+                            ], pc)
                             if (json.who == config.username) {
                                 for (var i = 0; i < NodeOps.length; i++) {
                                     if (NodeOps[i][1][1].from == json.from && NodeOps[i][1][1].escrow_id == json.escrow_id && NodeOps[i][1][0] == 'escrow_dispute') {
@@ -1403,7 +1406,7 @@ function startApp() {
             .catch(e => { console.log(e) })
     });
 
-    processor.onOperation('escrow_release', function(json) {
+    processor.onOperation('escrow_release', function(json, pc) {
         getPathObj(['escrow', json.escrow_id, json.from])
             .then(a => {
                 getPathObj(['contracts', a.for, a.contract])
@@ -1414,7 +1417,7 @@ function startApp() {
                                 { type: 'put', path: ['contracts', a.for, a.contract], data: c },
                                 { type: 'put', path: ['feed', `${json.block_num}:${json.transaction_id}`], data: `@${json.who}| released funds for @${json.to} for ${c.txid}` },
                                 { type: 'del', path: ['escrow', json.who, c.txid + `:release`] }
-                            ])
+                            ], pc)
                             if (json.who == config.username) {
                                 for (var i = 0; i < NodeOps.length; i++) {
                                     if (NodeOps[i][1][1].from == json.from && NodeOps[i][1][1].escrow_id == json.escrow_id && NodeOps[i][1][0] == 'escrow_release') {
@@ -1430,7 +1433,7 @@ function startApp() {
                                 { type: 'put', path: ['feed', `${json.block_num}:${json.transaction_id}`], data: `@${json.from}| canceled ${c.txid}` },
                                 { type: 'del', path: ['chrono', c.expire_path] },
                                 { type: 'del', path: ['escrow', json.who, c.txid + `:cancel`] }
-                            ])
+                            ], pc)
                             deletePointer(c.escrow_id, a.for)
                             credit(json.who)
                         }
@@ -1440,7 +1443,7 @@ function startApp() {
             .catch(e => { console.log(e) })
     });
 
-    processor.on('node_add', function(json, from, active) {
+    processor.on('node_add', function(json, from, active, pc) {
         if (json.domain && typeof json.domain === 'string') {
             var z = false
             if (json.escrow == true) {
@@ -1480,26 +1483,26 @@ function startApp() {
                                 report: {},
                                 escrow: z
                             }
-                        }])
+                        }], pc)
                     } else {
                         var b = a;
                         b.domain = json.domain
                         b.bidRate = int
                         b.escrow = z
                         b.marketingRate = t
-                        store.batch([{ type: 'put', path: ['markets', 'node', from], data: b }])
+                        store.batch([{ type: 'put', path: ['markets', 'node', from], data: b }], pc)
                     }
                 } else {
                     console.log(e)
                 }
             })
-            store.batch([{ type: 'put', path: ['feed', `${json.block_num}:${json.transaction_id}`], data: `@${from}| has bid the hive-state node ${json.domain} at ${json.bidRate}` }])
+            store.batch([{ type: 'put', path: ['feed', `${json.block_num}:${json.transaction_id}`], data: `@${from}| has bid the hive-state node ${json.domain} at ${json.bidRate}` }], pc)
         } else {
-            store.batch([{ type: 'put', path: ['feed', `${json.block_num}:${json.transaction_id}`], data: `@${from}| sent and invalid hive-state node operation` }])
+            store.batch([{ type: 'put', path: ['feed', `${json.block_num}:${json.transaction_id}`], data: `@${from}| sent and invalid hive-state node operation` }], pc)
         }
     });
 
-    processor.on('node_delete', function(json, from, active) {
+    processor.on('node_delete', function(json, from, active, pc) {
         if (active) {
             var ops = []
             var Pqueue = getPathObj(['queue']),
@@ -1527,12 +1530,12 @@ function startApp() {
                     ops.push({ type: 'put', path: ['markets', 'node', from], data: b })
                 }
                 ops.push({ type: 'put', path: ['feed', `${json.block_num}:${json.transaction_id}`], data: `@${from}| has signed off their dlux node` })
-                store.batch(ops)
+                store.batch(ops, pc)
             }).catch(function(e) { console.log(e) })
         }
     });
 
-    processor.on('report', function(json, from, active) {
+    processor.on('report', function(json, from, active, pc) {
         store.get(['markets', 'node', from], function(e, a) {
             if (!e) {
                 var b = a
@@ -1542,7 +1545,7 @@ function startApp() {
                         { type: 'put', path: ['markets', 'node', from], data: b },
                         { type: 'put', path: ['feed', `${json.block_num}:${json.transaction_id}`], data: `@${from}| Report processed` }
                     ]
-                    store.batch(ops)
+                    store.batch(ops, pc)
                 } else {
                     if (from === config.username && config.NODEDOMAIN) {
                         var op = { required_auth: json.required_auths, required_posting_auths: json.required_posting_auths, id: json.id, custom_json: json.custom_json }
@@ -1567,7 +1570,7 @@ function startApp() {
         })
     });
 
-    processor.on('queueForDaily', function(json, from, active) {
+    processor.on('queueForDaily', function(json, from, active, pc) {
         if (from = 'dlux-io' && json.text && json.title) {
             store.batch([{
                 type: 'put',
@@ -1576,11 +1579,11 @@ function startApp() {
                     text: json.text,
                     title: json.title
                 }
-            }])
+            }], pc)
         }
     })
 
-    processor.on('nomention', function(json, from, active) {
+    processor.on('nomention', function(json, from, active, pc) {
             if (typeof json.nomention == 'boolean') {
                 store.get(['delegations', from], function(e, a) {
                     var ops = []
@@ -1589,7 +1592,7 @@ function startApp() {
                     } else if (!e && !json.nomention) {
                         ops.push({ type: 'del', path: ['nomention', from] })
                     }
-                    store.batch(ops)
+                    store.batch(ops, pc)
                 })
             }
         })
@@ -1609,7 +1612,7 @@ function startApp() {
                                     block: json.block_num,
                                 })
                                 ops.push({ type: 'put', path: ['posts', `${json[1].author}/${json[1].permlink}`], data: o })
-                                store.batch(ops)
+                                store.batch(ops, pc)
                             }
                         }
                     })
@@ -1618,7 +1621,7 @@ function startApp() {
         */
 
 
-    processor.onOperation('comment_options', function(json, from) { //grab posts to reward
+    processor.onOperation('comment_options', function(json, from, pc) { //grab posts to reward
         try {
             var filter = json.extensions[0][1].beneficiaries
         } catch (e) {
@@ -1670,7 +1673,7 @@ function startApp() {
                     })
                     ops.push({ type: 'put', path: ['queue'], data: queue })
                     ops.push({ type: 'put', path: ['feed', `${json.block_num}:${json.transaction_id}`], data: `@${json.author}|${json.permlink} added to dlux rewardable content` })
-                    store.batch(ops)
+                    store.batch(ops, pc)
                     if (assignments[0] || assignments[1] || assignments[2] || assignments[3]) {
                         client.database.call('get_content', [json.author, json.permlink])
                             .then(result => {
@@ -1739,7 +1742,7 @@ function startApp() {
         }
     });
 
-    processor.on('cjv', function(json, from, active) {
+    processor.on('cjv', function(json, from, active, pc) {
         var postPromise = getPathObj(['posts', `${json.a}/${json.p}`])
         Promise.all([postPromise])
             .then(function(v) {
@@ -1788,7 +1791,7 @@ function startApp() {
                         }
                         ops.push({ type: 'put', path: ['posts', `${json.a}/${json.p}`], data: post })
                         console.log(ops)
-                        store.batch(ops)
+                        store.batch(ops, pc)
                     }
                 }
             })
@@ -1797,7 +1800,7 @@ function startApp() {
             });
     });
 
-    processor.on('sig', function(json, from, active) {
+    processor.on('sig', function(json, from, active, pc) {
         var postPromise = getPathObj(['posts', `${json.author}/${json.permlink}`])
         Promise.all([postPromise])
             .then(function(v) {
@@ -1807,7 +1810,7 @@ function startApp() {
                     post.signatures[from] = json.sig
                     ops.push({ type: 'put', path: ['posts', `${json.author}/${json.permlink}`], data: post })
                     ops.push({ type: 'put', path: ['feed', `${json.block_num}:${json.transaction_id}`], data: `@${from}| Signed on ${json.author}/${json.permlink}` })
-                    store.batch(ops)
+                    store.batch(ops, pc)
                 }
             })
             .catch(function(e) {
@@ -1815,7 +1818,7 @@ function startApp() {
             });
     });
 
-    processor.on('cert', function(json, from, active) {
+    processor.on('cert', function(json, from, active, pc) {
         var postPromise = getPathObj(['posts', `${json.author}/${json.permlink}`])
         Promise.all([postPromise])
             .then(function(v) {
@@ -1825,7 +1828,7 @@ function startApp() {
                     post.cert[from] = json.cert
                     ops.push({ type: 'put', path: ['posts', `${json.author}/${json.permlink}`], data: post })
                     ops.push({ type: 'put', path: ['feed', `${json.block_num}:${json.transaction_id}`], data: `@${from}| Signed a certificate on ${json.author}/${json.permlink}` })
-                    store.batch(ops)
+                    store.batch(ops, pc)
                 }
             })
             .catch(function(e) {
@@ -1833,7 +1836,7 @@ function startApp() {
             });
     });
 
-    processor.onOperation('vote', function(json) {
+    processor.onOperation('vote', function(json, pc) {
         if (json.voter == 'dlux-io') {
             console.log('the vote')
             store.get(['escrow', json.voter], function(e, a) {
@@ -1843,7 +1846,7 @@ function startApp() {
                         if (a[b][1].permlink == json.permlink) {
                             let ops = [{ type: 'del', path: ['escrow', json.voter, b] }]
                             console.log(ops)
-                            store.batch(ops)
+                            store.batch(ops, pc)
                             if (json.voter == config.username) {
                                 delete plasma.pending[b]
                                 for (var i = 0; i < NodeOps.length; i++) {
@@ -1862,7 +1865,7 @@ function startApp() {
         }
     })
 
-    processor.onOperation('transfer', function(json) {
+    processor.onOperation('transfer', function(json, pc) {
         store.get(['escrow', json.from, json.memo.split(' ')[0] + ':transfer'], function(e, a) {
             var ops = []
             if (!e && !isEmpty(a)) {
@@ -1906,7 +1909,7 @@ function startApp() {
                             }
                             console.log(ops)
                             credit(json.from)
-                            store.batch(ops)
+                            store.batch(ops, pc)
                         })
                         .catch(e => { console.log(e) })
                 }
@@ -1925,7 +1928,7 @@ function startApp() {
                     if (purchase < i) {
                         i -= purchase
                         b += purchase
-                        store.batch([{ type: 'put', path: ['feed', `${json.block_num}:${json.transaction_id}`], data: `@${json.from}| bought ${parseFloat(purchase/1000).toFixed(3)} DLUX with ${parseFloat(amount/1000).toFixed(3)} HIVE` }])
+                        store.batch([{ type: 'put', path: ['feed', `${json.block_num}:${json.transaction_id}`], data: `@${json.from}| bought ${parseFloat(purchase/1000).toFixed(3)} DLUX with ${parseFloat(amount/1000).toFixed(3)} HIVE` }], pc)
                     } else {
                         b += i
                         const left = purchase - i
@@ -1936,19 +1939,19 @@ function startApp() {
                             { type: 'put', path: ['balances', 'ri'], data: i },
                             { type: 'put', path: ['stats'], data: stats },
                             { type: 'put', path: ['feed', `${json.block_num}:${json.transaction_id}`], data: `@${json.from}| bought ALL ${parseFloat(parseInt(purchase - left)).toFixed(3)} DLUX with ${parseFloat(parseInt(amount)/1000).toFixed(3)} HIVE. And bid in the over-auction` }
-                        ])
+                        ], pc)
                     }
                 } else {
                     store.batch([
                         { type: 'put', path: ['ico', json.block_num, json.from], data: parseInt(amount) },
                         { type: 'put', path: ['feed', `${json.block_num}:${json.transaction_id}`], data: `@${json.from}| bought ALL ${parseFloat(parseInt(purchase - left)).toFixed(3)} DLUX with ${parseFloat(parseInt(amount)/1000).toFixed(3)} HIVE. And bid in the over-auction` }
-                    ])
+                    ], pc)
                 }
             });
         }
     });
 
-    processor.onOperation('delegate_vesting_shares', function(json) { //grab posts to reward
+    processor.onOperation('delegate_vesting_shares', function(json, pc) { //grab posts to reward
         var ops = []
         const vests = parseInt(parseFloat(json.vesting_shares) * 1000000)
         if (json.delegatee == 'dlux-io' && vests) {
@@ -1958,7 +1961,7 @@ function startApp() {
             ops.push({ type: 'del', path: ['delegations', json.delegator] })
             ops.push({ type: 'put', path: ['feed', `${json.block_num}:${json.transaction_id}`], data: `@${json.delegator}| has removed delegation to @dlux-io` })
         }
-        store.batch(ops)
+        store.batch(ops, pc)
     });
     /*
     processor.onOperation('account_update', function(json, from) { //grab posts to reward
@@ -1966,7 +1969,7 @@ function startApp() {
     });
     */
 
-    processor.onOperation('comment', function(json) { //grab posts to reward
+    processor.onOperation('comment', function(json, pc) { //grab posts to reward
         if (json.author == 'dlux-io') {
             store.get(['escrow', json.author], function(e, a) {
                 if (!e) {
@@ -1982,7 +1985,7 @@ function startApp() {
                                 }
                                 delete plasma.pending[b]
                             }
-                            store.batch(ops)
+                            store.batch(ops, pc)
                             break;
                         }
                     }
@@ -1990,10 +1993,12 @@ function startApp() {
                     console.log(e)
                 }
             })
+        } else {
+            pc[0]()
         }
     });
 
-    processor.onBlock(function(num, block) {
+    processor.onBlock(function(num, block, pc) {
         current = num
         chronoProcess = true
         store.someChildren(['chrono'], {
