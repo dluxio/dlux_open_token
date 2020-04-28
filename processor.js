@@ -124,12 +124,12 @@ function transactional(ops, i){
             ip.transaction_id = transactions[i].transaction_id
             ip.block_num = transactions[i].block_num
             if(!from){from = op[1].required_auths[0];active=true}
-            onCustomJsonOperation[op[1].id](ip, from, active);
+            ops.push([op[1].id, ip, from, active])//onCustomJsonOperation[op[1].id](ip, from, active);
           }
         } else if(onOperation[op[0]] !== undefined) {
           op[1].transaction_id = transactions[i].transaction_id
           op[1].block_num = transactions[i].block_num
-          onOperation[op[0]](op[1]);
+          ops.push([op[0], op[1]])//onOperation[op[0]](op[1]);
         }
       }
     }
