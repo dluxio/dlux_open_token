@@ -2018,7 +2018,7 @@ function startApp() {
                         switch (b.op) {
                             case 'expire':
                                 release(b.from, b.txid)
-                                store.batch([{ type: 'del', path: ['chrono', delKey] }])
+                                store.batch([{ type: 'del', path: ['chrono', delKey] }], [null, null])
                                 break;
                             case 'power_down':
                                 let lbp = getPathNum(['balances', from]),
@@ -2035,7 +2035,7 @@ function startApp() {
                                             ops.push({ type: 'put', path: ['pow', 't'], data: tpow - b.amount })
                                             ops.push({ type: 'put', path: ['feed', `${num}:vop_${chrops[i].split(':')[1]}`], data: `@${b.by}| powered down ${parseFloat(b.amount/1000).toFixed(3)} DLUX` })
                                             ops.push({ type: 'del', path: ['chrono', delKey] })
-                                            store.batch(ops)
+                                            store.batch(ops, [null, null])
                                         }
                                     })
                                     .catch(e => { console.log(e) })
@@ -2063,7 +2063,7 @@ function startApp() {
                                     ops.push({ type: 'put', path: ['feed', `${num}:vop_${chrops[i].split(':')[1]}`], data: `@${b.author}| Post:${b.permlink} voting expired.` })
                                     ops.push({ type: 'del', path: ['posts', `${b.author}/${b.permlink}`] })
                                     console.log(ops)
-                                    store.batch(ops)
+                                    store.batch(ops, [null, null])
                                 })
                                 break;
                             default:
@@ -2265,215 +2265,221 @@ function check() {
 }
 
 function tally(num) {
-    var Prunners = getPathObj(['runners']),
-        Pnode = getPathObj(['markets', 'node']),
-        Pstats = getPathObj(['stats']),
-        Prb = getPathNum(['balances', 'ra'])
-    Promise.all([Prunners, Pnode, Pstats, Prb]).then(function(v) {
-        var runners = v[0],
-            nodes = v[1],
-            stats = v[2],
-            rbal = v[3],
-            queue = []
-        var tally = {
-            agreements: {
-                runners: {},
-                tally: {},
-                votes: 0
-            },
-            election: {},
-            winner: {},
-            results: []
-        }
-        for (var node in runners) {
-            tally.agreements.runners[node] = nodes[node]
-            var getHash
-            try { getHash = nodes[node].report.hash } catch (e) {}
-            tally.agreements.tally[node] = {
-                    self: node,
-                    hash: getHash,
+    return new Promise((resolve, reject)=>{
+        var Prunners = getPathObj(['runners']),
+            Pnode = getPathObj(['markets', 'node']),
+            Pstats = getPathObj(['stats']),
+            Prb = getPathNum(['balances', 'ra'])
+        Promise.all([Prunners, Pnode, Pstats, Prb]).then(function(v) {
+            var runners = v[0],
+                nodes = v[1],
+                stats = v[2],
+                rbal = v[3],
+                queue = []
+            var tally = {
+                agreements: {
+                    runners: {},
+                    tally: {},
                     votes: 0
-                } //build a dataset to count
-        }
-        for (var node in tally.agreements.runners) {
-            var ags
-            try { ags = tally.agreements.runners[node].report.agreements } catch (e) {}
-            for (var subnode in ags) {
-                if (tally.agreements.tally[subnode]) {
-                    if (tally.agreements.tally[subnode].hash == tally.agreements.tally[node].hash && nodes[node].report.block === num - 99) {
-                        tally.agreements.tally[subnode].votes++
+                },
+                election: {},
+                winner: {},
+                results: []
+            }
+            for (var node in runners) {
+                tally.agreements.runners[node] = nodes[node]
+                var getHash
+                try { getHash = nodes[node].report.hash } catch (e) {}
+                tally.agreements.tally[node] = {
+                        self: node,
+                        hash: getHash,
+                        votes: 0
+                    } //build a dataset to count
+            }
+            for (var node in tally.agreements.runners) {
+                var ags
+                try { ags = tally.agreements.runners[node].report.agreements } catch (e) {}
+                for (var subnode in ags) {
+                    if (tally.agreements.tally[subnode]) {
+                        if (tally.agreements.tally[subnode].hash == tally.agreements.tally[node].hash && nodes[node].report.block === num - 99) {
+                            tally.agreements.tally[subnode].votes++
+                        }
+                    }
+                }
+                tally.agreements.votes++
+            }
+            var l = 0
+            var consensus, firstCatch, first = []
+            for (var node in runners) {
+                l++
+                var forblock = 0
+                try {
+                    forblock = nodes[node].report.block
+                } catch (e) {
+                    console.log(e)
+                }
+                if (tally.agreements.tally[node].votes / tally.agreements.votes >= 2 / 3) {
+                    consensus = tally.agreements.runners[node].report.hash
+                    if (firstCatch) {
+                        firstCatch();
+                        firstCatch = null
+                    }
+                } else if (l > 1) {
+                    if (first.length && tally.agreements.runners[node].report.hash == tally.agreements.runners[first[0]].report.hash) {
+                        first.push(node)
+                        console.log(node + ' also scheduled for removal')
+                    } else {
+                        remove(node)
+                        console.log('uh-oh:' + node + ' scored ' + tally.agreements.tally[node].votes + '/' + tally.agreements.votes)
+                    }
+                } else if (l == 1) {
+                    if (nodes[node].report.block === num - 99) consensus = nodes[node].report.hash
+                    console.log('old-consensus catch scheduled for removal upon consensus: ' + node)
+                    first = [node]
+                    firstCatch = () => { for (i in first) { remove(first[i]) } }
+                }
+
+                function remove(node) { delete runners[node] }
+            }
+            console.log('Consensus: ' + consensus)
+            stats.lastBlock = stats.hashLastIBlock
+            if (consensus) stats.hashLastIBlock = consensus
+            for (var node in nodes) {
+                nodes[node].attempts++
+                    var getHash
+                try { getHash = nodes[node].report.hash } catch (e) {}
+                if (getHash == stats.hashLastIBlock) {
+                    nodes[node].yays++
+                        nodes[node].lastGood = num
+                }
+            }
+            if (l < 20) {
+                for (var node in nodes) {
+                    tally.election[node] = nodes[node]
+                }
+                tally.results = []
+                for (var node in runners) {
+                    queue.push(node)
+                    delete tally.election[node]
+                }
+                for (var node in tally.election) {
+                    var getHash
+                    try { getHash = nodes[node].report.hash } catch (e) {}
+                    if (getHash !== stats.hashLastIBlock && stats.hashLastIBlock) {
+                        delete tally.election[node]
+                    }
+                }
+                var t = 0
+                for (var node in tally.election) {
+                    t++
+                    tally.results.push([node, parseInt(((tally.election[node].yays / tally.election[node].attempts) * tally.election[node].attempts))])
+                }
+                if (t) {
+                    tally.results.sort(function(a, b) {
+                        return a[1] - b[1];
+                    })
+                    for (p = 0; p < tally.results.length; p++) {
+                        queue.push(tally.results[p][0])
+                    }
+                    tally.winner = tally.results.pop()
+                    runners[tally.winner[0]] = {
+                        self: nodes[tally.winner[0]].self,
+                        domain: nodes[tally.winner[0]].domain
                     }
                 }
             }
-            tally.agreements.votes++
-        }
-        var l = 0
-        var consensus, firstCatch, first = []
-        for (var node in runners) {
-            l++
-            var forblock = 0
-            try {
-                forblock = nodes[node].report.block
-            } catch (e) {
-                console.log(e)
-            }
-            if (tally.agreements.tally[node].votes / tally.agreements.votes >= 2 / 3) {
-                consensus = tally.agreements.runners[node].report.hash
-                if (firstCatch) {
-                    firstCatch();
-                    firstCatch = null
-                }
-            } else if (l > 1) {
-                if (first.length && tally.agreements.runners[node].report.hash == tally.agreements.runners[first[0]].report.hash) {
-                    first.push(node)
-                    console.log(node + ' also scheduled for removal')
-                } else {
-                    remove(node)
-                    console.log('uh-oh:' + node + ' scored ' + tally.agreements.tally[node].votes + '/' + tally.agreements.votes)
-                }
-            } else if (l == 1) {
-                if (nodes[node].report.block === num - 99) consensus = nodes[node].report.hash
-                console.log('old-consensus catch scheduled for removal upon consensus: ' + node)
-                first = [node]
-                firstCatch = () => { for (i in first) { remove(first[i]) } }
-            }
-
-            function remove(node) { delete runners[node] }
-        }
-        console.log('Consensus: ' + consensus)
-        stats.lastBlock = stats.hashLastIBlock
-        if (consensus) stats.hashLastIBlock = consensus
-        for (var node in nodes) {
-            nodes[node].attempts++
-                var getHash
-            try { getHash = nodes[node].report.hash } catch (e) {}
-            if (getHash == stats.hashLastIBlock) {
-                nodes[node].yays++
-                    nodes[node].lastGood = num
-            }
-        }
-        if (l < 20) {
-            for (var node in nodes) {
-                tally.election[node] = nodes[node]
-            }
-            tally.results = []
             for (var node in runners) {
-                queue.push(node)
-                delete tally.election[node]
+                nodes[node].wins++
             }
-            for (var node in tally.election) {
-                var getHash
-                try { getHash = nodes[node].report.hash } catch (e) {}
-                if (getHash !== stats.hashLastIBlock && stats.hashLastIBlock) {
-                    delete tally.election[node]
+            //count agreements and make the runners list, update market rate for node services
+            if (num > 30900000) {
+                var mint = parseInt(stats.tokenSupply / stats.interestRate)
+                stats.tokenSupply += mint
+                rbal += mint
+            }
+            store.batch([
+                { type: 'put', path: ['stats'], data: stats },
+                { type: 'put', path: ['queue'], data: queue },
+                { type: 'put', path: ['runners'], data: runners },
+                { type: 'put', path: ['markets', 'node'], data: nodes },
+                { type: 'put', path: ['balances', 'ra'], data: rbal }
+            ], [resolve, reject])
+            if (consensus && (consensus != plasma.hashLastIBlock || consensus != nodes[config.username].report.hash) && processor.isStreaming()) {
+                exit(consensus)
+                var errors = ['failed Consensus']
+                if (VERSION != nodes[node].report.version) {
+                    console.log(current + `:Abandoning ${plasma.hashLastIBlock} because ${errors[0]}`)
                 }
-            }
-            var t = 0
-            for (var node in tally.election) {
-                t++
-                tally.results.push([node, parseInt(((tally.election[node].yays / tally.election[node].attempts) * tally.election[node].attempts))])
-            }
-            if (t) {
-                tally.results.sort(function(a, b) {
-                    return a[1] - b[1];
-                })
-                for (p = 0; p < tally.results.length; p++) {
-                    queue.push(tally.results[p][0])
-                }
-                tally.winner = tally.results.pop()
-                runners[tally.winner[0]] = {
-                    self: nodes[tally.winner[0]].self,
-                    domain: nodes[tally.winner[0]].domain
-                }
-            }
-        }
-        for (var node in runners) {
-            nodes[node].wins++
-        }
-        //count agreements and make the runners list, update market rate for node services
-        if (num > 30900000) {
-            var mint = parseInt(stats.tokenSupply / stats.interestRate)
-            stats.tokenSupply += mint
-            rbal += mint
-        }
-        store.batch([
-            { type: 'put', path: ['stats'], data: stats },
-            { type: 'put', path: ['queue'], data: queue },
-            { type: 'put', path: ['runners'], data: runners },
-            { type: 'put', path: ['markets', 'node'], data: nodes },
-            { type: 'put', path: ['balances', 'ra'], data: rbal }
-        ])
-        if (consensus && (consensus != plasma.hashLastIBlock || consensus != nodes[config.username].report.hash) && processor.isStreaming()) {
-            exit(consensus)
-            var errors = ['failed Consensus']
-            if (VERSION != nodes[node].report.version) {
+                //const blockState = Buffer.from(JSON.stringify([num, state]))
+                plasma.hashBlock = ''
+                plasma.hashLastIBlock = ''
                 console.log(current + `:Abandoning ${plasma.hashLastIBlock} because ${errors[0]}`)
             }
-            //const blockState = Buffer.from(JSON.stringify([num, state]))
-            plasma.hashBlock = ''
-            plasma.hashLastIBlock = ''
-            console.log(current + `:Abandoning ${plasma.hashLastIBlock} because ${errors[0]}`)
-        }
-    });
+        });
+    })
 }
 
 function release(from, txid) {
-    var found = ''
-    store.get(['contracts', from, txid], function(er, a) {
-        if (er) { console.log(er) } else {
-            var ops = []
-            switch (a.type) {
-                case 'ss':
-                    store.get(['dex', 'hive', 'sellOrders', `${a.rate}:${a.txid}`], function(e, r) {
-                        if (e) { console.log(e) } else if (isEmpty(r)) { console.log('Nothing here' + a.txid) } else {
-                            add(r.from, r.amount)
-                            ops.push({ type: 'del', path: ['contracts', from, txid] })
-                            ops.push({ type: 'del', path: ['chrono', a.expire_path] })
-                            ops.push({ type: 'del', path: ['dex', 'hive', 'sellOrders', `${a.rate}:${a.txid}`] })
-                            store.batch(ops)
-                        }
-                    });
-                    break;
-                case 'ds':
-                    store.get(['dex', 'hbd', 'sellOrders', `${a.rate}:${a.txid}`], function(e, r) {
-                        if (e) { console.log(e) } else if (isEmpty(r)) { console.log('Nothing here' + a.txid) } else {
-                            add(r.from, r.amount)
-                            ops.push({ type: 'del', path: ['contracts', from, txid] })
-                            ops.push({ type: 'del', path: ['chrono', a.expire_path] })
-                            ops.push({ type: 'del', path: ['dex', 'hbd', 'sellOrders', `${a.rate}:${a.txid}`] })
-                            store.batch(ops)
-                        }
-                    });
-                    break;
-                case 'sb':
-                    store.get(['dex', 'hive', 'buyOrders', `${a.rate}:${a.txid}`], function(e, r) {
-                        if (e) { console.log(e) } else if (isEmpty(r)) { console.log('Nothing here' + a.txid) } else {
-                            a.cancel = true
-                            ops.push({ type: 'put', path: ['escrow', r.reject[0], r.txid + ':cancel'], data: r.reject[1] })
-                            ops.push({ type: 'put', path: ['contracts', from, r.txid], data: a })
-                            ops.push({ type: 'del', path: ['dex', 'hive', 'buyOrders', `${a.rate}:${a.txid}`] })
-                            store.batch(ops)
-                        }
-                    });
-                    break;
-                case 'db':
-                    store.get(['dex', 'hbd', 'buyOrders', `${a.rate}:${a.txid}`], function(e, r) {
-                        if (e) { console.log(e) } else if (isEmpty(r)) { console.log('Nothing here' + a.txid) } else {
-                            a.cancel = true
-                            ops.push({ type: 'put', path: ['contracts', from, r.txid], data: a })
-                            ops.push({ type: 'put', path: ['escrow', r.reject[0], r.txid + ':cancel'], data: r.reject[1] })
-                            ops.push({ type: 'del', path: ['dex', 'hbd', 'buyOrders', `${a.rate}:${a.txid}`] })
-                            store.batch(ops)
-                        }
-                    });
-                    break;
-                default:
+    return new Promise((resolve, reject)=>{
+        var found = ''
+        store.get(['contracts', from, txid], function(er, a) {
+            if (er) { console.log(er) } else {
+                var ops = []
+                switch (a.type) {
+                    case 'ss':
+                        store.get(['dex', 'hive', 'sellOrders', `${a.rate}:${a.txid}`], function(e, r) {
+                            if (e) { console.log(e) } else if (isEmpty(r)) { console.log('Nothing here' + a.txid) } else {
+                                add(r.from, r.amount)
+                                ops.push({ type: 'del', path: ['contracts', from, txid] })
+                                ops.push({ type: 'del', path: ['chrono', a.expire_path] })
+                                ops.push({ type: 'del', path: ['dex', 'hive', 'sellOrders', `${a.rate}:${a.txid}`] })
+                                store.batch(ops, [resolve, reject])
+                            }
+                        });
+                        break;
+                    case 'ds':
+                        store.get(['dex', 'hbd', 'sellOrders', `${a.rate}:${a.txid}`], function(e, r) {
+                            if (e) { console.log(e) } else if (isEmpty(r)) { console.log('Nothing here' + a.txid) } else {
+                                add(r.from, r.amount)
+                                ops.push({ type: 'del', path: ['contracts', from, txid] })
+                                ops.push({ type: 'del', path: ['chrono', a.expire_path] })
+                                ops.push({ type: 'del', path: ['dex', 'hbd', 'sellOrders', `${a.rate}:${a.txid}`] })
+                                store.batch(ops, [resolve, reject])
+                            }
+                        });
+                        break;
+                    case 'sb':
+                        store.get(['dex', 'hive', 'buyOrders', `${a.rate}:${a.txid}`], function(e, r) {
+                            if (e) { console.log(e) } else if (isEmpty(r)) { console.log('Nothing here' + a.txid) } else {
+                                a.cancel = true
+                                ops.push({ type: 'put', path: ['escrow', r.reject[0], r.txid + ':cancel'], data: r.reject[1] })
+                                ops.push({ type: 'put', path: ['contracts', from, r.txid], data: a })
+                                ops.push({ type: 'del', path: ['dex', 'hive', 'buyOrders', `${a.rate}:${a.txid}`] })
+                                store.batch(ops, [resolve, reject])
+                            }
+                        });
+                        break;
+                    case 'db':
+                        store.get(['dex', 'hbd', 'buyOrders', `${a.rate}:${a.txid}`], function(e, r) {
+                            if (e) { console.log(e) } else if (isEmpty(r)) { console.log('Nothing here' + a.txid) } else {
+                                a.cancel = true
+                                ops.push({ type: 'put', path: ['contracts', from, r.txid], data: a })
+                                ops.push({ type: 'put', path: ['escrow', r.reject[0], r.txid + ':cancel'], data: r.reject[1] })
+                                ops.push({ type: 'del', path: ['dex', 'hbd', 'buyOrders', `${a.rate}:${a.txid}`] })
+                                store.batch(ops, [resolve, reject])
+                            }
+                        });
+                        break;
+                    default:
+                        resolve()
+                }
             }
-        }
+        })
     })
 }
 
 function dao(num) {
+    return new Promise ((resolve, reject)=>{
     let post = `## DLUX DAO REPORT\n`,
         news = '',
         daops = [],
@@ -2820,9 +2826,12 @@ function dao(num) {
         daops.push({ type: 'put', path: ['delegations'], data: deles })
         daops.push({ type: 'put', path: ['escrow', 'dlux-io', 'comment'], data: op })
         console.log(daops)
-        store.batch(daops)
+        store.batch(daops, [resolve, reject])
     })
-}function report(num) {
+    })
+}
+
+function report(num) {
     agreements = {
         [config.username]: {
             node: config.username,
@@ -2911,21 +2920,25 @@ function exit(consensus) {
 }
 
 function credit(node) {
-    getPathNum(['markets', 'node', node, 'wins'])
+    return new Promise((resolve, reject)=>{
+getPathNum(['markets', 'node', node, 'wins'])
         .then(a => {
-            store.batch([{ type: 'put', path: ['markets', 'node', node, 'wins'], data: a++ }])
+            store.batch([{ type: 'put', path: ['markets', 'node', node, 'wins'], data: a++ }], [resolve, reject])
         })
-        .catch(e => { console.log(e) })
+        .catch(e => { console.log(e); reject(e) })
+    })
 }
 
 function add(node, amount) {
-    store.get(['balances', node], function(e, a) {
-        if (!e) {
-            const a2 = typeof a != 'number' ? amount : a + amount
-            store.batch([{ type: 'put', path: ['balances', node], data: a2 }])
-        } else {
-            console.log(e)
-        }
+    return new Promise((resolve, reject)=>{
+        store.get(['balances', node], function(e, a) {
+                if (!e) {
+                    const a2 = typeof a != 'number' ? amount : a + amount
+                    store.batch([{ type: 'put', path: ['balances', node], data: a2 }], [resolve, reject])
+                } else {
+                    console.log(e)
+                }
+            })
     })
 }
 
@@ -2957,8 +2970,7 @@ function chronAssign(block, op) {
                     var temp = t
                     t = `${block}:${temp}`
                 }
-                store.batch([{ type: 'put', path: ['chrono', t], data: op }])
-                resolve(t)
+                store.batch([{ type: 'put', path: ['chrono', t], data: op }], [resolve, reject, t])
             }
         })
 
@@ -3052,21 +3064,23 @@ function sortSellArray(array, key) { //seek insert instead
 }
 
 function deletePointer(escrowID, user) { //node ops incrementer and cleaner... 3 retries and out
-    store.get(['escrow', escrowID], function(e, a) {
-        if (!e) {
-            var found = false
-            const users = Object.keys(a)
-            for (i = 0; i < users.length; i++) {
-                if (user = users[i]) {
-                    found = true
-                    break
+    return new Promise ((resolve, reject)=>{
+        store.get(['escrow', escrowID], function(e, a) {
+                if (!e) {
+                    var found = false
+                    const users = Object.keys(a)
+                    for (i = 0; i < users.length; i++) {
+                        if (user = users[i]) {
+                            found = true
+                            break
+                        }
+                    }
+                    if (found && users.length == 1) {
+                        store.batch([{ type: 'del', path: ['escrow', escrowID] }], [resolve,reject])
+                    } else if (found) {
+                        store.batch([{ type: 'del', path: ['escrow', escrowID, user] }], [resolve,reject])
+                    }
                 }
-            }
-            if (found && users.length == 1) {
-                store.batch([{ type: 'del', path: ['escrow', escrowID] }])
-            } else if (found) {
-                store.batch([{ type: 'del', path: ['escrow', escrowID, user] }])
-            }
-        }
+            })
     })
 }
