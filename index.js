@@ -2018,7 +2018,7 @@ function startApp() {
                         switch (b.op) {
                             case 'expire':
                                 release(b.from, b.txid)
-                                store.batch([{ type: 'del', path: ['chrono', delKey] }], [null, null])
+                                store.batch([{ type: 'del', path: ['chrono', delKey] }], [function(){console.log('success')}, function(){console.log('failure')}])
                                 break;
                             case 'power_down':
                                 let lbp = getPathNum(['balances', from]),
@@ -2035,7 +2035,7 @@ function startApp() {
                                             ops.push({ type: 'put', path: ['pow', 't'], data: tpow - b.amount })
                                             ops.push({ type: 'put', path: ['feed', `${num}:vop_${chrops[i].split(':')[1]}`], data: `@${b.by}| powered down ${parseFloat(b.amount/1000).toFixed(3)} DLUX` })
                                             ops.push({ type: 'del', path: ['chrono', delKey] })
-                                            store.batch(ops, [null, null])
+                                            store.batch(ops, [function(){console.log('success')}, function(){console.log('failure')}])
                                         }
                                     })
                                     .catch(e => { console.log(e) })
@@ -2063,7 +2063,7 @@ function startApp() {
                                     ops.push({ type: 'put', path: ['feed', `${num}:vop_${chrops[i].split(':')[1]}`], data: `@${b.author}| Post:${b.permlink} voting expired.` })
                                     ops.push({ type: 'del', path: ['posts', `${b.author}/${b.permlink}`] })
                                     console.log(ops)
-                                    store.batch(ops, [null, null])
+                                    store.batch(ops, [function(){console.log('success')}, function(){console.log('failure')}])
                                 })
                                 break;
                             default:
