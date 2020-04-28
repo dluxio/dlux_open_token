@@ -49,8 +49,8 @@ Pathwise.prototype.batch = function(ops, pc) { // promise chain[resolve(), rejec
     var self = this;
     var batch = this._db.batch();
     var next = after(ops.length, function(err) {
-        if (err) {pc[1](err)}
-        else {pc[0]()}
+        if (err && pc[1]) {pc[1](err)}
+        else {try{pc[0]()}catch(e){console.log(e)}}
     });
     ops.forEach(function(op) {
         if (op.type == 'put') self.put(op.path, op.data, { batch: batch }, next);
