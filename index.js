@@ -306,6 +306,38 @@ api.get('/feed', (req, res, next) => {
         }, null, 3))
     });
 });
+api.get('/posts', (req, res, next) => {
+    res.setHeader('Content-Type', 'application/json')
+    store.get(['posts'], function(err, obj) {
+        var feed = obj
+        res.send(JSON.stringify({
+            feed,
+            node: config.username,
+            VERSION,
+            realtime: current
+        }, null, 3))
+    });
+});
+api.get('/posts/:author/:permlink', (req, res, next) => {
+    let author = req.params.author,
+        permlink = req.params.permlink,
+    res.setHeader('Content-Type', 'application/json')
+    archp = getPathObj(['posts', `s/${author}/${permlink}`])
+     nowp = getPathObj(['posts', `${author}/${permlink}`])
+     Promise.all([archp,nowp])
+    .then(a=>{
+     var arch = a[0],
+         now = a[1]
+        res.send(JSON.stringify({
+            now,
+            arch,
+            node: config.username,
+            VERSION,
+            realtime: current
+        }, null, 3))
+     })
+    .catch(e=>{console.log(e)})
+});
 api.get('/fresh', (req, res, next) => {
     let page = req.query.page || 0
     res.setHeader('Content-Type', 'application/json')
@@ -533,7 +565,7 @@ var recents = []
         }
     });
     */
-startWith('QmZQcdSNqNoDURRTv66kSWPTv9MVTMPMPCQghM87M4wJo8')
+startWith('QmcVGM9546kfwD9s3AMmvgV61CXhDmbKfstY6h7K7nkyDj')
     // Special Attention
 function startWith(hash) {
     console.log(`${hash} inserted`)
@@ -553,14 +585,13 @@ function startWith(hash) {
                         if (!e) {
                             if (hash) {
                                 var cleanState = data[1]
-                                if (hash == 'QmVy8rsXgWtdfMXX7w89MM567sZ2RJdyvW1Hk42CGW4px1') {
+                                if (hash == 'QmcVGM9546kfwD9s3AMmvgV61CXhDmbKfstY6h7K7nkyDj') {
                                     //delete cleanState.dex.hive.buyOrders
-                                    cleanState.chrono = {}
+                                    //cleanState.chrono = {}
                                     //cleanState.posts = {}
-                                    delete cleanState.escrow.inconceivable 
                                     //cleanState.feed = {}
-                                    cleanState.contracts = {}
-                                    cleanState.escrow = {}
+                                    //cleanState.contracts = {}
+                                    cleanState.posts = {}
                                 }
                                 store.put([], cleanState, function(err) {
                                     if (err) {
@@ -2795,6 +2826,12 @@ function dao(num) {
                     bucket -= parseInt((br[i].post.voters[j].weight * 2 / q * 3) * compa)
                 }
                 vo.push(br[i].post)
+                cpost[i] = {
+                    v:br[i].post.voters.length,
+                    d: parseFloat(parseInt(dif - bucket)/1000).toFixed(3),  
+                }
+                cpost[`s/${br[i].post.author]}/${br[i].post.permlink]}`] = cpost[i]
+                delete cpost[i]
                 contentRewards = contentRewards + `* [${br[i].post.title || 'DLUX Content'}](https://ipfs.dlux.io/dlux/@${br[i].post.author}/${br[i].post.permlink}) by @${br[i].post.author} awarded ${parseFloat(parseInt(dif - bucket)/1000).toFixed(3)} DLUX\n`
             }
             bals.rc += bucket
@@ -2825,6 +2862,7 @@ function dao(num) {
                     }
                 ]
             })
+            cpost[`s/${vo[oo].author}/${vo[oo].permlink}`].b = weight
             hiveVotes = hiveVotes + `* [${vo[oo].title || 'DLUX Content'}](https://dlux.io/@${vo[oo].author}/${vo[oo].permlink}) by @${vo[oo].author} | ${parseFloat(weight/100).toFixed(2)}% \n`
         }
         const footer = `[Visit dlux.io](https://dlux.io)\n[Find us on Discord](https://discord.gg/Beeb38j)\n[Visit our DEX/Wallet](https://ipfs.dlux.io/dex)\n[Learn how to use DLUX](https://github.com/dluxio/dluxio/wiki)\n*Price for 25.2 Hrs from posting or until daily 100,000.000 DLUX sold.`
@@ -2846,10 +2884,10 @@ function dao(num) {
         daops.push({ type: 'put', path: ['dex'], data: dex })
         daops.push({ type: 'put', path: ['stats'], data: stats })
         daops.push({ type: 'put', path: ['balances'], data: bals })
+        daops.push({ type: 'put', path: ['posts'], data: cposts })
         daops.push({ type: 'put', path: ['markets', 'node'], data: mnode })
         daops.push({ type: 'put', path: ['delegations'], data: deles })
         daops.push({ type: 'put', path: ['escrow', 'dlux-io', 'comment'], data: op })
-        console.log(daops)
         store.batch(daops, [resolve, reject])
     })
     })
