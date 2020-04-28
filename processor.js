@@ -91,10 +91,30 @@ module.exports = function(client, steem, currentBlockNumber=1, blockComputeSpeed
   function processBlock(block, num) {
     onNewBlock(num, block);
     var transactions = block.transactions;
-
+function transactional(ops, i){
+  doOp(ops[i])
+  .then(v=>{
+    if (ops.length > i - 1){
+      transactional(ops, i+1)
+    }
+  })
+  .catch(e=>{console.log(e)})
+  
+  function doOp(op){
+      return new Promise((resolve, reject)=>{
+        if(op.length == 4){
+          onCustomJsonOperation[op[0]](op[1], op[2], op[3],[resolve,reject])
+        } else if (op.length == 2){
+          onOperation[op[0]](op[1],[resolve,reject]);
+        }
+      })
+  }
+            onCustomJsonOperation[op[1].id](ip, from, active,[resolve,reject])
+            onOperation[op[0]](op[1],[resolve,reject]);
+}
+    let ops = []
     for(var i = 0; i < transactions.length; i++) {
       for(var j = 0; j < transactions[i].operations.length; j++) {
-
         var op = transactions[i].operations[j];
         if(op[0] === 'custom_json') {
           if(typeof onCustomJsonOperation[op[1].id] === 'function') {
@@ -112,6 +132,9 @@ module.exports = function(client, steem, currentBlockNumber=1, blockComputeSpeed
           onOperation[op[0]](op[1]);
         }
       }
+    }
+    if (ops.length){
+      transactional(ops,0)
     }
   }
 
