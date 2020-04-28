@@ -2040,12 +2040,12 @@ function startApp() {
                                     let ops = []
                                     console.log(a)
                                     a.title = a.customJSON.p.d
-                                    delete a.p.d
-                                    a.c = a.p
-                                    delete a.p
-                                    delete a.s
-                                    delete a.sw
-                                    delete a.pw
+                                    delete a.customJSON.p.d
+                                    a.c = a.customJSON.p
+                                    delete a.customJSON.p
+                                    delete a.customJSON.s
+                                    delete a.customJSON.pw
+                                    delete a.customJSON.sw
                                     ops.push({
                                         type: 'put',
                                         path: ['br', `${b.author}/${b.permlink}`],
@@ -2057,6 +2057,7 @@ function startApp() {
                                     ops.push({ type: 'del', path: ['chrono', delKey] })
                                     ops.push({ type: 'put', path: ['feed', `${num}:vop_${chrops[i].split(':')[1]}`], data: `@${b.author}| Post:${b.permlink} voting expired.` })
                                     ops.push({ type: 'del', path: ['posts', `${b.author}/${b.permlink}`] })
+                                    console.log(ops)
                                     store.batch(ops)
                                 })
                                 break;
