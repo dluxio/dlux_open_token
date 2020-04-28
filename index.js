@@ -2027,9 +2027,9 @@ function startApp() {
                             case 'post_reward':
                                 store.get(['posts', `${b.author}/${b.permlink}`], function(e, a) {
                                     let ops = []
-                                    console.log(a.p)
-                                    a.title = a.p.d
-                                    delete a.p.d
+                                    console.log(a)
+                                    //a.title = a.p.d
+                                    //delete a.p.d
                                     a.c = a.p
                                     delete a.p
                                     delete a.s
