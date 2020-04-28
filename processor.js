@@ -109,8 +109,8 @@ function transactional(ops, i){
         }
       })
   }
-            onCustomJsonOperation[op[1].id](ip, from, active,[resolve,reject])
-            onOperation[op[0]](op[1],[resolve,reject]);
+            //onCustomJsonOperation[op[1].id](ip, from, active,[resolve,reject])
+            //onOperation[op[0]](op[1],[resolve,reject]);
 }
     let ops = []
     for(var i = 0; i < transactions.length; i++) {
