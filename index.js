@@ -319,6 +319,7 @@ api.get('/posts', (req, res, next) => {
     });
 });
 api.get('/posts/:author/:permlink', (req, res, next) => {
+    try{
     let author = req.params.author,
         permlink = req.params.permlink,
     res.setHeader('Content-Type', 'application/json')
@@ -337,6 +338,7 @@ api.get('/posts/:author/:permlink', (req, res, next) => {
         }, null, 3))
      })
     .catch(e=>{console.log(e)})
+    } catch (e) {res.send('Something went wrong')}
 });
 api.get('/fresh', (req, res, next) => {
     let page = req.query.page || 0
