@@ -2832,7 +2832,7 @@ function dao(num) {
                     v:br[i].post.voters.length,
                     d: parseFloat(parseInt(dif - bucket)/1000).toFixed(3),  
                 }
-                cpost[`s/${br[i].post.author]}/${br[i].post.permlink]}`] = cpost[i]
+                cpost[`s/${br[i].post.author}/${br[i].post.permlink}`] = cpost[i]
                 delete cpost[i]
                 contentRewards = contentRewards + `* [${br[i].post.title || 'DLUX Content'}](https://ipfs.dlux.io/dlux/@${br[i].post.author}/${br[i].post.permlink}) by @${br[i].post.author} awarded ${parseFloat(parseInt(dif - bucket)/1000).toFixed(3)} DLUX\n`
             }
