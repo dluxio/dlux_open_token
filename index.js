@@ -321,7 +321,7 @@ api.get('/posts', (req, res, next) => {
 api.get('/posts/:author/:permlink', (req, res, next) => {
     try{
     let author = req.params.author,
-        permlink = req.params.permlink,
+        permlink = req.params.permlink
     res.setHeader('Content-Type', 'application/json')
     archp = getPathObj(['posts', `s/${author}/${permlink}`])
      nowp = getPathObj(['posts', `${author}/${permlink}`])
