@@ -1678,7 +1678,7 @@ function startApp() {
         */
 
 
-    processor.onOperation('comment_options', function(json, from, pc) { //grab posts to reward
+    processor.onOperation('comment_options', function(json, pc) { //grab posts to reward
         try {
             var filter = json.extensions[0][1].beneficiaries
         } catch (e) {
