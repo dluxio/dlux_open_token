@@ -2056,7 +2056,7 @@ function startApp() {
                 }
             })
         } else {
-            pc[0]()
+            pc[0](pc[2])
         }
     });
 
