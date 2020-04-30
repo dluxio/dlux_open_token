@@ -53,10 +53,10 @@ Pathwise.prototype.batch = function(ops, pc) { // promise chain[resolve(), rejec
             console.log('fail', err)
             pc[1](err)}
         else if (pc.length > 2){
-            console.log()
+            console.log('len 2')
             pc[0](pc[2])}
         else {
-            console.log('try', pc[0])
+            console.log('try')
             try{
                 pc[0]()
             } catch(e){
@@ -65,6 +65,7 @@ Pathwise.prototype.batch = function(ops, pc) { // promise chain[resolve(), rejec
         }
     });
     ops.forEach(function(op) {
+        console.log(op)
         if (op.type == 'put') self.put(op.path, op.data, { batch: batch }, next);
         else if (op.type == 'del') self.del(op.path, { batch: batch }, next);
     });
