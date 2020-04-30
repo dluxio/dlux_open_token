@@ -2940,6 +2940,7 @@ function dao(num) {
                     daops.splice(i,1)
                 }
             }
+            console.log(resolve, reject)
             store.batch(daops, [resolve, reject])
         })
     })
