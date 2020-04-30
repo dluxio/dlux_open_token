@@ -1334,6 +1334,8 @@ function startApp() {
                     ]
                 })
                 store.batch(ops, pc)
+            } else {
+                pc[0](pc[2])
             }
         }).catch(function(e) { console.log('Failed Escrow:' + e) })
     });
@@ -1413,6 +1415,8 @@ function startApp() {
                             dataOps.push({ type: 'put', path: ['contracts', a.for, a.contract], data: c })
                             store.batch(dataOps)
                             credit(json.who)
+                        } else {
+                            pc[0](pc[2])
                         }
                         /*else if (c.pending[1].approve == false) {
                                                    dataOps.push({ type: 'del', path: ['contracts', a.for, a.contract.split(':')[1]] })
@@ -1456,6 +1460,8 @@ function startApp() {
                                 delete plasma.pending[c.txid + `:dispute`]
                             }
                             credit(json.who)
+                        } else {
+                            pc[0](pc[2])
                         }
                     })
                     .catch(e => { console.log(e) })
@@ -1493,6 +1499,8 @@ function startApp() {
                             ], pc)
                             deletePointer(c.escrow_id, a.for)
                             credit(json.who)
+                        } else {
+                            pc[0](pc[2])
                         }
                     })
                     .catch(e => { console.log(e) })
@@ -1974,6 +1982,8 @@ function startApp() {
                             store.batch(ops, pc)
                         })
                         .catch(e => { console.log(e) })
+                } else {
+                    pc[0](pc[2])
                 }
             }
         })
