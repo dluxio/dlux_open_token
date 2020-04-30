@@ -41,24 +41,26 @@ module.exports = function(client, steem, currentBlockNumber=1, blockComputeSpeed
                                         // in getBlock()
       client.database.getBlock(blockNum)
         .then((result) => {
-          processBlock(result, blockNum);
+          processBlock(result, blockNum)
+          .then(r=>{
+            currentBlockNumber++;
+            if(!stopping) {
+              isAtRealTime(function(result) {
+                if(!result) {
+                  setTimeout(computeBlock, blockComputeSpeed);
+                } else {
+                  beginBlockStreaming();
+                }
+              })
+            } else {
+              setTimeout(stopCallback,1000);
+            }
+          })
+          .catch(e=>{console.log(e)})
         })
         .catch((err) => {
           throw err;
         })
-
-      currentBlockNumber++;
-      if(!stopping) {
-        isAtRealTime(function(result) {
-          if(!result) {
-            setTimeout(computeBlock, blockComputeSpeed);
-          } else {
-            beginBlockStreaming();
-          }
-        })
-      } else {
-        setTimeout(stopCallback,1000);
-      }
     }
 
     computeBlock();
@@ -88,17 +90,30 @@ module.exports = function(client, steem, currentBlockNumber=1, blockComputeSpeed
     })
   }
 
-  function processBlock(block, num) {
-    onNewBlock(num, block);
-    var transactions = block.transactions;
-function transactional(ops, i){
-  doOp(ops[i])
-  .then(v=>{
-    if (ops.length > i + 1){
-      transactional(ops, i+1)
+  
+  function transactional(ops, i, pc){
+    if(ops.length){
+      doOp(ops[i])
+      .then(v=>{
+        if (ops.length > i + 1){
+          transactional(ops, i+1)
+        } else {
+          onNewBlock(num, block)
+          .then(r=>{
+            pc[0]()
+          })
+          .catch(e=>{pc[1](e)})
+        }
+      })
+      .catch(e=>{console.log(e);pc[1](e)})
+    } else {
+      onNewBlock(num, block)
+      .then(r=>{
+        pc[0]()
+      })
+      .catch(e=>{pc[1](e)})
     }
-  })
-  .catch(e=>{console.log(e)})
+  
   
   function doOp(op){
       return new Promise((resolve, reject)=>{
@@ -109,33 +124,36 @@ function transactional(ops, i){
         }
       })
   }
-            //onCustomJsonOperation[op[1].id](ip, from, active,[resolve,reject])
-            //onOperation[op[0]](op[1],[resolve,reject]);
 }
-    let ops = []
-    for(var i = 0; i < transactions.length; i++) {
-      for(var j = 0; j < transactions[i].operations.length; j++) {
-        var op = transactions[i].operations[j];
-        if(op[0] === 'custom_json') {
-          if(typeof onCustomJsonOperation[op[1].id] === 'function') {
-            var ip = JSON.parse(op[1].json),
-                from = op[1].required_posting_auths[0],
-                active = false
-            ip.transaction_id = transactions[i].transaction_id
-            ip.block_num = transactions[i].block_num
-            if(!from){from = op[1].required_auths[0];active=true}
-            ops.push([op[1].id, ip, from, active])//onCustomJsonOperation[op[1].id](ip, from, active);
+  
+  function processBlock(block, num) {
+    return new Promise((resolve, reject)=>{
+    
+      var transactions = block.transactions;
+
+      let ops = []
+      for(var i = 0; i < transactions.length; i++) {
+        for(var j = 0; j < transactions[i].operations.length; j++) {
+          var op = transactions[i].operations[j];
+          if(op[0] === 'custom_json') {
+            if(typeof onCustomJsonOperation[op[1].id] === 'function') {
+              var ip = JSON.parse(op[1].json),
+                  from = op[1].required_posting_auths[0],
+                  active = false
+              ip.transaction_id = transactions[i].transaction_id
+              ip.block_num = transactions[i].block_num
+              if(!from){from = op[1].required_auths[0];active=true}
+              ops.push([op[1].id, ip, from, active])//onCustomJsonOperation[op[1].id](ip, from, active);
+            }
+          } else if(onOperation[op[0]] !== undefined) {
+            op[1].transaction_id = transactions[i].transaction_id
+            op[1].block_num = transactions[i].block_num
+            ops.push([op[0], op[1]])//onOperation[op[0]](op[1]);
           }
-        } else if(onOperation[op[0]] !== undefined) {
-          op[1].transaction_id = transactions[i].transaction_id
-          op[1].block_num = transactions[i].block_num
-          ops.push([op[0], op[1]])//onOperation[op[0]](op[1]);
         }
       }
-    }
-    if (ops.length){
-      transactional(ops,0)
-    }
+      transactional(ops,0, [resolve, reject])
+    })
   }
 
   return {
