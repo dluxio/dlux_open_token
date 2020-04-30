@@ -56,7 +56,7 @@ Pathwise.prototype.batch = function(ops, pc) { // promise chain[resolve(), rejec
             console.log()
             pc[0](pc[2])}
         else {
-            console.log('try')
+            console.log('try', pc[0])
             try{
                 pc[0]()
             } catch(e){
