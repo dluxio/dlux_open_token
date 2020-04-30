@@ -1795,6 +1795,8 @@ function startApp() {
                             }).catch(e => { console.log(e) });
                     }
                 })
+            } else {
+                pc[0]()
             }
         }
     });
@@ -1920,6 +1922,8 @@ function startApp() {
                     console.log(e)
                 }
             })
+        } else {
+            pc[0]()
         }
     })
 
