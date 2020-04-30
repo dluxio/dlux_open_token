@@ -2184,7 +2184,7 @@ if (num % 100 === 0 && processor.isStreaming()) {
             if(promises.length){
             Promise.all(promises)
                 .then(r => {
-                    resolve()
+                    resolve(pc)
                 })
                 .catch(e => { reject() })
             } else {resolve()}
