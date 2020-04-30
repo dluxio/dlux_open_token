@@ -2927,6 +2927,7 @@ function dao(num) {
                     })
                 }
             ]
+            console.log(op)
             daops.push({ type: 'put', path: ['dex'], data: dex })
             daops.push({ type: 'put', path: ['stats'], data: stats })
             daops.push({ type: 'put', path: ['balances'], data: bals })
@@ -2939,7 +2940,7 @@ function dao(num) {
                     daops.splice(i,1)
                 }
             }
-            store.batch(daops, [resolve, reject, 'dao'])
+            store.batch(daops, [resolve, reject])
         })
     })
 }
