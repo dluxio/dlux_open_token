@@ -98,7 +98,7 @@ module.exports = function(client, steem, currentBlockNumber=1, blockComputeSpeed
         if (ops.length > i + 1){
           transactional(ops, i+1)
         } else {
-          onNewBlock(num, block, pc)
+          onNewBlock(num, pc)
           .then(r=>{
             r[0]()
           })
@@ -107,7 +107,7 @@ module.exports = function(client, steem, currentBlockNumber=1, blockComputeSpeed
       })
       .catch(e=>{console.log(e);pc[1](e)})
     } else {
-      onNewBlock(num, block, pc)
+      onNewBlock(num, pc)
       .then(r=>{
         r[0]()
       })
