@@ -45,6 +45,19 @@ Pathwise.prototype._write = function(batch, key, obj, fn) {
     }
 };
 
+Pathwise.prototype.batch = function(ops, fn) {
+    var self = this;
+    var batch = this._db.batch();
+    var next = after(ops.length, function(err) {
+        if (err) return fn(err);
+        batch.write(fn);
+    });
+    ops.forEach(function(op) {
+        if (op.type == 'put') self.put(op.path, op.data, { batch: batch }, next);
+        else if (op.type == 'del') self.del(op.path, { batch: batch }, next);
+    });
+};
+
 Pathwise.prototype.batch = function(ops, pc) { // promise chain[resolve(), reject(), info]
     var self = this;
     var batch = this._db.batch();
@@ -53,15 +66,10 @@ Pathwise.prototype.batch = function(ops, pc) { // promise chain[resolve(), rejec
             console.log('fail', err)
             pc[1](err)}
         else if (pc.length > 2){
-            console.log('len 2')
-            pc[0](pc[2])}
+            //console.log('len 2')
+            batch.write(pc[0](pc[2]))}
         else {
-            console.log('try')
-            try{
-                pc[0]()
-            } catch(e){
-                console.log(e)
-            }
+            batch.write(pc[0]())
         }
     });
     ops.forEach(function(op) {
