@@ -1445,7 +1445,8 @@ function startApp() {
                 getPathObj(['contracts', a.for, a.contract])
                     .then(c => {
                         if (Object.keys(c).length == 0) {
-                            if(!!c.auths[2])pc[0](pc[2])
+                            console.log(c, json)
+                            pc[0](pc[2])
                         } else {
                             store.batch([
                                 { type: 'put', path: ['escrow', c.auths[1][0], c.txid + ':release'], data: c.auths[1][1] },
