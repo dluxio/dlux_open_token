@@ -567,7 +567,7 @@ var recents = []
         }
     });
     */
-startWith('QmcVGM9546kfwD9s3AMmvgV61CXhDmbKfstY6h7K7nkyDj')
+startWith('QmTxAgzXuuS2HiwvRVom3QPif48FtHnPZgRWgU5Fmr9EhB')
     // Special Attention
 function startWith(hash) {
     console.log(`${hash} inserted`)
@@ -2886,7 +2886,7 @@ function dao(num) {
         daops.push({ type: 'put', path: ['dex'], data: dex })
         daops.push({ type: 'put', path: ['stats'], data: stats })
         daops.push({ type: 'put', path: ['balances'], data: bals })
-        daops.push({ type: 'put', path: ['posts'], data: cposts })
+        daops.push({ type: 'put', path: ['posts'], data: cpost })
         daops.push({ type: 'put', path: ['markets', 'node'], data: mnode })
         daops.push({ type: 'put', path: ['delegations'], data: deles })
         daops.push({ type: 'put', path: ['escrow', 'dlux-io', 'comment'], data: op })
