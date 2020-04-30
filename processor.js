@@ -100,6 +100,7 @@ module.exports = function(client, steem, currentBlockNumber=1, blockComputeSpeed
         } else {
           onNewBlock(num, v[2])
           .then(r=>{
+            console.log('then:', r)
             r[0]()
           })
           .catch(e=>{console.log(e)})
