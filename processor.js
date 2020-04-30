@@ -91,7 +91,7 @@ module.exports = function(client, steem, currentBlockNumber=1, blockComputeSpeed
   }
 
   
-  function transactional(ops, i, pc, num){
+  function transactional(ops, i, pc, num, block){
     console.log(ops)
     if(ops.length){
       doOp(ops[i])
@@ -155,7 +155,7 @@ module.exports = function(client, steem, currentBlockNumber=1, blockComputeSpeed
           }
         }
       }
-      transactional(ops,0, [resolve, reject], num)
+      transactional(ops,0, [resolve, reject], num, block)
     })
   }
 
