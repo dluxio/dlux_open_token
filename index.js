@@ -2199,7 +2199,7 @@ processor.onBlock(function(num, pc) {
                 function waitup (promisesf, pca,p){
                     Promise.all(promisesf)
                     .then(r => {
-                        console.log('yeah?:', p[0])
+                        console.log('yeah?:', pca)
                         p[0](pca)
                     })
                     .catch(e => { p[1](e) })
@@ -2941,7 +2941,6 @@ function dao(num) {
                     daops.splice(i,1)
                 }
             }
-            console.log(resolve, reject)
             store.batch(daops, [resolve, reject])
         })
     })
