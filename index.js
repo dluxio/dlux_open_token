@@ -2416,7 +2416,7 @@ function startApp() {
                 }
             })
             */
-        }
+        
     });
 
     processor.onStreamingStart(function() {
