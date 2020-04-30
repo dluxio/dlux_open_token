@@ -1936,92 +1936,94 @@ function startApp() {
     })
 
     processor.onOperation('transfer', function(json, pc) {
-        store.get(['escrow', json.from, json.memo.split(' ')[0] + ':transfer'], function(e, a) {
-            var ops = []
-            if (!e && !isEmpty(a)) {
-                let auth = true,
-                    terms = Object.keys(a[1])
-                for (i = 0; i < terms.length; i++) {
-                    if (json[terms[i]] !== a[1][terms[i]]) {
-                        auth = false
-                    }
-                }
-                console.log('authed ' + auth)
-                if (auth) {
-                    ops.push({
-                        type: 'put',
-                        path: ['feed', `${json.block_num}:${json.transaction_id}`],
-                        data: `@${json.from}| sent @${json.to} ${json.amount} for ${json.memo.split(' ')[0]}`
-                    })
-                    const addr = json.memo.split(' ')[0],
-                        co = json.memo.split(' ')[2]
-                    let cp = getPathObj(['contracts', co, addr]),
-                        gp = getPathNum(['balances', json.from])
-                    Promise.all([cp, gp])
-                        .then(ret => {
-                            let d = ret[1],
-                                c = ret[0],
-                                eo = c.buyer,
-                                g = c.escrow
-                            if (c.type === 'sb' || c.type === 'db') eo = c.from
-                            ops.push({ type: 'put', path: ['balances', json.from], data: parseInt(g + d) })
-                            ops.push({ type: 'del', path: ['escrow', json.from, addr + ':transfer'] })
-                            ops.push({ type: 'del', path: ['contracts', co, addr] })
-                            ops.push({ type: 'del', path: ['chrono', c.expire_path] })
-                            deletePointer(c.escrow_id, eo)
-                            if (json.from == config.username) {
-                                delete plasma.pending[i + ':transfer']
-                                for (var i = 0; i < NodeOps.length; i++) {
-                                    if (NodeOps[i][1][1].from == json.from && NodeOps[i][1][1].to == json.to && NodeOps[i][1][0] == 'transfer' && NodeOps[i][1][1].steem_amount == json.steem_amount && NodeOps[i][1][1].sbd_amount == json.sbd_amount) {
-                                        NodeOps.splice(i, 1)
-                                    }
-                                }
-                            }
-                            console.log(ops)
-                            credit(json.from)
-                            store.batch(ops, pc)
-                        })
-                        .catch(e => { console.log(e) })
-                } else {
-                    pc[0](pc[2])
+    store.get(['escrow', json.from, json.memo.split(' ')[0] + ':transfer'], function(e, a) {
+        var ops = []
+        if (!e && !isEmpty(a)) {
+            let auth = true,
+                terms = Object.keys(a[1])
+            for (i = 0; i < terms.length; i++) {
+                if (json[terms[i]] !== a[1][terms[i]]) {
+                    auth = false
                 }
             }
-        })
-        if (json.to == 'robotolux' && json.amount.split(' ')[1] == 'HIVE') {
-            const amount = parseInt(parseFloat(json.amount) * 1000)
-            var purchase,
-                Pstats = getPathObj(['stats']),
-                Pbal = getPathNum(['balances', json.from]),
-                Pinv = getPathNum(['balances', 'ri'])
-            Promise.all([Pstats, Pbal, Pinv]).then(function(v) {
-                stats = v[0], b = v[1], i = v[2], ops = []
-                if (!stats.outOnBlock) {
-                    purchase = parseInt(amount / stats.icoPrice * 1000)
-                    if (purchase < i) {
-                        i -= purchase
-                        b += purchase
-                        store.batch([{ type: 'put', path: ['feed', `${json.block_num}:${json.transaction_id}`], data: `@${json.from}| bought ${parseFloat(purchase/1000).toFixed(3)} DLUX with ${parseFloat(amount/1000).toFixed(3)} HIVE` }], pc)
-                    } else {
-                        b += i
-                        const left = purchase - i
-                        stats.outOnBlock = json.block_num
-                        store.batch([
-                            { type: 'put', path: ['ico', json.block_num, json.from], data: parseInt(amount * left / purchase) },
-                            { type: 'put', path: ['balances', json.from], data: b },
-                            { type: 'put', path: ['balances', 'ri'], data: i },
-                            { type: 'put', path: ['stats'], data: stats },
-                            { type: 'put', path: ['feed', `${json.block_num}:${json.transaction_id}`], data: `@${json.from}| bought ALL ${parseFloat(parseInt(purchase - left)).toFixed(3)} DLUX with ${parseFloat(parseInt(amount)/1000).toFixed(3)} HIVE. And bid in the over-auction` }
-                        ], pc)
-                    }
+            console.log('authed ' + auth)
+            if (auth) {
+                ops.push({
+                    type: 'put',
+                    path: ['feed', `${json.block_num}:${json.transaction_id}`],
+                    data: `@${json.from}| sent @${json.to} ${json.amount} for ${json.memo.split(' ')[0]}`
+                })
+                const addr = json.memo.split(' ')[0],
+                    co = json.memo.split(' ')[2]
+                let cp = getPathObj(['contracts', co, addr]),
+                    gp = getPathNum(['balances', json.from])
+                Promise.all([cp, gp])
+                    .then(ret => {
+                        let d = ret[1],
+                            c = ret[0],
+                            eo = c.buyer,
+                            g = c.escrow
+                        if (c.type === 'sb' || c.type === 'db') eo = c.from
+                        ops.push({ type: 'put', path: ['balances', json.from], data: parseInt(g + d) })
+                        ops.push({ type: 'del', path: ['escrow', json.from, addr + ':transfer'] })
+                        ops.push({ type: 'del', path: ['contracts', co, addr] })
+                        ops.push({ type: 'del', path: ['chrono', c.expire_path] })
+                        deletePointer(c.escrow_id, eo)
+                        if (json.from == config.username) {
+                            delete plasma.pending[i + ':transfer']
+                            for (var i = 0; i < NodeOps.length; i++) {
+                                if (NodeOps[i][1][1].from == json.from && NodeOps[i][1][1].to == json.to && NodeOps[i][1][0] == 'transfer' && NodeOps[i][1][1].steem_amount == json.steem_amount && NodeOps[i][1][1].sbd_amount == json.sbd_amount) {
+                                    NodeOps.splice(i, 1)
+                                }
+                            }
+                        }
+                        console.log(ops)
+                        credit(json.from)
+                        store.batch(ops, pc)
+                    })
+                    .catch(e => { console.log(e) })
+            } else {
+                pc[0](pc[2])
+            }
+        }
+    })
+    if (json.to == 'robotolux' && json.amount.split(' ')[1] == 'HIVE') {
+        const amount = parseInt(parseFloat(json.amount) * 1000)
+        var purchase,
+            Pstats = getPathObj(['stats']),
+            Pbal = getPathNum(['balances', json.from]),
+            Pinv = getPathNum(['balances', 'ri'])
+        Promise.all([Pstats, Pbal, Pinv]).then(function(v) {
+            stats = v[0], b = v[1], i = v[2], ops = []
+            if (!stats.outOnBlock) {
+                purchase = parseInt(amount / stats.icoPrice * 1000)
+                if (purchase < i) {
+                    i -= purchase
+                    b += purchase
+                    store.batch([{ type: 'put', path: ['feed', `${json.block_num}:${json.transaction_id}`], data: `@${json.from}| bought ${parseFloat(purchase/1000).toFixed(3)} DLUX with ${parseFloat(amount/1000).toFixed(3)} HIVE` }], pc)
                 } else {
+                    b += i
+                    const left = purchase - i
+                    stats.outOnBlock = json.block_num
                     store.batch([
-                        { type: 'put', path: ['ico', json.block_num, json.from], data: parseInt(amount) },
+                        { type: 'put', path: ['ico', json.block_num, json.from], data: parseInt(amount * left / purchase) },
+                        { type: 'put', path: ['balances', json.from], data: b },
+                        { type: 'put', path: ['balances', 'ri'], data: i },
+                        { type: 'put', path: ['stats'], data: stats },
                         { type: 'put', path: ['feed', `${json.block_num}:${json.transaction_id}`], data: `@${json.from}| bought ALL ${parseFloat(parseInt(purchase - left)).toFixed(3)} DLUX with ${parseFloat(parseInt(amount)/1000).toFixed(3)} HIVE. And bid in the over-auction` }
                     ], pc)
                 }
-            });
-        }
-    });
+            } else {
+                store.batch([
+                    { type: 'put', path: ['ico', json.block_num, json.from], data: parseInt(amount) },
+                    { type: 'put', path: ['feed', `${json.block_num}:${json.transaction_id}`], data: `@${json.from}| bought ALL ${parseFloat(parseInt(purchase - left)).toFixed(3)} DLUX with ${parseFloat(parseInt(amount)/1000).toFixed(3)} HIVE. And bid in the over-auction` }
+                ], pc)
+            }
+        });
+    } else {
+        pc[0](pc[2])
+    }
+});
 
     processor.onOperation('delegate_vesting_shares', function(json, pc) { //grab posts to reward
         var ops = []
