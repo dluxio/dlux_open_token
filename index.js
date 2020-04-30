@@ -2583,8 +2583,9 @@ function dao(num) {
             br = v[8],
             powBal = v[9],
             nomention = v[10],
-            cpost = v[11] || {},
+            cpost = v[11],
             feedCleaner = v[12],
+            console.log(cpost)
             feedKeys = Object.keys(feedCleaner)
         for (feedi = 0; feedi < feedKeys.length; feedi++) {
             if (feedKeys[feedi].split(':')[0] < num - 30240) {
@@ -2890,6 +2891,11 @@ function dao(num) {
         daops.push({ type: 'put', path: ['markets', 'node'], data: mnode })
         daops.push({ type: 'put', path: ['delegations'], data: deles })
         daops.push({ type: 'put', path: ['escrow', 'dlux-io', 'comment'], data: op })
+        for (var i = 0;i < daops.length;i++){
+            if(daops[i].type !== 'del'){
+                console.log(daops[i].path,daops[i].data)
+            }
+        }
         store.batch(daops, [resolve, reject])
     })
     })
