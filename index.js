@@ -1154,7 +1154,7 @@ function startApp() {
                             { type: 'put', path: ['contracts', seller, meta.split(':')[1]], data: contract },
                             { type: 'put', path: ['escrow', contract.pending[0][0], contract.txid + ':buyApprove'], data: contract.pending[0][1] },
                             { type: 'put', path: ['escrow', contract.pending[1][0], contract.txid + ':buyApprove'], data: contract.pending[1][1] },
-                            { type: 'put', path: ['escrow', json.escrow_id, json.from], data: { 'for': seller, 'contract': meta.split(':')[1] } },
+                            { type: 'put', path: ['escrow', json.escrow_id.toString(), json.from], data: { 'for': seller, 'contract': meta.split(':')[1] } },
                             { type: 'put', path: ['balances', json.from], data: fromBal },
                             { type: 'put', path: ['balances', json.to], data: toBal },
                             { type: 'put', path: ['dex', type, 'tick'], data: contract.rate },
@@ -1169,7 +1169,7 @@ function startApp() {
                         var out = []
                         out.push({
                             type: 'put',
-                            path: ['escrow', json.to, json.escrow_id],
+                            path: ['escrow', json.to, json.escrow_id.toString()],
                             data: [
                                 "escrow_approve",
                                 {
@@ -1184,7 +1184,7 @@ function startApp() {
                         })
                         out.push({
                             type: 'put',
-                            path: ['escrow', json.agent, json.escrow_id],
+                            path: ['escrow', json.agent, json.escrow_id.toString()],
                             data: [
                                 "escrow_approve",
                                 {
@@ -1237,7 +1237,7 @@ function startApp() {
                         },
                         {
                             type: 'put',
-                            path: ['escrow', json.escrow_id, json.from],
+                            path: ['escrow', json.escrow_id.toString(), json.from],
                             data: { 'for': json.from, contract: txid }
                         }
                     ],
@@ -1341,7 +1341,7 @@ function startApp() {
     });
 
     processor.onOperation('escrow_approve', function(json, pc) {
-        store.get(['escrow', json.escrow_id, json.from], function(e, a) { // since escrow ids are unique to sender, store a list of pointers to the owner of the contract
+        store.get(['escrow', json.escrow_id.toString(), json.from], function(e, a) { // since escrow ids are unique to sender, store a list of pointers to the owner of the contract
             if (!e && Object.keys(a).length) {
                 store.get(['contracts', a.for, a.contract], function(e, b) {
                     if (e) { console.log(e1) }
@@ -1472,7 +1472,7 @@ function startApp() {
     });
 
     processor.onOperation('escrow_release', function(json, pc) {
-        getPathObj(['escrow', json.escrow_id, json.from])
+        getPathObj(['escrow', json.escrow_id.toString(), json.from])
             .then(a => {
                 getPathObj(['contracts', a.for, a.contract])
                     .then(c => {
