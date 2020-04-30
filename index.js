@@ -2585,8 +2585,8 @@ function dao(num) {
             nomention = v[10],
             cpost = v[11],
             feedCleaner = v[12],
-            console.log(cpost)
             feedKeys = Object.keys(feedCleaner)
+        console.log(cpost)
         for (feedi = 0; feedi < feedKeys.length; feedi++) {
             if (feedKeys[feedi].split(':')[0] < num - 30240) {
                 daops.push({ type: 'del', path: ['feed', feedKeys[feedi]] })
