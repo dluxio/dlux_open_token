@@ -2244,8 +2244,8 @@ function startApp() {
                     console.log(e)
                 }
             })
-        })
         /*
+        })
         current = num
         chronoProcess = true
         store.someChildren(['chrono'], {
