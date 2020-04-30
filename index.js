@@ -2197,12 +2197,10 @@ processor.onBlock(function(num, pc) {
             if (promises.length) {
                 Promise.all(promises)
                     .then(r => {
-                    console.log('here', pc)
                         resolve(pc)
                     })
                     .catch(e => { reject() })
             } else { 
-                    console.log('there', pc)
                 resolve(pc) }
             //rest is out of consensus
             for (var p = 0; p < pa.length; p++) { //automate some tasks
