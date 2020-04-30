@@ -1444,7 +1444,9 @@ function startApp() {
             .then(a => {
                 getPathObj(['contracts', a.for, a.contract])
                     .then(c => {
-                        if (Object.keys(c).length == 0 && !c.auths[2]) { console.log('empty record') } else {
+                        if (Object.keys(c).length == 0 && !c.auths[2]) {
+                            pc[0](pc[2])
+                        } else {
                             store.batch([
                                 { type: 'put', path: ['escrow', c.auths[1][0], c.txid + ':release'], data: c.auths[1][1] },
                                 { type: 'put', path: ['contracts', a.for, a.contract], data: c },
@@ -1460,8 +1462,6 @@ function startApp() {
                                 delete plasma.pending[c.txid + `:dispute`]
                             }
                             credit(json.who)
-                        } else {
-                            pc[0](pc[2])
                         }
                     })
                     .catch(e => { console.log(e) })
