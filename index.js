@@ -2199,6 +2199,7 @@ processor.onBlock(function(num, pc) {
                 function waitup (promisesf, pca,p){
                     Promise.all(promisesf)
                     .then(r => {
+                        console.log('yeah?:', p[0])
                         p[0](pca)
                     })
                     .catch(e => { p[1](e) })
