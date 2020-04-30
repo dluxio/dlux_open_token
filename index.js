@@ -1440,12 +1440,8 @@ function startApp() {
     });
 
     processor.onOperation('escrow_dispute', function(json, pc) {
-        getPathObj(['escrow', json.escrow_id, json.from])
+        getPathObj(['escrow', json.escrow_id.toString(), json.from])
             .then(a => {
-            getPathObj(['escrow'])
-            .then(v => {
-             console.log(v)
-            })
                 console.log(a)
                 getPathObj(['contracts', a.for, a.contract])
                     .then(c => {
