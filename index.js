@@ -587,7 +587,7 @@ function startWith(hash) {
                         if (!e) {
                             if (hash) {
                                 var cleanState = data[1]
-                                if (hash == 'QmcVGM9546kfwD9s3AMmvgV61CXhDmbKfstY6h7K7nkyDj') {
+                                if (hash == 'QmTxAgzXuuS2HiwvRVom3QPif48FtHnPZgRWgU5Fmr9EhB') {
                                     //delete cleanState.dex.hive.buyOrders
                                     //cleanState.chrono = {}
                                     //cleanState.posts = {}
