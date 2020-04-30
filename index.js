@@ -2938,6 +2938,7 @@ function dao(num) {
                 if (daops[i].type == 'put' && Object.keys(daops[i].data).length == 0 && typeof daops[i].data != 'number' && typeof daops[i].data != 'string') {
                     daops.splice(i,1,0)
                 }
+                console.log(daops[i])
             }
             store.batch(daops, [resolve, reject, 'dao'])
         })
