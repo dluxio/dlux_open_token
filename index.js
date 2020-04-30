@@ -2934,13 +2934,12 @@ function dao(num) {
             daops.push({ type: 'put', path: ['markets', 'node'], data: mnode })
             daops.push({ type: 'put', path: ['delegations'], data: deles })
             daops.push({ type: 'put', path: ['escrow', 'dlux-io', 'comment'], data: op })
-            for (var i = 0; i < daops.length; i++) {
+            for (var i = daops.length - 1; i >= 0; i--) {
                 if (daops[i].type == 'put' && Object.keys(daops[i].data).length == 0 && typeof daops[i].data != 'number' && typeof daops[i].data != 'string') {
-                    console.log('deleting ' + daops[i].path)
-                    daops[i] = { type: 'del', path: daops[i].path }
+                    daops.splice(i,1,0)
                 }
             }
-            store.batch(daops, [resolve, reject])
+            store.batch(daops, [resolve, reject, 'dao'])
         })
     })
 }
