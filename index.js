@@ -2583,7 +2583,7 @@ function dao(num) {
             br = v[8],
             powBal = v[9],
             nomention = v[10],
-            cpost = v[11],
+            cpost = v[11] || {},
             feedCleaner = v[12],
             feedKeys = Object.keys(feedCleaner)
         for (feedi = 0; feedi < feedKeys.length; feedi++) {
