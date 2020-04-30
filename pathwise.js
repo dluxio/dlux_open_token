@@ -65,8 +65,7 @@ Pathwise.prototype.batch = function(ops, pc) { // promise chain[resolve(), rejec
         }
     });
     ops.forEach(function(op) {
-        console.log(op)
-        if (op.type == 'put') self.put(op.path, op.data, { batch: batch }, next);
+        if (op.type == 'put') {self.put(op.path, op.data, { batch: batch }, next);console.log(op)}
         else if (op.type == 'del') self.del(op.path, { batch: batch }, next);
     });
 };
