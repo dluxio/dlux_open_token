@@ -2892,8 +2892,8 @@ function dao(num) {
         daops.push({ type: 'put', path: ['delegations'], data: deles })
         daops.push({ type: 'put', path: ['escrow', 'dlux-io', 'comment'], data: op })
         for (var i = 0;i < daops.length;i++){
-            if(daops[i].type !== 'del'){
-                console.log(daops[i].path,daops[i].data)
+            if(daops[i].type == 'put' && Object.keys(daops[i].data).length == 0 && typeOf daops[i].data != 'number'){
+                daops[i] = {type: 'del', path: 'daops[i].path}
             }
         }
         store.batch(daops, [resolve, reject])
