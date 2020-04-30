@@ -104,7 +104,7 @@ module.exports = function(client, steem, currentBlockNumber=1, blockComputeSpeed
           .then(r=>{
             pc[0]()
           })
-          .catch(e=>{pc[1](e)})
+          .catch(e=>{console.log(e)})
         }
       })
       .catch(e=>{console.log(e);pc[1](e)})
