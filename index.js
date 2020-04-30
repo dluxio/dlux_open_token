@@ -2195,11 +2195,14 @@ processor.onBlock(function(num, pc) {
                 })
             }
             if (promises.length) {
+                waitup(promises, pc)
+                function waitup (promises, pc){
                 Promise.all(promises)
                     .then(r => {
                         resolve(pc)
                     })
                     .catch(e => { reject() })
+                }
             } else { 
                 resolve(pc) }
             //rest is out of consensus
