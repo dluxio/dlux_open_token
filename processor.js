@@ -94,13 +94,13 @@ module.exports = function(client, steem, currentBlockNumber=1, blockComputeSpeed
   function transactional(ops, i, pc, num, block){
     console.log(ops)
     if(ops.length){
-      doOp(ops[i])
+      doOp(ops[i], pc)
       .then(v=>{
         console.log(i)
         if (ops.length > i + 1){
           transactional(ops, i+1)
         } else {
-          onNewBlock(num, block)
+          onNewBlock(num, block, pc)
           .then(r=>{
             pc[0]()
           })
@@ -109,10 +109,10 @@ module.exports = function(client, steem, currentBlockNumber=1, blockComputeSpeed
       })
       .catch(e=>{console.log(e);pc[1](e)})
     } else {
-      onNewBlock(num, block)
+      onNewBlock(num, block, pc)
       .then(r=>{
         console.log('here')
-        pc[0]()
+        r[0]()
       })
       .catch(e=>{pc[1](e)})
     }
