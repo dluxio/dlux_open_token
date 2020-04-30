@@ -1442,6 +1442,7 @@ function startApp() {
     processor.onOperation('escrow_dispute', function(json, pc) {
         getPathObj(['escrow', json.escrow_id, json.from])
             .then(a => {
+                console.log(a)
                 getPathObj(['contracts', a.for, a.contract])
                     .then(c => {
                         if (Object.keys(c).length == 0) {
