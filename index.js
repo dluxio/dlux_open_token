@@ -2184,13 +2184,13 @@ function startApp() {
                     ipfsSaveState(num, blockState)
                 })
             }
-
+            if(promises.length){
             Promise.all(promises)
                 .then(r => {
                     resolve()
                 })
                 .catch(e => { reject() })
-
+            } else {resolve()}
             //rest is out of consensus
             for (var p = 0; p < pa.length; p++) { //automate some tasks
                 var r = eval(pa[p][1])
