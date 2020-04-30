@@ -2197,8 +2197,9 @@ processor.onBlock(function(num, pc) {
             if (promises.length) {
                 waitup(promises, pc)
                 function waitup (promises, pc){
-                Promise.all(promises)
+                    Promise.all(promises)
                     .then(r => {
+                        console.log('resolving:'+pc)
                         resolve(pc)
                     })
                     .catch(e => { reject() })
