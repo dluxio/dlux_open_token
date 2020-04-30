@@ -1690,6 +1690,7 @@ function startApp() {
         try {
             var filter = json.extensions[0][1].beneficiaries
         } catch (e) {
+            pc[0](pc[2])
             return;
         }
         var ops = []
@@ -2176,7 +2177,7 @@ processor.onBlock(function(num, pc) {
                 broadcast = 2
             }
             if ((num - 20000) % 30240 === 0) { //time for daily magic
-                //promises.push(dao(num))
+                promises.push(dao(num))
             }
             if (num % 100 === 0 && processor.isStreaming()) {
                 client.database.getAccounts([config.username])
