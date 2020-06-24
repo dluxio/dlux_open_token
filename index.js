@@ -1930,7 +1930,7 @@ function startApp() {
                         }
                     }
                 } else {
-                    console.log(e)
+                    pc[0](pc[2])
                 }
             })
         } else {
