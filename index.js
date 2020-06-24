@@ -1912,8 +1912,10 @@ function startApp() {
             console.log('the vote')
             store.get(['escrow', json.voter], function(e, a) {
                 if (!e) {
+                    var found = 0
                     for (b in a) {
                         console.log(a, b, json)
+                        found++
                         if (a[b][1].permlink == json.permlink) {
                             let ops = [{ type: 'del', path: ['escrow', json.voter, b] }]
                             console.log(ops)
@@ -1928,6 +1930,9 @@ function startApp() {
                             }
                             break;
                         }
+                    }
+                    if (!found) {
+                        pc[0](pc[2])
                     }
                 } else {
                     pc[0](pc[2])
