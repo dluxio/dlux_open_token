@@ -138,6 +138,7 @@ api.get('/getwrap', (req, res, next) => {
 });
 api.get('/getauthorpic/:un', (req, res, next) => {
     let un = req.params.un || ''
+    un = un.
     let body = {
         jsonrpc: "2.0",
         method: 'condenser_api.get_accounts',
@@ -567,7 +568,7 @@ var recents = []
         }
     });
     */
-startWith('QmdJxEvyiESpMUrbTrTBZXntckuPSrv6XxajuVqacdg1aW')
+startWith('QmcfTxNhTwLHNFBtFpCZHVS9NKLgtQTMsSQuf5LLTrmsHp')
     // Special Attention
 function startWith(hash) {
     console.log(`${hash} inserted`)
