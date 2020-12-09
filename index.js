@@ -138,7 +138,6 @@ api.get('/getwrap', (req, res, next) => {
 });
 api.get('/getauthorpic/:un', (req, res, next) => {
     let un = req.params.un || ''
-    un = un.
     let body = {
         jsonrpc: "2.0",
         method: 'condenser_api.get_accounts',
