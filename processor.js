@@ -100,7 +100,7 @@ module.exports = function(client, steem, currentBlockNumber=1, blockComputeSpeed
         } else {
           onNewBlock(num, v)
           .then(r=>{
-            console.log(r)
+            console.log(num)
             pc[0]()
           })
           .catch(e=>{console.log(e)})
@@ -110,7 +110,7 @@ module.exports = function(client, steem, currentBlockNumber=1, blockComputeSpeed
     } else {
       onNewBlock(num, pc)
       .then(r=>{
-        console.log(r)
+        console.log(num)
         r[0]()
       })
       .catch(e=>{pc[1](e)})
@@ -121,8 +121,10 @@ module.exports = function(client, steem, currentBlockNumber=1, blockComputeSpeed
       return new Promise((resolve, reject)=>{
         if(op.length == 4){
           onCustomJsonOperation[op[0]](op[1], op[2], op[3],[resolve,reject, pc])
+          console.log(op[0])
         } else if (op.length == 2){
           onOperation[op[0]](op[1],[resolve,reject, pc]);
+          console.log(op[0])
         }
       })
   }
