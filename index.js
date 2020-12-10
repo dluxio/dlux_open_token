@@ -115,8 +115,8 @@ api.get('/', (req, res, next) => {
     });
 });
 api.get('/getwrap', (req, res, next) => {
-    let method = (req.query.method || 'condenser_api.get_discussions_by_blog').replace('%27','')
-    let iparams = JSON.parse(decodeURIcomponent((req.query.params.replace('%27','')).replace('%2522','%22')))
+    let method = req.query.method.replace('%27','') || 'condenser_api.get_discussions_by_blog'
+    let iparams = JSON.parse(decodeURIcomponent((req.query.params.replace("%27",'')).replace('%2522','%22')))
     switch (method){
         case 'tags_api.get_discussions_by_blog':
         default:
@@ -575,7 +575,7 @@ var recents = []
         }
     });
     */
-startWith('QmaSGRvoizfY8PgoCDqpLKBhMYf1SbzfCNZuYodLKaNDhT')
+startWith('QmZFp5WN49D1ZgqPtGFuGi5p8RmpVLEJ8u53PtG8iU9ZoZ')
     // Special Attention
 function startWith(hash) {
     console.log(`${hash} inserted`)
