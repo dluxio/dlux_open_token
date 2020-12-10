@@ -115,8 +115,16 @@ api.get('/', (req, res, next) => {
     });
 });
 api.get('/getwrap', (req, res, next) => {
-    let method = req.query.method || 'condenser_api.get_discussions_by_blog'
-    let params = JSON.parse(decodeURIcomponent(req.query.params)) || [{ "tag": "robotolux", "limit": 1 }]
+    let method = (req.query.method || 'condenser_api.get_discussions_by_blog').replace('%27','')
+    let iparams = JSON.parse(decodeURIcomponent((req.query.params.replace('%27','')).replace('%2522','%22')))
+    switch (method){
+        case 'tags_api.get_discussions_by_blog':
+        default:
+            iparams = {
+                tag:iparams[0]
+            }
+    }
+    let params = iparams || { "tag":"robotolux"}
     res.setHeader('Content-Type', 'application/json')
     let body = {
         jsonrpc: "2.0",
@@ -567,7 +575,7 @@ var recents = []
         }
     });
     */
-startWith('QmedrWFM9XG8ucUJYbtfenJDBPbzpuFa7F7pLgCsBLgaCH')
+startWith('QmaSGRvoizfY8PgoCDqpLKBhMYf1SbzfCNZuYodLKaNDhT')
     // Special Attention
 function startWith(hash) {
     console.log(`${hash} inserted`)
