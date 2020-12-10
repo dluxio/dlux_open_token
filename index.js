@@ -115,7 +115,8 @@ api.get('/', (req, res, next) => {
     });
 });
 api.get('/getwrap', (req, res, next) => {
-    let method = req.query.method.replace('%27','') || 'condenser_api.get_discussions_by_blog'
+    let method = req.query.method || 'condenser_api.get_discussions_by_blog'
+    method.replace('%27','') 
     let iparams = JSON.parse(decodeURIcomponent((req.query.params.replace("%27",'')).replace('%2522','%22')))
     switch (method){
         case 'tags_api.get_discussions_by_blog':
