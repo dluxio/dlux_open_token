@@ -33,7 +33,7 @@
         "level-pathwise": "^4.0.0",
         "node-fetch": "^2.6.0",
         "safe-eval": "^0.4.1",
-        "steem-js-patched": "^1.0.0",
+        "@hiveio/hive-js": "^0.8.10",
         "xmlhttprequest": "^1.8.0"
     }
 }
