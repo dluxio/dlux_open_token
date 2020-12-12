@@ -16,7 +16,7 @@ const args = require('minimist')(process.argv.slice(2));
 const express = require('express')
 const cors = require('cors')
 const config = require('./config');
-const hiveClient = require('steem-js-patched')
+const hiveClient = require('@hiveio/hive-js')
 hiveClient.api.setOptions({ url: config.clientURL });
 const fs = require('fs-extra');
 const XMLHttpRequest = require("xmlhttprequest").XMLHttpRequest
