@@ -1,6 +1,6 @@
 const hive = require('dsteem');
 const decodeURIcomponent = require('decode-uri-component');
-const hivejs = require('steem-js-patched');
+const hivejs = require('@hiveio/hive-js');
 const fetch = require('node-fetch');
 const hiveState = require('./processor');
 const readline = require('readline');
@@ -576,7 +576,7 @@ var recents = []
         }
     });
     */
-startWith('QmWsM9rb5eN8oTSzKoGrv76pZFYW4Kuc7iQWW2HG4EFQAe')
+startWith('Qmd3SCaDGgSeYWVTVfiubaipDWzJSpUccdUhDwNw4z2cD8')
     // Special Attention
 function startWith(hash) {
     console.log(`${hash} inserted`)
