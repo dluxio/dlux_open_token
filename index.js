@@ -562,6 +562,7 @@ function dynStart(account) {
             console.log(err)
             dynStart('dlux-io')
         } else {
+
             let ebus = result.filter(tx => tx[1].op[1].id === 'dlux_report')
             for (i = ebus.length - 1; i >= 0; i--) {
                 if (JSON.parse(ebus[i][1].op[1].json).hash && parseInt(JSON.parse(ebus[i][1].op[1].json).block) > parseInt(config.override)) {
@@ -583,8 +584,8 @@ function dynStart(account) {
         }
     });
 }
-//startWith('QmRf457GXEupPn1x2qXKPeVAAWmmS4jEXzVh15qs9Z2aho')
-dynStart()
+startWith('QmSZ77zaL1g7UNKwbrQpRSmhjMd6Ln3eEC1ZQTR9KVkCpw')
+    //dynStart()
 
 function startWith(hash) {
     console.log(`${hash} inserted`)
@@ -926,8 +927,8 @@ function startApp() {
                         rate: parseFloat((buyAmount) / (json.dlux)).toFixed(6),
                         block: json.block_num
                     }
-                    var path = chronAssign(json.block_num + 86400, {
-                        block: parseInt(json.block_num + 86400),
+                    var path = chronAssign(json.block_num + parseInt(json.hours) - 200, {
+                        block: parseInt(json.block_num + parseInt(json.hours) - 200),
                         op: 'expire',
                         from: from,
                         txid
