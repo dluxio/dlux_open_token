@@ -62,7 +62,13 @@ const {
     DAGNode
 } = require('ipld-dag-pb')
 
-//startWith('QmSZ77zaL1g7UNKwbrQpRSmhjMd6Ln3eEC1ZQTR9KVkCpw')
+var recents = []
+const { ChainTypes, makeBitMaskFilter } = require('@hiveio/hive-js/lib/auth/serializer')
+const op = ChainTypes.operations
+const walletOperationsBitmask = makeBitMaskFilter([
+        op.custom_json
+    ])
+    //startWith('QmSZ77zaL1g7UNKwbrQpRSmhjMd6Ln3eEC1ZQTR9KVkCpw')
 dynStart()
 
 function hashThis2(datum) {
@@ -551,12 +557,6 @@ if (config.username == selector) {
 if (config.rta && config.rtp) {
     rtrades.handleLogin(config.rta, config.rtp)
 }
-var recents = []
-const { ChainTypes, makeBitMaskFilter } = require('@hiveio/hive-js/lib/auth/serializer')
-const op = ChainTypes.operations
-const walletOperationsBitmask = makeBitMaskFilter([
-    op.custom_json
-])
 
 function dynStart(account) {
     let accountToQuery = account || config.username
