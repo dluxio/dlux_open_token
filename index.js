@@ -549,11 +549,12 @@ if (config.rta && config.rtp) {
     rtrades.handleLogin(config.rta, config.rtp)
 }
 var recents = []
-    /*
-    hivejs.api.getAccountHistory(config.username, -1, 100, function(err, result) {
+function dynStart(account){
+    let accountToQuery = account || config.username
+    hivejs.api.getAccountHistory(accountToQuery, -1, 100, function(err, result) {
         if (err) {
             console.log(err)
-            startWith(config.engineCrank)
+            dynStart('dlux-io')
         } else {
             let ebus = result.filter(tx => tx[1].op[1].id === 'dlux_report')
             for (i = ebus.length - 1; i >= 0; i--) {
@@ -575,8 +576,8 @@ var recents = []
             }
         }
     });
-    */
-startWith('QmRf457GXEupPn1x2qXKPeVAAWmmS4jEXzVh15qs9Z2aho')
+}
+//startWith('QmRf457GXEupPn1x2qXKPeVAAWmmS4jEXzVh15qs9Z2aho')
     // Special Attention
 function startWith(hash) {
     console.log(`${hash} inserted`)
