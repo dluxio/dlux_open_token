@@ -562,6 +562,7 @@ function dynStart(account) {
             console.log(err)
             dynStart('dlux-io')
         } else {
+            console.log(result)
             let ebus = result.filter(tx => tx[1].op[1].id === 'dlux_report')
             for (i = ebus.length - 1; i >= 0; i--) {
                 if (JSON.parse(ebus[i][1].op[1].json).hash && parseInt(JSON.parse(ebus[i][1].op[1].json).block) > parseInt(config.override)) {

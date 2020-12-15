@@ -4,7 +4,7 @@ const username = ENV.account || 'dlux-io';
 const active = ENV.active || '';
 const memoKey = ENV.memo || '';
 const NODEDOMAIN = ENV.domain || 'http://dlux-token.herokuapp.com'
-const override = ENV.override || false
+const override = ENV.override || 0
 const rta = ENV.rta || ''
 const rtp = ENV.rtp || ''
 
@@ -17,7 +17,18 @@ const engineCrank = ENV.startingHash || 'QmTwkiBz8jZGMQ7rTsSRrLUZVNNNoYZzjDg342g
 const acm = ENV.account_creator || false //account creation market
 
 let config = {
-    username,active,memoKey, NODEDOMAIN, bidRate, engineCrank, port, clientURL, acm, rta, rtp,override
+    username,
+    active,
+    memoKey,
+    NODEDOMAIN,
+    bidRate,
+    engineCrank,
+    port,
+    clientURL,
+    acm,
+    rta,
+    rtp,
+    override
 };
 
 module.exports = config;
