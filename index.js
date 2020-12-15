@@ -918,6 +918,8 @@ function startApp() {
                 console.log(`${from}, selling ${json.dlux} for ${json.hive}`)
                 var b = a
                 let hours = parseInt(json.hours) || 1
+                if (hours > 120) { hours = 120 }
+                const expBlock = json.block_num + (hours * 1200) - 200
                 if (json.dlux <= b && typeof buyAmount == 'number' && active) {
                     var txid = 'DLUX' + hashThis(from + json.block_num)
                     const contract = {
@@ -930,8 +932,8 @@ function startApp() {
                         rate: parseFloat((buyAmount) / (json.dlux)).toFixed(6),
                         block: json.block_num
                     }
-                    var path = chronAssign(json.block_num + (hours * 1200) - 200, {
-                        block: parseInt(json.block_num + (hours * 1200) - 200),
+                    var path = chronAssign(expBlock, {
+                        block: expBlock,
                         op: 'expire',
                         from: from,
                         txid
@@ -962,6 +964,9 @@ function startApp() {
         store.get(['balances', from], function(e, a) {
             if (!e) {
                 var b = a
+                let hours = parseInt(json.hours) || 1
+                if (hours > 120) { hours = 120 }
+                const expBlock = json.block_num + (hours * 1200) - 200
                 if (json.dlux <= b && typeof buyAmount == 'number' && active) {
                     var txid = 'DLUX' + hashThis(from + json.block_num)
                     const contract = {
@@ -974,8 +979,8 @@ function startApp() {
                         rate: parseFloat((buyAmount) / (json.dlux)).toFixed(6),
                         block: json.block_num
                     }
-                    var path = chronAssign(json.block_num + 86400, {
-                        block: parseInt(json.block_num + 86400),
+                    var path = chronAssign(expBlock, {
+                        block: expBlock,
                         op: 'expire',
                         from: from,
                         txid
