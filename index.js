@@ -1092,8 +1092,8 @@ function startApp() {
                 const now = new Date()
                 const until = now.setHours(now.getHours())
                 const check = Date.parse(json.ratification_deadline)
-                console.log(contract.hive, parseInt(parseFloat(json.steem_amount) * 1000), contract.hbd, contract.hbd, parseInt(parseFloat(json.sbd_amount) * 1000), check, until)
-                if (contract.hive == parseInt(parseFloat(json.steem_amount) * 1000) && contract.hbd == parseInt(parseFloat(json.sbd_amount) * 1000) && check > until) {
+                console.log(contract.hive, parseInt(parseFloat(json.steem_amount) * 1000), contract.hbd, contract.hbd, parseInt(parseFloat(json.hbd_amount) * 1000), check, until)
+                if (contract.hive == parseInt(parseFloat(json.steem_amount) * 1000) && contract.hbd == parseInt(parseFloat(json.hbd_amount) * 1000) && check > until) {
                     console.log(1)
                     if (toBal >= contract.amount) {
                         console.log(2)
@@ -1161,7 +1161,7 @@ function startApp() {
                                     "who": json.agent,
                                     "receiver": json.to,
                                     "escrow_id": json.escrow_id,
-                                    "sbd_amount": json.sbd_amount,
+                                    "hbd_amount": json.hbd_amount,
                                     "steem_amount": json.steem_amount
                                 }
                             ]],
@@ -1230,7 +1230,7 @@ function startApp() {
                 console.log(4)
                 var txid = 'DLUX' + hashThis(`${json.from}${json.block_num}`),
                     rate = parseFloat(parseInt(parseFloat(json.steem_amount) * 1000) / dextx.dlux).toFixed(6)
-                if (!parseFloat(rate)) rate = parseFloat(parseInt(parseFloat(json.sbd_amount) * 1000) / dextx.dlux).toFixed(6)
+                if (!parseFloat(rate)) rate = parseFloat(parseInt(parseFloat(json.hbd_amount) * 1000) / dextx.dlux).toFixed(6)
                 ops = [{
                             type: 'put',
                             path: ['escrow', json.agent, txid + ':listApprove'],
@@ -1287,7 +1287,7 @@ function startApp() {
                                 "who": json.agent,
                                 "receiver": json.to,
                                 "escrow_id": json.escrow_id,
-                                "sbd_amount": json.sbd_amount,
+                                "hbd_amount": json.hbd_amount,
                                 "steem_amount": json.steem_amount
                             }
                         ]]
@@ -1301,7 +1301,7 @@ function startApp() {
                             "who": json.to,
                             "receiver": json.from,
                             "escrow_id": json.escrow_id,
-                            "sbd_amount": json.sbd_amount,
+                            "hbd_amount": json.hbd_amount,
                             "steem_amount": json.steem_amount
                         }
                     ]],
@@ -1309,7 +1309,7 @@ function startApp() {
                         txid,
                         from: json.from,
                         hive: parseInt(parseFloat(json.steem_amount) * 1000),
-                        hbd: parseInt(parseFloat(json.sbd_amount) * 1000),
+                        hbd: parseInt(parseFloat(json.hbd_amount) * 1000),
                         amount: dextx.dlux,
                         rate,
                         block: json.block_num,
@@ -1332,9 +1332,9 @@ function startApp() {
                             contract.type = 'sb'
                             ops.push({ type: 'put', path: ['feed', `${json.block_num}:${json.transaction_id}`], data: `@${json.from}| signed a ${parseFloat(json.steem_amount).toFixed(3)} HIVE buy order for ${parseFloat(dextx.dlux).toFixed(3)} DLUX:${txid}` })
                             ops.push({ type: 'put', path: ['dex', 'hive', 'buyOrders', `${contract.rate}:${contract.txid}`], data: contract })
-                        } else if (parseFloat(json.sbd_amount) > 0) {
+                        } else if (parseFloat(json.hbd_amount) > 0) {
                             contract.type = 'db'
-                            ops.push({ type: 'put', path: ['feed', `${json.block_num}:${json.transaction_id}`], data: `@${json.from}| signed a ${parseFloat(json.sbd_amount).toFixed(3)} HBD buy order for ${parseFloat(dextx.dlux).toFixed(3)} DLUX:${txid}` })
+                            ops.push({ type: 'put', path: ['feed', `${json.block_num}:${json.transaction_id}`], data: `@${json.from}| signed a ${parseFloat(json.hbd_amount).toFixed(3)} HBD buy order for ${parseFloat(dextx.dlux).toFixed(3)} DLUX:${txid}` })
                             ops.push({ type: 'put', path: ['dex', 'hbd', 'buyOrders', `${contract.rate}:${contract.txid}`], data: contract })
                         }
                         console.log(contract.type)
@@ -2009,7 +2009,7 @@ function startApp() {
                             if (json.from == config.username) {
                                 delete plasma.pending[i + ':transfer']
                                 for (var i = 0; i < NodeOps.length; i++) {
-                                    if (NodeOps[i][1][1].from == json.from && NodeOps[i][1][1].to == json.to && NodeOps[i][1][0] == 'transfer' && NodeOps[i][1][1].steem_amount == json.steem_amount && NodeOps[i][1][1].sbd_amount == json.sbd_amount) {
+                                    if (NodeOps[i][1][1].from == json.from && NodeOps[i][1][1].to == json.to && NodeOps[i][1][0] == 'transfer' && NodeOps[i][1][1].steem_amount == json.steem_amount && NodeOps[i][1][1].hbd_amount == json.hbd_amount) {
                                         NodeOps.splice(i, 1)
                                     }
                                 }
