@@ -578,7 +578,7 @@ function dynStart(account){
     });
 }
 //startWith('QmRf457GXEupPn1x2qXKPeVAAWmmS4jEXzVh15qs9Z2aho')
-    // Special Attention
+dynStart()
 function startWith(hash) {
     console.log(`${hash} inserted`)
     if (hash) {
