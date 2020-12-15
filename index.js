@@ -116,16 +116,16 @@ api.get('/', (req, res, next) => {
 });
 api.get('/getwrap', (req, res, next) => {
     let method = req.query.method || 'condenser_api.get_discussions_by_blog'
-    method.replace('%27','') 
-    let iparams = JSON.parse(decodeURIcomponent((req.query.params.replace("%27",'')).replace('%2522','%22')))
-    switch (method){
+    method.replace('%27', '')
+    let iparams = JSON.parse(decodeURIcomponent((req.query.params.replace("%27", '')).replace('%2522', '%22')))
+    switch (method) {
         case 'tags_api.get_discussions_by_blog':
         default:
             iparams = {
-                tag:iparams[0]
+                tag: iparams[0]
             }
     }
-    let params = iparams || { "tag":"robotolux"}
+    let params = iparams || { "tag": "robotolux" }
     res.setHeader('Content-Type', 'application/json')
     let body = {
         jsonrpc: "2.0",
@@ -549,9 +549,15 @@ if (config.rta && config.rtp) {
     rtrades.handleLogin(config.rta, config.rtp)
 }
 var recents = []
-function dynStart(account){
+const { ChainTypes, makeBitMaskFilter } = require('@hiveio/hive-js/lib/auth/serializer')
+const op = ChainTypes.operations
+const walletOperationsBitmask = makeBitMaskFilter([
+    op.custom_json
+])
+
+function dynStart(account) {
     let accountToQuery = account || config.username
-    hivejs.api.getAccountHistory(accountToQuery, -1, 100, function(err, result) {
+    hivejs.api.getAccountHistory(accountToQuery, -1, 100, ...walletOperationsBitmask, function(err, result) {
         if (err) {
             console.log(err)
             dynStart('dlux-io')
@@ -579,6 +585,7 @@ function dynStart(account){
 }
 //startWith('QmRf457GXEupPn1x2qXKPeVAAWmmS4jEXzVh15qs9Z2aho')
 dynStart()
+
 function startWith(hash) {
     console.log(`${hash} inserted`)
     if (hash) {
@@ -1446,7 +1453,7 @@ function startApp() {
                     }
                 });
             } else {
-            pc[0](pc[2])
+                pc[0](pc[2])
             }
         })
 
@@ -1957,94 +1964,94 @@ function startApp() {
     })
 
     processor.onOperation('transfer', function(json, pc) {
-    store.get(['escrow', json.from, json.memo.split(' ')[0] + ':transfer'], function(e, a) {
-        var ops = []
-        if (!e && !isEmpty(a)) {
-            let auth = true,
-                terms = Object.keys(a[1])
-            for (i = 0; i < terms.length; i++) {
-                if (json[terms[i]] !== a[1][terms[i]]) {
-                    auth = false
+        store.get(['escrow', json.from, json.memo.split(' ')[0] + ':transfer'], function(e, a) {
+            var ops = []
+            if (!e && !isEmpty(a)) {
+                let auth = true,
+                    terms = Object.keys(a[1])
+                for (i = 0; i < terms.length; i++) {
+                    if (json[terms[i]] !== a[1][terms[i]]) {
+                        auth = false
+                    }
                 }
-            }
-            console.log('authed ' + auth)
-            if (auth) {
-                ops.push({
-                    type: 'put',
-                    path: ['feed', `${json.block_num}:${json.transaction_id}`],
-                    data: `@${json.from}| sent @${json.to} ${json.amount} for ${json.memo.split(' ')[0]}`
-                })
-                const addr = json.memo.split(' ')[0],
-                    co = json.memo.split(' ')[2]
-                let cp = getPathObj(['contracts', co, addr]),
-                    gp = getPathNum(['balances', json.from])
-                Promise.all([cp, gp])
-                    .then(ret => {
-                        let d = ret[1],
-                            c = ret[0],
-                            eo = c.buyer,
-                            g = c.escrow
-                        if (c.type === 'sb' || c.type === 'db') eo = c.from
-                        ops.push({ type: 'put', path: ['balances', json.from], data: parseInt(g + d) })
-                        ops.push({ type: 'del', path: ['escrow', json.from, addr + ':transfer'] })
-                        ops.push({ type: 'del', path: ['contracts', co, addr] })
-                        ops.push({ type: 'del', path: ['chrono', c.expire_path] })
-                        deletePointer(c.escrow_id, eo)
-                        if (json.from == config.username) {
-                            delete plasma.pending[i + ':transfer']
-                            for (var i = 0; i < NodeOps.length; i++) {
-                                if (NodeOps[i][1][1].from == json.from && NodeOps[i][1][1].to == json.to && NodeOps[i][1][0] == 'transfer' && NodeOps[i][1][1].steem_amount == json.steem_amount && NodeOps[i][1][1].sbd_amount == json.sbd_amount) {
-                                    NodeOps.splice(i, 1)
+                console.log('authed ' + auth)
+                if (auth) {
+                    ops.push({
+                        type: 'put',
+                        path: ['feed', `${json.block_num}:${json.transaction_id}`],
+                        data: `@${json.from}| sent @${json.to} ${json.amount} for ${json.memo.split(' ')[0]}`
+                    })
+                    const addr = json.memo.split(' ')[0],
+                        co = json.memo.split(' ')[2]
+                    let cp = getPathObj(['contracts', co, addr]),
+                        gp = getPathNum(['balances', json.from])
+                    Promise.all([cp, gp])
+                        .then(ret => {
+                            let d = ret[1],
+                                c = ret[0],
+                                eo = c.buyer,
+                                g = c.escrow
+                            if (c.type === 'sb' || c.type === 'db') eo = c.from
+                            ops.push({ type: 'put', path: ['balances', json.from], data: parseInt(g + d) })
+                            ops.push({ type: 'del', path: ['escrow', json.from, addr + ':transfer'] })
+                            ops.push({ type: 'del', path: ['contracts', co, addr] })
+                            ops.push({ type: 'del', path: ['chrono', c.expire_path] })
+                            deletePointer(c.escrow_id, eo)
+                            if (json.from == config.username) {
+                                delete plasma.pending[i + ':transfer']
+                                for (var i = 0; i < NodeOps.length; i++) {
+                                    if (NodeOps[i][1][1].from == json.from && NodeOps[i][1][1].to == json.to && NodeOps[i][1][0] == 'transfer' && NodeOps[i][1][1].steem_amount == json.steem_amount && NodeOps[i][1][1].sbd_amount == json.sbd_amount) {
+                                        NodeOps.splice(i, 1)
+                                    }
                                 }
                             }
-                        }
-                        console.log(ops)
-                        credit(json.from)
-                        store.batch(ops, pc)
-                    })
-                    .catch(e => { console.log(e) })
-            } else {
-                pc[0](pc[2])
-            }
-        }
-    })
-    if (json.to == 'robotolux' && json.amount.split(' ')[1] == 'HIVE') {
-        const amount = parseInt(parseFloat(json.amount) * 1000)
-        var purchase,
-            Pstats = getPathObj(['stats']),
-            Pbal = getPathNum(['balances', json.from]),
-            Pinv = getPathNum(['balances', 'ri'])
-        Promise.all([Pstats, Pbal, Pinv]).then(function(v) {
-            stats = v[0], b = v[1], i = v[2], ops = []
-            if (!stats.outOnBlock) {
-                purchase = parseInt(amount / stats.icoPrice * 1000)
-                if (purchase < i) {
-                    i -= purchase
-                    b += purchase
-                    store.batch([{ type: 'put', path: ['feed', `${json.block_num}:${json.transaction_id}`], data: `@${json.from}| bought ${parseFloat(purchase/1000).toFixed(3)} DLUX with ${parseFloat(amount/1000).toFixed(3)} HIVE` }], pc)
+                            console.log(ops)
+                            credit(json.from)
+                            store.batch(ops, pc)
+                        })
+                        .catch(e => { console.log(e) })
                 } else {
-                    b += i
-                    const left = purchase - i
-                    stats.outOnBlock = json.block_num
+                    pc[0](pc[2])
+                }
+            }
+        })
+        if (json.to == 'robotolux' && json.amount.split(' ')[1] == 'HIVE') {
+            const amount = parseInt(parseFloat(json.amount) * 1000)
+            var purchase,
+                Pstats = getPathObj(['stats']),
+                Pbal = getPathNum(['balances', json.from]),
+                Pinv = getPathNum(['balances', 'ri'])
+            Promise.all([Pstats, Pbal, Pinv]).then(function(v) {
+                stats = v[0], b = v[1], i = v[2], ops = []
+                if (!stats.outOnBlock) {
+                    purchase = parseInt(amount / stats.icoPrice * 1000)
+                    if (purchase < i) {
+                        i -= purchase
+                        b += purchase
+                        store.batch([{ type: 'put', path: ['feed', `${json.block_num}:${json.transaction_id}`], data: `@${json.from}| bought ${parseFloat(purchase/1000).toFixed(3)} DLUX with ${parseFloat(amount/1000).toFixed(3)} HIVE` }], pc)
+                    } else {
+                        b += i
+                        const left = purchase - i
+                        stats.outOnBlock = json.block_num
+                        store.batch([
+                            { type: 'put', path: ['ico', json.block_num, json.from], data: parseInt(amount * left / purchase) },
+                            { type: 'put', path: ['balances', json.from], data: b },
+                            { type: 'put', path: ['balances', 'ri'], data: i },
+                            { type: 'put', path: ['stats'], data: stats },
+                            { type: 'put', path: ['feed', `${json.block_num}:${json.transaction_id}`], data: `@${json.from}| bought ALL ${parseFloat(parseInt(purchase - left)).toFixed(3)} DLUX with ${parseFloat(parseInt(amount)/1000).toFixed(3)} HIVE. And bid in the over-auction` }
+                        ], pc)
+                    }
+                } else {
                     store.batch([
-                        { type: 'put', path: ['ico', json.block_num, json.from], data: parseInt(amount * left / purchase) },
-                        { type: 'put', path: ['balances', json.from], data: b },
-                        { type: 'put', path: ['balances', 'ri'], data: i },
-                        { type: 'put', path: ['stats'], data: stats },
+                        { type: 'put', path: ['ico', json.block_num, json.from], data: parseInt(amount) },
                         { type: 'put', path: ['feed', `${json.block_num}:${json.transaction_id}`], data: `@${json.from}| bought ALL ${parseFloat(parseInt(purchase - left)).toFixed(3)} DLUX with ${parseFloat(parseInt(amount)/1000).toFixed(3)} HIVE. And bid in the over-auction` }
                     ], pc)
                 }
-            } else {
-                store.batch([
-                    { type: 'put', path: ['ico', json.block_num, json.from], data: parseInt(amount) },
-                    { type: 'put', path: ['feed', `${json.block_num}:${json.transaction_id}`], data: `@${json.from}| bought ALL ${parseFloat(parseInt(purchase - left)).toFixed(3)} DLUX with ${parseFloat(parseInt(amount)/1000).toFixed(3)} HIVE. And bid in the over-auction` }
-                ], pc)
-            }
-        });
-    } else {
-        pc[0](pc[2])
-    }
-});
+            });
+        } else {
+            pc[0](pc[2])
+        }
+    });
 
     processor.onOperation('delegate_vesting_shares', function(json, pc) { //grab posts to reward
         var ops = []
@@ -2093,204 +2100,206 @@ function startApp() {
         }
     });
 
-    
-processor.onBlock(function(num, pc) {
-    return new Promise((resolve, reject) => {
-        current = num
-        chronoProcess = true
-        store.someChildren(['chrono'], {
-            gte: "" + num,
-            lte: "" + (num + 1)
-        }, function(e, a) {
-            if (e) { console.log('chrono err: ' + e) }
-            let chrops = {},
-                promises = []
-            for (var i in a) {
-                chrops[a[i]] = a[i]
-            }
-            let totalPromises = chrops.length
+
+    processor.onBlock(function(num, pc) {
+        return new Promise((resolve, reject) => {
+            current = num
+            chronoProcess = true
+            store.someChildren(['chrono'], {
+                gte: "" + num,
+                lte: "" + (num + 1)
+            }, function(e, a) {
+                if (e) { console.log('chrono err: ' + e) }
+                let chrops = {},
+                    promises = []
+                for (var i in a) {
+                    chrops[a[i]] = a[i]
+                }
+                let totalPromises = chrops.length
 
 
-            for (var i in chrops) {
-                let delKey = chrops[i]
-                store.get(['chrono', chrops[i]], function(e, b) {
-                    console.log(b)
-                    switch (b.op) {
-                        case 'expire':
-                            promises.push(release(b.from, b.txid))
-                            store.batch([{ type: 'del', path: ['chrono', delKey] }], [function() { console.log('success') }, function() { console.log('failure') }])
-                            break;
-                        case 'power_down':
-                            let lbp = getPathNum(['balances', from]),
-                                tpowp = getPathNum(['pow', 't']),
-                                powp = getPathNum(['pow', from])
-                            promises.push(powerDownOp([lbp, tpowp, powp], from, delkey, num, chrops[i].split(':')[1], b))
+                for (var i in chrops) {
+                    let delKey = chrops[i]
+                    store.get(['chrono', chrops[i]], function(e, b) {
+                        console.log(b)
+                        switch (b.op) {
+                            case 'expire':
+                                promises.push(release(b.from, b.txid))
+                                store.batch([{ type: 'del', path: ['chrono', delKey] }], [function() { console.log('success') }, function() { console.log('failure') }])
+                                break;
+                            case 'power_down':
+                                let lbp = getPathNum(['balances', from]),
+                                    tpowp = getPathNum(['pow', 't']),
+                                    powp = getPathNum(['pow', from])
+                                promises.push(powerDownOp([lbp, tpowp, powp], from, delkey, num, chrops[i].split(':')[1], b))
 
-                            function powerDownOp(promies, from, delkey, num, id, b) {
-                                return new Promise((resolve, reject) => {
-                                    Promise.all(promies)
-                                        .then(bals => {
-                                            let lbal = bals[0],
-                                                tpow = bals[1],
-                                                pbal = bals[2]
-                                            ops.push({ type: 'put', path: ['balances', from], data: lbal + b.amount })
-                                            ops.push({ type: 'put', path: ['pow', from], data: pbal - b.amount })
-                                            ops.push({ type: 'put', path: ['pow', 't'], data: tpow - b.amount })
-                                            ops.push({ type: 'put', path: ['feed', `${num}:vop_${id}`], data: `@${b.by}| powered down ${parseFloat(b.amount/1000).toFixed(3)} DLUX` })
+                                function powerDownOp(promies, from, delkey, num, id, b) {
+                                    return new Promise((resolve, reject) => {
+                                        Promise.all(promies)
+                                            .then(bals => {
+                                                let lbal = bals[0],
+                                                    tpow = bals[1],
+                                                    pbal = bals[2]
+                                                ops.push({ type: 'put', path: ['balances', from], data: lbal + b.amount })
+                                                ops.push({ type: 'put', path: ['pow', from], data: pbal - b.amount })
+                                                ops.push({ type: 'put', path: ['pow', 't'], data: tpow - b.amount })
+                                                ops.push({ type: 'put', path: ['feed', `${num}:vop_${id}`], data: `@${b.by}| powered down ${parseFloat(b.amount/1000).toFixed(3)} DLUX` })
+                                                ops.push({ type: 'del', path: ['chrono', delKey] })
+                                                store.batch(ops, [resolve, reject])
+                                            })
+                                            .catch(e => { console.log(e) })
+                                    })
+                                }
+                                break;
+                            case 'post_reward':
+                                promises.push(postRewardOP(b, num, chrops[i].split(':')[1], delkey))
+
+                                function postRewardOP(b, num, id, delkey) {
+                                    return new Promise((resolve, reject) => {
+                                        store.get(['posts', `${b.author}/${b.permlink}`], function(e, a) {
+                                            let ops = []
+                                            console.log(a)
+                                            a.title = a.customJSON.p.d
+                                            delete a.customJSON.p.d
+                                            a.c = a.customJSON.p
+                                            delete a.customJSON.p
+                                            delete a.customJSON.s
+                                            delete a.customJSON.pw
+                                            delete a.customJSON.sw
+                                            ops.push({
+                                                type: 'put',
+                                                path: ['br', `${b.author}/${b.permlink}`],
+                                                data: {
+                                                    op: 'dao_content',
+                                                    post: a
+                                                }
+                                            })
                                             ops.push({ type: 'del', path: ['chrono', delKey] })
+                                            ops.push({ type: 'put', path: ['feed', `${num}:vop_${id}`], data: `@${b.author}| Post:${b.permlink} voting expired.` })
+                                            ops.push({ type: 'del', path: ['posts', `${b.author}/${b.permlink}`] })
+                                            console.log(ops)
                                             store.batch(ops, [resolve, reject])
                                         })
-                                        .catch(e => { console.log(e) })
-                                })
-                            }
-                            break;
-                        case 'post_reward':
-                            promises.push(postRewardOP(b, num, chrops[i].split(':')[1], delkey))
-
-                            function postRewardOP(b, num, id, delkey) {
-                                return new Promise((resolve, reject) => {
-                                    store.get(['posts', `${b.author}/${b.permlink}`], function(e, a) {
-                                        let ops = []
-                                        console.log(a)
-                                        a.title = a.customJSON.p.d
-                                        delete a.customJSON.p.d
-                                        a.c = a.customJSON.p
-                                        delete a.customJSON.p
-                                        delete a.customJSON.s
-                                        delete a.customJSON.pw
-                                        delete a.customJSON.sw
-                                        ops.push({
-                                            type: 'put',
-                                            path: ['br', `${b.author}/${b.permlink}`],
-                                            data: {
-                                                op: 'dao_content',
-                                                post: a
-                                            }
-                                        })
-                                        ops.push({ type: 'del', path: ['chrono', delKey] })
-                                        ops.push({ type: 'put', path: ['feed', `${num}:vop_${id}`], data: `@${b.author}| Post:${b.permlink} voting expired.` })
-                                        ops.push({ type: 'del', path: ['posts', `${b.author}/${b.permlink}`] })
-                                        console.log(ops)
-                                        store.batch(ops, [resolve, reject])
                                     })
-                                })
-                            }
-
-                            break;
-                        default:
-
-                    }
-
-                })
-            }
-            if (num % 100 === 0 && processor.isStreaming()) {
-                client.database.getDynamicGlobalProperties()
-                    .then(function(result) {
-                        console.log('At block', num, 'with', result.head_block_number - num, `left until real-time. DAO @ ${(num - 20000) % 30240}`)
-                    });
-            }
-            if (num % 100 === 5 && processor.isStreaming()) {
-                check(num) //not promised, read only
-            }
-            if (num % 100 === 50 && processor.isStreaming()) {
-                report(num)
-                broadcast = 2
-            }
-            if ((num - 20000) % 30240 === 0) { //time for daily magic
-                promises.push(dao(num))
-            }
-            if (num % 100 === 0 && processor.isStreaming()) {
-                client.database.getAccounts([config.username])
-                    .then(function(result) {
-                        var account = result[0]
-
-                    });
-            }
-            if (num % 100 === 0) {
-                promises.push(tally(num));
-            }
-            if (num % 100 === 1) {
-                store.get([], function(err, obj) {
-                    const blockState = Buffer.from(JSON.stringify([num, obj]))
-                    ipfsSaveState(num, blockState)
-                })
-            }
-            if (promises.length) {
-                waitup(promises, pc, [resolve, reject])
-                function waitup (promisesf, pca,p){
-                    Promise.all(promisesf)
-                    .then(r => {
-                        p[0](pca)
-                    })
-                    .catch(e => { p[1](e) })
-                }
-            } else { 
-                resolve(pc) }
-            //rest is out of consensus
-            for (var p = 0; p < pa.length; p++) { //automate some tasks
-                var r = eval(pa[p][1])
-                if (r) {
-                    NodeOps.push([
-                        [0, 0],
-                        [pa[p][2], pa[p][3]]
-                    ])
-                }
-            }
-            //*
-            if (config.active && processor.isStreaming()) {
-                store.get(['escrow', config.username], function(e, a) {
-                    if (!e) {
-                        for (b in a) {
-                            if (!plasma.pending[b]) {
-                                NodeOps.push([
-                                    [0, 0],
-                                    a[b]
-                                ]);
-                                plasma.pending[b] = true
-                            }
-                        }
-                        var ops = []
-                        for (i = 0; i < NodeOps.length; i++) {
-                            if (NodeOps[i][0][1] == 0 && NodeOps[i][0][0] <= 100) {
-                                ops.push(NodeOps[i][1])
-                                NodeOps[i][0][1] = 1
-                            } else if (NodeOps[i][0][0] < 100) {
-                                NodeOps[i][0][0]++
-                            } else if (NodeOps[i][0][0] == 100) {
-                                NodeOps[i][0][0] = 0
-                            }
-                        }
-                        if (ops.length) {
-                            console.log('attepting broadcast', ops)
-                            hiveClient.broadcast.send({
-                                extensions: [],
-                                operations: ops
-                            }, [config.active], (err, result) => {
-                                if (err) {
-                                    console.log(err)
-                                    for (q = 0; q < ops.length; q++) {
-                                        if (NodeOps[q][0][1] == 1) {
-                                            NodeOps[q][0][1] = 3
-                                        }
-                                    }
-                                } else {
-                                    console.log(result)
-                                    for (q = ops.length - 1; q > -1; q--) {
-                                        if (NodeOps[q][0][0] = 1) {
-                                            NodeOps.splice(q, 1)
-                                        }
-                                    }
                                 }
-                            });
+
+                                break;
+                            default:
+
                         }
-                    } else {
-                        console.log(e)
+
+                    })
+                }
+                if (num % 100 === 0 && processor.isStreaming()) {
+                    client.database.getDynamicGlobalProperties()
+                        .then(function(result) {
+                            console.log('At block', num, 'with', result.head_block_number - num, `left until real-time. DAO @ ${(num - 20000) % 30240}`)
+                        });
+                }
+                if (num % 100 === 5 && processor.isStreaming()) {
+                    check(num) //not promised, read only
+                }
+                if (num % 100 === 50 && processor.isStreaming()) {
+                    report(num)
+                    broadcast = 2
+                }
+                if ((num - 20000) % 30240 === 0) { //time for daily magic
+                    promises.push(dao(num))
+                }
+                if (num % 100 === 0 && processor.isStreaming()) {
+                    client.database.getAccounts([config.username])
+                        .then(function(result) {
+                            var account = result[0]
+
+                        });
+                }
+                if (num % 100 === 0) {
+                    promises.push(tally(num));
+                }
+                if (num % 100 === 1) {
+                    store.get([], function(err, obj) {
+                        const blockState = Buffer.from(JSON.stringify([num, obj]))
+                        ipfsSaveState(num, blockState)
+                    })
+                }
+                if (promises.length) {
+                    waitup(promises, pc, [resolve, reject])
+
+                    function waitup(promisesf, pca, p) {
+                        Promise.all(promisesf)
+                            .then(r => {
+                                p[0](pca)
+                            })
+                            .catch(e => { p[1](e) })
                     }
-                })
-            }
+                } else {
+                    resolve(pc)
+                }
+                //rest is out of consensus
+                for (var p = 0; p < pa.length; p++) { //automate some tasks
+                    var r = eval(pa[p][1])
+                    if (r) {
+                        NodeOps.push([
+                            [0, 0],
+                            [pa[p][2], pa[p][3]]
+                        ])
+                    }
+                }
+                //*
+                if (config.active && processor.isStreaming()) {
+                    store.get(['escrow', config.username], function(e, a) {
+                        if (!e) {
+                            for (b in a) {
+                                if (!plasma.pending[b]) {
+                                    NodeOps.push([
+                                        [0, 0],
+                                        a[b]
+                                    ]);
+                                    plasma.pending[b] = true
+                                }
+                            }
+                            var ops = []
+                            for (i = 0; i < NodeOps.length; i++) {
+                                if (NodeOps[i][0][1] == 0 && NodeOps[i][0][0] <= 100) {
+                                    ops.push(NodeOps[i][1])
+                                    NodeOps[i][0][1] = 1
+                                } else if (NodeOps[i][0][0] < 100) {
+                                    NodeOps[i][0][0]++
+                                } else if (NodeOps[i][0][0] == 100) {
+                                    NodeOps[i][0][0] = 0
+                                }
+                            }
+                            if (ops.length) {
+                                console.log('attepting broadcast', ops)
+                                hiveClient.broadcast.send({
+                                    extensions: [],
+                                    operations: ops
+                                }, [config.active], (err, result) => {
+                                    if (err) {
+                                        console.log(err)
+                                        for (q = 0; q < ops.length; q++) {
+                                            if (NodeOps[q][0][1] == 1) {
+                                                NodeOps[q][0][1] = 3
+                                            }
+                                        }
+                                    } else {
+                                        console.log(result)
+                                        for (q = ops.length - 1; q > -1; q--) {
+                                            if (NodeOps[q][0][0] = 1) {
+                                                NodeOps.splice(q, 1)
+                                            }
+                                        }
+                                    }
+                                });
+                            }
+                        } else {
+                            console.log(e)
+                        }
+                    })
+                }
+            })
         })
-    })
-});
+    });
     processor.onStreamingStart(function() {
         console.log("At real time.")
         store.get(['markets', 'node', config.username], function(e, a) {
@@ -2958,7 +2967,7 @@ function dao(num) {
             daops.push({ type: 'put', path: ['escrow', 'dlux-io', 'comment'], data: op })
             for (var i = daops.length - 1; i >= 0; i--) {
                 if (daops[i].type == 'put' && Object.keys(daops[i].data).length == 0 && typeof daops[i].data != 'number' && typeof daops[i].data != 'string') {
-                    daops.splice(i,1)
+                    daops.splice(i, 1)
                 }
             }
             store.batch(daops, [resolve, reject])
