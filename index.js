@@ -62,6 +62,9 @@ const {
     DAGNode
 } = require('ipld-dag-pb')
 
+//startWith('QmSZ77zaL1g7UNKwbrQpRSmhjMd6Ln3eEC1ZQTR9KVkCpw')
+dynStart()
+
 function hashThis2(datum) {
     const data = Buffer.from(datum, 'ascii')
     const unixFs = new Unixfs('file', data)
@@ -584,8 +587,7 @@ function dynStart(account) {
         }
     });
 }
-startWith('QmSZ77zaL1g7UNKwbrQpRSmhjMd6Ln3eEC1ZQTR9KVkCpw')
-    //dynStart()
+
 
 function startWith(hash) {
     console.log(`${hash} inserted`)
@@ -915,6 +917,7 @@ function startApp() {
             if (!e) {
                 console.log(`${from}, selling ${json.dlux} for ${json.hive}`)
                 var b = a
+                let hours = parseInt(json.hours) || 1
                 if (json.dlux <= b && typeof buyAmount == 'number' && active) {
                     var txid = 'DLUX' + hashThis(from + json.block_num)
                     const contract = {
@@ -927,8 +930,8 @@ function startApp() {
                         rate: parseFloat((buyAmount) / (json.dlux)).toFixed(6),
                         block: json.block_num
                     }
-                    var path = chronAssign(json.block_num + (parseInt(json.hours) * 1200) - 200, {
-                        block: parseInt(json.block_num + (parseInt(json.hours) * 1200) - 200),
+                    var path = chronAssign(json.block_num + (hours * 1200) - 200, {
+                        block: parseInt(json.block_num + (hours * 1200) - 200),
                         op: 'expire',
                         from: from,
                         txid
