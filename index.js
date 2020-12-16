@@ -3227,6 +3227,7 @@ function deletePointer(escrowID, user) { //node ops incrementer and cleaner... 3
             if (!e) {
                 var found = false
                 const users = Object.keys(a)
+                console.log(users)
                 for (i = 0; i < users.length; i++) {
                     if (user = users[i]) {
                         found = true
