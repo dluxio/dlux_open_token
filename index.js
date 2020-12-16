@@ -1223,7 +1223,7 @@ function startApp() {
                                 }
                             ]
                         })
-                        store.batch(out)
+                        store.batch(out, pc)
                     }
                 }
             } else if (toBal > dextxdlux && typeof dextxdlux === 'number' && dextxdlux > 0 && isAgent && isDAgent) {
@@ -1400,7 +1400,7 @@ function startApp() {
                                         }
                                         console.log(a.contract)
                                         dataOps.push({ type: 'put', path: ['contracts', a.for, a.contract], data: c })
-                                        store.batch(dataOps)
+                                        store.batch(dataOps, pc)
                                         credit(json.who)
                                     })
                                 })
@@ -1425,7 +1425,7 @@ function startApp() {
                                         }
                                         console.log(a.contract, c)
                                         dataOps.push({ type: 'put', path: ['contracts', a.for, a.contract], data: c })
-                                        store.batch(dataOps)
+                                        store.batch(dataOps, pc)
                                         credit(json.who)
                                     })
                                 })
@@ -1441,7 +1441,7 @@ function startApp() {
                                 delete plasma.pending[c.txid + ':listApprove']
                             }
                             dataOps.push({ type: 'put', path: ['contracts', a.for, a.contract], data: c })
-                            store.batch(dataOps)
+                            store.batch(dataOps, pc)
                             credit(json.who)
                         } else {
                             pc[0](pc[2])
@@ -1457,7 +1457,7 @@ function startApp() {
                                                        }
                                                        delete plasma.pending[`deny${json.from}:${json.escrow_id}`]
                                                    }
-                                                   store.batch(dataOps)
+                                                   store.batch(dataOps, pc)
                                                    credit(json.who)
                                                } */
                     }
