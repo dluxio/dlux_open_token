@@ -3234,9 +3234,11 @@ function deletePointer(escrowID, user) { //node ops incrementer and cleaner... 3
                     }
                 }
                 if (found && users.length == 1) {
-                    store.batch([{ type: 'del', path: ['escrow', escrowID] }], [resolve, reject])
+                    console.log('del id')
+                    store.batch([{ type: 'del', path: ['escrow', escrowID] }], [resolve, reject, users.length])
                 } else if (found) {
-                    store.batch([{ type: 'del', path: ['escrow', escrowID, user] }], [resolve, reject])
+                    console.log('del entry')
+                    store.batch([{ type: 'del', path: ['escrow', escrowID, user] }], [resolve, reject, users.length])
                 }
             }
         })
