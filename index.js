@@ -3223,11 +3223,11 @@ function sortSellArray(array, key) { //seek insert instead
 function deletePointer(escrowID, user) { //node ops incrementer and cleaner... 3 retries and out
     console.log(`deleting pointer ${escrowID}:${user}`)
     return new Promise((resolve, reject) => {
-        store.get(['escrow', escrowID], function(e, a) {
+        store.get(['escrow', escrowID.toString()], function(e, a) {
             if (!e) {
                 var found = false
                 const users = Object.keys(a)
-                console.log(users)
+                console.log(users, a)
                 for (i = 0; i < users.length; i++) {
                     if (user = users[i]) {
                         found = true
