@@ -68,7 +68,7 @@ const op = ChainTypes.operations
 const walletOperationsBitmask = makeBitMaskFilter([
     op.custom_json
 ])
-startWith('QmetK53cLriqvEFVcuN3fb7Bqfn2nuAVubz1qH3AGBkpxS')
+startWith('QmToY48waNwZxo2NwzvSCp6xFqxD5BkPNPYRSLkBNGVJ1Y')
     //dynStart()
 
 function hashThis2(datum) {
@@ -1529,7 +1529,7 @@ function startApp() {
                                 { type: 'del', path: ['chrono', c.expire_path] },
                                 { type: 'del', path: ['escrow', json.who, c.txid + `:cancel`] }
                             ], pc)
-                            deletePointer(c.escrow_id, a.for)
+                            deletePointer(c.escrow_id, a.for).then(r => { console.log(r) }).catch(e => console.error(e))
                             credit(json.who)
                         } else {
                             pc[0](pc[2])
@@ -3221,6 +3221,7 @@ function sortSellArray(array, key) { //seek insert instead
 }
 
 function deletePointer(escrowID, user) { //node ops incrementer and cleaner... 3 retries and out
+    console.log(`deleting pointer ${escrowID}:${user}`)
     return new Promise((resolve, reject) => {
         store.get(['escrow', escrowID], function(e, a) {
             if (!e) {
