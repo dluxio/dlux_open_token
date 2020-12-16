@@ -68,7 +68,7 @@ const op = ChainTypes.operations
 const walletOperationsBitmask = makeBitMaskFilter([
     op.custom_json
 ])
-startWith('QmPVLa4qUcxorXNYXWHbWqbqB2skN8jvsvh7zD6VcMLdQJ')
+startWith('QmetK53cLriqvEFVcuN3fb7Bqfn2nuAVubz1qH3AGBkpxS')
     //dynStart()
 
 function hashThis2(datum) {
