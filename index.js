@@ -66,10 +66,10 @@ var recents = []
 const { ChainTypes, makeBitMaskFilter } = require('@hiveio/hive-js/lib/auth/serializer')
 const op = ChainTypes.operations
 const walletOperationsBitmask = makeBitMaskFilter([
-    op.custom_json
-])
-startWith('QmToY48waNwZxo2NwzvSCp6xFqxD5BkPNPYRSLkBNGVJ1Y')
-    //dynStart()
+        op.custom_json
+    ])
+    //startWith('QmToY48waNwZxo2NwzvSCp6xFqxD5BkPNPYRSLkBNGVJ1Y')
+dynStart()
 
 function hashThis2(datum) {
     const data = Buffer.from(datum, 'ascii')
@@ -3157,27 +3157,6 @@ function ipfsSaveState(blocknum, hashable) {
     })
 };
 
-function asyncIpfsSaveState(blocknum, hashable) {
-    return new Promise((resolve, reject) => {
-        ipfs.add(hashable, (err, IpFsHash) => {
-            if (!err) {
-                resolve(IpFsHash[0].hash)
-                console.log(current + `:Saved:  ${IpFsHash[0].hash}`)
-            } else {
-                resolve('Failed to save state.')
-                console.log({
-                    cycle
-                }, 'IPFS Error', err)
-                cycleipfs(cycle++)
-                if (cycle >= 25) {
-                    cycle = 0;
-                    return;
-                }
-            }
-        })
-    })
-};
-
 function getPathObj(path) {
     return new Promise(function(resolve, reject) { //put back
         store.get(path, function(err, obj) {
@@ -3220,14 +3199,12 @@ function sortSellArray(array, key) { //seek insert instead
     });
 }
 
-function deletePointer(escrowID, user) { //node ops incrementer and cleaner... 3 retries and out
-    console.log(`deleting pointer ${escrowID}:${user}`)
+function deletePointer(escrowID, user) {
     return new Promise((resolve, reject) => {
         store.get(['escrow', escrowID.toString()], function(e, a) {
             if (!e) {
                 var found = false
                 const users = Object.keys(a)
-                console.log(users, a)
                 for (i = 0; i < users.length; i++) {
                     if (user = users[i]) {
                         found = true
@@ -3235,10 +3212,8 @@ function deletePointer(escrowID, user) { //node ops incrementer and cleaner... 3
                     }
                 }
                 if (found && users.length == 1) {
-                    console.log('del id')
                     store.batch([{ type: 'del', path: ['escrow', escrowID.toString()] }], [resolve, reject, users.length])
                 } else if (found) {
-                    console.log('del entry')
                     store.batch([{ type: 'del', path: ['escrow', escrowID.toString(), user] }], [resolve, reject, users.length])
                 }
             }
