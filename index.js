@@ -1320,8 +1320,9 @@ function startApp() {
                         auths,
                         reject
                     }
-                chronAssign(json.block_num + parseInt((Date.parse(json.escrow_expiration) - Date.parse(json.ratification_deadline)) / 3000), {
-                        block: parseInt(json.block_num + parseInt((Date.parse(json.escrow_expiration) - Date.parse(json.ratification_deadline)) / 3000)),
+                let exp_block = json.block_num + 1000
+                chronAssign(exp_block, {
+                        block: exp_block,
                         op: 'expire',
                         from: json.from,
                         txid
@@ -3108,7 +3109,7 @@ function chronAssign(block, op) {
                 reject(e)
                 console.log(e)
             } else {
-                console.log('chron assign:', a)
+                console.log('chron assign:', block, ' over:', a)
                 var keys = Object.keys(a)
                 var t //needs serialization work with del chrono
                 if (keys.length && keys.length < 10) {
