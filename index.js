@@ -66,10 +66,10 @@ var recents = []
 const { ChainTypes, makeBitMaskFilter } = require('@hiveio/hive-js/lib/auth/serializer')
 const op = ChainTypes.operations
 const walletOperationsBitmask = makeBitMaskFilter([
-        op.custom_json
-    ])
-    //startWith('QmSZ77zaL1g7UNKwbrQpRSmhjMd6Ln3eEC1ZQTR9KVkCpw')
-dynStart()
+    op.custom_json
+])
+startWith('QmPVLa4qUcxorXNYXWHbWqbqB2skN8jvsvh7zD6VcMLdQJ')
+    //dynStart()
 
 function hashThis2(datum) {
     const data = Buffer.from(datum, 'ascii')
@@ -1092,8 +1092,8 @@ function startApp() {
                 const now = new Date()
                 const until = now.setHours(now.getHours())
                 const check = Date.parse(json.ratification_deadline)
-                console.log(contract.hive, parseInt(parseFloat(json.steem_amount) * 1000), contract.hbd, contract.hbd, parseInt(parseFloat(json.hbd_amount) * 1000), check, until)
-                if (contract.hive == parseInt(parseFloat(json.steem_amount) * 1000) && contract.hbd == parseInt(parseFloat(json.hbd_amount) * 1000) && check > until) {
+                console.log(contract.hive, parseInt(parseFloat(json.hive_amount) * 1000), contract.hbd, contract.hbd, parseInt(parseFloat(json.hbd_amount) * 1000), check, until)
+                if (contract.hive == parseInt(parseFloat(json.hive_amount) * 1000) && contract.hbd == parseInt(parseFloat(json.hbd_amount) * 1000) && check > until) {
                     console.log(1)
                     if (toBal >= contract.amount) {
                         console.log(2)
@@ -1162,7 +1162,7 @@ function startApp() {
                                     "receiver": json.to,
                                     "escrow_id": json.escrow_id,
                                     "hbd_amount": json.hbd_amount,
-                                    "steem_amount": json.steem_amount
+                                    "hive_amount": json.hive_amount
                                 }
                             ]],
                             [json.to, [
@@ -1229,7 +1229,7 @@ function startApp() {
             } else if (toBal > dextxdlux && typeof dextxdlux === 'number' && dextxdlux > 0 && isAgent && isDAgent) {
                 console.log(4)
                 var txid = 'DLUX' + hashThis(`${json.from}${json.block_num}`),
-                    rate = parseFloat(parseInt(parseFloat(json.steem_amount) * 1000) / dextx.dlux).toFixed(6)
+                    rate = parseFloat(parseInt(parseFloat(json.hive_amount) * 1000) / dextx.dlux).toFixed(6)
                 if (!parseFloat(rate)) rate = parseFloat(parseInt(parseFloat(json.hbd_amount) * 1000) / dextx.dlux).toFixed(6)
                 ops = [{
                             type: 'put',
@@ -1288,7 +1288,7 @@ function startApp() {
                                 "receiver": json.to,
                                 "escrow_id": json.escrow_id,
                                 "hbd_amount": json.hbd_amount,
-                                "steem_amount": json.steem_amount
+                                "hive_amount": json.hive_amount
                             }
                         ]]
                     ],
@@ -1302,13 +1302,13 @@ function startApp() {
                             "receiver": json.from,
                             "escrow_id": json.escrow_id,
                             "hbd_amount": json.hbd_amount,
-                            "steem_amount": json.steem_amount
+                            "hive_amount": json.hive_amount
                         }
                     ]],
                     contract = {
                         txid,
                         from: json.from,
-                        hive: parseInt(parseFloat(json.steem_amount) * 1000),
+                        hive: parseInt(parseFloat(json.hive_amount) * 1000),
                         hbd: parseInt(parseFloat(json.hbd_amount) * 1000),
                         amount: dextx.dlux,
                         rate,
@@ -1328,9 +1328,9 @@ function startApp() {
                     })
                     .then(expire_path => {
                         contract.expire_path = expire_path
-                        if (parseFloat(json.steem_amount) > 0) {
+                        if (parseFloat(json.hive_amount) > 0) {
                             contract.type = 'sb'
-                            ops.push({ type: 'put', path: ['feed', `${json.block_num}:${json.transaction_id}`], data: `@${json.from}| signed a ${parseFloat(json.steem_amount).toFixed(3)} HIVE buy order for ${parseFloat(dextx.dlux).toFixed(3)} DLUX:${txid}` })
+                            ops.push({ type: 'put', path: ['feed', `${json.block_num}:${json.transaction_id}`], data: `@${json.from}| signed a ${parseFloat(json.hive_amount).toFixed(3)} HIVE buy order for ${parseFloat(dextx.dlux).toFixed(3)} DLUX:${txid}` })
                             ops.push({ type: 'put', path: ['dex', 'hive', 'buyOrders', `${contract.rate}:${contract.txid}`], data: contract })
                         } else if (parseFloat(json.hbd_amount) > 0) {
                             contract.type = 'db'
@@ -2009,7 +2009,7 @@ function startApp() {
                             if (json.from == config.username) {
                                 delete plasma.pending[i + ':transfer']
                                 for (var i = 0; i < NodeOps.length; i++) {
-                                    if (NodeOps[i][1][1].from == json.from && NodeOps[i][1][1].to == json.to && NodeOps[i][1][0] == 'transfer' && NodeOps[i][1][1].steem_amount == json.steem_amount && NodeOps[i][1][1].hbd_amount == json.hbd_amount) {
+                                    if (NodeOps[i][1][1].from == json.from && NodeOps[i][1][1].to == json.to && NodeOps[i][1][0] == 'transfer' && NodeOps[i][1][1].hive_amount == json.hive_amount && NodeOps[i][1][1].hbd_amount == json.hbd_amount) {
                                         NodeOps.splice(i, 1)
                                     }
                                 }
