@@ -10,9 +10,24 @@ const rtp = ENV.rtp || ''
 
 const bidRate = ENV.BIDRATE || 2500
 const port = ENV.PORT || 3000;
-const clientURL = ENV.APIURL || 'https://anyx.io'
-
-
+var clientURL = ENV.APIURL || 'https://anyx.io'
+const clients = [
+    'https://api.hive.blog',
+    'https://anyx.io',
+    'https://api.hivekings.com',
+    'https://api.openhive.network',
+    'https://rpc.ausbit.dev',
+    'https://hive.roelandp.nl',
+    'https://api.c0ff33a.uk',
+    'https://api.deathwing.me',
+    'https://hive-api.arcange.eu',
+    'https://fin.hive.3speak.co',
+    'https://hived.emre.sh',
+    'https://techcoderx.com',
+    'https://rpc.ecency.com',
+    'https://hived.privex.io',
+    'https://api.pharesim.me'
+]
 const engineCrank = ENV.startingHash || 'QmTwkiBz8jZGMQ7rTsSRrLUZVNNNoYZzjDg342gfLAFRRq'
 const acm = ENV.account_creator || false //account creation market
 
@@ -25,6 +40,7 @@ let config = {
     engineCrank,
     port,
     clientURL,
+    clients,
     acm,
     rta,
     rtp,
