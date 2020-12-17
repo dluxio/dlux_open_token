@@ -10,7 +10,7 @@ const rtp = ENV.rtp || ''
 
 const bidRate = ENV.BIDRATE || 2500
 const port = ENV.PORT || 3000;
-var clientURL = ENV.APIURL || 'https://anyx.io'
+var clientURL = ENV.APIURL || 'https://api.hive.blog'
 const clients = [
     'https://api.hive.blog',
     'https://anyx.io',
