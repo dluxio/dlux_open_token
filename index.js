@@ -1,31 +1,24 @@
 const hive = require('dsteem');
 const decodeURIcomponent = require('decode-uri-component');
-const hivejs = require('@hiveio/hive-js');
 const fetch = require('node-fetch');
 const hiveState = require('./processor');
-const readline = require('readline');
-//const safeEval = require('safe-eval');
 const IPFS = require('ipfs-api');
-//var aesjs = require('aes-js');
-const ipfs = new IPFS({
-    host: 'ipfs.infura.io',
-    port: 5001,
-    protocol: 'https'
-});
 const args = require('minimist')(process.argv.slice(2));
 const express = require('express')
 const cors = require('cors')
 const config = require('./config');
+const ipfs = new IPFS({
+    host: config.ipfshost,
+    port: 5001,
+    protocol: 'https'
+});
 const hiveClient = require('@hiveio/hive-js')
 hiveClient.api.setOptions({ url: config.clientURL });
-const fs = require('fs-extra');
-const XMLHttpRequest = require("xmlhttprequest").XMLHttpRequest
 const rtrades = require('./rtrades');
 var Pathwise = require('./pathwise');
 var level = require('level');
 
 var store = new Pathwise(level('./db', { createIfEmpty: true }));
-const statestart = require('./state')
 const crypto = require('crypto')
 const bs58 = require('bs58')
 const hashFunction = Buffer.from('12', 'hex')
@@ -37,17 +30,14 @@ function hashThis(data) {
     const multihash = bs58.encode(combined)
     return multihash.toString()
 }
-const testing = true
-const VERSION = 'v0.0.4a'
+const VERSION = 'v0.0.5a'
 const api = express()
 var http = require('http').Server(api);
-//const io = require('socket.io')(http)
 var escrow = false
-var broadcast = 1
-const wif = hiveClient.auth.toWif(config.username, config.active, 'active')
-const reblogAccount = 'dlux-io';
+    //const wif = hiveClient.auth.toWif(config.username, config.active, 'active')
+    //const reblogAccount = 'dlux-io';
 var startingBlock = 41372401;
-var current, dhive, testString
+var current
 
 const prefix = 'dlux_';
 const streamMode = args.mode || 'irreversible';
@@ -83,11 +73,7 @@ function hashThis2(datum) {
         return hashThis2(JSON.stringify(dagNode)) // Qmf412jQZiuVUtdgnB36FXFX7xg5V6KEbSJ4dpQuhkLyfD
     })
 }
-// Read line for CLI access
-const rl = readline.createInterface({
-    input: process.stdin,
-    output: process.stdout
-});
+
 
 // Cycle through good public IPFS gateways
 var cycle = 0
@@ -449,7 +435,7 @@ if (config.rta && config.rtp) {
 
 function dynStart(account) {
     let accountToQuery = account || config.username
-    hivejs.api.getAccountHistory(accountToQuery, -1, 100, ...walletOperationsBitmask, function(err, result) {
+    hiveClient.api.getAccountHistory(accountToQuery, -1, 100, ...walletOperationsBitmask, function(err, result) {
         if (err) {
             console.log(err)
             dynStart('dlux-io')
@@ -784,7 +770,7 @@ function startApp() {
                     rate = parseFloat((buyAmount) / (json.dlux)).toFixed(6)
                 let hours = parseInt(json.hours) || 1
                 if (hours > 120) { hours = 120 }
-                const expBlock = json.block_num + (hours * 1200) - 200
+                const expBlock = json.block_num + (hours * 1200)
                 if (json.dlux <= b && typeof buyAmount == 'number' && allowedPrice(hiveHis, rate, json.block_num) && active) {
                     var txid = 'DLUX' + hashThis(from + json.block_num)
                     const contract = {
@@ -836,7 +822,7 @@ function startApp() {
                     rate = parseFloat((buyAmount) / (json.dlux)).toFixed(6)
                 let hours = parseInt(json.hours) || 1
                 if (hours > 120) { hours = 120 }
-                const expBlock = json.block_num + (hours * 1200) - 200
+                const expBlock = json.block_num + (hours * 1200)
                 if (json.dlux <= b && typeof buyAmount == 'number' && allowedPrice(hbdHis, rate, json.block_num) && active) {
                     var txid = 'DLUX' + hashThis(from + json.block_num)
                     const contract = {
@@ -931,11 +917,15 @@ function startApp() {
 
     processor.onOperation('escrow_transfer', function(json, pc) {
         var ops, dextx, seller, contract, isAgent, isDAgent, dextxdlux, meta, done = 0,
-            type = 'hive'
+            type = 'hive',
+            hours
         try {
             dextx = JSON.parse(json.json_meta).dextx
             dextxdlux = dextx.dlux
+            hours = JSON.parse(json.json_meta).hours
         } catch (e) {}
+        if (!hours) { hours = 1 }
+        if (hours > 120) { hours = 120 }
         try {
             meta = JSON.parse(json.json_meta).contract
             contract = meta.split(':')[1]
@@ -943,6 +933,13 @@ function startApp() {
         try {
             seller = JSON.parse(json.json_meta).for
         } catch (e) {}
+        const now = new Date()
+        const until = now.setHours(now.getHours())
+        const check = Date.parse(json.ratification_deadline)
+        const eexp = Date.parse(json.escrow_expiration)
+        const timer = eexp - now
+        let etime = false
+        if (timer > 518400000) { etime = true } //6 days 
         let PfromBal = getPathNum(['balances', json.from]),
             PtoBal = getPathNum(['balances', json.to]),
             PagentBal = getPathNum(['balances', json.agent]),
@@ -966,10 +963,7 @@ function startApp() {
 
             buy = contract.amount
             console.log(buy, isAgent, isDAgent)
-            if (typeof buy === 'number' && isAgent && isDAgent) { //{txid, from: from, buying: buyAmount, amount: json.dlux, [json.dlux]:buyAmount, rate:parseFloat((json.dlux)/(buyAmount)).toFixed(6), block:current, partial: json.partial || true
-                const now = new Date()
-                const until = now.setHours(now.getHours())
-                const check = Date.parse(json.ratification_deadline)
+            if (typeof buy === 'number' && isAgent && isDAgent && etime) { //{txid, from: from, buying: buyAmount, amount: json.dlux, [json.dlux]:buyAmount, rate:parseFloat((json.dlux)/(buyAmount)).toFixed(6), block:current, partial: json.partial || true
                 console.log(contract.hive, parseInt(parseFloat(json.hive_amount) * 1000), contract.hbd, contract.hbd, parseInt(parseFloat(json.hbd_amount) * 1000), check, until)
                 if (contract.hive == parseInt(parseFloat(json.hive_amount) * 1000) && contract.hbd == parseInt(parseFloat(json.hbd_amount) * 1000) && check > until) {
                     console.log(1)
@@ -1111,7 +1105,7 @@ function startApp() {
                         store.batch(out, pc)
                     }
                 }
-            } else if (toBal > (dextxdlux * 2) && agentBal > (dextxdlux * 2) && typeof dextxdlux === 'number' && dextxdlux > 0 && isAgent && isDAgent) {
+            } else if (toBal > (dextxdlux * 2) && agentBal > (dextxdlux * 2) && typeof dextxdlux === 'number' && dextxdlux > 0 && isAgent && isDAgent && etime) {
                 console.log(4)
                 var txid = 'DLUX' + hashThis(`${json.from}${json.block_num}`),
                     rate = parseFloat(parseInt(parseFloat(json.hive_amount) * 1000) / dextx.dlux).toFixed(6),
@@ -1222,7 +1216,7 @@ function startApp() {
                     } else if (parseFloat(json.hbd_amount) > 0) {
                         contract.type = 'db'
                     }
-                    let exp_block = json.block_num + 1000 //fix this
+                    let exp_block = json.block_num + (1200 * hours)
                     chronAssign(exp_block, {
                             block: exp_block,
                             op: 'expire',
@@ -1697,8 +1691,8 @@ function startApp() {
                     for (var numb in a) {
                         queue.push(a[numb])
                     }
-                    chronAssign(json.block_num + 3600, {
-                        block: parseInt(json.block_num + 3600),
+                    chronAssign(json.block_num + 144000, {
+                        block: parseInt(json.block_num + 144000),
                         op: 'post_reward',
                         author: json.author,
                         permlink: json.permlink
@@ -2404,9 +2398,9 @@ function tally(num) {
                     } //build a dataset to count
             }
             for (var node in tally.agreements.runners) {
-                var ags
-                try { ags = tally.agreements.runners[node].report.agreements } catch (e) {}
-                for (var subnode in ags) {
+                var agreements
+                try { agreements = tally.agreements.runners[node].report.agreements } catch (e) {}
+                for (var subnode in agreements) {
                     if (tally.agreements.tally[subnode]) {
                         if (tally.agreements.tally[subnode].hash == tally.agreements.tally[node].hash && nodes[node].report.block === num - 99) {
                             tally.agreements.tally[subnode].votes++

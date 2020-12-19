@@ -7,7 +7,7 @@ const NODEDOMAIN = ENV.domain || 'http://dlux-token.herokuapp.com'
 const override = ENV.override || 0
 const rta = ENV.rta || ''
 const rtp = ENV.rtp || ''
-
+var ipfshost = ENV.ipfshost || 'ipfs.infura.io'
 const bidRate = ENV.BIDRATE || 2500
 const port = ENV.PORT || 3000;
 var clientURL = ENV.APIURL || 'https://api.hive.blog'
@@ -44,7 +44,8 @@ let config = {
     acm,
     rta,
     rtp,
-    override
+    override,
+    ipfshost
 };
 
 module.exports = config;
