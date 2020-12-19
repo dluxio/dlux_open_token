@@ -4,9 +4,9 @@ const hivejs = require('@hiveio/hive-js');
 const fetch = require('node-fetch');
 const hiveState = require('./processor');
 const readline = require('readline');
-const safeEval = require('safe-eval');
+//const safeEval = require('safe-eval');
 const IPFS = require('ipfs-api');
-var aesjs = require('aes-js');
+//var aesjs = require('aes-js');
 const ipfs = new IPFS({
     host: 'ipfs.infura.io',
     port: 5001,
@@ -55,7 +55,8 @@ console.log("Streaming using mode", streamMode);
 var client = new hive.Client(config.clientURL);
 var processor;
 
-var pa = []
+var live_dex = {},
+    pa = []
 
 const Unixfs = require('ipfs-unixfs')
 const {
@@ -232,6 +233,21 @@ api.get('/getauthorpic/:un', (req, res, next) => {
         })
 });
 
+api.get('/pendex/:un', (req, res, next) => { //pending dex transactions and feedback un=username returns pending transaction IDs
+    let un = req.params.un
+    res.setHeader('Content-Type', 'application/json')
+    let ret = Object.keys(live_dex[un])
+    res.send(JSON.stringify(ret, null, 3))
+});
+
+api.get('/pendex/:un/:id', (req, res, next) => { //pending dex transactions and feedback, un= username, id= transaction ID, returns detail JSON
+    let un = req.params.un
+    let id = req.params.id
+    res.setHeader('Content-Type', 'application/json')
+    let ret = live_dex[un][id]
+    res.send(JSON.stringify(ret, null, 3))
+});
+
 api.get('/getblog/:un', (req, res, next) => {
     let un = req.params.un
     let start = req.query.s || 0
@@ -358,77 +374,6 @@ api.get('/posts/:author/:permlink', (req, res, next) => {
             .catch(e => { console.log(e) })
     } catch (e) { res.send('Something went wrong') }
 });
-api.get('/fresh', (req, res, next) => {
-    let page = req.query.page || 0
-    res.setHeader('Content-Type', 'application/json')
-    var ip = page && typeof page == 'number' ? plasma.page[page] : current
-    store.someChildren(['postchron'], { lte: ip, gte: plasma.page[page] }, function(err, obj) {
-        var feed = []
-        for (i in obj) {
-            feed.push(i)
-            if (feed.length == 25) {
-                if (typeof page == 'number' && page > plasma.page.length) {
-                    plasma.page.push(i)
-                } else if (typeof page == 'number' && page >= 0) {
-                    plasma.page.push(i)
-                } else {
-                    plasma.page[page] = i
-                }
-                break;
-            }
-        }
-        res.send(JSON.stringify({
-            feed,
-            node: config.username,
-            VERSION,
-            realtime: current
-        }, null, 3))
-    });
-});
-api.get('/freshncz', (req, res, next) => {
-    let pagencz = req.query.page || 0
-    res.setHeader('Content-Type', 'application/json')
-    var ip = pagencz && typeof pagencz == 'number' ? plasma.pagencz[pagencz] : realtime
-    store.someChildren(['postchron'], { lte: ip, gte: plasma.pagencz[pagencz] }, function(err, obj) {
-        var feed = [],
-            Promises = []
-        for (p in obj) {
-            Promises.push(new Promise(function(resolve, reject) {
-                store.get(['posts', `${obj[p].a}/${obj[p].p}`], function(err, obj) {
-                    if (err) {
-                        reject(err)
-                    } else {
-                        resolve(obj)
-                    }
-                });
-            }));
-        }
-        Promise.all(Promises)
-            .then(function(obj) {
-                for (i = 0; i < obj.length; i++) {
-                    if (obj[i].credentials.nanocheeze) {
-                        if (obj[i].credentials.nanocheeze.safe) feed.push(i)
-                    }
-                    if (feed.length == 25) {
-                        if (typeof pagencz == 'number' && pagencz > plasma.pagencz[i]) {
-                            plasma.pagencz.push(obj[i].block)
-                        } else if (typeof pagencz == 'number' && pagencz >= 0) {
-                            plasma.pagencz.push(obj[i].block)
-                        } else {
-                            plasma.pagencz[pagencz] = obj[i].block
-                        }
-                        break;
-                    }
-                }
-                res.send(JSON.stringify({
-                    feed,
-                    node: config.username,
-                    VERSION,
-                    realtime: current
-                }, null, 3))
-            })
-    })
-});
 
 api.get('/markets', (req, res, next) => {
     let markets = getPathObj(['markets']),
@@ -483,62 +428,6 @@ api.get('/report/:un', (req, res, next) => {
 http.listen(config.port, function() {
     console.log(`DLUX token API listening on port ${config.port}`);
 });
-var utils = {
-    chronoSort: function() {
-        var sorted
-        store.get(['chrono'], function(err, obj) {
-            sorted = obj
-            sorted.sort(function(a, b) {
-                return a.block - b.block
-            });
-            store.batch([{ type: 'put', path: ['chrono'], data: sorted }])
-        });
-    },
-    cleaner: function(num, prune) { //memory management with out lossing private data(individually shardable)
-        var nodes
-        store.get(['markets', 'node'], function(err, obj) {
-            nodes = obj
-            for (var node in nodes) {
-                if (nodes[node].report.block < num - prune || 28800) {
-                    if (nodes[node].report.stash && nodes[node].report.stash.length < 255 && typeof nodes[node].report.stash.length === 'string') {
-                        var temp = {
-                            stash: nodes[node].report.stash,
-                            hash: nodes[node].report.hash
-                        }
-                        delete nodes[node].report
-                        nodes[node].report = temp
-                    } else {
-                        delete nodes[node].report
-                    }
-                }
-            }
-            store.batch([{ type: 'put', path: ['markets', 'node'], data: nodes }])
-        });
-    },
-    agentCycler: function() {
-        var queue
-        store.get(['queue'], function(err, obj) {
-            queue = obj
-            var x = queue.shift();
-            queue.push(x);
-            return x
-            store.batch([{ type: 'put', path: ['queue'], data: queue }])
-        });
-    },
-    cleanExeq: function(id) {
-        var exeq
-        store.get(['exeq'], function(err, obj) {
-            exeq = obj
-            for (var i = 0; i < exeq.length; i++) {
-                if (exeq[i][1] == id) {
-                    exeq.splice(i, 1)
-                    i--;
-                }
-            }
-            store.batch([{ type: 'put', path: ['exeq'], data: exeq }])
-        });
-    }
-}
 
 var plasma = {
         pending: {},
@@ -678,34 +567,6 @@ function startApp() {
             })
             .catch(e => { console.log(e) })
     });
-    /*
-    processor.onOperation('update_proposal_votes', function(json) {
-        store.get(['sps'], function(e, spsc) {
-            store.del(['sps'],function(e){
-                var sps = spsc
-                delete sps.jga //delete later
-                console.log(sps)
-                if(json.approve){
-                    for(i=0;i<json.proposal_ids.length;i++){
-                        if(json.proposal_ids[i] == 11){
-                            sps[json.voter] = true
-                            console.log(json.voter + ' rocks!')
-                        }
-                    }
-                } else {
-                    for(i=0;i<json.proposal_ids.length;i++){
-                        if(json.proposal_ids[i] == 11){
-                            delete sps[json.voter]
-                            console.log(json.voter + ' :(')
-                        }
-                    }
-                }
-                var ops=[{type:'put',path:['sps'], data: sps}]
-                store.batch(ops, pc)
-            })
-        })
-    });
-    */
     // power up tokens
     processor.on('power_up', function(json, from, active, pc) {
         var amount = parseInt(json.amount),
@@ -890,6 +751,7 @@ function startApp() {
                                         }
                                     ]]
                                 }
+                                chronAssign(json.block_num + 200, { op: 'check', agent: found.auths[0][0], txid: found.txid + ':dispute', acc: found.from, id: found.escrow_id.toString() })
                                 store.batch([
                                     ops[0],
                                     { type: 'put', path: ['contracts', json.for, json.contract.split(':')[1]], data: found },
@@ -911,7 +773,7 @@ function startApp() {
             })
     });
 
-    processor.on('dex_hive_sell', function(json, from, active, pc) {
+    processor.on('dex_hive_sell', function(json, from, active, pc) { //no feedback required, trade will appear after 60 seconds
         var buyAmount = parseInt(json.hive)
         store.get(['balances', from], function(e, a) {
             if (!e) {
@@ -925,6 +787,7 @@ function startApp() {
                     const contract = {
                         txid,
                         type: 'ss',
+                        co: from,
                         from: from,
                         hive: buyAmount,
                         hbd: 0,
@@ -974,6 +837,7 @@ function startApp() {
                         type: 'ds',
                         from: from,
                         hive: 0,
+                        co: from,
                         hbd: buyAmount,
                         amount: json.dlux,
                         rate: parseFloat((buyAmount) / (json.dlux)).toFixed(6),
@@ -1022,28 +886,28 @@ function startApp() {
                             case 'ss':
                                 store.get(['dex', 'hive', 'sellOrders', `${b.rate}:${b.txid}`], function(e, a) {
                                     if (e) { console.log(e) } else if (isEmpty(a)) { console.log('Nothing here' + b.txid) } else {
-                                        release(from, b.txid)
+                                        release(from, b.txid, json.block_num)
                                     }
                                 });
                                 break;
                             case 'ds':
                                 store.get(['dex', 'hbd', 'sellOrders', `${b.rate}:${b.txid}`], function(e, a) {
                                     if (e) { console.log(e) } else if (isEmpty(a)) { console.log('Nothing here' + b.txid) } else {
-                                        release(from, b.txid)
+                                        release(from, b.txid, json.block_num)
                                     }
                                 });
                                 break;
                             case 'sb':
                                 store.get(['dex', 'hive', 'buyOrders', `${b.rate}:${b.txid}`], function(e, a) {
                                     if (e) { console.log(e) } else if (isEmpty(a)) { console.log('Nothing here' + b.txid) } else {
-                                        release(from, b.txid)
+                                        release(from, b.txid, json.block_num)
                                     }
                                 });
                                 break;
                             case 'db':
                                 store.get(['dex', 'hbd', 'buyOrders', `${b.rate}:${b.txid}`], function(e, a) {
                                     if (e) { console.log(e) } else if (isEmpty(a)) { console.log('Nothing here' + b.txid) } else {
-                                        release(from, b.txid)
+                                        release(from, b.txid, json.block_num)
                                     }
                                 });
                                 break;
@@ -1058,7 +922,7 @@ function startApp() {
         }
     })
 
-    processor.onOperation('escrow_transfer', function(json, pc) { //grab posts to reward
+    processor.onOperation('escrow_transfer', function(json, pc) {
         var ops, dextx, seller, contract, isAgent, isDAgent, dextxdlux, meta, done = 0,
             type = 'hive'
         try {
@@ -1074,18 +938,25 @@ function startApp() {
         } catch (e) {}
         let PfromBal = getPathNum(['balances', json.from]),
             PtoBal = getPathNum(['balances', json.to]),
+            PagentBal = getPathNum(['balances', json.agent]),
             PtoNode = getPathObj(['markets', 'node', json.to]),
             PagentNode = getPathObj(['markets', 'node', json.agent]),
-            Pcontract = getPathObj(['contracts', seller, contract])
-        Promise.all([PfromBal, PtoBal, PtoNode, PagentNode, Pcontract]).then(function(v) {
+            Pcontract = getPathObj(['contracts', seller, contract]),
+            PhbdHis = getPathObj(['dex', 'hbd', 'his']),
+            PhiveHis = getPathObj(['dex', 'hive', 'his'])
+        Promise.all([PfromBal, PtoBal, PtoNode, PagentNode, Pcontract, PhbdHis, PhiveHis, PagentBal]).then(function(v) {
             console.log(v)
             var fromBal = v[0],
                 toBal = v[1],
                 toNode = v[2],
                 agentNode = v[3],
-                contract = v[4] || {}
-            isAgent = (toNode.lastGood > json.block_num - 200)
+                contract = v[4] || {},
+                hbdHis = v[5],
+                hiveHis = v[6],
+                agentBal = v[7],
+                isAgent = (toNode.lastGood > json.block_num - 200)
             isDAgent = (agentNode.lastGood > json.block_num - 200)
+
             buy = contract.amount
             console.log(buy, isAgent, isDAgent)
             if (typeof buy === 'number' && isAgent && isDAgent) { //{txid, from: from, buying: buyAmount, amount: json.dlux, [json.dlux]:buyAmount, rate:parseFloat((json.dlux)/(buyAmount)).toFixed(6), block:current, partial: json.partial || true
@@ -1095,13 +966,17 @@ function startApp() {
                 console.log(contract.hive, parseInt(parseFloat(json.hive_amount) * 1000), contract.hbd, contract.hbd, parseInt(parseFloat(json.hbd_amount) * 1000), check, until)
                 if (contract.hive == parseInt(parseFloat(json.hive_amount) * 1000) && contract.hbd == parseInt(parseFloat(json.hbd_amount) * 1000) && check > until) {
                     console.log(1)
-                    if (toBal >= contract.amount) {
-                        console.log(2)
+                    if (toBal >= (contract.amount * 2) && agentBal >= (contract.amount * 2)) {
                         done = 1
-                        toBal -= contract.amount // collateral withdraw of dlux
+                        toBal -= (contract.amount * 2) // collateral withdraw of dlux
+                        agentBal -= (contract.amount * 2) //collateral withdrawl of dlux
                         fromBal += contract.amount // collateral held and therefore instant purchase
-                        contract.escrow = contract.amount
+                        contract.escrow = 0 //(contract.amount * 4)
+                        contract.agent = json.agent
+                        contract.tagent = json.to
                         contract.buyer = json.from
+                        contract.eo = json.from
+                        contract.from = json.from
                         contract.escrow_id = json.escrow_id
                         contract.approveAgent = false
                         contract.approve_to = false
@@ -1175,14 +1050,17 @@ function startApp() {
                                 }
                             ]]
                         ]
+                        chronAssign(json.block_num + 200, { op: 'check', agent: contract.pending[1][0], txid: contract.txid + ':buyApproveA', acc: json.from, id: json.escrow_id.toString() })
+                        chronAssign(json.block_num + 200, { op: 'check', agent: contract.pending[0][0], txid: contract.txid + ':buyApproveT', acc: json.from, id: json.escrow_id.toString() })
                         ops = [
                             { type: 'put', path: ['feed', `${json.block_num}:${json.transaction_id}`], data: `@${json.from}| has bought ${meta}: ${parseFloat(contract.amount/1000).toFixed(3)} for ${samount}` },
                             { type: 'put', path: ['contracts', seller, meta.split(':')[1]], data: contract },
-                            { type: 'put', path: ['escrow', contract.pending[0][0], contract.txid + ':buyApprove'], data: contract.pending[0][1] },
-                            { type: 'put', path: ['escrow', contract.pending[1][0], contract.txid + ':buyApprove'], data: contract.pending[1][1] },
+                            { type: 'put', path: ['escrow', contract.pending[0][0], contract.txid + ':buyApproveT'], data: contract.pending[0][1] },
+                            { type: 'put', path: ['escrow', contract.pending[1][0], contract.txid + ':buyApproveA'], data: contract.pending[1][1] },
                             { type: 'put', path: ['escrow', json.escrow_id.toString(), json.from], data: { 'for': seller, 'contract': meta.split(':')[1] } },
                             { type: 'put', path: ['balances', json.from], data: fromBal },
                             { type: 'put', path: ['balances', json.to], data: toBal },
+                            { type: 'put', path: ['balances', contract.agent], data: agentBal },
                             { type: 'put', path: ['dex', type, 'tick'], data: contract.rate },
                             //{type:'put',path:['chrono',`${json.block_num}`]},
                             { type: 'put', path: ['dex', type, 'his', `${hisE.block}:${json.transaction_id}`], data: hisE },
@@ -1192,7 +1070,7 @@ function startApp() {
                     }
                     if (!done) {
                         console.log(3)
-                        var out = []
+                        var out = [{ type: 'put', path: ['feed', `${json.block_num}:${json.transaction_id}`], data: `@${json.from}'s trade has failed collateral requirements, Try different agents` }, ]
                         out.push({
                             type: 'put',
                             path: ['escrow', json.to, json.escrow_id.toString()],
@@ -1226,14 +1104,16 @@ function startApp() {
                         store.batch(out, pc)
                     }
                 }
-            } else if (toBal > dextxdlux && typeof dextxdlux === 'number' && dextxdlux > 0 && isAgent && isDAgent) {
+            } else if (toBal > (dextxdlux * 2) && agentBal > (dextxdlux * 2) && typeof dextxdlux === 'number' && dextxdlux > 0 && isAgent && isDAgent) {
                 console.log(4)
                 var txid = 'DLUX' + hashThis(`${json.from}${json.block_num}`),
                     rate = parseFloat(parseInt(parseFloat(json.hive_amount) * 1000) / dextx.dlux).toFixed(6)
                 if (!parseFloat(rate)) rate = parseFloat(parseInt(parseFloat(json.hbd_amount) * 1000) / dextx.dlux).toFixed(6)
+                chronAssign(json.block_num + 200, { op: 'check', agent: json.agent, txid: txid + ':listApproveA', acc: json.from, id: json.escrow_id.toString() })
+                chronAssign(json.block_num + 200, { op: 'check', agent: json.to, txid: txid + ':listApproveT', acc: json.from, id: json.escrow_id.toString() })
                 ops = [{
                             type: 'put',
-                            path: ['escrow', json.agent, txid + ':listApprove'],
+                            path: ['escrow', json.agent, txid + ':listApproveA'],
                             data: [
                                 "escrow_approve",
                                 {
@@ -1248,7 +1128,7 @@ function startApp() {
                         },
                         {
                             type: 'put',
-                            path: ['escrow', json.to, txid + ':listApprove'],
+                            path: ['escrow', json.to, txid + ':listApproveT'],
                             data: [
                                 "escrow_approve",
                                 {
@@ -1314,13 +1194,25 @@ function startApp() {
                         rate,
                         block: json.block_num,
                         escrow_id: json.escrow_id,
+                        eo: json.from,
+                        escrow: 0, //(dextx.dlux * 4),
                         agent: json.agent,
+                        tagent: json.to,
                         fee: json.fee,
                         approvals: 0,
                         auths,
                         reject
                     }
-                let exp_block = json.block_num + 1000
+                if (parseFloat(json.hive_amount) > 0) {
+                    contract.type = 'sb'
+                        //ops.push({ type: 'put', path: ['feed', `${json.block_num}:${json.transaction_id}`], data: `@${json.from}| signed a ${parseFloat(json.hive_amount).toFixed(3)} HIVE buy order for ${parseFloat(dextx.dlux).toFixed(3)} DLUX:${txid}` })
+                        //ops.push({ type: 'put', path: ['dex', 'hive', 'buyOrders', `${contract.rate}:${contract.txid}`], data: contract })
+                } else if (parseFloat(json.hbd_amount) > 0) {
+                    contract.type = 'db'
+                        //ops.push({ type: 'put', path: ['feed', `${json.block_num}:${json.transaction_id}`], data: `@${json.from}| signed a ${parseFloat(json.hbd_amount).toFixed(3)} HBD buy order for ${parseFloat(dextx.dlux).toFixed(3)} DLUX:${txid}` })
+                        //ops.push({ type: 'put', path: ['dex', 'hbd', 'buyOrders', `${contract.rate}:${contract.txid}`], data: contract })
+                }
+                let exp_block = json.block_num + 1000 //fix this
                 chronAssign(exp_block, {
                         block: exp_block,
                         op: 'expire',
@@ -1329,15 +1221,8 @@ function startApp() {
                     })
                     .then(expire_path => {
                         contract.expire_path = expire_path
-                        if (parseFloat(json.hive_amount) > 0) {
-                            contract.type = 'sb'
-                            ops.push({ type: 'put', path: ['feed', `${json.block_num}:${json.transaction_id}`], data: `@${json.from}| signed a ${parseFloat(json.hive_amount).toFixed(3)} HIVE buy order for ${parseFloat(dextx.dlux).toFixed(3)} DLUX:${txid}` })
-                            ops.push({ type: 'put', path: ['dex', 'hive', 'buyOrders', `${contract.rate}:${contract.txid}`], data: contract })
-                        } else if (parseFloat(json.hbd_amount) > 0) {
-                            contract.type = 'db'
-                            ops.push({ type: 'put', path: ['feed', `${json.block_num}:${json.transaction_id}`], data: `@${json.from}| signed a ${parseFloat(json.hbd_amount).toFixed(3)} HBD buy order for ${parseFloat(dextx.dlux).toFixed(3)} DLUX:${txid}` })
-                            ops.push({ type: 'put', path: ['dex', 'hbd', 'buyOrders', `${contract.rate}:${contract.txid}`], data: contract })
-                        }
+                        ops.push({ type: 'put', path: ['balances', json.to], data: toBal - (dextxdlux * 2) })
+                        ops.push({ type: 'put', path: ['balances', json.agent], data: agentBal - (dextxdlux * 2) })
                         console.log(contract.type)
                         ops.push({ type: 'put', path: ['contracts', json.from, txid], data: contract })
                         store.batch(ops, pc)
@@ -1387,16 +1272,17 @@ function startApp() {
                                         if (t) {
                                             console.log('to then agent' + t)
                                             c.approve_to = true
+                                            chronAssign(json.block_num + 200, { op: 'check', agent: c.auths[0][0], txid: c.txid + ':dispute', acc: c.from, id: c.escrow_id.toString() })
                                             dataOps.push({ type: 'put', path: ['escrow', c.auths[0][0], c.txid + ':dispute'], data: c.auths[0][1] })
                                         }
-                                        dataOps.push({ type: 'del', path: ['escrow', json.who, c.txid + ':buyApprove'] })
+                                        dataOps.push({ type: 'del', path: ['escrow', json.who, c.txid + ':buyApproveA'] })
                                         if (json.who == config.username) {
                                             for (var i = 0; i < NodeOps.length; i++) {
                                                 if (NodeOps[i][1][1].from == json.from && NodeOps[i][1][1].escrow_id == json.escrow_id && NodeOps[i][1][0] == 'escrow_approve') {
                                                     NodeOps.splice(i, 1)
                                                 }
                                             }
-                                            delete plasma.pending[c.txid + ':buyApprove']
+                                            delete plasma.pending[c.txid + ':buyApproveA']
                                         }
                                         console.log(a.contract)
                                         dataOps.push({ type: 'put', path: ['contracts', a.for, a.contract], data: c })
@@ -1411,17 +1297,18 @@ function startApp() {
                                         if (t) {
                                             console.log('agent then to' + t)
                                             c.approveAgent = true
+                                            chronAssign(json.block_num + 200, { op: 'check', agent: c.auths[0][0], txid: c.txid + ':dispute', acc: c.from, id: c.escrow_id.toString() })
                                             dataOps.push({ type: 'put', path: ['escrow', c.auths[0][0], c.txid + ':dispute'], data: c.auths[0][1] })
 
                                         }
-                                        dataOps.push({ type: 'del', path: ['escrow', json.who, c.txid + ':buyApprove'] })
+                                        dataOps.push({ type: 'del', path: ['escrow', json.who, c.txid + ':buyApproveT'] })
                                         if (json.who == config.username) {
                                             for (var i = 0; i < NodeOps.length; i++) {
                                                 if (NodeOps[i][1][1].from == json.from && NodeOps[i][1][1].escrow_id == json.escrow_id && NodeOps[i][1][0] == 'escrow_approve') {
                                                     NodeOps.splice(i, 1)
                                                 }
                                             }
-                                            delete plasma.pending[c.txid + ':buyApprove']
+                                            delete plasma.pending[c.txid + ':buyApproveT']
                                         }
                                         console.log(a.contract, c)
                                         dataOps.push({ type: 'put', path: ['contracts', a.for, a.contract], data: c })
@@ -1430,15 +1317,52 @@ function startApp() {
                                     })
                                 })
                             }
-                        } else if (json.approve) {
-                            dataOps.push({ type: 'del', path: ['escrow', json.who, c.txid + ':listApprove'] })
+                        } else if (json.approve && json.who == json.to) { //no contract update... update approvals?
+                            dataOps.push({ type: 'del', path: ['escrow', json.who, c.txid + ':listApproveT'] })
                             if (json.who == config.username) {
                                 for (var i = 0; i < NodeOps.length; i++) {
                                     if (NodeOps[i][1][1].from == json.from && NodeOps[i][1][1].escrow_id == json.escrow_id && NodeOps[i][1][0] == 'escrow_approve') {
                                         NodeOps.splice(i, 1)
                                     }
                                 }
-                                delete plasma.pending[c.txid + ':listApprove']
+                                delete plasma.pending[c.txid + ':listApproveT']
+                            }
+                            c.approve_to = true
+                            if (c.approveAgent) {
+                                if (parseFloat(c.hive) > 0) {
+                                    //contract.type = 'sb'
+                                    dataOps.push({ type: 'put', path: ['feed', `${json.block_num}:${c.txid}`], data: `@${c.eo}| signed a ${parseFloat(c.hive).toFixed(3)} HIVE buy order for ${parseFloat(c.amount).toFixed(3)}` })
+                                    dataOps.push({ type: 'put', path: ['dex', 'hive', 'buyOrders', `${c.rate}:${c.txid}`], data: c })
+                                } else if (parseFloat(c.hbd) > 0) {
+                                    //contract.type = 'db'
+                                    dataOps.push({ type: 'put', path: ['feed', `${json.block_num}:${c.txid}`], data: `@${c.eo}| signed a ${parseFloat(c.hbd).toFixed(3)} HBD buy order for ${parseFloat(c.amount).toFixed(3)}` })
+                                    dataOps.push({ type: 'put', path: ['dex', 'hbd', 'buyOrders', `${c.rate}:${c.txid}`], data: c })
+                                }
+                            }
+                            dataOps.push({ type: 'put', path: ['contracts', a.for, a.contract], data: c })
+                            store.batch(dataOps, pc)
+                            credit(json.who)
+                        } else if (json.approve && json.who == json.agent) { //no contract update... update list approvals, maybe this is where to pull collateral?
+                            dataOps.push({ type: 'del', path: ['escrow', json.who, c.txid + ':listApproveA'] })
+                            if (json.who == config.username) {
+                                for (var i = 0; i < NodeOps.length; i++) {
+                                    if (NodeOps[i][1][1].from == json.from && NodeOps[i][1][1].escrow_id == json.escrow_id && NodeOps[i][1][0] == 'escrow_approve') {
+                                        NodeOps.splice(i, 1)
+                                    }
+                                }
+                                delete plasma.pending[c.txid + ':listApproveA']
+                            }
+                            c.approveAgent = true
+                            if (c.approve_to) {
+                                if (parseFloat(c.hive) > 0) {
+                                    //contract.type = 'sb'
+                                    dataOps.push({ type: 'put', path: ['feed', `${json.block_num}:${c.txid}`], data: `@${c.eo}| signed a ${parseFloat(c.hive).toFixed(3)} HIVE buy order for ${parseFloat(c.amount).toFixed(3)}` })
+                                    dataOps.push({ type: 'put', path: ['dex', 'hive', 'buyOrders', `${c.rate}:${c.txid}`], data: c })
+                                } else if (parseFloat(c.hbd) > 0) {
+                                    //contract.type = 'db'
+                                    dataOps.push({ type: 'put', path: ['feed', `${json.block_num}:${c.txid}`], data: `@${c.eo}| signed a ${parseFloat(c.hbd).toFixed(3)} HBD buy order for ${parseFloat(c.amount).toFixed(3)}` })
+                                    dataOps.push({ type: 'put', path: ['dex', 'hbd', 'buyOrders', `${c.rate}:${c.txid}`], data: c })
+                                }
                             }
                             dataOps.push({ type: 'put', path: ['contracts', a.for, a.contract], data: c })
                             store.batch(dataOps, pc)
@@ -1469,16 +1393,17 @@ function startApp() {
 
     });
 
-    processor.onOperation('escrow_dispute', function(json, pc) {
+    processor.onOperation('escrow_dispute', function(json, pc) { //this probably needs some work
         getPathObj(['escrow', json.escrow_id.toString(), json.from])
             .then(a => {
                 console.log(a)
-                getPathObj(['contracts', a.for, a.contract])
+                getPathObj(['contracts', a.for, a.contract]) //probably put a contract.status for validity checks
                     .then(c => {
                         if (Object.keys(c).length == 0) {
                             console.log(c, json)
-                            pc[0](pc[2])
-                        } else {
+                            pc[0](pc[2]) //contract not found continue
+                        } else { // no validity checks? where does collateral get fixed -- no contract update
+                            chronAssign(json.block_num + 200, { op: 'check', agent: c.auths[2][0], txid: c.txid + ':release', acc: c.from, id: c.escrow_id.toString() })
                             store.batch([
                                 { type: 'put', path: ['escrow', c.auths[1][0], c.txid + ':release'], data: c.auths[1][1] },
                                 { type: 'put', path: ['contracts', a.for, a.contract], data: c },
@@ -1493,7 +1418,7 @@ function startApp() {
                                 }
                                 delete plasma.pending[c.txid + `:dispute`]
                             }
-                            credit(json.who)
+                            credit(json.who) //this is a good place to settle collateral, may require two collateral pools
                         }
                     })
                     .catch(e => { console.log(e) })
@@ -1507,6 +1432,9 @@ function startApp() {
                 getPathObj(['contracts', a.for, a.contract])
                     .then(c => {
                         if (Object.keys(c).length && c.auths[2]) {
+                            add(json.agent, parseInt(c.escrow / 2)) //settle collateral
+                            c.escrow = parseInt(c.escrow / 2)
+                            chronAssign(json.block_num + 200, { op: 'check', agent: c.auths[2][0], txid: c.txid + ':transfer', acc: c.from, id: c.escrow_id.toString() })
                             store.batch([
                                 { type: 'put', path: ['escrow', c.auths[2][0], c.txid + ':transfer'], data: c.auths[2][1] },
                                 { type: 'put', path: ['contracts', a.for, a.contract], data: c },
@@ -1521,8 +1449,10 @@ function startApp() {
                                 }
                                 delete plasma.pending[c.txid + `:release`]
                             }
-                            credit(json.who)
+                            credit(json.who) //good place to settle collateral as well
                         } else if (c.cancel && json.receiver == c.from) {
+                            add(json.agent, parseInt(c.escrow / 2))
+                            add(json.to, parseInt(c.escrow / 2))
                             store.batch([
                                 { type: 'del', path: ['contracts', a.for, a.contract], data: c },
                                 { type: 'put', path: ['feed', `${json.block_num}:${json.transaction_id}`], data: `@${json.from}| canceled ${c.txid}` },
@@ -1530,7 +1460,7 @@ function startApp() {
                                 { type: 'del', path: ['escrow', json.who, c.txid + `:cancel`] }
                             ], pc)
                             deletePointer(c.escrow_id, a.for).then(r => { console.log(r) }).catch(e => console.error(e))
-                            credit(json.who)
+                            credit(json.who) //good place to settle collateral as well
                         } else {
                             pc[0](pc[2])
                         }
@@ -1574,6 +1504,9 @@ function startApp() {
                                 attempts: 0,
                                 yays: 0,
                                 wins: 0,
+                                strikes: 0,
+                                burned: 0,
+                                moved: 0,
                                 contracts: 0,
                                 escrows: 0,
                                 lastGood: 0,
@@ -1842,7 +1775,7 @@ function startApp() {
         }
     });
 
-    processor.on('cjv', function(json, from, active, pc) {
+    processor.on('cjv', function(json, from, active, pc) { //externalizing HIVE data
         var postPromise = getPathObj(['posts', `${json.a}/${json.p}`])
         Promise.all([postPromise])
             .then(function(v) {
@@ -1901,7 +1834,7 @@ function startApp() {
             });
     });
 
-    processor.on('sig', function(json, from, active, pc) {
+    processor.on('sig', function(json, from, active, pc) { //hopeful attestation of programs
         var postPromise = getPathObj(['posts', `${json.author}/${json.permlink}`])
         Promise.all([postPromise])
             .then(function(v) {
@@ -1919,7 +1852,7 @@ function startApp() {
             });
     });
 
-    processor.on('cert', function(json, from, active, pc) {
+    processor.on('cert', function(json, from, active, pc) { //verification certs for posted programs
         var postPromise = getPathObj(['posts', `${json.author}/${json.permlink}`])
         Promise.all([postPromise])
             .then(function(v) {
@@ -2002,6 +1935,7 @@ function startApp() {
                                 eo = c.buyer,
                                 g = c.escrow
                             if (c.type === 'sb' || c.type === 'db') eo = c.from
+                            add(json.from, parseInt(cp.escrow))
                             ops.push({ type: 'put', path: ['balances', json.from], data: parseInt(g + d) })
                             ops.push({ type: 'del', path: ['escrow', json.from, addr + ':transfer'] })
                             ops.push({ type: 'del', path: ['contracts', co, addr] })
@@ -2134,10 +2068,14 @@ function startApp() {
                         console.log(b)
                         switch (b.op) {
                             case 'expire':
-                                promises.push(release(b.from, b.txid))
+                                promises.push(release(b.from, b.txid, num))
                                 store.batch([{ type: 'del', path: ['chrono', delKey] }], [function() { console.log('success') }, function() { console.log('failure') }])
                                 break;
-                            case 'power_down':
+                            case 'check':
+                                promises.push(enforce(b.agent, b.txid, { id: b.id, acc: b.acc }, num))
+                                store.batch([{ type: 'del', path: ['chrono', delKey] }], [function() { console.log('success') }, function() { console.log('failure') }])
+                                break;
+                            case 'power_down': //needs work and testing
                                 let lbp = getPathNum(['balances', from]),
                                     tpowp = getPathNum(['pow', 't']),
                                     powp = getPathNum(['pow', from])
@@ -2161,7 +2099,7 @@ function startApp() {
                                     })
                                 }
                                 break;
-                            case 'post_reward':
+                            case 'post_reward': //needs work and/or testing
                                 promises.push(postRewardOP(b, num, chrops[i].split(':')[1], delkey))
 
                                 function postRewardOP(b, num, id, delkey) {
@@ -2558,7 +2496,111 @@ function tally(num) {
     })
 }
 
-function release(from, txid) {
+function enforce(agent, txid, pointer, block_num) { //checks status of required ops, performs collateral ops, strike recording and memory management
+    return new Promise((resolve, reject) => {
+        getPathObj(['escrow', agent, txid])
+            .then(a => {
+                if (Object.keys(a).length) {
+                    let op = txid.split(":")[1],
+                        id = txid.split(":")[0],
+                        ops = []
+                    getPathObj(['contracts', pointer.acc, pointer.id])
+                        .then(c => {
+                            let eo = c.eo
+                            let co = c.from
+                            switch (op) {
+                                case 'dispute':
+                                    ops.push({ type: 'put', path: ['feed', `${block_num}:${txid}`], data: `@${c.tagent} failed to make a timely transaction and has forfieted collateral` })
+                                    ops.push({ type: 'del', path: ['escrow', agent, txid] })
+                                    ops.push({ type: 'del', path: ['contracts', co, id] })
+                                    add(c.agent, parseInt(c.escrow / 2))
+                                    add(c.eo, parseInt(c.escrow / 4))
+                                    deletePointer(c.escrow_id, eo)
+                                    nodeUpdate(c.tagent, 'strike', parseInt(c.escrow / 4))
+                                    break;
+                                case 'buyApproveT':
+                                    ops.push({ type: 'put', path: ['feed', `${block_num}:${txid}`], data: `@${c.tagent} failed to make a timely transaction` })
+                                    ops.push({ type: 'del', path: ['escrow', agent, txid] })
+                                    ops.push({ type: 'del', path: ['contracts', co, id] })
+                                    add(c.agent, parseInt(c.escrow / 2))
+                                    add(c.eo, parseInt(c.escrow / 4))
+                                    deletePointer(c.escrow_id, eo)
+                                    nodeUpdate(c.tagent, 'strike', parseInt(c.escrow / 4))
+                                    break;
+                                case 'buyApproveA':
+                                    ops.push({ type: 'put', path: ['feed', `${block_num}:${txid}`], data: `@${c.agent} failed to make a timely transaction` })
+                                    ops.push({ type: 'del', path: ['escrow', agent, txid] })
+                                    ops.push({ type: 'del', path: ['contracts', co, id] })
+                                    add(c.tagent, parseInt(c.escrow / 2))
+                                    add(c.eo, parseInt(c.escrow / 4))
+                                    deletePointer(c.escrow_id, eo)
+                                    nodeUpdate(c.agent, 'strike', parseInt(c.escrow / 4))
+                                    break;
+                                case 'listApproveT':
+                                    ops.push({ type: 'put', path: ['feed', `${block_num}:${txid}`], data: `@${c.tagent} failed to make a timely transaction` })
+                                    ops.push({ type: 'del', path: ['escrow', agent, txid] })
+                                    ops.push({ type: 'del', path: ['contracts', co, id] })
+                                    add(c.agent, parseInt(c.escrow / 2))
+                                    add(c.eo, parseInt(c.escrow / 4))
+                                    deletePointer(c.escrow_id, eo)
+                                    nodeUpdate(c.tagent, 'strike', parseInt(c.escrow / 4))
+                                    break;
+                                case 'listApproveA':
+                                    ops.push({ type: 'put', path: ['feed', `${block_num}:${txid}`], data: `@${c.agent} failed to make a timely transaction` })
+                                    ops.push({ type: 'del', path: ['escrow', agent, txid] })
+                                    ops.push({ type: 'del', path: ['contracts', co, id] })
+                                    add(c.tagent, parseInt(c.escrow / 2))
+                                    add(c.eo, parseInt(c.escrow / 4))
+                                    deletePointer(c.escrow_id, eo)
+                                    nodeUpdate(c.agent, 'strike', parseInt(c.escrow / 4))
+                                    break;
+                                case 'release':
+                                    ops.push({ type: 'put', path: ['feed', `${block_num}:${txid}`], data: `@${c.agent} failed to make a timely transaction and has forfieted collateral` })
+                                    ops.push({ type: 'del', path: ['escrow', agent, txid] })
+                                    ops.push({ type: 'del', path: ['contracts', co, id] })
+                                    add(c.tagent, parseInt(c.escrow / 2))
+                                    add(c.eo, parseInt(c.escrow / 4))
+                                    deletePointer(c.escrow_id, eo)
+                                    nodeUpdate(c.agent, 'strike', parseInt(c.escrow / 4))
+                                    break;
+                                case 'transfer':
+                                    ops.push({ type: 'put', path: ['feed', `${block_num}:${txid}`], data: `@${c.tagent} failed to make a timely transaction and has forfieted collateral` })
+                                    ops.push({ type: 'del', path: ['escrow', agent, txid] })
+                                    ops.push({ type: 'del', path: ['contracts', co, id] })
+                                    add(c.eo, parseInt(c.escrow / 2))
+                                    deletePointer(c.escrow_id, eo)
+                                    nodeUpdate(c.tagent, 'strike', parseInt(c.escrow / 4))
+                                    break;
+                                case 'cancel':
+                                    ops.push({ type: 'put', path: ['feed', `${block_num}:${txid}`], data: `@${c.tagent} failed to make a timely transaction and has forfieted collateral` })
+                                    ops.push({ type: 'del', path: ['escrow', agent, txid] })
+                                    ops.push({ type: 'del', path: ['contracts', co, id] })
+                                    add(c.agent, parseInt(c.escrow / 2))
+                                    add(c.eo, parseInt(c.escrow / 4))
+                                    deletePointer(c.escrow_id, eo)
+                                    nodeUpdate(c.tagent, 'strike', parseInt(c.escrow / 4))
+                                    break;
+                                default:
+                                    console.log(`Unknown Op: ${op}`)
+                                    resolve()
+                            }
+                        })
+                        .catch(e => {
+                            console.log(e);
+                            reject()
+                        })
+                } else {
+                    resolve()
+                }
+            })
+            .catch(e => {
+                console.log(e);
+                reject()
+            })
+    })
+}
+
+function release(from, txid, bn) {
     return new Promise((resolve, reject) => {
         var found = ''
         store.get(['contracts', from, txid], function(er, a) {
@@ -2591,6 +2633,7 @@ function release(from, txid) {
                         store.get(['dex', 'hive', 'buyOrders', `${a.rate}:${a.txid}`], function(e, r) {
                             if (e) { console.log(e) } else if (isEmpty(r)) { console.log('Nothing here' + a.txid) } else {
                                 a.cancel = true
+                                chronAssign(bn + 200, { op: 'check', agent: r.reject[0], txid: r.txid + ':cancel', acc: from, id: txid })
                                 ops.push({ type: 'put', path: ['escrow', r.reject[0], r.txid + ':cancel'], data: r.reject[1] })
                                 ops.push({ type: 'put', path: ['contracts', from, r.txid], data: a })
                                 ops.push({ type: 'del', path: ['dex', 'hive', 'buyOrders', `${a.rate}:${a.txid}`] })
@@ -2602,6 +2645,7 @@ function release(from, txid) {
                         store.get(['dex', 'hbd', 'buyOrders', `${a.rate}:${a.txid}`], function(e, r) {
                             if (e) { console.log(e) } else if (isEmpty(r)) { console.log('Nothing here' + a.txid) } else {
                                 a.cancel = true
+                                chronAssign(bn + 200, { op: 'check', agent: r.reject[0], txid: r.txid + ':cancel', acc: from, id: txid })
                                 ops.push({ type: 'put', path: ['contracts', from, r.txid], data: a })
                                 ops.push({ type: 'put', path: ['escrow', r.reject[0], r.txid + ':cancel'], data: r.reject[1] })
                                 ops.push({ type: 'del', path: ['dex', 'hbd', 'buyOrders', `${a.rate}:${a.txid}`] })
@@ -2951,7 +2995,7 @@ function dao(num) {
                 cpost[`s/${vo[oo].author}/${vo[oo].permlink}`].b = weight
                 hiveVotes = hiveVotes + `* [${vo[oo].title || 'DLUX Content'}](https://dlux.io/@${vo[oo].author}/${vo[oo].permlink}) by @${vo[oo].author} | ${parseFloat(weight/100).toFixed(2)}% \n`
             }
-            const footer = `[Visit dlux.io](https://dlux.io)\n[Find us on Discord](https://discord.gg/Beeb38j)\n[Visit our DEX/Wallet](https://ipfs.dlux.io/dex)\n[Learn how to use DLUX](https://github.com/dluxio/dluxio/wiki)\n*Price for 25.2 Hrs from posting or until daily 100,000.000 DLUX sold.`
+            const footer = `[Visit dlux.io](https://dlux.io)\n[Find us on Discord](https://discord.gg/Beeb38j)\n[Visit our DEX/Wallet](https://www.dlux.io/dex)\n[Learn how to use DLUX](https://github.com/dluxio/dluxio/wiki)\n*Price for 25.2 Hrs from posting or until daily 100,000.000 DLUX sold.`
             if (hiveVotes) hiveVotes = `#### Community Voted DLUX Posts\n` + hiveVotes + `*****\n`
             post = header + contentRewards + hiveVotes + post + footer
             var op = ["comment",
@@ -3216,6 +3260,33 @@ function deletePointer(escrowID, user) {
                 } else if (found) {
                     store.batch([{ type: 'del', path: ['escrow', escrowID.toString(), user] }], [resolve, reject, users.length])
                 }
+            }
+        })
+    })
+}
+
+function nodeUpdate(node, op, val) {
+    return new Promise((resolve, reject) => {
+        store.get(['markets', 'node', node], function(e, a) {
+            if (!e) {
+                if (!a.strikes) a.strikes = 0
+                if (!a.burned) a.burned = 0
+                if (!a.moved) a.moved = 0
+                switch (op) {
+                    case 'strike':
+                        a.strikes++
+                            a.burned += val
+                        break;
+                    case 'ops':
+                        a.escrows++
+                            a.moved += val
+                        break;
+                    default:
+                }
+                store.batch([{ type: 'put', path: ['markets', 'node', node], data: a }], [resolve, reject, 1])
+            } else {
+                console.log(e)
+                resolve()
             }
         })
     })
