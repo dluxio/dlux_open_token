@@ -774,15 +774,18 @@ function startApp() {
     });
 
     processor.on('dex_hive_sell', function(json, from, active, pc) { //no feedback required, trade will appear after 60 seconds
-        var buyAmount = parseInt(json.hive)
-        store.get(['balances', from], function(e, a) {
+        let buyAmount = parseInt(json.hive),
+            PfromBal = getPathNum(['balances', from]),
+            PhiveHis = getPathObj(['dex', 'hive', 'his'])
+        Promise.all([PfromBal, PhiveHis]).then(a => {
             if (!e) {
-                console.log(`${from}, selling ${json.dlux} for ${json.hive}`)
-                var b = a
+                let b = a[0],
+                    hiveHis = a[1],
+                    rate = parseFloat((buyAmount) / (json.dlux)).toFixed(6)
                 let hours = parseInt(json.hours) || 1
                 if (hours > 120) { hours = 120 }
                 const expBlock = json.block_num + (hours * 1200) - 200
-                if (json.dlux <= b && typeof buyAmount == 'number' && active) {
+                if (json.dlux <= b && typeof buyAmount == 'number' && allowedPrice(hiveHis, rate, json.block_num) && active) {
                     var txid = 'DLUX' + hashThis(from + json.block_num)
                     const contract = {
                         txid,
@@ -823,14 +826,18 @@ function startApp() {
     });
 
     processor.on('dex_hbd_sell', function(json, from, active, pc) {
-        var buyAmount = parseInt(json.hbd)
-        store.get(['balances', from], function(e, a) {
+        let buyAmount = parseInt(json.hbd),
+            PfromBal = getPathNum(['balances', from]),
+            PhbdHis = getPathObj(['dex', 'hbd', 'his'])
+        Promise.all([PfromBal, PhbdHis]).then(a => {
             if (!e) {
-                var b = a
+                let b = a[0],
+                    hbdHis = a[1],
+                    rate = parseFloat((buyAmount) / (json.dlux)).toFixed(6)
                 let hours = parseInt(json.hours) || 1
                 if (hours > 120) { hours = 120 }
                 const expBlock = json.block_num + (hours * 1200) - 200
-                if (json.dlux <= b && typeof buyAmount == 'number' && active) {
+                if (json.dlux <= b && typeof buyAmount == 'number' && allowedPrice(hbdHis, rate, json.block_num) && active) {
                     var txid = 'DLUX' + hashThis(from + json.block_num)
                     const contract = {
                         txid,
@@ -840,7 +847,7 @@ function startApp() {
                         co: from,
                         hbd: buyAmount,
                         amount: json.dlux,
-                        rate: parseFloat((buyAmount) / (json.dlux)).toFixed(6),
+                        rate,
                         block: json.block_num
                     }
                     var path = chronAssign(expBlock, {
@@ -1107,126 +1114,149 @@ function startApp() {
             } else if (toBal > (dextxdlux * 2) && agentBal > (dextxdlux * 2) && typeof dextxdlux === 'number' && dextxdlux > 0 && isAgent && isDAgent) {
                 console.log(4)
                 var txid = 'DLUX' + hashThis(`${json.from}${json.block_num}`),
-                    rate = parseFloat(parseInt(parseFloat(json.hive_amount) * 1000) / dextx.dlux).toFixed(6)
-                if (!parseFloat(rate)) rate = parseFloat(parseInt(parseFloat(json.hbd_amount) * 1000) / dextx.dlux).toFixed(6)
-                chronAssign(json.block_num + 200, { op: 'check', agent: json.agent, txid: txid + ':listApproveA', acc: json.from, id: json.escrow_id.toString() })
-                chronAssign(json.block_num + 200, { op: 'check', agent: json.to, txid: txid + ':listApproveT', acc: json.from, id: json.escrow_id.toString() })
-                ops = [{
-                            type: 'put',
-                            path: ['escrow', json.agent, txid + ':listApproveA'],
-                            data: [
-                                "escrow_approve",
-                                {
-                                    "from": json.from,
-                                    "to": json.to,
-                                    "agent": json.agent,
-                                    "who": json.agent,
-                                    "escrow_id": json.escrow_id,
-                                    "approve": true
-                                }
-                            ]
-                        },
-                        {
-                            type: 'put',
-                            path: ['escrow', json.to, txid + ':listApproveT'],
-                            data: [
-                                "escrow_approve",
+                    rate = parseFloat(parseInt(parseFloat(json.hive_amount) * 1000) / dextx.dlux).toFixed(6),
+                    allowed = false
+                if (!parseFloat(rate)) {
+                    rate = parseFloat(parseInt(parseFloat(json.hbd_amount) * 1000) / dextx.dlux).toFixed(6)
+                    allowed = allowedPrice(hbdHis, rate, json.block_num)
+                } else {
+                    allowed = allowedPrice(hiveHis, rate, json.block_num)
+                }
+                if (allowed) {
+                    chronAssign(json.block_num + 200, { op: 'check', agent: json.agent, txid: txid + ':listApproveA', acc: json.from, id: json.escrow_id.toString() })
+                    chronAssign(json.block_num + 200, { op: 'check', agent: json.to, txid: txid + ':listApproveT', acc: json.from, id: json.escrow_id.toString() })
+                    ops = [{
+                                type: 'put',
+                                path: ['escrow', json.agent, txid + ':listApproveA'],
+                                data: [
+                                    "escrow_approve",
+                                    {
+                                        "from": json.from,
+                                        "to": json.to,
+                                        "agent": json.agent,
+                                        "who": json.agent,
+                                        "escrow_id": json.escrow_id,
+                                        "approve": true
+                                    }
+                                ]
+                            },
+                            {
+                                type: 'put',
+                                path: ['escrow', json.to, txid + ':listApproveT'],
+                                data: [
+                                    "escrow_approve",
+                                    {
+                                        "from": json.from,
+                                        "to": json.to,
+                                        "agent": json.agent,
+                                        "who": json.to,
+                                        "escrow_id": json.escrow_id,
+                                        "approve": true
+                                    }
+                                ]
+                            },
+                            {
+                                type: 'put',
+                                path: ['escrow', json.escrow_id.toString(), json.from],
+                                data: { 'for': json.from, contract: txid }
+                            }
+                        ],
+                        auths = [
+                            [json.to, [
+                                "escrow_dispute",
                                 {
                                     "from": json.from,
                                     "to": json.to,
                                     "agent": json.agent,
                                     "who": json.to,
-                                    "escrow_id": json.escrow_id,
-                                    "approve": true
+                                    "escrow_id": json.escrow_id
                                 }
-                            ]
-                        },
-                        {
-                            type: 'put',
-                            path: ['escrow', json.escrow_id.toString(), json.from],
-                            data: { 'for': json.from, contract: txid }
-                        }
-                    ],
-                    auths = [
-                        [json.to, [
-                            "escrow_dispute",
-                            {
-                                "from": json.from,
-                                "to": json.to,
-                                "agent": json.agent,
-                                "who": json.to,
-                                "escrow_id": json.escrow_id
-                            }
-                        ]],
-                        [json.agent, [
+                            ]],
+                            [json.agent, [
+                                "escrow_release",
+                                {
+                                    "from": json.from,
+                                    "to": json.to,
+                                    "agent": json.agent,
+                                    "who": json.agent,
+                                    "receiver": json.to,
+                                    "escrow_id": json.escrow_id,
+                                    "hbd_amount": json.hbd_amount,
+                                    "hive_amount": json.hive_amount
+                                }
+                            ]]
+                        ],
+                        reject = [json.to, [
                             "escrow_release",
                             {
                                 "from": json.from,
                                 "to": json.to,
                                 "agent": json.agent,
-                                "who": json.agent,
-                                "receiver": json.to,
+                                "who": json.to,
+                                "receiver": json.from,
                                 "escrow_id": json.escrow_id,
                                 "hbd_amount": json.hbd_amount,
                                 "hive_amount": json.hive_amount
                             }
-                        ]]
-                    ],
-                    reject = [json.to, [
-                        "escrow_release",
-                        {
-                            "from": json.from,
-                            "to": json.to,
-                            "agent": json.agent,
-                            "who": json.to,
-                            "receiver": json.from,
-                            "escrow_id": json.escrow_id,
-                            "hbd_amount": json.hbd_amount,
-                            "hive_amount": json.hive_amount
+                        ]],
+                        contract = {
+                            txid,
+                            from: json.from,
+                            hive: parseInt(parseFloat(json.hive_amount) * 1000),
+                            hbd: parseInt(parseFloat(json.hbd_amount) * 1000),
+                            amount: dextx.dlux,
+                            rate,
+                            block: json.block_num,
+                            escrow_id: json.escrow_id,
+                            eo: json.from,
+                            escrow: 0, //(dextx.dlux * 4),
+                            agent: json.agent,
+                            tagent: json.to,
+                            fee: json.fee,
+                            approvals: 0,
+                            auths,
+                            reject
                         }
-                    ]],
-                    contract = {
-                        txid,
-                        from: json.from,
-                        hive: parseInt(parseFloat(json.hive_amount) * 1000),
-                        hbd: parseInt(parseFloat(json.hbd_amount) * 1000),
-                        amount: dextx.dlux,
-                        rate,
-                        block: json.block_num,
-                        escrow_id: json.escrow_id,
-                        eo: json.from,
-                        escrow: 0, //(dextx.dlux * 4),
-                        agent: json.agent,
-                        tagent: json.to,
-                        fee: json.fee,
-                        approvals: 0,
-                        auths,
-                        reject
+                    if (parseFloat(json.hive_amount) > 0) {
+                        contract.type = 'sb'
+                    } else if (parseFloat(json.hbd_amount) > 0) {
+                        contract.type = 'db'
                     }
-                if (parseFloat(json.hive_amount) > 0) {
-                    contract.type = 'sb'
-                        //ops.push({ type: 'put', path: ['feed', `${json.block_num}:${json.transaction_id}`], data: `@${json.from}| signed a ${parseFloat(json.hive_amount).toFixed(3)} HIVE buy order for ${parseFloat(dextx.dlux).toFixed(3)} DLUX:${txid}` })
-                        //ops.push({ type: 'put', path: ['dex', 'hive', 'buyOrders', `${contract.rate}:${contract.txid}`], data: contract })
-                } else if (parseFloat(json.hbd_amount) > 0) {
-                    contract.type = 'db'
-                        //ops.push({ type: 'put', path: ['feed', `${json.block_num}:${json.transaction_id}`], data: `@${json.from}| signed a ${parseFloat(json.hbd_amount).toFixed(3)} HBD buy order for ${parseFloat(dextx.dlux).toFixed(3)} DLUX:${txid}` })
-                        //ops.push({ type: 'put', path: ['dex', 'hbd', 'buyOrders', `${contract.rate}:${contract.txid}`], data: contract })
+                    let exp_block = json.block_num + 1000 //fix this
+                    chronAssign(exp_block, {
+                            block: exp_block,
+                            op: 'expire',
+                            from: json.from,
+                            txid
+                        })
+                        .then(expire_path => {
+                            contract.expire_path = expire_path
+                            ops.push({ type: 'put', path: ['balances', json.to], data: toBal - (dextxdlux * 2) })
+                            ops.push({ type: 'put', path: ['balances', json.agent], data: agentBal - (dextxdlux * 2) })
+                            console.log(contract.type)
+                            ops.push({ type: 'put', path: ['contracts', json.from, txid], data: contract })
+                            store.batch(ops, pc)
+                        })
+                } else {
+                    var ops = []
+                    ops.push({ type: 'put', path: ['feed', `${json.block_num}:${json.transaction_id}`], data: `@${json.from}| requested a trade outside of price curbs.` })
+                    ops.push({
+                        type: 'put',
+                        path: ['escrow', json.agent, `deny${json.from}:${json.escrow_id}`],
+                        data: [
+                            "escrow_approve",
+                            {
+                                "from": json.from,
+                                "to": json.to,
+                                "agent": json.agent,
+                                "who": json.agent,
+                                "escrow_id": json.escrow_id,
+                                "approve": false //reject non coded
+                            }
+                        ]
+                    })
+                    store.batch(ops, pc)
                 }
-                let exp_block = json.block_num + 1000 //fix this
-                chronAssign(exp_block, {
-                        block: exp_block,
-                        op: 'expire',
-                        from: json.from,
-                        txid
-                    })
-                    .then(expire_path => {
-                        contract.expire_path = expire_path
-                        ops.push({ type: 'put', path: ['balances', json.to], data: toBal - (dextxdlux * 2) })
-                        ops.push({ type: 'put', path: ['balances', json.agent], data: agentBal - (dextxdlux * 2) })
-                        console.log(contract.type)
-                        ops.push({ type: 'put', path: ['contracts', json.from, txid], data: contract })
-                        store.batch(ops, pc)
-                    })
             } else if (isDAgent && isAgent) {
                 var ops = []
                 ops.push({ type: 'put', path: ['feed', `${json.block_num}:${json.transaction_id}`], data: `@${json.from}| improperly attempted to use the escrow network. Attempting escrow deny.` })
@@ -3241,6 +3271,40 @@ function sortSellArray(array, key) { //seek insert instead
     return array.sort(function(a, b) {
         return a[key] - b[key];
     });
+}
+
+function allowedPrice(his, rate, bn) { //this is gonna get process heavy with use... none deterministic floats may be an attack vector
+    let SUMpriceVol = 0
+    let SUMvol = 0
+    for (trade in his) {
+        let block = his[trade].block
+        if (block - bn > -30239) {
+            time_weighted_volume = ((30240 + (block - bn)) / 30240) * his[trade].amount //weight the history
+            SUMvol += time_weighted_volume
+            SUMpriceVol += time_weighted_volume * parseFloat(his[trade].rate)
+        }
+    }
+    let VWP = SUMpriceVol / SUMvol
+    if (parseFloat(rate) > (VWP * 0.8) && parseFloat(rate) < (VWP * 1.2)) {
+        return true
+    } else {
+        return false
+    }
+}
+
+function forceExpire(his, bn) { //this is gonna get process heavy with use... none deterministic floats may be an attack vector
+    let SUMpriceVol = 0
+    let SUMvol = 0
+    for (trade in his) {
+        let block = his[trade].block
+        if (block - bn > -30239) {
+            time_weighted_volume = ((30240 + (block - bn)) / 30240) * his[trade].amount //weight the history
+            SUMvol += time_weighted_volume
+            SUMpriceVol += time_weighted_volume * parseFloat(his[trade].rate)
+        }
+    }
+    let VWP = SUMpriceVol / SUMvol
+    return { over: parseFloat(VWP * 1.5).toFixed(6), under: parseFloat(VWP * 0.5).toFixed(6) }
 }
 
 function deletePointer(escrowID, user) {
