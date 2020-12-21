@@ -2460,7 +2460,6 @@ function tally(num) {
                 }
                 tally.results = []
                 for (var node in runners) {
-                    queue.push(node)
                     delete tally.election[node]
                 }
                 for (var node in tally.election) {
@@ -2474,7 +2473,9 @@ function tally(num) {
                 for (var node in tally.election) {
                     t++
                     tally.results.push([node, parseInt(((tally.election[node].yays / tally.election[node].attempts) * tally.election[node].attempts))])
+                    queue.push(node)
                 }
+                runners = []
                 if (t) {
                     tally.results.sort(function(a, b) {
                         return a[1] - b[1];
