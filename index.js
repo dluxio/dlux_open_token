@@ -4,32 +4,24 @@ const fetch = require('node-fetch');
 const hiveState = require('./processor');
 const IPFS = require('ipfs-api');
 const args = require('minimist')(process.argv.slice(2));
-const express = require('express')
-const cors = require('cors')
+const express = require('express');
+const cors = require('cors');
 const config = require('./config');
 const ipfs = new IPFS({
     host: config.ipfshost,
     port: 5001,
     protocol: 'https'
 });
-const hiveClient = require('@hiveio/hive-js')
+const hiveClient = require('@hiveio/hive-js');
 hiveClient.api.setOptions({ url: config.clientURL });
 const rtrades = require('./rtrades');
 var Pathwise = require('./pathwise');
 var level = require('level');
 
 var store = new Pathwise(level('./db', { createIfEmpty: true }));
-const crypto = require('crypto')
-const bs58 = require('bs58')
-const hashFunction = Buffer.from('12', 'hex')
-
-function hashThis(data) {
-    const digest = crypto.createHash('sha256').update(data).digest()
-    const digestSize = Buffer.from(digest.byteLength.toString(16), 'hex')
-    const combined = Buffer.concat([hashFunction, digestSize, digest])
-    const multihash = bs58.encode(combined)
-    return multihash.toString()
-}
+const crypto = require('crypto');
+const bs58 = require('bs58');
+const hashFunction = Buffer.from('12', 'hex');
 const VERSION = 'v0.0.5a'
 const api = express()
 var http = require('http').Server(api);
@@ -59,33 +51,35 @@ const op = ChainTypes.operations
 const walletOperationsBitmask = makeBitMaskFilter([
     op.custom_json
 ])
-startWith('QmQCz92BgYZ9JdkWJAnm1ihomoorQyLNDBCvJQSCH9A5ic')
-    //dynStart()
-
-function hashThis2(datum) {
-    const data = Buffer.from(datum, 'ascii')
-    const unixFs = new Unixfs('file', data)
-    DAGNode.create(unixFs.marshal(), (err, dagNode) => {
-        if (err) {
-            return console.error(err)
-        }
-        console.log(hashThis2(JSON.stringify(dagNode)))
-        return hashThis2(JSON.stringify(dagNode)) // Qmf412jQZiuVUtdgnB36FXFX7xg5V6KEbSJ4dpQuhkLyfD
-    })
-}
-
+startWith('QmdpRG22Hkp9zV6NSxukiFJMgLoAMbccGsQ9jojkZXdkpA')
+    //dynStart('dlux-io')
+    /*
+    function hashThis2(datum) {
+        const data = Buffer.from(datum, 'ascii')
+        const unixFs = new Unixfs('file', data)
+        DAGNode.create(unixFs.marshal(), (err, dagNode) => {
+            if (err) {
+                return console.error(err)
+            }
+            console.log(hashThis2(JSON.stringify(dagNode)))
+            return hashThis2(JSON.stringify(dagNode)) // Qmf412jQZiuVUtdgnB36FXFX7xg5V6KEbSJ4dpQuhkLyfD
+        })
+    }
+    */
 
 // Cycle through good public IPFS gateways
 var cycle = 0
-
-function cycleipfs(num) {
-    //ipfs = new IPFS({ host: state.gateways[num], port: 5001, protocol: 'https' });
-}
-
+    /*
+    function cycleipfs(num) {
+        //ipfs = new IPFS({ host: state.gateways[num], port: 5001, protocol: 'https' });
+    }
+    */
 if (config.active && config.NODEDOMAIN) {
     escrow = true
     dhive = new hive.Client(config.clientURL)
 }
+
+//heroku force https
 var https_redirect = function(req, res, next) {
     if (process.env.NODE_ENV === 'production') {
         if (req.headers['x-forwarded-proto'] != 'https') {
@@ -141,6 +135,7 @@ api.get('/getwrap', (req, res, next) => {
             res.send(JSON.stringify(r, null, 3))
         })
 });
+
 api.get('/getauthorpic/:un', (req, res, next) => {
     let un = req.params.un || ''
     let body = {
@@ -257,6 +252,7 @@ api.get('/getblog/:un', (req, res, next) => {
             res.send(JSON.stringify(out, null, 3))
         })
 });
+
 api.get('/@:un', (req, res, next) => {
     let un = req.params.un,
         bal = getPathNum(['balances', un]),
@@ -278,6 +274,7 @@ api.get('/@:un', (req, res, next) => {
             console.log(err)
         })
 });
+
 api.get('/stats', (req, res, next) => {
     var stats = {}
     res.setHeader('Content-Type', 'application/json')
@@ -288,6 +285,7 @@ api.get('/stats', (req, res, next) => {
             }, null, 3))
     });
 });
+
 api.get('/state', (req, res, next) => {
     var state = {}
     res.setHeader('Content-Type', 'application/json')
@@ -298,10 +296,12 @@ api.get('/state', (req, res, next) => {
             }, null, 3))
     });
 });
+
 api.get('/pending', (req, res, next) => {
     res.setHeader('Content-Type', 'application/json');
     res.send(JSON.stringify(NodeOps, null, 3))
 });
+
 api.get('/runners', (req, res, next) => {
     res.setHeader('Content-Type', 'application/json')
     store.get(['runners'], function(err, obj) {
@@ -314,6 +314,7 @@ api.get('/runners', (req, res, next) => {
         }, null, 3))
     });
 });
+
 api.get('/feed', (req, res, next) => {
     res.setHeader('Content-Type', 'application/json')
     store.get(['feed'], function(err, obj) {
@@ -326,6 +327,7 @@ api.get('/feed', (req, res, next) => {
         }, null, 3))
     });
 });
+
 api.get('/posts', (req, res, next) => {
     res.setHeader('Content-Type', 'application/json')
     store.get(['posts'], function(err, obj) {
@@ -338,6 +340,7 @@ api.get('/posts', (req, res, next) => {
         }, null, 3))
     });
 });
+
 api.get('/posts/:author/:permlink', (req, res, next) => {
     try {
         let author = req.params.author,
@@ -379,6 +382,7 @@ api.get('/markets', (req, res, next) => {
             console.log(err)
         })
 });
+
 api.get('/dex', (req, res, next) => {
     var dex = getPathObj(['dex'])
     var queue = getPathObj(['queue'])
@@ -397,6 +401,7 @@ api.get('/dex', (req, res, next) => {
             console.log(err)
         })
 });
+
 api.get('/report/:un', (req, res, next) => {
     let un = req.params.un
     res.setHeader('Content-Type', 'application/json')
@@ -410,10 +415,12 @@ api.get('/report/:un', (req, res, next) => {
         }, null, 3))
     });
 });
+
 http.listen(config.port, function() {
     console.log(`DLUX token API listening on port ${config.port}`);
 });
 
+//none consensus node memory
 var plasma = {
         pending: {},
         page: [],
@@ -461,7 +468,6 @@ function dynStart(account) {
         }
     });
 }
-
 
 function startWith(hash) {
     console.log(`${hash} inserted`)
@@ -531,7 +537,6 @@ function startWith(hash) {
 function startApp() {
     processor = hiveState(client, hive, startingBlock, 10, prefix, streamMode);
 
-
     processor.on('send', function(json, from, active, pc) {
         let fbalp = getPathNum(['balances', from]),
             tbp = getPathNum(['balances', json.to])
@@ -556,7 +561,6 @@ function startApp() {
     // power up tokens
     processor.on('power_up', function(json, from, active, pc) {
         var amount = parseInt(json.amount),
-            lbal, pbal,
             lpp = getPathNum(['balances', from]),
             tpowp = getPathNum(['pow', 't']),
             powp = getPathNum(['pow', from])
@@ -586,7 +590,6 @@ function startApp() {
     // power down tokens
     processor.on('power_down', function(json, from, active, pc) {
         var amount = parseInt(json.amount),
-            p,
             powp = getPathNum(['pow', from])
         powd = getPathObj(['powd', from])
         Promise.all([powp, powd])
@@ -684,10 +687,10 @@ function startApp() {
 
     processor.on('dex_buy', function(json, from, active, pc) {
         let Pbal = getPathNum(['balances', from]),
-            Pfound = getPathObj(['contracts', json.for, json.contract.split(':')[1]])
-        PhiveVWMA = getPathObj(['stats', 'HiveVWMA'])
-        PhbdVWMA = getPathObj(['stats', 'HbdVWMA'])
-        Promise.all([Pbal, Pfound])
+            Pfound = getPathObj(['contracts', json.for, json.contract.split(':')[1]]),
+            PhiveVWMA = getPathObj(['stats', 'HiveVWMA']),
+            PhbdVWMA = getPathObj(['stats', 'HbdVWMA'])
+        Promise.all([Pbal, Pfound, PhiveVWMA, PhbdVWMA])
             .then(function(v) {
                 var bal = v[0],
                     found = v[1],
@@ -697,7 +700,7 @@ function startApp() {
                     agent
                 if (found.auths) agent = found.auths[0][1][1].to
                 console.log({ bal, found, agent, from })
-                if (found.amount && active && bal >= found.amount && from != agent) {
+                if (found.amount && active && bal >= found.amount) {
                     var PbalTo = getPathNum(['balances', agent]),
                         PbalFor = getPathNum(['balances', found.from])
                     Promise.all([PbalTo, PbalFor])
@@ -3388,4 +3391,13 @@ function nodeUpdate(node, op, val) {
             }
         })
     })
+}
+
+
+function hashThis(data) {
+    const digest = crypto.createHash('sha256').update(data).digest()
+    const digestSize = Buffer.from(digest.byteLength.toString(16), 'hex')
+    const combined = Buffer.concat([hashFunction, digestSize, digest])
+    const multihash = bs58.encode(combined)
+    return multihash.toString()
 }
