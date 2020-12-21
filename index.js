@@ -2592,8 +2592,6 @@ function tally(num) {
             }
             console.log(runners)
             store.batch([
-                { type: 'del', path: ['runners'] },
-                { type: 'del', path: ['queue'] },
                 { type: 'put', path: ['stats'], data: stats },
                 { type: 'put', path: ['queue'], data: queue },
                 { type: 'put', path: ['runners'], data: runners },
