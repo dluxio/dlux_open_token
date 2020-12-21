@@ -778,7 +778,7 @@ function startApp() {
         let buyAmount = parseInt(json.hive),
             PfromBal = getPathNum(['balances', from]),
             PhiveVWMA = getPathObj(['stats', 'HiveVWMA'])
-        Promise.all([PfromBal, PhiveHis, PhiveVWMA]).then(a => {
+        Promise.all([PfromBal, PhiveVWMA]).then(a => {
             let b = a[0],
                 hiveVWMA = a[1],
                 rate = parseFloat((buyAmount) / (json.dlux)).toFixed(6)
