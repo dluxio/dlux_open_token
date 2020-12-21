@@ -410,7 +410,6 @@ api.get('/report/:un', (req, res, next) => {
         }, null, 3))
     });
 });
-//api.listen(port, () => console.log(`DLUX token API listening on port ${port}!\nAvailible commands:\n/@username =>Balance\n/stats\n/markets`))
 http.listen(config.port, function() {
     console.log(`DLUX token API listening on port ${config.port}`);
 });
@@ -481,15 +480,6 @@ function startWith(hash) {
                         if (!e) {
                             if (hash) {
                                 var cleanState = data[1]
-                                console.log(cleanState.balances)
-                                delete cleanState.balances.undefined
-                                console.log(cleanState.balances)
-                                    //delete cleanState.dex.hive.buyOrders
-                                    //cleanState.chrono = {}
-                                    //cleanState.posts = {}
-                                    //cleanState.feed = {}
-                                    //cleanState.contracts = {}
-                                    //cleanState.posts = {}
                                 store.put([], cleanState, function(err) {
                                     if (err) {
                                         console.log(err)
@@ -685,15 +675,18 @@ function startApp() {
     processor.on('dex_buy', function(json, from, active, pc) {
         let Pbal = getPathNum(['balances', from]),
             Pfound = getPathObj(['contracts', json.for, json.contract.split(':')[1]])
+        PhiveVWMA = getPathObj(['stats', 'HiveVWMA'])
+        PhbdVWMA = getPathObj(['stats', 'HbdVWMA'])
         Promise.all([Pbal, Pfound])
             .then(function(v) {
                 var bal = v[0],
                     found = v[1],
+                    hiveVWMA = v[2],
+                    hbdVWMA = v[3],
                     type = 'hive',
                     agent
                 if (found.auths) agent = found.auths[0][1][1].to
-                if (found.hbd) type = 'hbd'
-                console.log({ bal, found, type, agent, from })
+                console.log({ bal, found, agent, from })
                 if (found.amount && active && bal >= found.amount && from != agent) {
                     var PbalTo = getPathNum(['balances', agent]),
                         PbalFor = getPathNum(['balances', found.from])
@@ -713,6 +706,26 @@ function startApp() {
                                     rate: found.rate,
                                     block: json.block_num,
                                     amount: found.amount
+                                }
+                                hiveTimeWeight = 1 - ((json.block_num - hiveVWMA.block) * 0.000033)
+                                hbdTimeWeight = 1 - ((json.block_num - hbdVWMA.block) * 0.000033)
+                                if (hiveTimeWeight < 0) { hiveTimeWeight = 0 }
+                                if (hbdTimeWeight < 0) { hbdTimeWeight = 0 }
+                                if (found.hbd) {
+                                    type = 'hbd'
+                                    hbdVWMA = {
+                                        rate: parseFloat(((found.rate * found.amount) + (parseFloat(hbdVWMA.rate) * hbdVWMA.vol * hbdTimeWeight)) / (found.amount + (hbdVWMA.vol * hbdTimeWeight))).toFixed(6),
+                                        block: json.block_num,
+                                        vol: parseInt(found.amount + (hbdVWMA.vol * hbdTimeWeight))
+                                    }
+                                    forceCancel(hbdVWMA.rate, 'hbd')
+                                } else {
+                                    hiveVWMA = {
+                                        rate: parseFloat(((found.rate * found.amount) + (parseFloat(hiveVWMA.rate) * hiveVWMA.vol * hiveTimeWeight)) / (found.amount + (hiveVWMA.vol * hiveTimeWeight))).toFixed(6),
+                                        block: json.block_num,
+                                        vol: parseInt(found.amount + (hiveVWMA.vol * hiveTimeWeight))
+                                    }
+                                    forceCancel(hiveVWMA.rate, 'hive')
                                 }
                                 if (found.hive) {
                                     ops.push({ type: 'put', path: ['feed', `${json.block_num}:${json.transaction_id}`], data: `@${from}| purchased ${parseFloat(found.hive/1000).toFixed(3)} HIVE with ${parseFloat(found.amount/1000).toFixed(3)} DLUX via DEX` })
@@ -745,6 +758,8 @@ function startApp() {
                                     { type: 'put', path: ['balances', from], data: bal },
                                     { type: 'put', path: ['balances', agent], data: toBal },
                                     { type: 'put', path: ['balances', found.from], data: fromBal },
+                                    { type: 'put', path: ['stats', 'HbdVWMA'], data: hbdVMWA },
+                                    { type: 'put', path: ['stats', 'HiveVWMA'], data: hiveVMWA, },
                                     { type: 'put', path: ['dex', type, 'tick'], data: json.contract.split(':')[0] },
                                     { type: 'put', path: ['dex', type, 'his', `${hisE.block}:${json.contract.split(':')[1]}`], data: hisE },
                                     { type: 'del', path: ['dex', type, 'buyOrders', `${json.contract}`] }
@@ -762,68 +777,65 @@ function startApp() {
     processor.on('dex_hive_sell', function(json, from, active, pc) { //no feedback required, trade will appear after 60 seconds
         let buyAmount = parseInt(json.hive),
             PfromBal = getPathNum(['balances', from]),
-            PhiveHis = getPathObj(['dex', 'hive', 'his'])
-        Promise.all([PfromBal, PhiveHis]).then(a => {
-            if (!e) {
-                let b = a[0],
-                    hiveHis = a[1],
-                    rate = parseFloat((buyAmount) / (json.dlux)).toFixed(6)
-                let hours = parseInt(json.hours) || 1
-                if (hours > 120) { hours = 120 }
-                const expBlock = json.block_num + (hours * 1200)
-                if (json.dlux <= b && typeof buyAmount == 'number' && allowedPrice(hiveHis, rate, json.block_num) && active) {
-                    var txid = 'DLUX' + hashThis(from + json.block_num)
-                    const contract = {
-                        txid,
-                        type: 'ss',
-                        co: from,
-                        from: from,
-                        hive: buyAmount,
-                        hbd: 0,
-                        amount: parseInt(json.dlux),
-                        rate: parseFloat((buyAmount) / (json.dlux)).toFixed(6),
-                        block: json.block_num
-                    }
-                    var path = chronAssign(expBlock, {
-                        block: expBlock,
-                        op: 'expire',
-                        from: from,
-                        txid
-                    })
-                    Promise.all([path])
-                        .then((r) => {
-                            contract.expire_path = r[0]
-                            store.batch([
-                                { type: 'put', path: ['dex', 'hive', 'sellOrders', `${contract.rate}:${contract.txid}`], data: contract },
-                                { type: 'put', path: ['balances', from], data: b - contract.amount },
-                                { type: 'put', path: ['contracts', from, contract.txid], data: contract },
-                                { type: 'put', path: ['feed', `${json.block_num}:${json.transaction_id}`], data: `@${from}| has placed order ${txid} to sell ${parseFloat(json.dlux/1000).toFixed(3)} for ${parseFloat(json.hive/1000).toFixed(3)} HIVE` }
-                            ], pc)
-                        })
-                        .catch((e) => console.log(e))
-                } else {
-                    store.batch([{ type: 'put', path: ['feed', `${json.block_num}:${json.transaction_id}`], data: `@${from}| tried to place an order to sell ${parseFloat(json.dlux/1000).toFixed(3)} for ${parseFloat(json.hive/1000).toFixed(3)} HIVE` }], pc)
+            PhiveVWMA = getPathObj(['stats', 'HiveVWMA'])
+        Promise.all([PfromBal, PhiveHis, PhiveVWMA]).then(a => {
+            let b = a[0],
+                hiveVWMA = a[1],
+                rate = parseFloat((buyAmount) / (json.dlux)).toFixed(6)
+            let hours = parseInt(json.hours) || 1
+            if (hours > 120) { hours = 120 }
+            const expBlock = json.block_num + (hours * 1200)
+            if (json.dlux <= b && typeof buyAmount == 'number' && allowedPrice(hiveVWMA.rate, rate) && active) {
+                var txid = 'DLUX' + hashThis(from + json.block_num)
+                const contract = {
+                    txid,
+                    type: 'ss',
+                    co: from,
+                    from: from,
+                    hive: buyAmount,
+                    hbd: 0,
+                    amount: parseInt(json.dlux),
+                    rate: parseFloat((buyAmount) / (json.dlux)).toFixed(6),
+                    block: json.block_num
                 }
+                var path = chronAssign(expBlock, {
+                    block: expBlock,
+                    op: 'expire',
+                    from: from,
+                    txid
+                })
+                Promise.all([path])
+                    .then((r) => {
+                        contract.expire_path = r[0]
+                        store.batch([
+                            { type: 'put', path: ['dex', 'hive', 'sellOrders', `${contract.rate}:${contract.txid}`], data: contract },
+                            { type: 'put', path: ['balances', from], data: b - contract.amount },
+                            { type: 'put', path: ['contracts', from, contract.txid], data: contract },
+                            { type: 'put', path: ['feed', `${json.block_num}:${json.transaction_id}`], data: `@${from}| has placed order ${txid} to sell ${parseFloat(json.dlux/1000).toFixed(3)} for ${parseFloat(json.hive/1000).toFixed(3)} HIVE` }
+                        ], pc)
+                    })
+                    .catch((e) => console.log(e))
             } else {
-                console.log(e)
-                pc[0]()
+                store.batch([{ type: 'put', path: ['feed', `${json.block_num}:${json.transaction_id}`], data: `@${from}| tried to place an order to sell ${parseFloat(json.dlux/1000).toFixed(3)} for ${parseFloat(json.hive/1000).toFixed(3)} HIVE` }], pc)
             }
+        }).catch(e => {
+            console.log(e)
+            pc[0]()
         })
     });
 
     processor.on('dex_hbd_sell', function(json, from, active, pc) {
         let buyAmount = parseInt(json.hbd),
             PfromBal = getPathNum(['balances', from]),
-            PhbdHis = getPathObj(['dex', 'hbd', 'his'])
+            PhbdHis = getPathObj(['dex', 'HbdVWMA'])
         Promise.all([PfromBal, PhbdHis]).then(a => {
-            if (!e) {
                 let b = a[0],
-                    hbdHis = a[1],
+                    hbdVWMA = a[1],
                     rate = parseFloat((buyAmount) / (json.dlux)).toFixed(6)
                 let hours = parseInt(json.hours) || 1
                 if (hours > 120) { hours = 120 }
                 const expBlock = json.block_num + (hours * 1200)
-                if (json.dlux <= b && typeof buyAmount == 'number' && allowedPrice(hbdHis, rate, json.block_num) && active) {
+                if (json.dlux <= b && typeof buyAmount == 'number' && allowedPrice(hbdVWMA.rate, rate) && active) {
                     var txid = 'DLUX' + hashThis(from + json.block_num)
                     const contract = {
                         txid,
@@ -856,11 +868,11 @@ function startApp() {
                 } else {
                     store.batch([{ type: 'put', path: ['feed', `${json.block_num}:${json.transaction_id}`], data: `@${from}| tried to place an order to sell ${parseFloat(json.dlux/1000).toFixed(3)} for ${parseFloat(json.hbd/1000).toFixed(3)} HBD` }], pc)
                 }
-            } else {
+            })
+            .catch(e => {
                 pc[0]()
                 console.log(e)
-            }
-        })
+            })
     });
 
     processor.on('dex_clear', function(json, from, active, pc) {
@@ -946,17 +958,17 @@ function startApp() {
             PtoNode = getPathObj(['markets', 'node', json.to]),
             PagentNode = getPathObj(['markets', 'node', json.agent]),
             Pcontract = getPathObj(['contracts', seller, contract]),
-            PhbdHis = getPathObj(['dex', 'hbd', 'his']),
-            PhiveHis = getPathObj(['dex', 'hive', 'his'])
-        Promise.all([PfromBal, PtoBal, PtoNode, PagentNode, Pcontract, PhbdHis, PhiveHis, PagentBal]).then(function(v) {
+            Phivevwma = getPathObj(['stats', 'HiveVWMA']),
+            Phbdvwma = getPathObj(['stats', 'HbdVWMA'])
+        Promise.all([PfromBal, PtoBal, PtoNode, PagentNode, Pcontract, Phbdvwma, Phivevwma, PagentBal]).then(function(v) {
             console.log(v)
             var fromBal = v[0],
                 toBal = v[1],
                 toNode = v[2],
                 agentNode = v[3],
                 contract = v[4] || {},
-                hbdHis = v[5],
-                hiveHis = v[6],
+                hbdVWMA = v[5],
+                hiveVWMA = v[6],
                 agentBal = v[7],
                 isAgent = (toNode.lastGood > json.block_num - 200)
             isDAgent = (agentNode.lastGood > json.block_num - 200)
@@ -987,11 +999,27 @@ function startApp() {
                             amount: contract.amount
                         }
                         var samount
+                        hiveTimeWeight = 1 - ((json.block_num - hiveVWMA.block) * 0.000033)
+                        hbdTimeWeight = 1 - ((json.block_num - hbdVWMA.block) * 0.000033)
+                        if (hiveTimeWeight < 0) { hiveTimeWeight = 0 }
+                        if (hbdTimeWeight < 0) { hbdTimeWeight = 0 }
                         if (contract.hive) {
                             samount = `${parseFloat(contract.hive/1000).toFixed(3)} HIVE`
+                            hiveVWMA = {
+                                rate: parseFloat(((contract.rate * contract.amount) + (parseFloat(hiveVWMA.rate) * hiveVWMA.vol * hiveTimeWeight)) / (contract.amount + (hiveVWMA.vol * hiveTimeWeight))).toFixed(6),
+                                block: json.block_num,
+                                vol: parseInt(contract.amount + (hiveVWMA.vol * hiveTimeWeight))
+                            }
+                            forceCancel(hiveVWMA.rate, 'hive')
                         } else {
                             type = 'hbd'
                             samount = `${parseFloat(contract.hbd/1000).toFixed(3)} HBD`
+                            hbdVWMA = {
+                                rate: parseFloat(((contract.rate * contract.amount) + (parseFloat(hbdVWMA.rate) * hbdVWMA.vol * hbdTimeWeight)) / (contract.amount + (hbdVWMA.vol * hbdTimeWeight))).toFixed(6),
+                                block: json.block_num,
+                                vol: parseInt(contract.amount + (hbdVWMA.vol * hbdTimeWeight))
+                            }
+                            forceCancel(hbdVWMA.rate, 'hbd')
                         }
                         contract.pending = [
                             [json.to, [
@@ -1063,7 +1091,8 @@ function startApp() {
                             { type: 'put', path: ['balances', json.to], data: toBal },
                             { type: 'put', path: ['balances', contract.agent], data: agentBal },
                             { type: 'put', path: ['dex', type, 'tick'], data: contract.rate },
-                            //{type:'put',path:['chrono',`${json.block_num}`]},
+                            { type: 'put', path: ['stats', 'HbdVWMA'], data: hbdVWMA },
+                            { type: 'put', path: ['stats', 'HiveVWMA'], data: hiveVWMA },
                             { type: 'put', path: ['dex', type, 'his', `${hisE.block}:${json.transaction_id}`], data: hisE },
                             { type: 'del', path: ['dex', type, 'sellOrders', `${contract.rate}:${contract.txid}`] }
                         ]
@@ -1112,9 +1141,9 @@ function startApp() {
                     allowed = false
                 if (!parseFloat(rate)) {
                     rate = parseFloat(parseInt(parseFloat(json.hbd_amount) * 1000) / dextx.dlux).toFixed(6)
-                    allowed = allowedPrice(hbdHis, rate, json.block_num)
+                    allowed = allowedPrice(hbdVWMA.rate, rate)
                 } else {
-                    allowed = allowedPrice(hiveHis, rate, json.block_num)
+                    allowed = allowedPrice(hiveVWMA.rate, rate)
                 }
                 if (allowed) {
                     chronAssign(json.block_num + 200, { op: 'check', agent: json.agent, txid: txid + ':listApproveA', acc: json.from, id: json.escrow_id.toString() })
@@ -3268,38 +3297,39 @@ function sortSellArray(array, key) { //seek insert instead
     });
 }
 
-function allowedPrice(his, rate, bn) { //this is gonna get process heavy with use... none deterministic floats may be an attack vector
-    let SUMpriceVol = 0
-    let SUMvol = 0
-    for (trade in his) {
-        let block = his[trade].block
-        if (block - bn > -30239) {
-            time_weighted_volume = ((30240 + (block - bn)) / 30240) * his[trade].amount //weight the history
-            SUMvol += time_weighted_volume
-            SUMpriceVol += time_weighted_volume * parseFloat(his[trade].rate)
-        }
-    }
-    let VWP = SUMpriceVol / SUMvol
-    if (parseFloat(rate) > (VWP * 0.8) && parseFloat(rate) < (VWP * 1.2)) {
+function allowedPrice(VWP, rate) {
+    VWPN = parseFloat(VWP)
+    if (parseFloat(rate) > (VWPN * 0.8) && parseFloat(rate) < (VWPN * 1.2)) {
         return true
     } else {
         return false
     }
 }
 
-function forceExpire(his, bn) { //this is gonna get process heavy with use... none deterministic floats may be an attack vector
-    let SUMpriceVol = 0
-    let SUMvol = 0
-    for (trade in his) {
-        let block = his[trade].block
-        if (block - bn > -30239) {
-            time_weighted_volume = ((30240 + (block - bn)) / 30240) * his[trade].amount //weight the history
-            SUMvol += time_weighted_volume
-            SUMpriceVol += time_weighted_volume * parseFloat(his[trade].rate)
-        }
-    }
-    let VWP = SUMpriceVol / SUMvol
-    return { over: parseFloat(VWP * 1.5).toFixed(6), under: parseFloat(VWP * 0.5).toFixed(6) }
+function forceCancel(rate, type, bn) {
+    price = parseFloat(rate)
+    getPathObj(['dex', type, 'sellOrders'])
+        .then(s => {
+            for (o in s) {
+                if (parseFloat(o.split(":")[0]) < (price * .6)) {
+                    release(o.from, o.split(":")[1], bn)
+                } else if (parseFloat(o.split(":")[0]) > (price * 1.4)) {
+                    release(o.from, o.split(":")[1], bn)
+                }
+            }
+        })
+        .catch(e => console.log(e))
+    getPathObj(['dex', type, 'buyOrders'])
+        .then(s => {
+            for (o in s) {
+                if (parseFloat(o.split(":")[0]) < (price * .6)) {
+                    release(o.from, o.split(":")[1], bn)
+                } else if (parseFloat(o.split(":")[0]) > (price * 1.4)) {
+                    release(o.from, o.split(":")[1], bn)
+                }
+            }
+        })
+        .catch(e => console.log(e))
 }
 
 function deletePointer(escrowID, user) {
