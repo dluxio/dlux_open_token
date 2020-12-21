@@ -486,16 +486,7 @@ function startWith(hash) {
                         if (!e) {
                             if (hash) {
                                 var cleanState = data[1]
-                                cleanState.stats.HiveVWMA = {
-                                    rate: "1.000000",
-                                    block: 49747169,
-                                    vol: 1000
-                                }
-                                cleanState.stats.HbdVWMA = {
-                                    rate: "0.125000",
-                                    block: 49747169,
-                                    vol: 1000
-                                }
+                                delete cleanState.escrow.heyhey
                                 store.put([], cleanState, function(err) {
                                     if (err) {
                                         console.log(err)
@@ -1276,9 +1267,41 @@ function startApp() {
                 } else {
                     var ops = []
                     ops.push({ type: 'put', path: ['feed', `${json.block_num}:${json.transaction_id}`], data: `@${json.from}| requested a trade outside of price curbs.` })
+                    if (json.agent == config.username) {
+                        NodeOps.push([
+                            [0, 0, true],
+                            [
+                                "escrow_approve",
+                                {
+                                    "from": json.from,
+                                    "to": json.to,
+                                    "agent": json.agent,
+                                    "who": json.agent,
+                                    "escrow_id": json.escrow_id,
+                                    "approve": false //reject non coded
+                                }
+                            ]
+                        ])
+                    } else if (json.to == config.username) {
+                        NodeOps.push([
+                            [0, 0, true],
+                            [
+                                "escrow_approve",
+                                {
+                                    "from": json.from,
+                                    "to": json.to,
+                                    "agent": json.agent,
+                                    "who": json.to,
+                                    "escrow_id": json.escrow_id,
+                                    "approve": false //reject non coded
+                                }
+                            ]
+                        ])
+                    }
+                    /*
                     ops.push({
                         type: 'put',
-                        path: ['escrow', json.agent, `deny${json.from}:${json.escrow_id}`],
+                        path: ['escrow', json.agent, `${json.block_num}:deny:${json.from}:${json.escrow_id}`],
                         data: [
                             "escrow_approve",
                             {
@@ -1291,26 +1314,29 @@ function startApp() {
                             }
                         ]
                     })
+                    */
                     store.batch(ops, pc)
                 }
             } else if (isDAgent && isAgent) {
                 var ops = []
                 ops.push({ type: 'put', path: ['feed', `${json.block_num}:${json.transaction_id}`], data: `@${json.from}| improperly attempted to use the escrow network. Attempting escrow deny.` })
-                ops.push({
-                    type: 'put',
-                    path: ['escrow', json.agent, `deny${json.from}:${json.escrow_id}`],
-                    data: [
-                        "escrow_approve",
-                        {
-                            "from": json.from,
-                            "to": json.to,
-                            "agent": json.agent,
-                            "who": json.agent,
-                            "escrow_id": json.escrow_id,
-                            "approve": false //reject non coded
-                        }
-                    ]
-                })
+                    /*
+                    ops.push({
+                        type: 'put',
+                        path: ['escrow', json.agent, `${json.block}:deny:${json.from}:${json.escrow_id}`],
+                        data: [
+                            "escrow_approve",
+                            {
+                                "from": json.from,
+                                "to": json.to,
+                                "agent": json.agent,
+                                "who": json.agent,
+                                "escrow_id": json.escrow_id,
+                                "approve": false //reject non coded
+                            }
+                        ]
+                    })
+                    */
                 store.batch(ops, pc)
             } else {
                 pc[0](pc[2])
@@ -1433,23 +1459,26 @@ function startApp() {
                             dataOps.push({ type: 'put', path: ['contracts', a.for, a.contract], data: c })
                             store.batch(dataOps, pc)
                             credit(json.who)
-                        } else {
+                        }
+                        /*
+                        else if (c.pending[1].approve == false) {
+                            //dataOps.push({ type: 'del', path: ['contracts', a.for, a.contract.split(':')[1]] })
+                            dataOps.push({ type: 'del', path: ['escrow', json.who, `deny${json.from}:${json.escrow_id}`] })
+                            if (json.who == config.username) {
+                                for (var i = 0; i < NodeOps.length; i++) {
+                                    if (NodeOps[i][1][1].from == json.from && NodeOps[i][1][1].escrow_id == json.escrow_id && NodeOps[i][1][0] == 'escrow_approve') {
+                                        NodeOps.splice(i, 1)
+                                    }
+                                }
+                                delete plasma.pending[`deny${json.from}:${json.escrow_id}`]
+                            }
+                            store.batch(dataOps, pc)
+                            credit(json.who)
+                        }
+                        */
+                        else {
                             pc[0](pc[2])
                         }
-                        /*else if (c.pending[1].approve == false) {
-                                                   dataOps.push({ type: 'del', path: ['contracts', a.for, a.contract.split(':')[1]] })
-                                                   dataOps.push({ type: 'del', path: ['escrow', json.who, `deny${json.from}:${json.escrow_id}`] })
-                                                   if (json.who == config.username) {
-                                                       for (var i = 0; i < NodeOps.length; i++) {
-                                                           if (NodeOps[i][1][1].from == json.from && NodeOps[i][1][1].escrow_id == json.escrow_id && NodeOps[i][1][0] == 'escrow_approve') {
-                                                               NodeOps.splice(i, 1)
-                                                           }
-                                                       }
-                                                       delete plasma.pending[`deny${json.from}:${json.escrow_id}`]
-                                                   }
-                                                   store.batch(dataOps, pc)
-                                                   credit(json.who)
-                                               } */
                     }
                 });
             } else {
@@ -2215,20 +2244,6 @@ function startApp() {
                 }
                 if (num % 100 === 50 && processor.isStreaming()) {
                     report(num)
-                    getPathObj(['escrow', config.username])
-                        .then(a => {
-                            for (tx in a) {
-                                NodeOps.push(
-                                    [
-                                        [0, 0],
-                                        a[tx]
-                                    ]
-                                )
-                            }
-                        })
-                        .catch(e => {
-                            console.log(e)
-                        })
                 }
                 if ((num - 20000) % 30240 === 0) { //time for daily magic
                     promises.push(dao(num))
@@ -2263,7 +2278,7 @@ function startApp() {
                     resolve(pc)
                 }
                 //rest is out of consensus
-                for (var p = 0; p < pa.length; p++) { //automate some tasks
+                for (var p = 0; p < pa.length; p++) { //automate some tasks... nearly positive this doesn't work
                     var r = eval(pa[p][1])
                     if (r) {
                         NodeOps.push([
@@ -2294,6 +2309,11 @@ function startApp() {
                                     NodeOps[i][0][0]++
                                 } else if (NodeOps[i][0][0] == 100) {
                                     NodeOps[i][0][0] = 0
+                                }
+                            }
+                            for (i = 0; i < NodeOps.length; i++) {
+                                if (NodeOps[i][0][2] == true) {
+                                    NodeOps.splice(i, 1)
                                 }
                             }
                             if (ops.length) {
