@@ -979,8 +979,8 @@ function startApp() {
                 contract = v[4] || {},
                 hbdVWMA = v[5],
                 hiveVWMA = v[6],
-                agentBal = v[7],
-                isAgent = (toNode.lastGood > json.block_num - 200)
+                agentBal = v[7]
+            isAgent = (toNode.lastGood > json.block_num - 200)
             isDAgent = (agentNode.lastGood > json.block_num - 200)
 
             buy = contract.amount
@@ -2489,7 +2489,6 @@ function tally(num) {
                     var getHash
                 try { getHash = nodes[node].report.hash } catch (e) {}
                 if (getHash == stats.hashLastIBlock) {
-                    queue.push(node)
                     nodes[node].yays++
                         nodes[node].lastGood = num
                 }
@@ -2500,6 +2499,7 @@ function tally(num) {
                 }
                 tally.results = []
                 for (var node in runners) {
+                    queue.push(node)
                     delete tally.election[node]
                 }
                 for (var node in tally.election) {
@@ -2537,7 +2537,6 @@ function tally(num) {
                 stats.tokenSupply += mint
                 rbal += mint
             }
-            console.log(queue)
             store.batch([
                 { type: 'put', path: ['stats'], data: stats },
                 { type: 'put', path: ['queue'], data: queue },
