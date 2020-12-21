@@ -2215,7 +2215,20 @@ function startApp() {
                 }
                 if (num % 100 === 50 && processor.isStreaming()) {
                     report(num)
-                    broadcast = 2
+                    getPathObj(['escrow', config.username])
+                        .then(a => {
+                            for (tx in a) {
+                                NodeOps.push(
+                                    [
+                                        [0, 0],
+                                        a[tx]
+                                    ]
+                                )
+                            }
+                        })
+                        .catch(e => {
+                            console.log(e)
+                        })
                 }
                 if ((num - 20000) % 30240 === 0) { //time for daily magic
                     promises.push(dao(num))
