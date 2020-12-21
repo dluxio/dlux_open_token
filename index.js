@@ -477,19 +477,19 @@ function startWith(hash) {
                 } else {
                     plasma.hashBlock = data[0]
                     plasma.hashLastIBlock = hash
-                        //store.batch([{type:'del',path:[]}])
                     store.del([], function(e) {
                         if (!e) {
                             if (hash) {
                                 var cleanState = data[1]
-                                if (hash == 'QmTxAgzXuuS2HiwvRVom3QPif48FtHnPZgRWgU5Fmr9EhB') {
+                                console.log(cleanState.balances)
+                                delete cleanState.balances.undefined
+                                console.log(cleanState.balances)
                                     //delete cleanState.dex.hive.buyOrders
                                     //cleanState.chrono = {}
                                     //cleanState.posts = {}
                                     //cleanState.feed = {}
                                     //cleanState.contracts = {}
-                                    cleanState.posts = {}
-                                }
+                                    //cleanState.posts = {}
                                 store.put([], cleanState, function(err) {
                                     if (err) {
                                         console.log(err)
@@ -2450,6 +2450,7 @@ function tally(num) {
                     var getHash
                 try { getHash = nodes[node].report.hash } catch (e) {}
                 if (getHash == stats.hashLastIBlock) {
+                    queue.push(node)
                     nodes[node].yays++
                         nodes[node].lastGood = num
                 }
@@ -2473,9 +2474,7 @@ function tally(num) {
                 for (var node in tally.election) {
                     t++
                     tally.results.push([node, parseInt(((tally.election[node].yays / tally.election[node].attempts) * tally.election[node].attempts))])
-                    queue.push(node)
                 }
-                runners = []
                 if (t) {
                     tally.results.sort(function(a, b) {
                         return a[1] - b[1];
