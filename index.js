@@ -480,6 +480,16 @@ function startWith(hash) {
                         if (!e) {
                             if (hash) {
                                 var cleanState = data[1]
+                                cleanState.HiveVWMA = {
+                                    rate: "1.000000",
+                                    block: 49747169,
+                                    vol: 1000
+                                }
+                                cleanState.HbdVWMA = {
+                                    rate: "0.125000",
+                                    block: 49747169,
+                                    vol: 1000
+                                }
                                 store.put([], cleanState, function(err) {
                                     if (err) {
                                         console.log(err)
