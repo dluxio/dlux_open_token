@@ -2334,7 +2334,7 @@ function startApp() {
                                 }
                             }
                             if (ops.length) {
-                                console.log('attepting broadcast', ops)
+                                console.log('attempting broadcast', ops)
                                 hiveClient.broadcast.send({
                                     extensions: [],
                                     operations: ops
