@@ -506,9 +506,9 @@ function startWith(hash) {
                                     if (err) {
                                         console.log(err)
                                     } else {
-                                        store.get(['balances', 'ra'], function(error, returns) {
+                                        store.get(['stats', 'lastBlock'], function(error, returns) {
                                             if (!error) {
-                                                console.log('here' + returns)
+                                                console.log(`State Check:  ${returns}\nAccount: ${config.username}\nKey: ${config.active.substr(0,3)}...`)
                                             }
                                         })
                                         startApp()
