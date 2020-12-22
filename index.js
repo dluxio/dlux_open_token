@@ -36,7 +36,6 @@ const streamMode = args.mode || 'irreversible';
 console.log("Streaming using mode", streamMode);
 var client = new hive.Client(config.clientURL);
 var processor;
-
 var live_dex = {},
     pa = []
 
@@ -422,6 +421,7 @@ http.listen(config.port, function() {
 
 //none consensus node memory
 var plasma = {
+        consensus: '',
         pending: {},
         page: [],
         pagencz: []
@@ -437,6 +437,22 @@ if (config.username == selector) {
 }
 if (config.rta && config.rtp) {
     rtrades.handleLogin(config.rta, config.rtp)
+}
+
+function cycleAPI() {
+    var c = 0
+    for (i of config.clients) {
+        if (config.clientURL == config.clients[i]) {
+            c = i
+            break;
+        }
+    }
+    if (c == config.clients.length - 1) {
+        c = -1
+    }
+    config.clientURL = config.clients[c + 1]
+    client = new hive.Client(config.clientURL)
+    exit(plasma.consensus)
 }
 
 function dynStart(account) {
@@ -525,7 +541,7 @@ function startWith(hash) {
 
 
 function startApp() {
-    processor = hiveState(client, hive, startingBlock, 10, prefix, streamMode);
+    processor = hiveState(client, hive, startingBlock, 10, prefix, streamMode, cycleAPI);
 
     processor.on('send', function(json, from, active, pc) {
         let fbalp = getPathNum(['balances', from]),
@@ -2535,6 +2551,7 @@ function tally(num) {
                 function remove(node) { delete runners[node] }
             }
             console.log('Consensus: ' + consensus)
+            plasma.consensus = consensus
             stats.lastBlock = stats.hashLastIBlock
             if (consensus) stats.hashLastIBlock = consensus
             for (var node in nodes) {

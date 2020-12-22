@@ -1,4 +1,4 @@
-module.exports = function(client, steem, currentBlockNumber = 1, blockComputeSpeed = 1000, prefix = '', mode = 'latest') {
+module.exports = function(client, steem, currentBlockNumber = 1, blockComputeSpeed = 1000, prefix = '', mode = 'latest', cycleapi) {
     var onCustomJsonOperation = {}; // Stores the function to be run for each operation id.
     var onOperation = {};
 
@@ -87,7 +87,7 @@ module.exports = function(client, steem, currentBlockNumber = 1, blockComputeSpe
             beginBlockComputing();
         })
         stream.on('error', function(err) {
-            console.log('this is the spot')
+            cycleapi()
             throw err;
         })
     }
