@@ -257,15 +257,17 @@ api.get('/@:un', (req, res, next) => {
         bal = getPathNum(['balances', un]),
         pb = getPathNum(['pow', un]),
         lp = getPathNum(['pow', 'n', un]),
-        contracts = getPathObj(['contracts', un])
+        contracts = getPathObj(['contracts', un]),
+        incol = getPathNum(['col', un]) //collateral
     res.setHeader('Content-Type', 'application/json');
-    Promise.all([bal, pb, lp, contracts])
+    Promise.all([bal, pb, lp, contracts, incol])
         .then(function(v) {
             console.log(bal, pb, lp, contracts)
             res.send(JSON.stringify({
                 balance: v[0],
                 poweredUp: v[1],
                 powerBeared: v[2],
+                heldCollateral: v[4],
                 contracts: v[3]
             }, null, 3))
         })
@@ -984,12 +986,14 @@ function startApp() {
         let PfromBal = getPathNum(['balances', json.from]),
             PtoBal = getPathNum(['balances', json.to]),
             PagentBal = getPathNum(['balances', json.agent]),
+            PtoCol = getPathNum(['col', json.to]),
+            PagentCol = getPathNum(['col', json.agent]),
             PtoNode = getPathObj(['markets', 'node', json.to]),
             PagentNode = getPathObj(['markets', 'node', json.agent]),
             Pcontract = getPathObj(['contracts', seller, contract]),
             Phivevwma = getPathObj(['stats', 'HiveVWMA']),
             Phbdvwma = getPathObj(['stats', 'HbdVWMA'])
-        Promise.all([PfromBal, PtoBal, PtoNode, PagentNode, Pcontract, Phbdvwma, Phivevwma, PagentBal]).then(function(v) {
+        Promise.all([PfromBal, PtoBal, PtoNode, PagentNode, Pcontract, Phbdvwma, Phivevwma, PagentBal, PtoCol, PagentCol]).then(function(v) {
             console.log(v)
             var fromBal = v[0],
                 toBal = v[1],
@@ -998,7 +1002,9 @@ function startApp() {
                 contract = v[4] || {},
                 hbdVWMA = v[5],
                 hiveVWMA = v[6],
-                agentBal = v[7]
+                agentBal = v[7],
+                toCol = v[8],
+                agentCol = v[9]
             isAgent = (toNode.lastGood > json.block_num - 200)
             isDAgent = (agentNode.lastGood > json.block_num - 200)
 
@@ -1021,6 +1027,8 @@ function startApp() {
                                 done = 1
                                 toBal -= (contract.amount * 2) // collateral withdraw of dlux
                                 agentBal -= (contract.amount * 2) //collateral withdrawl of dlux
+                                toCol += (contract.amount * 2) // collateral withdraw of dlux
+                                agentCol += (contract.amount * 2) //collateral withdrawl of dlux
                                 fromBal += contract.amount // collateral held and therefore instant purchase
                                 contract.escrow = 0 //(contract.amount * 4)
                                 contract.agent = json.agent
@@ -1127,6 +1135,8 @@ function startApp() {
                                     { type: 'put', path: ['balances', json.from], data: fromBal },
                                     { type: 'put', path: ['balances', json.to], data: toBal },
                                     { type: 'put', path: ['balances', contract.agent], data: agentBal },
+                                    { type: 'put', path: ['col', json.to], data: toCol },
+                                    { type: 'put', path: ['col', contract.agent], data: agentCol },
                                     { type: 'put', path: ['dex', type, 'tick'], data: contract.rate },
                                     { type: 'put', path: ['stats', 'HbdVWMA'], data: hbdVWMA },
                                     { type: 'put', path: ['stats', 'HiveVWMA'], data: hiveVWMA },
@@ -1271,7 +1281,7 @@ function startApp() {
                             block: json.block_num,
                             escrow_id: json.escrow_id,
                             eo: json.from,
-                            escrow: 0, //(dextx.dlux * 4),
+                            escrow: (dextx.dlux * 4),
                             agent: json.agent,
                             tagent: json.to,
                             fee: json.fee,
@@ -1295,6 +1305,8 @@ function startApp() {
                             contract.expire_path = expire_path
                             ops.push({ type: 'put', path: ['balances', json.to], data: toBal - (dextxdlux * 2) })
                             ops.push({ type: 'put', path: ['balances', json.agent], data: agentBal - (dextxdlux * 2) })
+                            ops.push({ type: 'put', path: ['col', json.to], data: toCol + (dextxdlux * 2) })
+                            ops.push({ type: 'put', path: ['col', json.agent], data: agentCol + (dextxdlux * 2) })
                             console.log(contract.type)
                             ops.push({ type: 'put', path: ['contracts', json.from, txid], data: contract })
                             store.batch(ops, pc)
@@ -1563,6 +1575,7 @@ function startApp() {
                     .then(c => {
                         if (Object.keys(c).length && c.auths[2]) {
                             add(json.agent, parseInt(c.escrow / 2)) //settle collateral
+                            addCol(json.agent, -parseInt(c.escrow / 2)) //settle collateral
                             c.escrow = parseInt(c.escrow / 2)
                             chronAssign(json.block_num + 200, { op: 'check', agent: c.auths[2][0], txid: c.txid + ':transfer', acc: c.from, id: c.escrow_id.toString() })
                             store.batch([
@@ -1583,6 +1596,8 @@ function startApp() {
                         } else if (c.cancel && json.receiver == c.from) {
                             add(json.agent, parseInt(c.escrow / 2))
                             add(json.to, parseInt(c.escrow / 2))
+                            addCol(json.agent, -parseInt(c.escrow / 2))
+                            addCol(json.to, -parseInt(c.escrow / 2))
                             store.batch([
                                 { type: 'del', path: ['contracts', a.for, a.contract], data: c },
                                 { type: 'put', path: ['feed', `${json.block_num}:${json.transaction_id}`], data: `@${json.from}| canceled ${c.txid}` },
@@ -2066,6 +2081,7 @@ function startApp() {
                                 g = c.escrow
                             if (c.type === 'sb' || c.type === 'db') eo = c.from
                             add(json.from, parseInt(cp.escrow))
+                            addCol(json.from, -parseInt(cp.escrow))
                             ops.push({ type: 'put', path: ['balances', json.from], data: parseInt(g + d) })
                             ops.push({ type: 'del', path: ['escrow', json.from, addr + ':transfer'] })
                             ops.push({ type: 'del', path: ['contracts', co, addr] })
@@ -2407,7 +2423,7 @@ function startApp() {
 }
 
 
-function check() {
+function check() { //is this needed at all?
     plasma.markets = {
         nodes: {},
         ipfss: {},
@@ -2649,16 +2665,20 @@ function enforce(agent, txid, pointer, block_num) { //checks status of required 
                                     ops.push({ type: 'put', path: ['feed', `${block_num}:${txid}`], data: `@${c.tagent} failed to make a timely transaction and has forfieted collateral` })
                                     ops.push({ type: 'del', path: ['escrow', agent, txid] })
                                     ops.push({ type: 'del', path: ['contracts', co, id] })
-                                    add(c.agent, parseInt(c.escrow / 2))
-                                    add(c.eo, parseInt(c.escrow / 4))
-                                    deletePointer(c.escrow_id, eo)
-                                    nodeUpdate(c.tagent, 'strike', parseInt(c.escrow / 4))
+                                    add(c.agent, parseInt(c.escrow / 2)) //good node gets back
+                                    add(c.eo, parseInt(c.escrow / 4)) //originator gets covered
+                                    addCol(c.agent, -parseInt(c.escrow / 2)) //trackers get emptied
+                                    addCol(c.tagent, -parseInt(c.escrow / 2))
+                                    deletePointer(c.escrow_id, eo) //housekeeping
+                                    nodeUpdate(c.tagent, 'strike', parseInt(c.escrow / 4)) //strike recorded
                                     break;
                                 case 'buyApproveT':
                                     ops.push({ type: 'put', path: ['feed', `${block_num}:${txid}`], data: `@${c.tagent} failed to make a timely transaction` })
                                     ops.push({ type: 'del', path: ['escrow', agent, txid] })
                                     ops.push({ type: 'del', path: ['contracts', co, id] })
                                     add(c.agent, parseInt(c.escrow / 2))
+                                    addCol(c.agent, -parseInt(c.escrow / 2))
+                                    addCol(c.tagent, -parseInt(c.escrow / 2))
                                     add(c.eo, parseInt(c.escrow / 4))
                                     deletePointer(c.escrow_id, eo)
                                     nodeUpdate(c.tagent, 'strike', parseInt(c.escrow / 4))
@@ -2668,6 +2688,8 @@ function enforce(agent, txid, pointer, block_num) { //checks status of required 
                                     ops.push({ type: 'del', path: ['escrow', agent, txid] })
                                     ops.push({ type: 'del', path: ['contracts', co, id] })
                                     add(c.tagent, parseInt(c.escrow / 2))
+                                    addCol(c.agent, -parseInt(c.escrow / 2))
+                                    addCol(c.tagent, -parseInt(c.escrow / 2))
                                     add(c.eo, parseInt(c.escrow / 4))
                                     deletePointer(c.escrow_id, eo)
                                     nodeUpdate(c.agent, 'strike', parseInt(c.escrow / 4))
@@ -2678,6 +2700,8 @@ function enforce(agent, txid, pointer, block_num) { //checks status of required 
                                     ops.push({ type: 'del', path: ['contracts', co, id] })
                                     add(c.agent, parseInt(c.escrow / 2))
                                     add(c.eo, parseInt(c.escrow / 4))
+                                    addCol(c.agent, -parseInt(c.escrow / 2))
+                                    addCol(c.tagent, -parseInt(c.escrow / 2))
                                     deletePointer(c.escrow_id, eo)
                                     nodeUpdate(c.tagent, 'strike', parseInt(c.escrow / 4))
                                     break;
@@ -2687,6 +2711,8 @@ function enforce(agent, txid, pointer, block_num) { //checks status of required 
                                     ops.push({ type: 'del', path: ['contracts', co, id] })
                                     add(c.tagent, parseInt(c.escrow / 2))
                                     add(c.eo, parseInt(c.escrow / 4))
+                                    addCol(c.agent, -parseInt(c.escrow / 2))
+                                    addCol(c.tagent, -parseInt(c.escrow / 2))
                                     deletePointer(c.escrow_id, eo)
                                     nodeUpdate(c.agent, 'strike', parseInt(c.escrow / 4))
                                     break;
@@ -2704,6 +2730,7 @@ function enforce(agent, txid, pointer, block_num) { //checks status of required 
                                     ops.push({ type: 'del', path: ['escrow', agent, txid] })
                                     ops.push({ type: 'del', path: ['contracts', co, id] })
                                     add(c.eo, parseInt(c.escrow / 2))
+                                    addCol(c.tagent, -parseInt(c.escrow))
                                     deletePointer(c.escrow_id, eo)
                                     nodeUpdate(c.tagent, 'strike', parseInt(c.escrow / 4))
                                     break;
@@ -2713,6 +2740,8 @@ function enforce(agent, txid, pointer, block_num) { //checks status of required 
                                     ops.push({ type: 'del', path: ['contracts', co, id] })
                                     add(c.agent, parseInt(c.escrow / 2))
                                     add(c.eo, parseInt(c.escrow / 4))
+                                    addCol(c.agent, -parseInt(c.escrow / 2))
+                                    addCol(c.tagent, -parseInt(c.escrow / 2))
                                     deletePointer(c.escrow_id, eo)
                                     nodeUpdate(c.tagent, 'strike', parseInt(c.escrow / 4))
                                     break;
@@ -3272,6 +3301,19 @@ function add(node, amount) {
             if (!e) {
                 const a2 = typeof a != 'number' ? amount : a + amount
                 store.batch([{ type: 'put', path: ['balances', node], data: a2 }], [resolve, reject])
+            } else {
+                console.log(e)
+            }
+        })
+    })
+}
+
+function addCol(node, amount) {
+    return new Promise((resolve, reject) => {
+        store.get(['col', node], function(e, a) {
+            if (!e) {
+                const a2 = typeof a != 'number' ? amount : a + amount
+                store.batch([{ type: 'put', path: ['col', node], data: a2 }], [resolve, reject])
             } else {
                 console.log(e)
             }
