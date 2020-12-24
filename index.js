@@ -974,17 +974,17 @@ function startApp() {
         try {
             seller = JSON.parse(json.json_meta).for
         } catch (e) {}
-        console.log(json.timestamp)
         const now = Date.parse(json.timestamp) //this needs to be based on the time in the signed block... or replays will fail
             //const until = now.setHours(now.getHours())
         const check = Date.parse(json.ratification_deadline)
         const eexp = Date.parse(json.escrow_expiration)
-        const timer = eexp - now
+        const timer = now - eexp
         console.log(eexp, now)
         let etime = false
         let btime = false
         if (timer > 518400000) { etime = true } //6 days 
         if (timer > 25000000) { btime = true } //6 hours
+        console.log(timer, etime, btime)
         let PfromBal = getPathNum(['balances', json.from]),
             PtoBal = getPathNum(['balances', json.to]),
             PagentBal = getPathNum(['balances', json.agent]),
