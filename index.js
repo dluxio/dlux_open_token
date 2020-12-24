@@ -978,12 +978,12 @@ function startApp() {
             //const until = now.setHours(now.getHours())
         const check = Date.parse(json.ratification_deadline)
         const eexp = Date.parse(json.escrow_expiration)
-        const timer = now - eexp
+        const timer = eexp - now
         console.log(eexp, now)
         let etime = false
         let btime = false
         if (timer > 518400000) { etime = true } //6 days 
-        if (timer > 25000000) { btime = true } //6 hours
+        if (timer > 20000000) { btime = true } //6 hours
         console.log(timer, etime, btime)
         let PfromBal = getPathNum(['balances', json.from]),
             PtoBal = getPathNum(['balances', json.to]),
