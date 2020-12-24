@@ -1145,6 +1145,7 @@ function startApp() {
                                     { type: 'put', path: ['dex', type, 'his', `${hisE.block}:${json.transaction_id}`], data: hisE },
                                     { type: 'del', path: ['dex', type, 'sellOrders', `${contract.rate}:${contract.txid}`] }
                                 ]
+                                console.log({ to: json.to, agent: contract.agent, agentCol, toCol })
                                 store.batch(ops, pc)
                             }
                             if (!done) {
@@ -1309,7 +1310,7 @@ function startApp() {
                             ops.push({ type: 'put', path: ['balances', json.agent], data: agentBal - (dextxdlux * 2) })
                             ops.push({ type: 'put', path: ['col', json.to], data: toCol + (dextxdlux * 2) })
                             ops.push({ type: 'put', path: ['col', json.agent], data: agentCol + (dextxdlux * 2) })
-                            console.log(contract.type)
+                            console.log(contract.type, { col: toCol + (dextxdlux * 2), to: json.to, agent: json.agent })
                             ops.push({ type: 'put', path: ['contracts', json.from, txid], data: contract })
                             store.batch(ops, pc)
                         })
@@ -3313,6 +3314,7 @@ function addCol(node, amount) {
         store.get(['col', node], function(e, a) {
             if (!e) {
                 const a2 = typeof a != 'number' ? amount : a + amount
+                console.log({ node, a })
                 store.batch([{ type: 'put', path: ['col', node], data: a2 }], [resolve, reject])
             } else {
                 console.log(e)
