@@ -2650,15 +2650,18 @@ function tally(num) {
 }
 
 function enforce(agent, txid, pointer, block_num) { //checks status of required ops, performs collateral ops, strike recording and memory management
+    console.log(agent, txid, pointer)
     return new Promise((resolve, reject) => {
         getPathObj(['escrow', agent, txid])
             .then(a => {
+                console.log({ a })
                 if (Object.keys(a).length) {
                     let op = txid.split(":")[1],
                         id = txid.split(":")[0],
                         ops = []
                     getPathObj(['contracts', pointer.acc, pointer.id])
                         .then(c => {
+                            console.log({ c })
                             let eo = c.eo
                             let co = c.from
                             switch (op) {
