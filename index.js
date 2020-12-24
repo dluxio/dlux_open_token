@@ -1011,7 +1011,7 @@ function startApp() {
 
             buy = contract.amount
             console.log(buy, isAgent, isDAgent)
-            if (typeof buy === 'number' && isAgent && isDAgent && etime) { //{txid, from: from, buying: buyAmount, amount: json.dlux, [json.dlux]:buyAmount, rate:parseFloat((json.dlux)/(buyAmount)).toFixed(6), block:current, partial: json.partial || true
+            if (typeof buy === 'number' && isAgent && isDAgent && btime) { //{txid, from: from, buying: buyAmount, amount: json.dlux, [json.dlux]:buyAmount, rate:parseFloat((json.dlux)/(buyAmount)).toFixed(6), block:current, partial: json.partial || true
                 console.log(contract.hive, parseInt(parseFloat(json.hive_amount) * 1000), contract.hbd, contract.hbd, parseInt(parseFloat(json.hbd_amount) * 1000), check, until)
                 if (contract.hive == parseInt(parseFloat(json.hive_amount) * 1000) && contract.hbd == parseInt(parseFloat(json.hbd_amount) * 1000) && check > until) {
                     console.log(1)
