@@ -2652,14 +2652,18 @@ function tally(num) {
 function enforce(agent, txid, pointer, block_num) { //checks status of required ops, performs collateral ops, strike recording and memory management
     console.log(agent, txid, pointer)
     return new Promise((resolve, reject) => {
-        getPathObj(['escrow', agent, txid])
-            .then(a => {
+        Pop = getPathObj(['escrow', agent, txid])
+        Ppointer = getPathObj(['escrow', pointer.id, pointer.acc])
+        Promise.all([Pop, Ppointer])
+            .then(r => {
+                a = r[0]
+                p = r[1]
                 console.log({ a })
                 if (Object.keys(a).length) {
                     let op = txid.split(":")[1],
                         id = txid.split(":")[0],
                         ops = []
-                    getPathObj(['contracts', a.for, a.contract])
+                    getPathObj(['contracts', p.for, p.contract])
                         .then(c => {
                             console.log({ c })
                             let eo = c.eo
