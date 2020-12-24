@@ -1369,23 +1369,23 @@ function startApp() {
                 var ops = []
                 console.log(toBal > (dextxdlux * 2), agentBal > (dextxdlux * 2), typeof dextxdlux === 'number', dextxdlux > 0, isAgent, isDAgent, btime, 'buy checks')
                 ops.push({ type: 'put', path: ['feed', `${json.block_num}:${json.transaction_id}`], data: `@${json.from}| improperly attempted to use the escrow network. Attempting escrow deny.` })
-                    /*
-                    ops.push({
-                        type: 'put',
-                        path: ['escrow', json.agent, `${json.block}:deny:${json.from}:${json.escrow_id}`],
-                        data: [
-                            "escrow_approve",
-                            {
-                                "from": json.from,
-                                "to": json.to,
-                                "agent": json.agent,
-                                "who": json.agent,
-                                "escrow_id": json.escrow_id,
-                                "approve": false //reject non coded
-                            }
-                        ]
-                    })
-                    */
+
+                ops.push({
+                    type: 'put',
+                    path: ['escrow', json.agent, `${json.block}:deny:${json.from}:${json.escrow_id}`],
+                    data: [
+                        "escrow_approve",
+                        {
+                            "from": json.from,
+                            "to": json.to,
+                            "agent": json.agent,
+                            "who": json.agent,
+                            "escrow_id": json.escrow_id,
+                            "approve": false //reject non coded
+                        }
+                    ]
+                })
+
                 store.batch(ops, pc)
             } else {
                 pc[0](pc[2])
