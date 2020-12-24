@@ -974,7 +974,7 @@ function startApp() {
         try {
             seller = JSON.parse(json.json_meta).for
         } catch (e) {}
-        const now = new Date()
+        const now = Date.parse(json.timestamp) //this needs to be based on the time in the signed block... or replays will fail
         const until = now.setHours(now.getHours())
         const check = Date.parse(json.ratification_deadline)
         const eexp = Date.parse(json.escrow_expiration)
