@@ -2670,7 +2670,7 @@ function enforce(agent, txid, pointer, block_num) { //checks status of required 
                                     add(c.eo, parseInt(c.escrow / 4)) //originator gets covered
                                     addCol(c.agent, -parseInt(c.escrow / 2)) //trackers get emptied
                                     addCol(c.tagent, -parseInt(c.escrow / 2))
-                                    deletePointer(c.escrow_id, eo) //housekeeping
+                                    deletePointer(pointer.id, pointer.acc) //housekeeping
                                     nodeUpdate(c.tagent, 'strike', parseInt(c.escrow / 4)) //strike recorded
                                     break;
                                 case 'buyApproveT':
@@ -2681,7 +2681,7 @@ function enforce(agent, txid, pointer, block_num) { //checks status of required 
                                     addCol(c.agent, -parseInt(c.escrow / 2))
                                     addCol(c.tagent, -parseInt(c.escrow / 2))
                                     add(c.eo, parseInt(c.escrow / 4))
-                                    deletePointer(c.escrow_id, eo)
+                                    deletePointer(pointer.id, pointer.acc)
                                     nodeUpdate(c.tagent, 'strike', parseInt(c.escrow / 4))
                                     break;
                                 case 'buyApproveA':
@@ -2692,7 +2692,7 @@ function enforce(agent, txid, pointer, block_num) { //checks status of required 
                                     addCol(c.agent, -parseInt(c.escrow / 2))
                                     addCol(c.tagent, -parseInt(c.escrow / 2))
                                     add(c.eo, parseInt(c.escrow / 4))
-                                    deletePointer(c.escrow_id, eo)
+                                    deletePointer(pointer.id, pointer.acc)
                                     nodeUpdate(c.agent, 'strike', parseInt(c.escrow / 4))
                                     break;
                                 case 'listApproveT':
@@ -2703,7 +2703,7 @@ function enforce(agent, txid, pointer, block_num) { //checks status of required 
                                     add(c.eo, parseInt(c.escrow / 4))
                                     addCol(c.agent, -parseInt(c.escrow / 2))
                                     addCol(c.tagent, -parseInt(c.escrow / 2))
-                                    deletePointer(c.escrow_id, eo)
+                                    deletePointer(pointer.id, pointer.acc)
                                     nodeUpdate(c.tagent, 'strike', parseInt(c.escrow / 4))
                                     break;
                                 case 'listApproveA':
@@ -2714,7 +2714,7 @@ function enforce(agent, txid, pointer, block_num) { //checks status of required 
                                     add(c.eo, parseInt(c.escrow / 4))
                                     addCol(c.agent, -parseInt(c.escrow / 2))
                                     addCol(c.tagent, -parseInt(c.escrow / 2))
-                                    deletePointer(c.escrow_id, eo)
+                                    deletePointer(pointer.id, pointer.acc)
                                     nodeUpdate(c.agent, 'strike', parseInt(c.escrow / 4))
                                     break;
                                 case 'release':
@@ -2723,7 +2723,7 @@ function enforce(agent, txid, pointer, block_num) { //checks status of required 
                                     ops.push({ type: 'del', path: ['contracts', co, id] })
                                     add(c.tagent, parseInt(c.escrow / 2))
                                     add(c.eo, parseInt(c.escrow / 4))
-                                    deletePointer(c.escrow_id, eo)
+                                    deletePointer(pointer.id, pointer.acc)
                                     nodeUpdate(c.agent, 'strike', parseInt(c.escrow / 4))
                                     break;
                                 case 'transfer':
@@ -2732,7 +2732,7 @@ function enforce(agent, txid, pointer, block_num) { //checks status of required 
                                     ops.push({ type: 'del', path: ['contracts', co, id] })
                                     add(c.eo, parseInt(c.escrow / 2))
                                     addCol(c.tagent, -parseInt(c.escrow))
-                                    deletePointer(c.escrow_id, eo)
+                                    deletePointer(pointer.id, pointer.acc)
                                     nodeUpdate(c.tagent, 'strike', parseInt(c.escrow / 4))
                                     break;
                                 case 'cancel':
@@ -2743,7 +2743,7 @@ function enforce(agent, txid, pointer, block_num) { //checks status of required 
                                     add(c.eo, parseInt(c.escrow / 4))
                                     addCol(c.agent, -parseInt(c.escrow / 2))
                                     addCol(c.tagent, -parseInt(c.escrow / 2))
-                                    deletePointer(c.escrow_id, eo)
+                                    deletePointer(pointer.id, pointer.acc)
                                     nodeUpdate(c.tagent, 'strike', parseInt(c.escrow / 4))
                                     break;
                                 default:
