@@ -984,7 +984,7 @@ function startApp() {
         let etime = false
         let btime = false
         if (timer > 518400000) { etime = true } //6 days 
-        if (timer > 86400000) { btime = true } //1 day
+        if (timer > 25000000) { btime = true } //6 hours
         let PfromBal = getPathNum(['balances', json.from]),
             PtoBal = getPathNum(['balances', json.to]),
             PagentBal = getPathNum(['balances', json.agent]),
