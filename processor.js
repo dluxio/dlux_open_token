@@ -139,7 +139,7 @@ module.exports = function(client, steem, currentBlockNumber = 1, blockComputeSpe
         return new Promise((resolve, reject) => {
 
             var transactions = block.transactions;
-
+            console.log(block)
             let ops = []
             for (var i = 0; i < transactions.length; i++) {
                 for (var j = 0; j < transactions[i].operations.length; j++) {
@@ -151,6 +151,7 @@ module.exports = function(client, steem, currentBlockNumber = 1, blockComputeSpe
                                 active = false
                             ip.transaction_id = transactions[i].transaction_id
                             ip.block_num = transactions[i].block_num
+                                //ip.data = block.date
                             if (!from) {
                                 from = op[1].required_auths[0];
                                 active = true
