@@ -978,7 +978,7 @@ function startApp() {
         const until = now.setHours(now.getHours())
         const check = Date.parse(json.ratification_deadline)
         const eexp = Date.parse(json.escrow_expiration)
-        const timer = eexp - now
+        const timer = eexp - until
         console.log(eexp, now)
         let etime = false
         let btime = false
