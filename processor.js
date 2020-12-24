@@ -137,7 +137,7 @@ module.exports = function(client, steem, currentBlockNumber = 1, blockComputeSpe
 
     function processBlock(block, num) {
         return new Promise((resolve, reject) => {
-
+            console.log(block)
             var transactions = block.transactions;
             let ops = []
             for (var i = 0; i < transactions.length; i++) {
