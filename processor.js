@@ -160,6 +160,7 @@ module.exports = function(client, steem, currentBlockNumber = 1, blockComputeSpe
                     } else if (onOperation[op[0]] !== undefined) {
                         op[1].transaction_id = transactions[i].transaction_id
                         op[1].block_num = transactions[i].block_num
+                        op[1].timestamp = block.timestamp
                         ops.push([op[0], op[1]]) //onOperation[op[0]](op[1]);
                     }
                 }
