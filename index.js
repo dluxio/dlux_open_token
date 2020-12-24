@@ -726,7 +726,7 @@ function startApp() {
                                     lowest = parseFloat(Book[i].split(":")[0])
                                 }
                             }
-                            if (toBal > found.amount && found.rate <= parseFloat(lowest) * 1.01) {
+                            if (toBal > found.amount && parseFloat(found.rate) <= parseFloat(lowest) * 1.01) {
                                 toBal -= found.amount
                                 found.escrow = found.amount
                                 bal -= found.amount
@@ -1023,7 +1023,7 @@ function startApp() {
                                     highest = parseFloat(Book[i].split(":")[0])
                                 }
                             }
-                            if (contract.amount >= parseFloat(highest * 0.99) && toBal >= (contract.amount * 2) && agentBal >= (contract.amount * 2)) {
+                            if (parseFloat(contract.rate) >= parseFloat(highest * 0.99) && toBal >= (contract.amount * 2) && agentBal >= (contract.amount * 2)) {
                                 done = 1
                                 toBal -= (contract.amount * 2) // collateral withdraw of dlux
                                 agentBal -= (contract.amount * 2) //collateral withdrawl of dlux
