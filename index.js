@@ -2659,7 +2659,7 @@ function enforce(agent, txid, pointer, block_num) { //checks status of required 
                     let op = txid.split(":")[1],
                         id = txid.split(":")[0],
                         ops = []
-                    getPathObj(['contracts', pointer.acc, pointer.id])
+                    getPathObj(['contracts', a.for, a.contract])
                         .then(c => {
                             console.log({ c })
                             let eo = c.eo
