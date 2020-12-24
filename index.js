@@ -1367,6 +1367,7 @@ function startApp() {
                 }
             } else if (isDAgent && isAgent) {
                 var ops = []
+                console.log(toBal > (dextxdlux * 2), agentBal > (dextxdlux * 2), typeof dextxdlux === 'number', dextxdlux > 0, isAgent, isDAgent, btime, 'buy checks')
                 ops.push({ type: 'put', path: ['feed', `${json.block_num}:${json.transaction_id}`], data: `@${json.from}| improperly attempted to use the escrow network. Attempting escrow deny.` })
                     /*
                     ops.push({
