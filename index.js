@@ -962,7 +962,7 @@ function startApp() {
             hours
         try {
             dextx = JSON.parse(json.json_meta).dextx
-            dextxdlux = dextx.dlux
+            dextxdlux = parseInt(dextx.dlux)
             hours = JSON.parse(json.json_meta).hours
         } catch (e) {}
         if (!hours) { hours = 1 }
@@ -979,6 +979,7 @@ function startApp() {
         const check = Date.parse(json.ratification_deadline)
         const eexp = Date.parse(json.escrow_expiration)
         const timer = eexp - now
+        console.log(eexp, now)
         let etime = false
         let btime = false
         if (timer > 518400000) { etime = true } //6 days 
