@@ -722,11 +722,11 @@ function startApp() {
                                 ops = [],
                                 lowest = 9999999999
                             for (i in Book) {
-                                if (parseFloat(Book[i].split(":")[0]) < lowest) {
-                                    lowest = parseFloat(Book[i].split(":")[0])
+                                if (parseFloat(i.split(":")[0]) < lowest) {
+                                    lowest = parseFloat(i.split(":")[0])
                                 }
                             }
-                            if (toBal > found.amount && parseFloat(found.rate) <= parseFloat(lowest) * 1.01) {
+                            if (toBal > found.amount && parseFloat(found.rate) >= parseFloat(lowest) * 0.99) {
                                 toBal -= found.amount
                                 found.escrow = found.amount
                                 bal -= found.amount
@@ -1021,11 +1021,11 @@ function startApp() {
                         .then(Book => {
                             let highest = 0
                             for (i in Book) {
-                                if (parseFloat(Book[i].split(":")[0]) > highest) {
-                                    highest = parseFloat(Book[i].split(":")[0])
+                                if (parseFloat(i.split(":")[0]) > highest) {
+                                    highest = parseFloat(i.split(":")[0])
                                 }
                             }
-                            if (parseFloat(contract.rate) >= parseFloat(highest * 0.99) && toBal >= (contract.amount * 2) && agentBal >= (contract.amount * 2)) {
+                            if (parseFloat(contract.rate) <= parseFloat(highest * 1.01) && toBal >= (contract.amount * 2) && agentBal >= (contract.amount * 2)) {
                                 done = 1
                                 toBal -= (contract.amount * 2) // collateral withdraw of dlux
                                 agentBal -= (contract.amount * 2) //collateral withdrawl of dlux
