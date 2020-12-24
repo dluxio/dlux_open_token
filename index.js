@@ -1373,7 +1373,7 @@ function startApp() {
 
                 ops.push({
                     type: 'put',
-                    path: ['escrow', json.agent, `${json.block}:deny:${json.from}:${json.escrow_id}`],
+                    path: ['escrow', json.agent, `deny:${json.from}:${json.escrow_id}`],
                     data: [
                         "escrow_approve",
                         {
@@ -1509,10 +1509,8 @@ function startApp() {
                             dataOps.push({ type: 'put', path: ['contracts', a.for, a.contract], data: c })
                             store.batch(dataOps, pc)
                             credit(json.who)
-                        }
-                        /*
-                        else if (c.pending[1].approve == false) {
-                            //dataOps.push({ type: 'del', path: ['contracts', a.for, a.contract.split(':')[1]] })
+                        } else if (c.pending[1].approve == false) {
+                            //dataOps.push({ type: 'del', path: ['contracts', a.for, a.contract.split(':')[1]] }) careful with these 
                             dataOps.push({ type: 'del', path: ['escrow', json.who, `deny${json.from}:${json.escrow_id}`] })
                             if (json.who == config.username) {
                                 for (var i = 0; i < NodeOps.length; i++) {
@@ -1524,9 +1522,7 @@ function startApp() {
                             }
                             store.batch(dataOps, pc)
                             credit(json.who)
-                        }
-                        */
-                        else {
+                        } else {
                             pc[0](pc[2])
                         }
                     }
