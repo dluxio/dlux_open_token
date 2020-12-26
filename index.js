@@ -7,6 +7,7 @@ const args = require('minimist')(process.argv.slice(2));
 const express = require('express');
 const cors = require('cors');
 const config = require('./config');
+const stringify = require('json-stable-stringify');
 const ipfs = new IPFS({
     host: config.ipfshost,
     port: 5001,
@@ -2312,7 +2313,7 @@ function startApp() {
                 }
                 if (num % 100 === 1) {
                     store.get([], function(err, obj) {
-                        const blockState = Buffer.from(JSON.stringify([num, obj]))
+                        const blockState = Buffer.from(stringify([num, obj]))
                         ipfsSaveState(num, blockState)
                     })
                 }
