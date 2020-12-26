@@ -1718,6 +1718,9 @@ function startApp() {
                 var b = a
                 if (from == b.self && b.domain) {
                     b.report = json
+                    delete b.timestamp
+                    delete b.transaction_id
+                    delete b.block_num
                     var ops = [
                         { type: 'put', path: ['markets', 'node', from], data: b },
                         { type: 'put', path: ['feed', `${json.block_num}:${json.transaction_id}`], data: `@${from}| Report processed` }
@@ -2293,7 +2296,7 @@ function startApp() {
                         });
                 }
                 if (num % 100 === 5 && processor.isStreaming()) {
-                    check(num) //not promised, read only
+                    //check(num) //not promised, read only
                 }
                 if (num % 100 === 50 && processor.isStreaming()) {
                     report(num)
@@ -3250,7 +3253,6 @@ function report(num) {
                     required_posting_auths: [],
                     id: 'dlux_report',
                     json: JSON.stringify({
-                        feed: feed,
                         hash: plasma.hashLastIBlock,
                         block: plasma.hashBlock,
                         version: VERSION,
