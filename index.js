@@ -2428,7 +2428,7 @@ function startApp() {
 }
 
 
-function check() { //is this needed at all?
+function check() { //is this needed at all? -not until doing oracle checks i think
     plasma.markets = {
         nodes: {},
         ipfss: {},
@@ -3207,83 +3207,21 @@ function dao(num) {
 }
 
 function report(num) {
-    agreements = {
-        [config.username]: {
-            node: config.username,
-            agreement: true
-        }
-    }
-    if (plasma.markets) {
-        for (var node in plasma.markets.nodes) {
-            if (plasma.markets.nodes[node].agreement) {
-                agreements[node] = {
-                    node,
-                    agreement: true
-                }
-            }
-        }
-        store.children(['runners'], function(e, a) {
-            for (var self in a) {
-                if (a.indexOf(a[self] == self)) {
-                    const agree = plasma.markets.nodes[a[self]] ? plasma.markets.nodes[a[self]].agreement : false
-                    const test = plasma.markets.nodes[a[self]] ? plasma.markets.nodes[a[self]].agreement : false
-                    if (agreements[a[self]]) {
-                        agreements[a[self]].top = true
-                    } else if (agree) {
-                        agreements[a[self]] = {
-                            node: a[self],
-                            agreement: true
-                        }
-                    } else {
-                        agreements[a[self]] = {
-                            node: a[self],
-                            agreement: false
-                        }
-                    }
-                }
-            }
-            var feed = []
-            store.someChildren(['feed'], {
-                gte: num - 100,
-                lte: num
-            }, function(e, a) {
-                feed = a
-                var op = ["custom_json", {
-                    required_auths: [config.username],
-                    required_posting_auths: [],
-                    id: 'dlux_report',
-                    json: JSON.stringify({
-                        hash: plasma.hashLastIBlock,
-                        block: plasma.hashBlock,
-                        version: VERSION,
-                        escrow: escrow,
-                        stash: plasma.privHash
-                    })
-                }]
-                NodeOps.unshift([
-                        [0, 0], op
-                    ])
-                    //plasma.pending[op]
-                    /*
-                    transactor.json(config.username, config.active, 'report', { //nodeops instead
-                        feed: feed,
-                        agreements: agreements,
-                        hash: plasma.hashLastIBlock,
-                        block: plasma.hashBlock,
-                        version: VERSION,
-                        escrow: escrow,
-                        stash: plasma.privHash
-                    }, function(err, result) {
-                        if (err) {
-                            console.error(err, `\nMost likely your ACCOUNT and KEY variables are not set!`);
-                        } else {
-                            console.log(current + `:Sent State report and published ${plasma.hashLastIBlock} for ${plasma.hashBlock}`)
-                        }
-                    })
-                    */
-            })
+    var op = ["custom_json", {
+        required_auths: [config.username],
+        required_posting_auths: [],
+        id: 'dlux_report',
+        json: JSON.stringify({
+            hash: plasma.hashLastIBlock,
+            block: plasma.hashBlock,
+            version: VERSION,
+            escrow: escrow,
+            stash: plasma.privHash
         })
-    }
+    }]
+    NodeOps.unshift([
+        [0, 0], op
+    ])
 }
 
 function exit(consensus) {
