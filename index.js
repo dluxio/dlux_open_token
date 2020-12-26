@@ -1,4 +1,4 @@
-const hive = require('dsteem');
+const hive = require('@hiveio/dhive');
 const decodeURIcomponent = require('decode-uri-component');
 const fetch = require('node-fetch');
 const hiveState = require('./processor');
@@ -50,7 +50,7 @@ const op = ChainTypes.operations
 const walletOperationsBitmask = makeBitMaskFilter([
     op.custom_json
 ])
-startWith('QmRxz1DNV9j7pnWEsCMzjduVJYL5688rB6DVyxjt75DPcm')
+startWith('QmcERaZ1GCAz5hSNWuJegtgBANGoLKLorTDGTCzyUuFQq3')
     //dynStart('dlux-io')
     /*
     function hashThis2(datum) {
@@ -1530,7 +1530,7 @@ function startApp() {
                     }
                 });
             } else {
-                pc[0](pc[2])
+                store.batch([{ type: 'del', path: ['escrow', json.who, json.escrow_id] }], pc)
             }
         })
 

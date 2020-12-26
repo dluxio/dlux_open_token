@@ -16,6 +16,7 @@
     "author": "disregardfiat",
     "license": "MIT",
     "dependencies": {
+        "@hiveio/dhive": "^0.14.12",
         "@hiveio/hive-js": "^0.8.10",
         "aes-js": "^3.1.2",
         "bs58": "^4.0.1",
@@ -23,7 +24,6 @@
         "crypto": "^1.0.1",
         "crypto-js": "^3.1.9-1",
         "decode-uri-component": "^0.2.0",
-        "dsteem": "^0.11.3",
         "express": "^4.16.4",
         "form-data": "^2.3.3",
         "fs-extra": "^9.0.1",
