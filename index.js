@@ -1125,7 +1125,7 @@ function startApp() {
                                         "transfer",
                                         {
                                             "from": json.to,
-                                            "to": contract.from,
+                                            "to": contract.co,
                                             "amount": samount,
                                             "memo": `${contract.txid} by ${contract.from} purchased with ${parseFloat(contract.amount/1000).toFixed(3)} DLUX`
                                         }
@@ -2089,8 +2089,8 @@ function startApp() {
                                 eo = c.buyer,
                                 g = c.escrow
                             if (c.type === 'sb' || c.type === 'db') eo = c.from
-                            add(json.from, parseInt(cp.escrow))
-                            addCol(json.from, -parseInt(cp.escrow))
+                            add(json.from, parseInt(c.escrow))
+                            addCol(json.from, -parseInt(c.escrow))
                             ops.push({ type: 'put', path: ['balances', json.from], data: parseInt(g + d) })
                             ops.push({ type: 'del', path: ['escrow', json.from, addr + ':transfer'] })
                             ops.push({ type: 'del', path: ['contracts', co, addr] })
