@@ -2673,6 +2673,7 @@ function enforce(agent, txid, pointer, block_num) { //checks status of required 
                         ops = []
                     getPathObj(['contracts', p.for, p.contract])
                         .then(c => {
+                            console.log({ c })
                             let co = c.co
                             switch (op) {
                                 case 'dispute':
