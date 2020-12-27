@@ -2666,7 +2666,7 @@ function enforce(agent, txid, pointer, block_num) { //checks status of required 
             .then(r => {
                 a = r[0]
                 p = r[1]
-                console.log({ a })
+                console.log('enforce:', { a })
                 if (Object.keys(a).length) {
                     let op = txid.split(":")[1],
                         id = txid.split(":")[0],
@@ -2763,6 +2763,7 @@ function enforce(agent, txid, pointer, block_num) { //checks status of required 
                                     console.log(`Unknown Op: ${op}`)
                                     resolve()
                             }
+                            console.log('enforce:', ops)
                             store.batch(ops, [resolve, reject])
                         })
                         .catch(e => {
