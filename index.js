@@ -505,10 +505,10 @@ function startWith(hash) {
                         if (!e) {
                             if (hash) {
                                 var cleanState = data[1]
-                                delete cleanState.contracts
-                                delete cleanState.escrow
-                                delete cleanState.chrono
-                                delete cleanState.col
+                                    //delete cleanState.contracts
+                                    //delete cleanState.escrow
+                                    //delete cleanState.chrono
+                                    //delete cleanState.col
                                 store.put([], cleanState, function(err) {
                                     if (err) {
                                         console.log(err)
@@ -2673,8 +2673,6 @@ function enforce(agent, txid, pointer, block_num) { //checks status of required 
                         ops = []
                     getPathObj(['contracts', p.for, p.contract])
                         .then(c => {
-                            console.log({ c })
-                            let eo = c.eo
                             let co = c.from
                             switch (op) {
                                 case 'dispute':
@@ -2765,6 +2763,7 @@ function enforce(agent, txid, pointer, block_num) { //checks status of required 
                                     console.log(`Unknown Op: ${op}`)
                                     resolve()
                             }
+                            store.batch(ops, [resolve, reject])
                         })
                         .catch(e => {
                             console.log(e);
