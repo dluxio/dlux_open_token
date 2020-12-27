@@ -104,6 +104,11 @@ api.get('/', (req, res, next) => {
             }, null, 3))
     });
 });
+
+// Some HIVE APi is wrapped here to support a stateless frontend built on the cheap with dreamweaver
+// None of these functions are required for token functionality
+//
+//
 api.get('/getwrap', (req, res, next) => {
     let method = req.query.method || 'condenser_api.get_discussions_by_blog'
     method.replace('%27', '')
@@ -214,21 +219,6 @@ api.get('/getauthorpic/:un', (req, res, next) => {
         })
 });
 
-api.get('/pendex/:un', (req, res, next) => { //pending dex transactions and feedback un=username returns pending transaction IDs
-    let un = req.params.un
-    res.setHeader('Content-Type', 'application/json')
-    let ret = Object.keys(live_dex[un])
-    res.send(JSON.stringify(ret, null, 3))
-});
-
-api.get('/pendex/:un/:id', (req, res, next) => { //pending dex transactions and feedback, un= username, id= transaction ID, returns detail JSON
-    let un = req.params.un
-    let id = req.params.id
-    res.setHeader('Content-Type', 'application/json')
-    let ret = live_dex[un][id]
-    res.send(JSON.stringify(ret, null, 3))
-});
-
 api.get('/getblog/:un', (req, res, next) => {
     let un = req.params.un
     let start = req.query.s || 0
@@ -252,6 +242,24 @@ api.get('/getblog/:un', (req, res, next) => {
             res.send(JSON.stringify(out, null, 3))
         })
 });
+
+//these calls have not been implemented
+/*
+api.get('/pendex/:un', (req, res, next) => { //pending dex transactions and feedback un=username returns pending transaction IDs
+    let un = req.params.un
+    res.setHeader('Content-Type', 'application/json')
+    let ret = Object.keys(live_dex[un])
+    res.send(JSON.stringify(ret, null, 3))
+});
+
+api.get('/pendex/:un/:id', (req, res, next) => { //pending dex transactions and feedback, un= username, id= transaction ID, returns detail JSON
+    let un = req.params.un
+    let id = req.params.id
+    res.setHeader('Content-Type', 'application/json')
+    let ret = live_dex[un][id]
+    res.send(JSON.stringify(ret, null, 3))
+});
+*/
 
 api.get('/@:un', (req, res, next) => {
     let un = req.params.un,
@@ -288,6 +296,7 @@ api.get('/stats', (req, res, next) => {
     });
 });
 
+//Do not recommend having a state dump in a production API
 api.get('/state', (req, res, next) => {
     var state = {}
     res.setHeader('Content-Type', 'application/json')
@@ -299,11 +308,13 @@ api.get('/state', (req, res, next) => {
     });
 });
 
+// The transaction signer now can sign multiple actions per block and this is nearly always empty
 api.get('/pending', (req, res, next) => {
     res.setHeader('Content-Type', 'application/json');
     res.send(JSON.stringify(NodeOps, null, 3))
 });
 
+//list of accounts that determine consensus... will also be the multi-sig accounts
 api.get('/runners', (req, res, next) => {
     res.setHeader('Content-Type', 'application/json')
     store.get(['runners'], function(err, obj) {
@@ -317,6 +328,7 @@ api.get('/runners', (req, res, next) => {
     });
 });
 
+//all side-chain transaction in current day
 api.get('/feed', (req, res, next) => {
     res.setHeader('Content-Type', 'application/json')
     store.get(['feed'], function(err, obj) {
@@ -330,6 +342,7 @@ api.get('/feed', (req, res, next) => {
     });
 });
 
+//posts made in community
 api.get('/posts', (req, res, next) => {
     res.setHeader('Content-Type', 'application/json')
     store.get(['posts'], function(err, obj) {
@@ -343,13 +356,14 @@ api.get('/posts', (req, res, next) => {
     });
 });
 
+
 api.get('/posts/:author/:permlink', (req, res, next) => {
     try {
         let author = req.params.author,
             permlink = req.params.permlink
         res.setHeader('Content-Type', 'application/json')
-        archp = getPathObj(['posts', `s/${author}/${permlink}`])
-        nowp = getPathObj(['posts', `${author}/${permlink}`])
+        archp = getPathObj(['posts', `s/${author}/${permlink}`]) //one of these will be empty
+        nowp = getPathObj(['posts', `${author}/${permlink}`]) //now are still eligible for votes
         Promise.all([archp, nowp])
             .then(a => {
                 var arch = a[0],
@@ -366,6 +380,7 @@ api.get('/posts/:author/:permlink', (req, res, next) => {
     } catch (e) { res.send('Something went wrong') }
 });
 
+//for finding node runner and tasks information
 api.get('/markets', (req, res, next) => {
     let markets = getPathObj(['markets']),
         stats = getPathObj(['stats'])
@@ -385,6 +400,7 @@ api.get('/markets', (req, res, next) => {
         })
 });
 
+//API for current DEX order book and queue
 api.get('/dex', (req, res, next) => {
     var dex = getPathObj(['dex'])
     var queue = getPathObj(['queue'])
@@ -404,6 +420,7 @@ api.get('/dex', (req, res, next) => {
         })
 });
 
+// probably not needed
 api.get('/report/:un', (req, res, next) => {
     let un = req.params.un
     res.setHeader('Content-Type', 'application/json')
@@ -422,26 +439,29 @@ http.listen(config.port, function() {
     console.log(`DLUX token API listening on port ${config.port}`);
 });
 
-//none consensus node memory
+//non-consensus node memory
 var plasma = {
         consensus: '',
         pending: {},
         page: [],
-        pagencz: []
+        //pagencz: []
     },
     jwt
 var NodeOps = []
-var rtradesToken = ''
+var rtradesToken = '' //for centralized IPFS pinning
 var selector = 'dlux-io'
 if (config.username == selector) {
     selector = `https://dlux-token-markegiles.herokuapp.com/state`
 } else {
     selector = `https://token.dlux.io/state`
 }
+
+//grabs an API token for IPFS pinning of DLUX posts
 if (config.rta && config.rtp) {
     rtrades.handleLogin(config.rta, config.rtp)
 }
 
+//hopefully handling the HIVE garbage APIs
 function cycleAPI() {
     var c = 0
     for (i of config.clients) {
@@ -458,6 +478,8 @@ function cycleAPI() {
     exit(plasma.consensus)
 }
 
+//pulls the latest activity of an account to find the last state put in by an account to dynamically start the node. 
+//this will include other accounts that are in the node network and the consensus state will be found if this is the wrong chain
 function dynStart(account) {
     let accountToQuery = account || config.username
     hiveClient.api.getAccountHistory(accountToQuery, -1, 100, ...walletOperationsBitmask, function(err, result) {
@@ -488,6 +510,8 @@ function dynStart(account) {
     });
 }
 
+
+//pulls state from IPFS, loads it into memory, starts the block processor
 function startWith(hash) {
     console.log(`${hash} inserted`)
     if (hash) {
@@ -505,7 +529,7 @@ function startWith(hash) {
                         if (!e) {
                             if (hash) {
                                 var cleanState = data[1]
-                                    //delete cleanState.contracts
+                                    //delete cleanState.contracts //memory cleaning for live testing
                                     //delete cleanState.escrow
                                     //delete cleanState.chrono
                                     //delete cleanState.col
@@ -546,20 +570,21 @@ function startWith(hash) {
     }
 }
 
-
+//starts block processor after memory has been loaded
 function startApp() {
     processor = hiveState(client, hive, startingBlock, 10, prefix, streamMode, cycleAPI);
 
+    //handles simple layer 2 token sends
     processor.on('send', function(json, from, active, pc) {
-        let fbalp = getPathNum(['balances', from]),
-            tbp = getPathNum(['balances', json.to])
+        let fbalp = getPathNum(['balances', from]), //from balance promise
+            tbp = getPathNum(['balances', json.to]) //to balance promise
         Promise.all([fbalp, tbp])
             .then(bals => {
-                let fbal = bals[0],
-                    tbal = bals[1],
+                let fbal = bals[0], //from balance
+                    tbal = bals[1], //to balance
                     ops = []
                 send = parseInt(json.amount)
-                if (json.to && typeof json.to == 'string' && send >= 0 && fbal >= send && active) {
+                if (json.to && typeof json.to == 'string' && send >= 0 && fbal >= send && active) { //balance checks
                     ops.push({ type: 'put', path: ['balances', from], data: parseInt(fbal - send) })
                     ops.push({ type: 'put', path: ['balances', json.to], data: parseInt(tbal + send) })
                     ops.push({ type: 'put', path: ['feed', `${json.block_num}:${json.transaction_id}`], data: `@${from}| Sent @${json.to} ${parseFloat(parseInt(json.amount)/1000).toFixed(3)}DLUX` })
@@ -571,7 +596,8 @@ function startApp() {
             })
             .catch(e => { console.log(e) })
     });
-    // power up tokens
+
+    // power up tokens for vote power in layer 2 token proof of brain
     processor.on('power_up', function(json, from, active, pc) {
         var amount = parseInt(json.amount),
             lpp = getPathNum(['balances', from]),
@@ -600,7 +626,7 @@ function startApp() {
 
     });
 
-    // power down tokens
+    // power down tokens - untested
     processor.on('power_down', function(json, from, active, pc) {
         var amount = parseInt(json.amount),
             powp = getPathNum(['pow', from])
@@ -655,12 +681,12 @@ function startApp() {
 
     })
 
-    // vote on content
+    // vote on content with powered token
     processor.on('vote_content', function(json, from, active, pc) {
         var powPromise = getPathNum(['pow', from]),
             postPromise = getPathObj(['posts', `${json.author}/${json.permlink}`]),
             rollingPromise = getPathNum(['rolling', from]),
-            nftPromise = getPathNum(['pow', 'n', from])
+            nftPromise = getPathNum(['pow', 'n', from]) //an approach to token delegation by wrapping power in nft contracts - untested
         Promise.all([powPromise, postPromise, rollingPromise, nftPromise])
             .then(function(v) {
                 var pow = v[0],
@@ -698,9 +724,10 @@ function startApp() {
             });
     });
 
+
     processor.on('dex_buy', function(json, from, active, pc) {
         let Pbal = getPathNum(['balances', from]),
-            Pfound = getPathObj(['contracts', json.for, json.contract.split(':')[1]]),
+            Pfound = getPathObj(['contracts', json.for, json.contract.split(':')[1]]), //using txids with prices auto sorts lists and cuts computer cycles
             PhiveVWMA = getPathObj(['stats', 'HiveVWMA']),
             PhbdVWMA = getPathObj(['stats', 'HbdVWMA'])
         Promise.all([Pbal, Pfound, PhiveVWMA, PhbdVWMA])
@@ -1621,6 +1648,7 @@ function startApp() {
             .catch(e => { console.log(e) })
     });
 
+    // join the node network
     processor.on('node_add', function(json, from, active, pc) {
         if (json.domain && typeof json.domain === 'string') {
             var z = false
@@ -1683,6 +1711,8 @@ function startApp() {
         }
     });
 
+    //leave the node network
+    // doesn't delete node statistics!!
     processor.on('node_delete', function(json, from, active, pc) {
         if (active) {
             var ops = []
@@ -1716,6 +1746,7 @@ function startApp() {
         }
     });
 
+    //process state reports to determine consensus
     processor.on('report', function(json, from, active, pc) {
         store.get(['markets', 'node', from], function(e, a) {
             if (!e) {
@@ -1754,6 +1785,7 @@ function startApp() {
         })
     });
 
+    //allows the daily DAO report to have announcements or posts inserted with out changing consensus code
     processor.on('queueForDaily', function(json, from, active, pc) {
         if (from = 'dlux-io' && json.text && json.title) {
             store.batch([{
@@ -1767,6 +1799,7 @@ function startApp() {
         }
     })
 
+    //stops mentions in DAO reports
     processor.on('nomention', function(json, from, active, pc) {
             if (typeof json.nomention == 'boolean') {
                 store.get(['delegations', from], function(e, a) {
@@ -1780,7 +1813,7 @@ function startApp() {
                 })
             }
         })
-        /*
+        /* //I don't like the idea of token distribution for reblogs but maybe you do
             processor.onNoPrefix('follow', function(json, from) { // Follow id includes both follow and reblog.
                 if (json[0] === 'reblog') {
                     store.get(['posts', `${json[1].author}/${json[1].permlink}`], function(e, a) {
@@ -1804,7 +1837,8 @@ function startApp() {
             });
         */
 
-
+    //looks for posts with benificiaries set and adds them to the layer 2 proof of brain
+    //also where IPFS pinning happens
     processor.onOperation('comment_options', function(json, pc) { //grab posts to reward
         try {
             var filter = json.extensions[0][1].beneficiaries
@@ -1929,6 +1963,8 @@ function startApp() {
         }
     });
 
+    //since comment options can be changed the HIVE state needs to be asked
+    //and consensused about post information... comment options for bennificiaries is not suffiecient alone
     processor.on('cjv', function(json, from, active, pc) { //externalizing HIVE data
         var postPromise = getPathObj(['posts', `${json.a}/${json.p}`])
         Promise.all([postPromise])
@@ -1988,6 +2024,7 @@ function startApp() {
             });
     });
 
+    //dlux is for putting executable programs into IPFS... this is for additional accounts to sign the code as non-malicious
     processor.on('sig', function(json, from, active, pc) { //hopeful attestation of programs
         var postPromise = getPathObj(['posts', `${json.author}/${json.permlink}`])
         Promise.all([postPromise])
@@ -2006,6 +2043,7 @@ function startApp() {
             });
     });
 
+    // json.cert is an open ended hope to interact with executable posts... unexplored
     processor.on('cert', function(json, from, active, pc) { //verification certs for posted programs
         var postPromise = getPathObj(['posts', `${json.author}/${json.permlink}`])
         Promise.all([postPromise])
@@ -2024,6 +2062,7 @@ function startApp() {
             });
     });
 
+    // layer 2 proof of brain voting
     processor.onOperation('vote', function(json, pc) {
         if (json.voter == 'dlux-io') {
             console.log('the vote')
@@ -2060,6 +2099,7 @@ function startApp() {
         }
     })
 
+    //look for transfer operations and process state accordingly
     processor.onOperation('transfer', function(json, pc) {
         store.get(['escrow', json.from, json.memo.split(' ')[0] + ':transfer'], function(e, a) {
             var ops = []
@@ -2114,7 +2154,7 @@ function startApp() {
                 }
             }
         })
-        if (json.to == 'robotolux' && json.amount.split(' ')[1] == 'HIVE') {
+        if (json.to == 'robotolux' && json.amount.split(' ')[1] == 'HIVE') { //the ICO disribution... should be in multi sig account
             const amount = parseInt(parseFloat(json.amount) * 1000)
             var purchase,
                 Pstats = getPathObj(['stats']),
@@ -2152,6 +2192,8 @@ function startApp() {
         }
     });
 
+    //inflation is rewarded to delegators to dlux-io, could be built for multi-sig account as well
+    //multi-sig delegation is more secure than holding HP or liquid hive for multi-sig
     processor.onOperation('delegate_vesting_shares', function(json, pc) { //grab posts to reward
         var ops = []
         const vests = parseInt(parseFloat(json.vesting_shares) * 1000000)
@@ -2199,7 +2241,7 @@ function startApp() {
         }
     });
 
-
+    //do things in cycles based on block time
     processor.onBlock(function(num, pc) {
         return new Promise((resolve, reject) => {
             current = num
@@ -2407,7 +2449,7 @@ function startApp() {
             })
         })
     });
-    processor.onStreamingStart(function() {
+    processor.onStreamingStart(function() { //auto-join
         console.log("At real time.")
         store.get(['markets', 'node', config.username], function(e, a) {
             if (!a.domain && config.NODEDOMAIN) {
@@ -2500,6 +2542,7 @@ function check() { //is this needed at all? -not until doing oracle checks i thi
     })
 }
 
+//determine consensus... needs some work with memory management
 function tally(num) {
     return new Promise((resolve, reject) => {
         var Prunners = getPathObj(['runners']),
@@ -2790,6 +2833,7 @@ function enforce(agent, txid, pointer, block_num) { //checks status of required 
     })
 }
 
+//how to trigger cancels and expirations
 function release(from, txid, bn) {
     return new Promise((resolve, reject) => {
         var found = ''
@@ -2851,6 +2895,7 @@ function release(from, txid, bn) {
     })
 }
 
+//the daily post, the inflation point for tokennomics
 function dao(num) {
     return new Promise((resolve, reject) => {
         let post = `## DLUX DAO REPORT\n`,
@@ -3219,7 +3264,8 @@ function dao(num) {
     })
 }
 
-function report(num) {
+//tell the hive your state, this is asynchronous with IPFS return... 
+function report() {
     var op = ["custom_json", {
         required_auths: [config.username],
         required_posting_auths: [],
@@ -3237,10 +3283,15 @@ function report(num) {
     ])
 }
 
+
 function exit(consensus) {
     console.log(`Restarting with ${consensus}...`);
     processor.stop(function() {
-        startWith(consensus)
+        if (consensus) {
+            startWith(consensus)
+        } else {
+            dynStart('dlux-io')
+        }
     });
 }
 
