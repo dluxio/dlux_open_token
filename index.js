@@ -51,7 +51,7 @@ const op = ChainTypes.operations
 const walletOperationsBitmask = makeBitMaskFilter([
         op.custom_json
     ])
-    //startWith('QmcERaZ1GCAz5hSNWuJegtgBANGoLKLorTDGTCzyUuFQq3')
+    //startWith('QmQQoNqNCFf73Heq6R7eZ8jfYLbu4NjWLa5PY4eDYMMRQr')
 dynStart('dlux-io')
     /*
     function hashThis2(datum) {
@@ -505,6 +505,10 @@ function startWith(hash) {
                         if (!e) {
                             if (hash) {
                                 var cleanState = data[1]
+                                delete cleanState.contracts
+                                delete cleanState.escrow
+                                delete cleanState.chrono
+                                delete cleanState.col
                                 store.put([], cleanState, function(err) {
                                     if (err) {
                                         console.log(err)
