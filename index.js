@@ -1037,7 +1037,7 @@ function startApp() {
                                 toCol += (contract.amount * 2) // collateral withdraw of dlux
                                 agentCol += (contract.amount * 2) //collateral withdrawl of dlux
                                 fromBal += contract.amount // collateral held and therefore instant purchase
-                                contract.escrow = 0 //(contract.amount * 4)
+                                contract.escrow = (contract.amount * 4)
                                 contract.agent = json.agent
                                 contract.tagent = json.to
                                 contract.buyer = json.from
