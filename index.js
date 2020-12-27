@@ -2673,11 +2673,12 @@ function enforce(agent, txid, pointer, block_num) { //checks status of required 
                         ops = []
                     getPathObj(['contracts', p.for, p.contract])
                         .then(c => {
-                            let co = c.from
+                            let co = c.co
                             switch (op) {
                                 case 'dispute':
                                     ops.push({ type: 'put', path: ['feed', `${block_num}:${txid}`], data: `@${c.tagent} failed to make a timely transaction and has forfieted collateral` })
                                     ops.push({ type: 'del', path: ['escrow', agent, txid] })
+                                    ops.push({ type: 'del', path: ['chrono', c.expire_path] })
                                     ops.push({ type: 'del', path: ['contracts', co, id] })
                                     add(c.agent, parseInt(c.escrow / 2)) //good node gets back
                                     add(c.eo, parseInt(c.escrow / 4)) //originator gets covered
@@ -2689,6 +2690,7 @@ function enforce(agent, txid, pointer, block_num) { //checks status of required 
                                 case 'buyApproveT':
                                     ops.push({ type: 'put', path: ['feed', `${block_num}:${txid}`], data: `@${c.tagent} failed to make a timely transaction` })
                                     ops.push({ type: 'del', path: ['escrow', agent, txid] })
+                                    ops.push({ type: 'del', path: ['chrono', c.expire_path] })
                                     ops.push({ type: 'del', path: ['contracts', co, id] })
                                     add(c.agent, parseInt(c.escrow / 2))
                                     addCol(c.agent, -parseInt(c.escrow / 2))
@@ -2700,6 +2702,7 @@ function enforce(agent, txid, pointer, block_num) { //checks status of required 
                                 case 'buyApproveA':
                                     ops.push({ type: 'put', path: ['feed', `${block_num}:${txid}`], data: `@${c.agent} failed to make a timely transaction` })
                                     ops.push({ type: 'del', path: ['escrow', agent, txid] })
+                                    ops.push({ type: 'del', path: ['chrono', c.expire_path] })
                                     ops.push({ type: 'del', path: ['contracts', co, id] })
                                     add(c.tagent, parseInt(c.escrow / 2))
                                     addCol(c.agent, -parseInt(c.escrow / 2))
@@ -2711,6 +2714,7 @@ function enforce(agent, txid, pointer, block_num) { //checks status of required 
                                 case 'listApproveT':
                                     ops.push({ type: 'put', path: ['feed', `${block_num}:${txid}`], data: `@${c.tagent} failed to make a timely transaction` })
                                     ops.push({ type: 'del', path: ['escrow', agent, txid] })
+                                    ops.push({ type: 'del', path: ['chrono', c.expire_path] })
                                     ops.push({ type: 'del', path: ['contracts', co, id] })
                                     add(c.agent, parseInt(c.escrow / 2))
                                     add(c.eo, parseInt(c.escrow / 4))
@@ -2722,6 +2726,7 @@ function enforce(agent, txid, pointer, block_num) { //checks status of required 
                                 case 'listApproveA':
                                     ops.push({ type: 'put', path: ['feed', `${block_num}:${txid}`], data: `@${c.agent} failed to make a timely transaction` })
                                     ops.push({ type: 'del', path: ['escrow', agent, txid] })
+                                    ops.push({ type: 'del', path: ['chrono', c.expire_path] })
                                     ops.push({ type: 'del', path: ['contracts', co, id] })
                                     add(c.tagent, parseInt(c.escrow / 2))
                                     add(c.eo, parseInt(c.escrow / 4))
@@ -2733,6 +2738,7 @@ function enforce(agent, txid, pointer, block_num) { //checks status of required 
                                 case 'release':
                                     ops.push({ type: 'put', path: ['feed', `${block_num}:${txid}`], data: `@${c.agent} failed to make a timely transaction and has forfieted collateral` })
                                     ops.push({ type: 'del', path: ['escrow', agent, txid] })
+                                    ops.push({ type: 'del', path: ['chrono', c.expire_path] })
                                     ops.push({ type: 'del', path: ['contracts', co, id] })
                                     add(c.tagent, parseInt(c.escrow / 2))
                                     add(c.eo, parseInt(c.escrow / 4))
@@ -2742,6 +2748,7 @@ function enforce(agent, txid, pointer, block_num) { //checks status of required 
                                 case 'transfer':
                                     ops.push({ type: 'put', path: ['feed', `${block_num}:${txid}`], data: `@${c.tagent} failed to make a timely transaction and has forfieted collateral` })
                                     ops.push({ type: 'del', path: ['escrow', agent, txid] })
+                                    ops.push({ type: 'del', path: ['chrono', c.expire_path] })
                                     ops.push({ type: 'del', path: ['contracts', co, id] })
                                     add(c.eo, parseInt(c.escrow / 2))
                                     addCol(c.tagent, -parseInt(c.escrow))
@@ -2751,6 +2758,7 @@ function enforce(agent, txid, pointer, block_num) { //checks status of required 
                                 case 'cancel':
                                     ops.push({ type: 'put', path: ['feed', `${block_num}:${txid}`], data: `@${c.tagent} failed to make a timely transaction and has forfieted collateral` })
                                     ops.push({ type: 'del', path: ['escrow', agent, txid] })
+                                    ops.push({ type: 'del', path: ['chrono', c.expire_path] })
                                     ops.push({ type: 'del', path: ['contracts', co, id] })
                                     add(c.agent, parseInt(c.escrow / 2))
                                     add(c.eo, parseInt(c.escrow / 4))
@@ -3262,6 +3270,7 @@ function add(node, amount) {
 }
 
 function addCol(node, amount) {
+    console.log('addCol: ', { node, amount })
     return new Promise((resolve, reject) => {
         store.get(['col', node], function(e, a) {
             if (!e) {
