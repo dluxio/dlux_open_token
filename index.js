@@ -2123,9 +2123,9 @@ function startApp() {
                         path: ['feed', `${json.block_num}:${json.transaction_id}`],
                         data: `@${json.from}| sent @${json.to} ${json.amount} for ${json.memo.split(' ')[0]}`
                     })
-                    const addr = json.memo.split(' ')[0],
-                        co = json.memo.split(' ')[2]
-                    let cp = getPathObj(['contracts', co, addr]),
+                    let addr = json.memo.split(' ')[0],
+                        co = json.memo.split(' ')[2],
+                        cp = getPathObj(['contracts', co, addr]),
                         sp = getPathObj(['contracts', json.to, addr]),
                         gp = getPathNum(['balances', json.from])
                     Promise.all([cp, gp, sp])
