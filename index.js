@@ -2126,7 +2126,10 @@ function startApp() {
                     Promise.all([cp, gp, sp])
                         .then(ret => {
                             let d = ret[1],
-                                c = ret[0] || ret[2]
+                                c = ret[0]
+                            if (!c.escrow_id) {
+                                c = ret[2]
+                            }
                             eo = c.buyer,
                                 g = c.escrow
                             if (c.type === 'sb' || c.type === 'db') eo = c.from
