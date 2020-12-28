@@ -49,10 +49,10 @@ var recents = []
 const { ChainTypes, makeBitMaskFilter } = require('@hiveio/hive-js/lib/auth/serializer')
 const op = ChainTypes.operations
 const walletOperationsBitmask = makeBitMaskFilter([
-        op.custom_json
-    ])
-    //startWith('QmURnxAp89HFUYgfYqXyaBPuBneuzBTNBheXWF9V6tXArS')
-dynStart('dlux-io')
+    op.custom_json
+])
+startWith('QmbXaFLBGNeu7P3DKSxR5G21xgVXuGsraQnovYq1iYoJdA')
+    //dynStart('dlux-io')
     /*
     function hashThis2(datum) {
         const data = Buffer.from(datum, 'ascii')
@@ -2121,12 +2121,13 @@ function startApp() {
                     const addr = json.memo.split(' ')[0],
                         co = json.memo.split(' ')[2]
                     let cp = getPathObj(['contracts', co, addr]),
+                        sp = getPathObj(['contracts', json.to, addr]),
                         gp = getPathNum(['balances', json.from])
-                    Promise.all([cp, gp])
+                    Promise.all([cp, gp, sp])
                         .then(ret => {
                             let d = ret[1],
-                                c = ret[0],
-                                eo = c.buyer,
+                                c = ret[0] || ret[2]
+                            eo = c.buyer,
                                 g = c.escrow
                             if (c.type === 'sb' || c.type === 'db') eo = c.from
                             add(json.from, parseInt(c.escrow))
