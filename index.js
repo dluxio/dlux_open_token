@@ -1159,7 +1159,10 @@ function startApp() {
                                     ]]
                                 ]
                                 chronAssign(json.block_num + 200, { op: 'check', agent: contract.pending[1][0], txid: contract.txid + ':buyApproveA', acc: json.from, id: json.escrow_id.toString() })
-                                chronAssign(json.block_num + 200, { op: 'check', agent: contract.pending[0][0], txid: contract.txid + ':buyApproveT', acc: json.from, id: json.escrow_id.toString() })
+                                    .then(empty => {
+                                        chronAssign(json.block_num + 200, { op: 'check', agent: contract.pending[0][0], txid: contract.txid + ':buyApproveT', acc: json.from, id: json.escrow_id.toString() })
+                                    })
+
                                 ops = [
                                     { type: 'put', path: ['feed', `${json.block_num}:${json.transaction_id}`], data: `@${json.from}| has bought ${meta}: ${parseFloat(contract.amount/1000).toFixed(3)} for ${samount}` },
                                     { type: 'put', path: ['contracts', seller, meta.split(':')[1]], data: contract },
@@ -1231,7 +1234,9 @@ function startApp() {
                 }
                 if (allowed) {
                     chronAssign(json.block_num + 200, { op: 'check', agent: json.agent, txid: txid + ':listApproveA', acc: json.from, id: json.escrow_id.toString() })
-                    chronAssign(json.block_num + 200, { op: 'check', agent: json.to, txid: txid + ':listApproveT', acc: json.from, id: json.escrow_id.toString() })
+                        .then(empty => {
+                            chronAssign(json.block_num + 200, { op: 'check', agent: json.to, txid: txid + ':listApproveT', acc: json.from, id: json.escrow_id.toString() })
+                        })
                     ops = [{
                                 type: 'put',
                                 path: ['escrow', json.agent, txid + ':listApproveA'],
@@ -2129,6 +2134,7 @@ function startApp() {
                                 c = ret[0]
                             if (!c.escrow_id) {
                                 c = ret[2]
+                                co = c.co
                             }
                             eo = c.buyer,
                                 g = c.escrow
