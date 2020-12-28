@@ -1187,35 +1187,37 @@ function startApp() {
                                 console.log(3)
                                 var out = [{ type: 'put', path: ['feed', `${json.block_num}:${json.transaction_id}`], data: `@${json.from}'s trade has failed collateral requirements, Try different agents` }, ]
                                 out.push({
-                                    type: 'put',
-                                    path: ['escrow', json.to, json.escrow_id.toString()],
-                                    data: [
-                                        "escrow_approve",
-                                        {
-                                            "from": json.from,
-                                            "to": json.to,
-                                            "agent": json.agent,
-                                            "who": json.to,
-                                            "escrow_id": json.escrow_id,
-                                            "approve": false
-                                        }
-                                    ]
-                                })
-                                out.push({
-                                    type: 'put',
-                                    path: ['escrow', json.agent, json.escrow_id.toString()],
-                                    data: [
-                                        "escrow_approve",
-                                        {
-                                            "from": json.from,
-                                            "to": json.to,
-                                            "agent": json.agent,
-                                            "who": json.agent,
-                                            "escrow_id": json.escrow_id,
-                                            "approve": false
-                                        }
-                                    ]
-                                })
+                                        type: 'put',
+                                        path: ['escrow', json.to, json.escrow_id.toString()],
+                                        data: [
+                                            "escrow_approve",
+                                            {
+                                                "from": json.from,
+                                                "to": json.to,
+                                                "agent": json.agent,
+                                                "who": json.to,
+                                                "escrow_id": json.escrow_id,
+                                                "approve": false
+                                            }
+                                        ]
+                                    })
+                                    /* //this is where we need an enforcement point, check for trues
+                                    out.push({
+                                        type: 'put',
+                                        path: ['escrow', json.agent, json.escrow_id.toString()],
+                                        data: [
+                                            "escrow_approve",
+                                            {
+                                                "from": json.from,
+                                                "to": json.to,
+                                                "agent": json.agent,
+                                                "who": json.agent,
+                                                "escrow_id": json.escrow_id,
+                                                "approve": false
+                                            }
+                                        ]
+                                    })
+                                    */
                                 store.batch(out, pc)
                             }
                         })
@@ -1355,41 +1357,10 @@ function startApp() {
                     console.log(toBal > (dextxdlux * 2), agentBal > (dextxdlux * 2), typeof dextxdlux === 'number', dextxdlux > 0, isAgent, isDAgent, btime, 'buy checks')
                     var ops = []
                     ops.push({ type: 'put', path: ['feed', `${json.block_num}:${json.transaction_id}`], data: `@${json.from}| requested a trade outside of price curbs.` })
-                    if (json.agent == config.username) {
-                        NodeOps.push([
-                            [0, 0, true],
-                            [
-                                "escrow_approve",
-                                {
-                                    "from": json.from,
-                                    "to": json.to,
-                                    "agent": json.agent,
-                                    "who": json.agent,
-                                    "escrow_id": json.escrow_id,
-                                    "approve": false //reject non coded
-                                }
-                            ]
-                        ])
-                    } else if (json.to == config.username) {
-                        NodeOps.push([
-                            [0, 0, true],
-                            [
-                                "escrow_approve",
-                                {
-                                    "from": json.from,
-                                    "to": json.to,
-                                    "agent": json.agent,
-                                    "who": json.to,
-                                    "escrow_id": json.escrow_id,
-                                    "approve": false //reject non coded
-                                }
-                            ]
-                        ])
-                    }
-                    /*
                     ops.push({
                         type: 'put',
                         path: ['escrow', json.agent, `${json.block_num}:deny:${json.from}:${json.escrow_id}`],
+                        //need and enforcement point to check for trues
                         data: [
                             "escrow_approve",
                             {
@@ -1402,7 +1373,6 @@ function startApp() {
                             }
                         ]
                     })
-                    */
                     store.batch(ops, pc)
                 }
             } else if (isDAgent && isAgent) {
