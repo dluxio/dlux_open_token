@@ -1188,7 +1188,7 @@ function startApp() {
                                 var out = [{ type: 'put', path: ['feed', `${json.block_num}:${json.transaction_id}`], data: `@${json.from}'s trade has failed collateral requirements, Try different agents` }, ]
                                 out.push({
                                         type: 'put',
-                                        path: ['escrow', json.to, json.escrow_id.toString()],
+                                        path: ['escrow', json.to, `deny:${ json.from }:${json.escrow_id}`],
                                         data: [
                                             "escrow_approve",
                                             {
@@ -1359,7 +1359,7 @@ function startApp() {
                     ops.push({ type: 'put', path: ['feed', `${json.block_num}:${json.transaction_id}`], data: `@${json.from}| requested a trade outside of price curbs.` })
                     ops.push({
                         type: 'put',
-                        path: ['escrow', json.agent, `${json.block_num}:deny:${json.from}:${json.escrow_id}`],
+                        path: ['escrow', json.agent, `deny:${json.from}:${json.escrow_id}`],
                         //need and enforcement point to check for trues
                         data: [
                             "escrow_approve",
@@ -1518,8 +1518,8 @@ function startApp() {
                             dataOps.push({ type: 'put', path: ['contracts', a.for, a.contract], data: c })
                             store.batch(dataOps, pc)
                             credit(json.who)
-                        } else if (c.pending[1].approve == false) {
-                            //dataOps.push({ type: 'del', path: ['contracts', a.for, a.contract.split(':')[1]] }) careful with these 
+                        } else if (json.approve == false) {
+                            //dataOps.push({ type: 'del', path: ['contracts', a.for, a.contract.split(':')[1]] }) some more logic here to clean memory... or check if this was denies for colateral reasons
                             dataOps.push({ type: 'del', path: ['escrow', json.who, `deny${json.from}:${json.escrow_id}`] })
                             if (json.who == config.username) {
                                 for (var i = 0; i < NodeOps.length; i++) {
