@@ -10,7 +10,7 @@ const port = ENV.PORT || 3000;
 
 // testing configs for replays
 const override = ENV.override || 0 //will use standard restarts after this blocknumber
-const engineCrank = ENV.startingHash || 'QmfPfsX8qfB7NgLRkVQctSuu32gNm87tV7baAjcNy6SoxZ' //but this state will be inserted before
+const engineCrank = ENV.startingHash || '' //but this state will be inserted before
 
 // third party configs
 const rta = ENV.rta || '' //rtrades account : IPFS pinning interface
@@ -55,7 +55,7 @@ const msaccount = 'dac.escrow' //account controlled by community leaders
 const mainAPI = 'token.dlux.io' //leaders API probably
 const mainFE = 'dlux.io' //frontend for content
 const mainIPFS = 'a.ipfs.dlux.io' //IPFS service
-
+const mainICO = 'robotolux' //Account collecting ICO HIVE
 
 //Aditionally on your branch, look closely at dao, this is where tokenomics happen and custom status posts are made
 
@@ -86,7 +86,8 @@ let config = {
     mainAPI,
     jsonTokenName,
     mainFE,
-    mainIPFS
+    mainIPFS,
+    mainICO
 };
 
 module.exports = config;

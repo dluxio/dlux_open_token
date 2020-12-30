@@ -524,23 +524,6 @@ function startWith(hash) {
                         if (!e) {
                             if (hash) {
                                 var cleanState = data[1]
-                                    //delete cleanState.contracts //memory cleaning for live testing
-                                delete cleanState.escrow['dlux-io']['deny:onthewayout:2166326884']
-                                cleanState.runners = {
-                                        'dlux-io': {
-                                            domain: 'https://token.dlux.io',
-                                            self: 'dlux-io'
-                                        },
-                                        disregardfiat: {
-                                            domain: 'https://token.dlux.io',
-                                            self: 'disregardfiat'
-                                        },
-                                        inconceivable: {
-                                            domain: 'https://token.dlux.io',
-                                            self: 'inconceivable'
-                                        }
-                                    }
-                                    //delete cleanState.col
                                 store.put([], cleanState, function(err) {
                                     if (err) {
                                         console.log(err)
@@ -574,8 +557,22 @@ function startWith(hash) {
             }
         });
     } else {
-        //initial state load
-        startApp()
+        startingBlock = config.starting_block
+        store.del([], function(e) {
+            if (e) { console.log(e) }
+            store.put([], statestart, function(err) {
+                if (err) {
+                    console.log(err)
+                } else {
+                    store.get(['stats', 'hashLastIBlock'], function(error, returns) {
+                        if (!error) {
+                            console.log(`State Check:  ${returns}\nAccount: ${config.username}\nKey: ${config.active.substr(0,3)}...`)
+                        }
+                    })
+                    startApp()
+                }
+            })
+        })
     }
 }
 
@@ -2181,7 +2178,7 @@ function startApp() {
                 }
             }
         })
-        if (json.to == 'robotolux' && json.amount.split(' ')[1] == 'HIVE') { //the ICO disribution... should be in multi sig account
+        if (json.to == config.mainICO && json.amount.split(' ')[1] == 'HIVE') { //the ICO disribution... should be in multi sig account
             const amount = parseInt(parseFloat(json.amount) * 1000)
             var purchase,
                 Pstats = getPathObj(['stats']),
@@ -3226,14 +3223,14 @@ function dao(num) {
                                         ago = parseFloat(ago / 60)
                                             .toFixed(1)
                                     }
-                                    post = post + `### We sold out ${ago}${dil}\nThere are now ${parseFloat(bals.ri/1000).toFixed(3)} ${config.TOKEN} for sale from @robotolux for ${parseFloat(stats.icoPrice/1000).toFixed(3)} HIVE each.\n`
+                                    post = post + `### We sold out ${ago}${dil}\nThere are now ${parseFloat(bals.ri/1000).toFixed(3)} ${config.TOKEN} for sale from @${config.mainICO} for ${parseFloat(stats.icoPrice/1000).toFixed(3)} HIVE each.\n`
                                 } else {
                                     var left = bals.ri
                                     stats.tokenSupply += 100000000 - left
                                     bals.ri = 100000000
                                     stats.icoPrice = stats.icoPrice - (left / 1000000000)
                                     if (stats.icoPrice < 220) stats.icoPrice = 220
-                                    post = post + `### We Sold out ${100000000 - left} today.\nThere are now ${parseFloat(bals.ri/1000).toFixed(3)} ${config.TOKEN} for sale from @robotolux for ${parseFloat(stats.icoPrice/1000).toFixed(3)} HIVE each.\n`
+                                    post = post + `### We Sold out ${100000000 - left} today.\nThere are now ${parseFloat(bals.ri/1000).toFixed(3)} ${config.TOKEN} for sale from @${config.mainICO} for ${parseFloat(stats.icoPrice/1000).toFixed(3)} HIVE each.\n`
                                 }
                             } else {
                                 post = post + `### We have ${parseFloat(parseInt(bals.ri - 100000000)/1000).toFixed(3)} ${config.TOKEN} left for sale at 0.22 HIVE in our Pre-ICO.\n`
