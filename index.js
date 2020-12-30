@@ -47,10 +47,10 @@ var recents = []
 const { ChainTypes, makeBitMaskFilter, ops } = require('@hiveio/hive-js/lib/auth/serializer')
 const op = ChainTypes.operations
 const walletOperationsBitmask = makeBitMaskFilter([
-    op.custom_json
-])
-startWith(config.engineCrank) //for testing and replaying
-    //dynStart(config.leader)
+        op.custom_json
+    ])
+    //startWith(config.engineCrank) //for testing and replaying
+dynStart(config.leader)
     /*
     function hashThis2(datum) {
         const data = Buffer.from(datum, 'ascii')
@@ -525,8 +525,21 @@ function startWith(hash) {
                             if (hash) {
                                 var cleanState = data[1]
                                     //delete cleanState.contracts //memory cleaning for live testing
-                                    //delete cleanState.escrow
-                                    //delete cleanState.chrono
+                                delete cleanState.escrow['dlux-io']['deny:onthewayout:2166326884']
+                                cleanState.runners = {
+                                        'dlux-io': {
+                                            domain: 'https://token.dlux.io',
+                                            self: 'dlux-io'
+                                        },
+                                        disregardfiat: {
+                                            domain: 'https://token.dlux.io',
+                                            self: 'disregardfiat'
+                                        },
+                                        inconceivable: {
+                                            domain: 'https://token.dlux.io',
+                                            self: 'inconceivable'
+                                        }
+                                    }
                                     //delete cleanState.col
                                 store.put([], cleanState, function(err) {
                                     if (err) {
@@ -1200,7 +1213,7 @@ function startApp() {
                                     //only one false can be broadcast, but both trues... keep a record to check against for memory management and enforcement
                                 out.push({
                                     type: 'put',
-                                    path: ['escrow', '.' + json.to, `${ json.from }/${json.escrow_id}:deny`],
+                                    path: ['escrow', '.' + json.to, `${ json.from }/${json.escrow_id}:deny`], //.prevents pickup
                                     data: [
                                         "escrow_approve",
                                         {
@@ -1217,26 +1230,29 @@ function startApp() {
                                     type: 'put',
                                     path: ['escrow', json.escrow_id.toString(), json.from],
                                     data: {
-
+                                        for: json.from,
+                                        contract: json.escrow_id.toString
                                     }
                                 })
                                 var coll = 0
                                 if (parseFloat(json.hbd_amount) > 0) {
-                                    coll = parseInt(4 * parseFloat(hbdVWMA.rate) * parseFloat(json.hbd_amount))
+                                    coll = parseInt(4 * parseFloat(hbdVWMA.rate) * parseFloat(json.hbd_amount) * 1000)
                                 } else {
-                                    coll = parseInt(4 * parseFloat(hiveVWMA.rate) * parseFloat(json.hive_amount))
+                                    coll = parseInt(4 * parseFloat(hiveVWMA.rate) * parseFloat(json.hive_amount) * 1000)
                                 }
                                 out.push({
                                     type: 'put',
                                     path: ['contracts', json.from, json.escrow_id.toString()],
                                     data: {
+                                        note: 'denied transaction',
+                                        from: json.from,
                                         to: json.to,
                                         agent: json.agent,
-                                        escrow_id: json.escrow_id,
+                                        escrow_id: json.escrow_id.toString(),
                                         col: coll
                                     }
                                 })
-                                chronAssign(json.block_num + 200, { op: 'deny', agent: json.from, txid: `${ json.from }/${json.escrow_id}:deny`, acc: json.from, id: json.escrow_id.toString() })
+                                chronAssign(json.block_num + 200, { op: 'denyA', agent: json.agent, txid: `${ json.from }/${json.escrow_id}:deny`, acc: json.from, id: json.escrow_id.toString() })
                                 store.batch(out, pc)
                             }
                         })
@@ -1432,9 +1448,7 @@ function startApp() {
                     if (Object.keys(b).length) {
                         var c = b
                         console.log(c)
-                        var dataOps = [
-                            { type: 'put', path: ['feed', `${json.block_num}:${json.transaction_id}`], data: `@${json.who}| approved escrow for ${json.from}` }
-                        ]
+                        var dataOps = []
                         if (json.approve && c.buyer) {
                             if (json.who == json.agent) {
                                 c.approveAgent = true
@@ -1456,6 +1470,7 @@ function startApp() {
                                             delete plasma.pending[c.txid + ':buyApproveA']
                                         }
                                         console.log(a.contract)
+                                        dataOps.push({ type: 'put', path: ['feed', `${json.block_num}:${json.transaction_id}`], data: `@${json.who}| approved escrow for ${json.from}` })
                                         dataOps.push({ type: 'put', path: ['contracts', a.for, a.contract], data: c })
                                         store.batch(dataOps, pc)
                                         credit(json.who)
@@ -1482,13 +1497,15 @@ function startApp() {
                                             delete plasma.pending[c.txid + ':buyApproveT']
                                         }
                                         console.log(a.contract, c)
+                                        dataOps.push({ type: 'put', path: ['feed', `${json.block_num}:${json.transaction_id}`], data: `@${json.who}| approved escrow for ${json.from}` })
                                         dataOps.push({ type: 'put', path: ['contracts', a.for, a.contract], data: c })
                                         store.batch(dataOps, pc)
                                         credit(json.who)
                                     })
                                 })
                             }
-                        } else if (json.approve && json.who == json.to) { //no contract update... update approvals?
+                        } else if (json.approve && json.who == json.to && c.type) { //no contract update... update approvals?
+                            dataOps.push({ type: 'put', path: ['feed', `${json.block_num}:${json.transaction_id}`], data: `@${json.who}| approved escrow for ${json.from}` })
                             dataOps.push({ type: 'del', path: ['escrow', json.who, c.txid + ':listApproveT'] })
                             if (json.who == config.username) {
                                 for (var i = 0; i < NodeOps.length; i++) {
@@ -1513,7 +1530,8 @@ function startApp() {
                             dataOps.push({ type: 'put', path: ['contracts', a.for, a.contract], data: c })
                             store.batch(dataOps, pc)
                             credit(json.who)
-                        } else if (json.approve && json.who == json.agent) { //no contract update... update list approvals, maybe this is where to pull collateral?
+                        } else if (json.approve && json.who == json.agent && c.type) { //no contract update... update list approvals, maybe this is where to pull collateral?
+                            dataOps.push({ type: 'put', path: ['feed', `${json.block_num}:${json.transaction_id}`], data: `@${json.who}| approved escrow for ${json.from}` })
                             dataOps.push({ type: 'del', path: ['escrow', json.who, c.txid + ':listApproveA'] })
                             if (json.who == config.username) {
                                 for (var i = 0; i < NodeOps.length; i++) {
@@ -1538,17 +1556,17 @@ function startApp() {
                             dataOps.push({ type: 'put', path: ['contracts', a.for, a.contract], data: c })
                             store.batch(dataOps, pc)
                             credit(json.who)
-                        } else if (json.approve == false) {
-                            //dataOps.push({ type: 'del', path: ['contracts', a.for, a.contract.split(':')[1]] }) some more logic here to clean memory... or check if this was denies for colateral reasons
-                            dataOps.push({ type: 'del', path: ['escrow', json.who, `deny${json.from}:${json.escrow_id}`] })
-                            if (json.who == config.username) {
-                                for (var i = 0; i < NodeOps.length; i++) {
-                                    if (NodeOps[i][1][1].from == json.from && NodeOps[i][1][1].escrow_id == json.escrow_id && NodeOps[i][1][0] == 'escrow_approve') {
-                                        NodeOps.splice(i, 1)
-                                    }
-                                }
-                                delete plasma.pending[`deny${json.from}:${json.escrow_id}`]
-                            }
+                        } else if (!json.approve && c.note == 'denied transaction' && json.who == json.agent) {
+                            dataOps.push({ type: 'del', path: ['contracts', a.for, a.contract] }) //some more logic here to clean memory... or check if this was denies for colateral reasons
+                            dataOps.push({ type: 'del', path: ['escrow', json.who, `${json.from}/${json.escrow_id}:deny`] })
+                            dataOps.push({ type: 'del', path: ['escrow', '.' + json.who, `${json.from}/${json.escrow_id}:deny`] })
+                            dataOps.push({ type: 'del', path: ['escrow', c.escrow_id, c.from] })
+                            store.batch(dataOps, pc)
+                            credit(json.who)
+                        } else if (!json.approve && c.note == 'denied transaction' && json.who == json.to) {
+                            dataOps.push({ type: 'del', path: ['contracts', a.for, a.contract] }) //some more logic here to clean memory... or check if this was denies for colateral reasons
+                            dataOps.push({ type: 'del', path: ['escrow', json.who, `${json.from}/${json.escrow_id}:deny`] })
+                            dataOps.push({ type: 'del', path: ['escrow', c.escrow_id, c.from] })
                             store.batch(dataOps, pc)
                             credit(json.who)
                         } else {
@@ -1556,8 +1574,6 @@ function startApp() {
                         }
                     }
                 });
-            } else {
-                store.batch([{ type: 'del', path: ['escrow', json.who, json.escrow_id] }], pc)
             }
         })
 
@@ -2828,9 +2844,45 @@ function enforce(agent, txid, pointer, block_num) { //checks status of required 
                             console.log({ c })
                             let co = c.co
                             switch (op) {
-                                case 'deny':
-                                    //schedule the other transaction... 
-                                    //clean memory...
+                                case 'denyA':
+                                    getPathObj(['escrow', '.' + c.to, `${c.from}/${c.escrow_id}:deny`])
+                                        .then(toOp => {
+                                            ops.push({ type: 'put', path: ['escrow', c.to, `${c.from}/${c.escrow_id}:deny`], data: toOp })
+                                            ops.push({ type: 'del', path: ['escrow', c.agent, `${c.from}/${c.escrow_id}:deny`] })
+                                            ops.push({ type: 'del', path: ['escrow', '.' + c.to, `${c.from}/${c.escrow_id}:deny`] })
+                                            chronAssign(json.block_num + 200, { op: 'deny', agent: c.to, txid: `${ c.from }/${c.escrow_id}:deny`, acc: c.from, id: c.escrow_id })
+                                            penalty(c.agent, c.coll)
+                                                .then(col => {
+                                                    c.recovered = col
+                                                    ops.push({ type: 'put', path: ['escrow', c.to, `${c.from}/${c.escrow_id}:deny`], data: toOp })
+                                                    ops.push({ type: 'del', path: ['escrow', c.agent, `${c.from}/${c.escrow_id}:deny`] })
+                                                    ops.push({ type: 'del', path: ['escrow', '.' + c.to, `${c.from}/${c.escrow_id}:deny`] })
+                                                    ops.push({ type: 'put', path: ['contracts', p.for, p.contract], data: c })
+                                                    store.batch(ops, [resolve, reject])
+                                                    ops = []
+                                                })
+                                                .catch(e => { console.log(e) })
+                                            ops = []
+                                        })
+                                        .catch(e => { console.log(e) })
+                                    break;
+                                case 'denyT':
+                                    penalty(c.agent, c.coll)
+                                        .then(col => {
+                                            const returnable = col + c.recovered
+                                            ops.push({ type: 'del', path: ['contracts', c.for, c.escrow_id] }) //some more logic here to clean memory... or check if this was denies for colateral reasons
+                                            ops.push({ type: 'del', path: ['escrow', c.to, `${c.from}/${c.escrow_id}:deny`] })
+                                            ops.push({ type: 'del', path: ['escrow', c.escrow_id, c.from] })
+                                            if (returnable > c.coll / 4) {
+                                                add(c.from, parseInt(c.coll / 4))
+                                            } else {
+                                                add(c.from, returnable)
+                                            }
+                                            store.batch(ops, [resolve, reject])
+                                            ops = []
+                                        })
+                                        .catch(e => { console.log(e) })
+                                    ops = []
                                     break;
                                 case 'dispute':
                                     ops.push({ type: 'put', path: ['feed', `${block_num}:${txid}`], data: `@${c.tagent} failed to make a timely transaction and has forfieted collateral` })
@@ -3442,6 +3494,25 @@ function addCol(node, amount) {
                 const a2 = typeof a != 'number' ? amount : a + amount
                 console.log({ node, a })
                 store.batch([{ type: 'put', path: ['col', node], data: a2 }], [resolve, reject])
+            } else {
+                console.log(e)
+            }
+        })
+    })
+}
+
+function penalty(node, amount) {
+    console.log('penalty: ', { node, amount })
+    return new Promise((resolve, reject) => {
+        store.get(['bal', node], function(e, a) {
+            if (!e) {
+                const a2 = typeof a != 'number' ? 0 : a
+                newBal = a2 - amount
+                if(newBal < 0){newBal = 0}
+                const forfiet = a2 - newBal
+                var ops = [{ type: 'put', path: ['bal', node], data: newBal }]
+                //dig into powered token? would this be a method to power down quickly?
+                store.batch(ops, [resolve(forfiet), reject])
             } else {
                 console.log(e)
             }
