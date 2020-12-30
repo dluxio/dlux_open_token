@@ -18,7 +18,7 @@ hiveClient.api.setOptions({ url: config.clientURL });
 const rtrades = require('./rtrades');
 var Pathwise = require('./pathwise');
 var level = require('level');
-
+const statestart = require('./state')
 var store = new Pathwise(level('./db', { createIfEmpty: true }));
 const crypto = require('crypto');
 const bs58 = require('bs58');
@@ -44,7 +44,7 @@ var live_dex = {}, //for feedback, unused currently
     */
 var recents = []
     //HIVE API CODE
-const { ChainTypes, makeBitMaskFilter } = require('@hiveio/hive-js/lib/auth/serializer')
+const { ChainTypes, makeBitMaskFilter, ops } = require('@hiveio/hive-js/lib/auth/serializer')
 const op = ChainTypes.operations
 const walletOperationsBitmask = makeBitMaskFilter([
         op.custom_json
@@ -561,6 +561,7 @@ function startWith(hash) {
             }
         });
     } else {
+        //initial state load
         startApp()
     }
 }
@@ -1689,29 +1690,35 @@ function startApp() {
             var Pqueue = getPathObj(['queue']),
                 Pnode = getPathObj(['markets', 'node', from])
             Promise.all([Pqueue, Pnode, Prunners]).then(function(v) {
-                var q = v[0],
-                    n = v[1],
-                    r = v[2]
-                if (typeof n.bidRate == 'number') {
-                    for (var i = 0; i < q.length; i++) {
-                        if (qe[i] == from) {
-                            found = i
-                            break;
+                deleteObjs([
+                        ['queue']
+                    ])
+                    .then(empty => {
+                        var q = v[0],
+                            n = v[1],
+                            r = v[2]
+                        if (typeof n.bidRate == 'number') {
+                            for (var i = 0; i < q.length; i++) {
+                                if (qe[i] == from) {
+                                    found = i
+                                    break;
+                                }
+                            }
+                            if (found >= 0) {
+                                q.splice(found, 1)
+                                ops.push({ type: 'put', path: ['queue'], data: q })
+                            }
+                            delete b.domain
+                            delete b.bidRate
+                            delete b.escrow
+                            delete b.marketingRate
+                            ops.push({ type: 'del', path: ['runners', from] })
+                            ops.push({ type: 'put', path: ['markets', 'node', from], data: b })
                         }
-                    }
-                    if (found >= 0) {
-                        q.splice(found, 1)
-                        ops.push({ type: 'put', path: ['queue'], data: q })
-                    }
-                    delete b.domain
-                    delete b.bidRate
-                    delete b.escrow
-                    delete b.marketingRate
-                    ops.push({ type: 'del', path: ['runners', from] })
-                    ops.push({ type: 'put', path: ['markets', 'node', from], data: b })
-                }
-                ops.push({ type: 'put', path: ['feed', `${json.block_num}:${json.transaction_id}`], data: `@${from}| has signed off their ${config.TOKEN} node` })
-                store.batch(ops, pc)
+                        ops.push({ type: 'put', path: ['feed', `${json.block_num}:${json.transaction_id}`], data: `@${from}| has signed off their ${config.TOKEN} node` })
+                        store.batch(ops, pc)
+                    })
+                    .catch(e => { console.log(e) })
             }).catch(function(e) { console.log(e) })
         }
     });
@@ -1821,111 +1828,116 @@ function startApp() {
             if (filter[i].account == config.ben && filter[i].weight > 999) {
                 store.get(['queue'], function(e, a) {
                     if (e) console.log(e)
-                    var queue = []
-                    for (var numb in a) {
-                        queue.push(a[numb])
-                    }
-                    chronAssign(json.block_num + 144000, {
-                        block: parseInt(json.block_num + 144000),
-                        op: 'post_reward',
-                        author: json.author,
-                        permlink: json.permlink
-                    })
-                    var assignments = [0, 0, 0, 0]
-                    if (config.username == config.leader || config.username == config.mirror) { //pin content ... hard set here since rewards are still hard set as well
-                        assignments[0] = 1
-                    }
-                    if (!e) {
-                        assignments[1] = queue.shift() //consensus accounts for API retrivals
-                        assignments[2] = queue.shift()
-                        assignments[3] = queue.shift()
-                        queue.push(assignments[1])
-                        queue.push(assignments[2])
-                        queue.push(assignments[3])
-                    }
-                    ops.push({
-                        type: 'put',
-                        path: ['posts', `${json.author}/${json.permlink}`],
-                        data: {
-                            block: json.block_num,
-                            author: json.author,
-                            permlink: json.permlink,
-                            totalWeight: 1,
-                            voters: {},
-                            reblogs: {},
-                            credentials: {},
-                            signatures: {},
-                            customJSON: {
-                                assignments: [config.leader, assignments[1], assignments[2], assignments[3]]
-                            },
-                        }
-                    })
-                    ops.push({ type: 'put', path: ['queue'], data: queue })
-                    ops.push({ type: 'put', path: ['feed', `${json.block_num}:${json.transaction_id}`], data: `@${json.author}|${json.permlink} added to ${config.TOKEN} rewardable content` })
-                    store.batch(ops, pc)
-                    if (assignments[0] || assignments[1] || assignments[2] || assignments[3]) {
-                        client.database.call('get_content', [json.author, json.permlink])
-                            .then(result => {
-                                console.log('hive content', result)
-                                var trimmed = JSON.parse(result.json_metadata),
-                                    final = { a: [] }
-                                for (j in trimmed.assets) {
-                                    if (trimmed.assets[j].hash.length == 46) final.a.push(trimmed.assets[j].hash) //a for assets
+                    deleteObjs([
+                            ['queue']
+                        ]).then(empty => {
+                            var queue = []
+                            for (var numb in a) {
+                                queue.push(a[numb])
+                            }
+                            chronAssign(json.block_num + 144000, {
+                                block: parseInt(json.block_num + 144000),
+                                op: 'post_reward',
+                                author: json.author,
+                                permlink: json.permlink
+                            })
+                            var assignments = [0, 0, 0, 0]
+                            if (config.username == config.leader || config.mirror) { //pin content ... hard set here since rewards are still hard set as well
+                                assignments[0] = config.username
+                            }
+                            if (!e) {
+                                assignments[1] = queue.shift() //consensus accounts for API retrivals
+                                assignments[2] = queue.shift()
+                                assignments[3] = queue.shift()
+                                queue.push(assignments[1])
+                                queue.push(assignments[2])
+                                queue.push(assignments[3])
+                            }
+                            ops.push({
+                                type: 'put',
+                                path: ['posts', `${json.author}/${json.permlink}`],
+                                data: {
+                                    block: json.block_num,
+                                    author: json.author,
+                                    permlink: json.permlink,
+                                    totalWeight: 1,
+                                    voters: {},
+                                    reblogs: {},
+                                    credentials: {},
+                                    signatures: {},
+                                    customJSON: {
+                                        assignments: [config.leader, assignments[1], assignments[2], assignments[3]]
+                                    },
                                 }
-                                if (trimmed.app.length < 33) { //p for process
-                                    final.p = trimmed.app
-                                }
-                                try {
-                                    if (trimmed.Hash360.length == 46) { //s for surround
-                                        final.s = trimmed.Hash360
-                                    }
-                                } catch (e) {}
-                                if (trimmed.vrHash.length == 46) { //e for executable
-                                    final.e = trimmed.vrHash
-                                }
-                                try {
-                                    if (JSON.stringify(trimmed.loc).length < 1024) { //l for spactial indexing
-                                        final.l = trimmed.loc
-                                    }
-                                } catch (e) {}
-                                final.t = trimmed.tags
-                                final.d = result.title
-                                if (assignments[0]) {
-                                    var bytes = rtrades.checkNpin(JSON.parse(result.json_metadata)
-                                        .assets)
-                                    bytes.then(function(value) {
-                                        var op = ["custom_json", {
-                                            required_auths: [config.username],
-                                            required_posting_auths: [],
-                                            id: `${config.prefix}cjv`, //custom json verification
-                                            json: JSON.stringify({
-                                                a: json.author,
-                                                p: json.permlink,
-                                                c: final, //customJson trimmed
-                                                b: value //amount of bytes posted
-                                            })
-                                        }]
-                                        NodeOps.unshift([
-                                            [0, 0], op
-                                        ])
-                                    }).catch(e => { console.log(e) })
-                                } else {
-                                    var op = ["custom_json", {
-                                        required_auths: [config.username],
-                                        required_posting_auths: [],
-                                        id: `${config.prefix}cjv`, //custom json verification
-                                        json: JSON.stringify({
-                                            a: json.author,
-                                            p: json.permlink,
-                                            c: final
-                                        })
-                                    }]
-                                    NodeOps.unshift([
-                                        [0, 0], op
-                                    ])
-                                }
-                            }).catch(e => { console.log(e) });
-                    }
+                            })
+                            ops.push({ type: 'put', path: ['queue'], data: queue })
+                            ops.push({ type: 'put', path: ['feed', `${json.block_num}:${json.transaction_id}`], data: `@${json.author}|${json.permlink} added to ${config.TOKEN} rewardable content` })
+                            store.batch(ops, pc)
+                            if (assignments[0] == config.username || assignments[1] == config.username || assignments[2] == config.username || assignments[3] == config.username) {
+                                client.database.call('get_content', [json.author, json.permlink])
+                                    .then(result => {
+                                        console.log('hive content', result)
+                                        var trimmed = JSON.parse(result.json_metadata),
+                                            final = { a: [] }
+                                        for (j in trimmed.assets) {
+                                            if (trimmed.assets[j].hash.length == 46) final.a.push(trimmed.assets[j].hash) //a for assets
+                                        }
+                                        if (trimmed.app.length < 33) { //p for process
+                                            final.p = trimmed.app
+                                        }
+                                        try {
+                                            if (trimmed.Hash360.length == 46) { //s for surround
+                                                final.s = trimmed.Hash360
+                                            }
+                                        } catch (e) {}
+                                        if (trimmed.vrHash.length == 46) { //e for executable
+                                            final.e = trimmed.vrHash
+                                        }
+                                        try {
+                                            if (JSON.stringify(trimmed.loc).length < 1024) { //l for spactial indexing
+                                                final.l = trimmed.loc
+                                            }
+                                        } catch (e) {}
+                                        final.t = trimmed.tags
+                                        final.d = result.title
+                                        if (assignments[0]) { //mirror username will need rtrades login
+                                            var bytes = rtrades.checkNpin(JSON.parse(result.json_metadata)
+                                                .assets)
+                                            bytes.then(function(value) {
+                                                var op = ["custom_json", {
+                                                    required_auths: [config.username],
+                                                    required_posting_auths: [],
+                                                    id: `${config.prefix}cjv`, //custom json verification
+                                                    json: JSON.stringify({
+                                                        a: json.author,
+                                                        p: json.permlink,
+                                                        c: final, //customJson trimmed
+                                                        b: value //amount of bytes posted
+                                                    })
+                                                }]
+                                                NodeOps.unshift([
+                                                    [0, 0], op
+                                                ])
+                                            }).catch(e => { console.log(e) })
+                                        } else {
+                                            var op = ["custom_json", {
+                                                required_auths: [config.username],
+                                                required_posting_auths: [],
+                                                id: `${config.prefix}cjv`, //custom json verification
+                                                json: JSON.stringify({
+                                                    a: json.author,
+                                                    p: json.permlink,
+                                                    c: final
+                                                })
+                                            }]
+                                            NodeOps.unshift([
+                                                [0, 0], op
+                                            ])
+                                        }
+                                    }).catch(e => { console.log(e) });
+                            }
+                        })
+                        .catch(e => { console.log(e) })
                 })
             } else {
                 pc[0](pc[2])
@@ -2215,6 +2227,93 @@ function startApp() {
             pc[0](pc[2])
         }
     });
+
+    //multi-sig ops
+    /*
+    processor.onOperation('account_update', function(json, pc) { //ensure proper keys are on record for DAO accounts
+        let agentsP = getPathObj(['agents']),
+            statsP = getPathObj(['stats']),
+            keysP = getPathObj(['keyPairs'])
+        Promise.all([agentsP, statsP, keysP])
+            .then(a => {
+                let agents = a[0],
+                    stats = a[1],
+                    keyPairs = a[2],
+                    ops = []
+                if (json.account == config.msaccount) {
+                    stats.auths = {}
+                    for (var agent in agents) {
+                        agents[agent].o = 0
+                    }
+                    for (var i = 0; i < json.owner.key_auths.length; i++) {
+                        stats.auth[json.owner.key_auths[i][0]] = 1
+                        agents[keyPairs[json.owner.key_auths[i][0]]].o = 1
+                    }
+                    //auto update active public keys
+                    ops.push({ type: 'put', path: ['stats'], data: stats })
+                    ops.push({ type: 'put', path: ['agents'], data: agents })
+                    console.log(ops);
+                    store.batch(ops, pc)
+                } else if (agents[json.account] != null && json.active != null) {
+                    ops.push({ type: 'put', path: ['agents', json.account, 'p'], data: json.active.key_auths[0][0] }) //keep record of public keys of agents
+                    ops.push({ type: 'put', path: ['keyPairs', json.active.key_auths[0][0]], data: json.account })
+                    console.log(ops);
+                    store.batch(ops, pc)
+                } else {
+                    pc[0](pc[2])
+                }
+            })
+            .catch(e => { console.log(e) })
+    });
+
+    processor.onOperation('claim_account', function(json, pc) {
+        getPathObj(['agents', json.creator])
+            .then(re => {
+                let r = re,
+                    ops = []
+                if (Object.keys(r).length) { //adjust inventories
+                    r.i++
+                        ops.push({ type: 'put', path: ['agents', json.creator], data: r })
+                    ops.push({ type: 'put', path: ['feed', `${json.block_num}:${json.transaction_id}`], data: `${json.creator} claimed an ACT` })
+                    console.log({ msg: 'claim', ops });
+                    store.batch(ops, pc)
+                } else {
+                    pc[0](pc[2])
+                }
+            })
+            .catch(e => { console.log(e) })
+    });
+
+
+    processor.onOperation('create_claimed_account', function(json, pc) {
+        let agentP = getPathObj(['agents', json.creator]),
+            conP = getPathObj(['contracts', json.creator, json.new_account_name + ':c'])
+        Promise.all([agentP, conP])
+            .then(a => {
+                let r = a[0],
+                    con = a[1],
+                    ops = []
+                if (Object.keys(r).length) { //adjust inventories
+                    r.i--
+                    ops.push({ type: 'put', path: ['agents', json.creator], data: r })
+                    ops.push({ type: 'put', path: ['feed', `${json.block_num}:${json.transaction_id}`], data: `@${json.creator} redeemed DACT for ${json.new_account_name}` })
+                    console.log(ops, 'adjust ACT inventories'); //needs more work
+                }
+                if (Object.keys(con).length) { //if a contract account --ACT options ---probably too advanced to build and test together
+                    if (con[`${json.new_account_name}:c`] != null) {
+                        r.ir++ //update redeemed total
+                            //state.bot.push(con[`${json.new_account_name}:c`]) //push payment to multisig bot build a thing for this
+                            ops.push({ type: 'del', path: ['contracts', json.creator, json.new_account_name + ':c'] })
+                    }
+                    ops.push({ type: 'put', path: ['agents', json.creator], data: r })
+                    console.log(ops, 'create'); //needs more work
+                    store.batch(ops, pc)
+                }
+            })
+            .catch(e => { console.log(e) })
+    });
+*/
+    //end multi-sig ops
 
     //do things in cycles based on block time
     processor.onBlock(function(num, pc) {
@@ -2525,152 +2624,159 @@ function tally(num) {
             Pstats = getPathObj(['stats']),
             Prb = getPathNum(['balances', 'ra'])
         Promise.all([Prunners, Pnode, Pstats, Prb]).then(function(v) {
-            var runners = v[0],
-                nodes = v[1],
-                stats = v[2],
-                rbal = v[3],
-                queue = []
-            var tally = {
-                agreements: {
-                    runners: {},
-                    tally: {},
-                    votes: 0
-                },
-                election: {},
-                winner: {},
-                results: []
-            }
-            for (var node in runners) {
-                tally.agreements.runners[node] = nodes[node]
-                var getHash
-                try { getHash = nodes[node].report.hash } catch (e) {}
-                tally.agreements.tally[node] = {
-                        self: node,
-                        hash: getHash,
-                        votes: 0
-                    } //build a dataset to count
-            }
-            for (var node in tally.agreements.runners) {
-                var agreements
-                try { agreements = tally.agreements.runners[node].report.agreements } catch (e) {}
-                for (var subnode in agreements) {
-                    if (tally.agreements.tally[subnode]) {
-                        if (tally.agreements.tally[subnode].hash == tally.agreements.tally[node].hash && nodes[node].report.block === num - 99) {
-                            tally.agreements.tally[subnode].votes++
+            deleteObjs([
+                    ['runners'],
+                    ['queue']
+                ])
+                .then(empty => {
+                    var runners = v[0],
+                        nodes = v[1],
+                        stats = v[2],
+                        rbal = v[3],
+                        queue = []
+                    var tally = {
+                        agreements: {
+                            runners: {},
+                            tally: {},
+                            votes: 0
+                        },
+                        election: {},
+                        winner: {},
+                        results: []
+                    }
+                    for (var node in runners) {
+                        tally.agreements.runners[node] = nodes[node]
+                        var getHash
+                        try { getHash = nodes[node].report.hash } catch (e) {}
+                        tally.agreements.tally[node] = {
+                                self: node,
+                                hash: getHash,
+                                votes: 0
+                            } //build a dataset to count
+                    }
+                    for (var node in tally.agreements.runners) {
+                        var agreements
+                        try { agreements = tally.agreements.runners[node].report.agreements } catch (e) {}
+                        for (var subnode in agreements) {
+                            if (tally.agreements.tally[subnode]) {
+                                if (tally.agreements.tally[subnode].hash == tally.agreements.tally[node].hash && nodes[node].report.block === num - 99) {
+                                    tally.agreements.tally[subnode].votes++
+                                }
+                            }
+                        }
+                        tally.agreements.votes++
+                    }
+                    var l = 0
+                    var consensus, firstCatch, first = []
+                    for (var node in runners) {
+                        l++
+                        var forblock = 0
+                        try {
+                            forblock = nodes[node].report.block
+                        } catch (e) {
+                            console.log(e)
+                        }
+                        if (tally.agreements.tally[node].votes / tally.agreements.votes >= 2 / 3) {
+                            consensus = tally.agreements.runners[node].report.hash
+                            if (firstCatch) {
+                                firstCatch();
+                                firstCatch = null
+                            }
+                        } else if (l > 1) {
+                            if (first.length && tally.agreements.runners[node].report.hash == tally.agreements.runners[first[0]].report.hash) {
+                                first.push(node)
+                                console.log(node + ' also scheduled for removal')
+                            } else {
+                                remove(node)
+                                console.log('uh-oh:' + node + ' scored ' + tally.agreements.tally[node].votes + '/' + tally.agreements.votes)
+                            }
+                        } else if (l == 1) {
+                            if (nodes[node].report.block === num - 99) consensus = nodes[node].report.hash
+                            console.log('old-consensus catch scheduled for removal upon consensus: ' + node)
+                            first = [node]
+                            firstCatch = () => { for (i in first) { remove(first[i]) } }
+                        }
+
+                        function remove(node) { delete runners[node] }
+                    }
+                    console.log('Consensus: ' + consensus)
+                    plasma.consensus = consensus
+                    stats.lastBlock = stats.hashLastIBlock
+                    if (consensus) stats.hashLastIBlock = consensus
+                    for (var node in nodes) {
+                        nodes[node].attempts++
+                            var getHash
+                        try { getHash = nodes[node].report.hash } catch (e) {}
+                        if (getHash == stats.hashLastIBlock) {
+                            nodes[node].yays++
+                                nodes[node].lastGood = num
                         }
                     }
-                }
-                tally.agreements.votes++
-            }
-            var l = 0
-            var consensus, firstCatch, first = []
-            for (var node in runners) {
-                l++
-                var forblock = 0
-                try {
-                    forblock = nodes[node].report.block
-                } catch (e) {
-                    console.log(e)
-                }
-                if (tally.agreements.tally[node].votes / tally.agreements.votes >= 2 / 3) {
-                    consensus = tally.agreements.runners[node].report.hash
-                    if (firstCatch) {
-                        firstCatch();
-                        firstCatch = null
+                    if (l < 20) {
+                        for (var node in nodes) {
+                            tally.election[node] = nodes[node]
+                        }
+                        tally.results = []
+                        for (var node in runners) {
+                            queue.push(node)
+                            delete tally.election[node]
+                        }
+                        for (var node in tally.election) {
+                            var getHash
+                            try { getHash = nodes[node].report.hash } catch (e) {}
+                            if (getHash !== stats.hashLastIBlock && stats.hashLastIBlock) {
+                                delete tally.election[node]
+                            }
+                        }
+                        var t = 0
+                        for (var node in tally.election) {
+                            t++
+                            tally.results.push([node, parseInt(((tally.election[node].yays / tally.election[node].attempts) * tally.election[node].attempts))])
+                        }
+                        if (t) {
+                            tally.results.sort(function(a, b) {
+                                return a[1] - b[1];
+                            })
+                            for (p = 0; p < tally.results.length; p++) {
+                                queue.push(tally.results[p][0])
+                            }
+                            tally.winner = tally.results.pop()
+                            runners[tally.winner[0]] = {
+                                self: nodes[tally.winner[0]].self,
+                                domain: nodes[tally.winner[0]].domain
+                            }
+                        }
                     }
-                } else if (l > 1) {
-                    if (first.length && tally.agreements.runners[node].report.hash == tally.agreements.runners[first[0]].report.hash) {
-                        first.push(node)
-                        console.log(node + ' also scheduled for removal')
-                    } else {
-                        remove(node)
-                        console.log('uh-oh:' + node + ' scored ' + tally.agreements.tally[node].votes + '/' + tally.agreements.votes)
+                    for (var node in runners) {
+                        nodes[node].wins++
                     }
-                } else if (l == 1) {
-                    if (nodes[node].report.block === num - 99) consensus = nodes[node].report.hash
-                    console.log('old-consensus catch scheduled for removal upon consensus: ' + node)
-                    first = [node]
-                    firstCatch = () => { for (i in first) { remove(first[i]) } }
-                }
-
-                function remove(node) { delete runners[node] }
-            }
-            console.log('Consensus: ' + consensus)
-            plasma.consensus = consensus
-            stats.lastBlock = stats.hashLastIBlock
-            if (consensus) stats.hashLastIBlock = consensus
-            for (var node in nodes) {
-                nodes[node].attempts++
-                    var getHash
-                try { getHash = nodes[node].report.hash } catch (e) {}
-                if (getHash == stats.hashLastIBlock) {
-                    nodes[node].yays++
-                        nodes[node].lastGood = num
-                }
-            }
-            if (l < 20) {
-                for (var node in nodes) {
-                    tally.election[node] = nodes[node]
-                }
-                tally.results = []
-                for (var node in runners) {
-                    queue.push(node)
-                    delete tally.election[node]
-                }
-                for (var node in tally.election) {
-                    var getHash
-                    try { getHash = nodes[node].report.hash } catch (e) {}
-                    if (getHash !== stats.hashLastIBlock && stats.hashLastIBlock) {
-                        delete tally.election[node]
+                    //count agreements and make the runners list, update market rate for node services
+                    if (num > 30900000) {
+                        var mint = parseInt(stats.tokenSupply / stats.interestRate)
+                        stats.tokenSupply += mint
+                        rbal += mint
                     }
-                }
-                var t = 0
-                for (var node in tally.election) {
-                    t++
-                    tally.results.push([node, parseInt(((tally.election[node].yays / tally.election[node].attempts) * tally.election[node].attempts))])
-                }
-                if (t) {
-                    tally.results.sort(function(a, b) {
-                        return a[1] - b[1];
-                    })
-                    for (p = 0; p < tally.results.length; p++) {
-                        queue.push(tally.results[p][0])
+                    console.log(runners)
+                    store.batch([
+                        { type: 'put', path: ['stats'], data: stats },
+                        { type: 'put', path: ['queue'], data: queue },
+                        { type: 'put', path: ['runners'], data: runners },
+                        { type: 'put', path: ['markets', 'node'], data: nodes },
+                        { type: 'put', path: ['balances', 'ra'], data: rbal }
+                    ], [resolve, reject])
+                    if (consensus && (consensus != plasma.hashLastIBlock || consensus != nodes[config.username].report.hash) && processor.isStreaming()) {
+                        exit(consensus)
+                        var errors = ['failed Consensus']
+                        if (VERSION != nodes[node].report.version) {
+                            console.log(current + `:Abandoning ${plasma.hashLastIBlock} because ${errors[0]}`)
+                        }
+                        //const blockState = Buffer.from(JSON.stringify([num, state]))
+                        plasma.hashBlock = ''
+                        plasma.hashLastIBlock = ''
+                        console.log(current + `:Abandoning ${plasma.hashLastIBlock} because ${errors[0]}`)
                     }
-                    tally.winner = tally.results.pop()
-                    runners[tally.winner[0]] = {
-                        self: nodes[tally.winner[0]].self,
-                        domain: nodes[tally.winner[0]].domain
-                    }
-                }
-            }
-            for (var node in runners) {
-                nodes[node].wins++
-            }
-            //count agreements and make the runners list, update market rate for node services
-            if (num > 30900000) {
-                var mint = parseInt(stats.tokenSupply / stats.interestRate)
-                stats.tokenSupply += mint
-                rbal += mint
-            }
-            console.log(runners)
-            store.batch([
-                { type: 'put', path: ['stats'], data: stats },
-                { type: 'put', path: ['queue'], data: queue },
-                { type: 'put', path: ['runners'], data: runners },
-                { type: 'put', path: ['markets', 'node'], data: nodes },
-                { type: 'put', path: ['balances', 'ra'], data: rbal }
-            ], [resolve, reject])
-            if (consensus && (consensus != plasma.hashLastIBlock || consensus != nodes[config.username].report.hash) && processor.isStreaming()) {
-                exit(consensus)
-                var errors = ['failed Consensus']
-                if (VERSION != nodes[node].report.version) {
-                    console.log(current + `:Abandoning ${plasma.hashLastIBlock} because ${errors[0]}`)
-                }
-                //const blockState = Buffer.from(JSON.stringify([num, state]))
-                plasma.hashBlock = ''
-                plasma.hashLastIBlock = ''
-                console.log(current + `:Abandoning ${plasma.hashLastIBlock} because ${errors[0]}`)
-            }
+                })
+                .catch(e => { console.log(e) })
         });
     })
 }
@@ -3444,6 +3550,16 @@ function forceCancel(rate, type, bn) {
             }
         })
         .catch(e => console.log(e))
+}
+
+function deleteObjs(paths) {
+    return new Promise((resolve, reject) => {
+        var ops=[]
+        for (i=0; i<paths.length;i++){
+            ops.push({ type: 'del', path: paths[i]})
+        }
+        store.batch(ops, [resolve, reject, paths.length])
+    })
 }
 
 function deletePointer(escrowID, user) {

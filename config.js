@@ -1,15 +1,16 @@
 const ENV = process.env;
 
-const username = ENV.account || 'dlux-io';
+const username = ENV.account || 'disregardfiat';
 const active = ENV.active || '';
 const memoKey = ENV.memo || '';
-const NODEDOMAIN = ENV.domain || 'http://dlux-token.herokuapp.com'
-const acm = ENV.account_creator || false //account creation market
+const NODEDOMAIN = ENV.domain || 'http://dlux-token.herokuapp.com' //where your API lives
+const acm = ENV.account_creator || false //account creation market ... use your accounts HP to claim account tokens
 const mirror = ENV.mirror || false //makes identical posts, votes and IPFS pins as the leader account
 const port = ENV.PORT || 3000;
-// testing configs
-const override = ENV.override || 0 //testing purposes 
-const engineCrank = ENV.startingHash || 'QmTwkiBz8jZGMQ7rTsSRrLUZVNNNoYZzjDg342gfLAFRRq' //testing purposes
+
+// testing configs for replays
+const override = ENV.override || 0 //will use standard restarts after this blocknumber
+const engineCrank = ENV.startingHash || 'QmTwkiBz8jZGMQ7rTsSRrLUZVNNNoYZzjDg342gfLAFRRq' //but this state will be inserted before
 
 // third party configs
 const rta = ENV.rta || '' //rtrades account : IPFS pinning interface
@@ -40,18 +41,21 @@ const clients = [
     'https://api.pharesim.me'
 ]
 
-//TOKEN CONFIGS!
-const starting_block = 41372401; //from what block does your token start
+//!!!!!!! -- THESE ARE COMMUNITY CONSTANTS -- !!!!!!!!!//
+//TOKEN CONFIGS -- ALL COMMUNITY RUNNERS NEED THESE SAME VALUES
+const starting_block = 49988008; //from what block does your token start
 const prefix = 'dlux_' //Community token name for Custom Json IDs
 const TOKEN = 'DLUX' //Token name
-const tag = 'dlux' //
+const tag = 'dlux' //the fe.com/<tag>/@<leader>/<permlink>
 const jsonTokenName = 'dlux' //what customJSON in Escrows and sends is looking for
 const leader = 'dlux-io' //Default account to pull state from, will post token 
 const ben = 'dlux-io' //Account where comment benifits trigger token action
-const delegation = 'dlux-io' //
+const delegation = 'dlux-io' //account people can delegate to for rewards
+const msaccount = 'dac.escrow' //account controlled by community leaders
 const mainAPI = 'token.dlux.io' //leaders API probably
 const mainFE = 'dlux.io' //frontend for content
 const mainIPFS = 'a.ipfs.dlux.io' //IPFS service
+
 
 //Aditionally on your branch, look closely at dao, this is where tokenomics happen and custom status posts are made
 
@@ -74,6 +78,7 @@ let config = {
     starting_block,
     prefix,
     leader,
+    msaccount,
     ben,
     delegation,
     TOKEN,
