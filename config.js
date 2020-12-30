@@ -10,7 +10,7 @@ const port = ENV.PORT || 3000;
 
 // testing configs for replays
 const override = ENV.override || 0 //will use standard restarts after this blocknumber
-const engineCrank = ENV.startingHash || 'QmTwkiBz8jZGMQ7rTsSRrLUZVNNNoYZzjDg342gfLAFRRq' //but this state will be inserted before
+const engineCrank = ENV.startingHash || 'QmfPfsX8qfB7NgLRkVQctSuu32gNm87tV7baAjcNy6SoxZ' //but this state will be inserted before
 
 // third party configs
 const rta = ENV.rta || '' //rtrades account : IPFS pinning interface

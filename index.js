@@ -47,10 +47,10 @@ var recents = []
 const { ChainTypes, makeBitMaskFilter, ops } = require('@hiveio/hive-js/lib/auth/serializer')
 const op = ChainTypes.operations
 const walletOperationsBitmask = makeBitMaskFilter([
-        op.custom_json
-    ])
-    //startWith(config.engineCrank) //for testing and replaying
-dynStart(config.leader)
+    op.custom_json
+])
+startWith(config.engineCrank) //for testing and replaying
+    //dynStart(config.leader)
     /*
     function hashThis2(datum) {
         const data = Buffer.from(datum, 'ascii')
@@ -1184,23 +1184,7 @@ function startApp() {
                                 var out = [{ type: 'put', path: ['feed', `${json.block_num}:${json.transaction_id}`], data: `@${json.from}'s trade has failed collateral requirements, Try different agents` }, ]
                                 out.push({
                                         type: 'put',
-                                        path: ['escrow', json.to, `deny:${ json.from }:${json.escrow_id}`],
-                                        data: [
-                                            "escrow_approve",
-                                            {
-                                                "from": json.from,
-                                                "to": json.to,
-                                                "agent": json.agent,
-                                                "who": json.to,
-                                                "escrow_id": json.escrow_id,
-                                                "approve": false
-                                            }
-                                        ]
-                                    })
-                                    /* //this is where we need an enforcement point, check for trues
-                                    out.push({
-                                        type: 'put',
-                                        path: ['escrow', json.agent, json.escrow_id.toString()],
+                                        path: ['escrow', json.agent, `${ json.from }/${json.escrow_id}:deny`],
                                         data: [
                                             "escrow_approve",
                                             {
@@ -1213,7 +1197,46 @@ function startApp() {
                                             }
                                         ]
                                     })
-                                    */
+                                    //only one false can be broadcast, but both trues... keep a record to check against for memory management and enforcement
+                                out.push({
+                                    type: 'put',
+                                    path: ['escrow', '.' + json.to, `${ json.from }/${json.escrow_id}:deny`],
+                                    data: [
+                                        "escrow_approve",
+                                        {
+                                            "from": json.from,
+                                            "to": json.to,
+                                            "agent": json.agent,
+                                            "who": json.to,
+                                            "escrow_id": json.escrow_id,
+                                            "approve": false
+                                        }
+                                    ]
+                                })
+                                out.push({
+                                    type: 'put',
+                                    path: ['escrow', json.escrow_id.toString(), json.from],
+                                    data: {
+
+                                    }
+                                })
+                                var coll = 0
+                                if (parseFloat(json.hbd_amount) > 0) {
+                                    coll = parseInt(4 * parseFloat(hbdVWMA.rate) * parseFloat(json.hbd_amount))
+                                } else {
+                                    coll = parseInt(4 * parseFloat(hiveVWMA.rate) * parseFloat(json.hive_amount))
+                                }
+                                out.push({
+                                    type: 'put',
+                                    path: ['contracts', json.from, json.escrow_id.toString()],
+                                    data: {
+                                        to: json.to,
+                                        agent: json.agent,
+                                        escrow_id: json.escrow_id,
+                                        col: coll
+                                    }
+                                })
+                                chronAssign(json.block_num + 200, { op: 'deny', agent: json.from, txid: `${ json.from }/${json.escrow_id}:deny`, acc: json.from, id: json.escrow_id.toString() })
                                 store.batch(out, pc)
                             }
                         })
@@ -1400,6 +1423,7 @@ function startApp() {
     });
 
     processor.onOperation('escrow_approve', function(json, pc) {
+        //need to build checks for approving denies, and cleanup as well.
         store.get(['escrow', json.escrow_id.toString(), json.from], function(e, a) { // since escrow ids are unique to sender, store a list of pointers to the owner of the contract
             console.log(a, Object.keys(a).length)
             if (!e && Object.keys(a).length) {
@@ -2053,8 +2077,8 @@ function startApp() {
                     var found = 0
                     for (b in a) {
                         console.log(a, b, json)
-                        found++
-                        if (a[b][1].permlink == json.permlink) {
+                        if (a[b][1].permlink == json.permlink && a[b][1].author == json.author) {
+                            found++
                             let ops = [{ type: 'del', path: ['escrow', json.voter, b] }]
                             console.log(ops)
                             store.batch(ops, pc)
@@ -2343,6 +2367,10 @@ function startApp() {
                                 store.batch([{ type: 'del', path: ['chrono', delKey] }], [function() { console.log('success') }, function() { console.log('failure') }])
                                 break;
                             case 'check':
+                                promises.push(enforce(b.agent, b.txid, { id: b.id, acc: b.acc }, num))
+                                store.batch([{ type: 'del', path: ['chrono', delKey] }], [function() { console.log('success') }, function() { console.log('failure') }])
+                                break;
+                            case 'deny':
                                 promises.push(enforce(b.agent, b.txid, { id: b.id, acc: b.acc }, num))
                                 store.batch([{ type: 'del', path: ['chrono', delKey] }], [function() { console.log('success') }, function() { console.log('failure') }])
                                 break;
@@ -2800,6 +2828,10 @@ function enforce(agent, txid, pointer, block_num) { //checks status of required 
                             console.log({ c })
                             let co = c.co
                             switch (op) {
+                                case 'deny':
+                                    //schedule the other transaction... 
+                                    //clean memory...
+                                    break;
                                 case 'dispute':
                                     ops.push({ type: 'put', path: ['feed', `${block_num}:${txid}`], data: `@${c.tagent} failed to make a timely transaction and has forfieted collateral` })
                                     ops.push({ type: 'del', path: ['escrow', agent, txid] })
