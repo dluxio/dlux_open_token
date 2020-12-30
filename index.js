@@ -18,7 +18,7 @@ hiveClient.api.setOptions({ url: config.clientURL });
 const rtrades = require('./rtrades');
 var Pathwise = require('./pathwise');
 var level = require('level');
-
+const statestart = require('./state')
 var store = new Pathwise(level('./db', { createIfEmpty: true }));
 const crypto = require('crypto');
 const bs58 = require('bs58');
@@ -28,31 +28,29 @@ const api = express()
 var http = require('http').Server(api);
 var escrow = false
     //const wif = hiveClient.auth.toWif(config.username, config.active, 'active')
-    //const reblogAccount = 'dlux-io';
-var startingBlock = 41372401;
+var startingBlock = config.starting_block
 var current
-
-const prefix = 'dlux_';
-const streamMode = args.mode || 'irreversible';
+const streamMode = args.mode || 'irreversible'; //latest is probably good enough
 console.log("Streaming using mode", streamMode);
 var client = new hive.Client(config.clientURL);
 var processor;
-var live_dex = {},
+var live_dex = {}, //for feedback, unused currently
     pa = []
-
-const Unixfs = require('ipfs-unixfs')
-const {
-    DAGNode
-} = require('ipld-dag-pb')
-
+    /* old hashing function
+    const Unixfs = require('ipfs-unixfs')
+    const {
+        DAGNode
+    } = require('ipld-dag-pb')
+    */
 var recents = []
-const { ChainTypes, makeBitMaskFilter } = require('@hiveio/hive-js/lib/auth/serializer')
+    //HIVE API CODE
+const { ChainTypes, makeBitMaskFilter, ops } = require('@hiveio/hive-js/lib/auth/serializer')
 const op = ChainTypes.operations
 const walletOperationsBitmask = makeBitMaskFilter([
         op.custom_json
     ])
-    //startWith('QmbXaFLBGNeu7P3DKSxR5G21xgVXuGsraQnovYq1iYoJdA')
-dynStart('dlux-io')
+    //startWith(config.engineCrank) //for testing and replaying
+dynStart(config.leader)
     /*
     function hashThis2(datum) {
         const data = Buffer.from(datum, 'ascii')
@@ -74,10 +72,12 @@ var cycle = 0
         //ipfs = new IPFS({ host: state.gateways[num], port: 5001, protocol: 'https' });
     }
     */
+    /*
 if (config.active && config.NODEDOMAIN) {
     escrow = true
     dhive = new hive.Client(config.clientURL)
 }
+*/
 
 //heroku force https
 var https_redirect = function(req, res, next) {
@@ -106,7 +106,7 @@ api.get('/', (req, res, next) => {
 });
 
 // Some HIVE APi is wrapped here to support a stateless frontend built on the cheap with dreamweaver
-// None of these functions are required for token functionality
+// None of these functions are required for token functionality and should likely be removed from the community version
 //
 //
 api.get('/getwrap', (req, res, next) => {
@@ -169,7 +169,7 @@ api.get('/getauthorpic/:un', (req, res, next) => {
                     image = JSON.parse(r.result[0].posting_json_metadata).profile.profile_image
                 } catch (e) {
                     i = 2
-                    image = 'https://ipfs.dlux.io/images/user-icon.svg'
+                    image = 'https://a.ipfs.dlux.io/images/user-icon.svg'
                 }
             }
             if (image) {
@@ -184,11 +184,11 @@ api.get('/getauthorpic/:un', (req, res, next) => {
                                 image = JSON.parse(r.result[0].posting_json_metadata).profile.profile_image
                             } catch (e) {
                                 i = 2
-                                image = 'https://ipfs.dlux.io/images/user-icon.svg'
+                                image = 'https://a.ipfs.dlux.io/images/user-icon.svg'
                             }
                         } else {
                             i = 2
-                            image = 'https://ipfs.dlux.io/images/user-icon.svg'
+                            image = 'https://a.ipfs.dlux.io/images/user-icon.svg'
                         }
                         fetch(image)
                             .then(response => {
@@ -196,7 +196,7 @@ api.get('/getauthorpic/:un', (req, res, next) => {
                             })
                             .catch(e => {
                                 if (i == 1) {
-                                    image = 'https://ipfs.dlux.io/images/user-icon.svg'
+                                    image = 'https://a.ipfs.dlux.io/images/user-icon.svg'
                                     fetch(image)
                                         .then(response => {
                                             response.body.pipe(res)
@@ -234,7 +234,7 @@ api.get('/getblog/:un', (req, res, next) => {
         .then(r => {
             var out = { items: [] }
             for (i in r.result) {
-                r.result[i].media = { m: "https://ipfs.dlux.io/images/400X200.gif" }
+                r.result[i].media = { m: "https://a.ipfs.dlux.io/images/400X200.gif" }
             }
             out.id = r.id
             out.jsonrpc = r.jsonrpc
@@ -308,7 +308,7 @@ api.get('/state', (req, res, next) => {
     });
 });
 
-// The transaction signer now can sign multiple actions per block and this is nearly always empty
+// The transaction signer now can sign multiple actions per block and this is nearly always empty, still good for troubleshooting
 api.get('/pending', (req, res, next) => {
     res.setHeader('Content-Type', 'application/json');
     res.send(JSON.stringify(NodeOps, null, 3))
@@ -436,7 +436,7 @@ api.get('/report/:un', (req, res, next) => {
 });
 
 http.listen(config.port, function() {
-    console.log(`DLUX token API listening on port ${config.port}`);
+    console.log(`${config.TOKEN} token API listening on port ${config.port}`);
 });
 
 //non-consensus node memory
@@ -449,14 +449,9 @@ var plasma = {
     jwt
 var NodeOps = []
 var rtradesToken = '' //for centralized IPFS pinning
-var selector = 'dlux-io'
-if (config.username == selector) {
-    selector = `https://dlux-token-markegiles.herokuapp.com/state`
-} else {
-    selector = `https://token.dlux.io/state`
-}
 
-//grabs an API token for IPFS pinning of DLUX posts
+
+//grabs an API token for IPFS pinning of TOKEN posts
 if (config.rta && config.rtp) {
     rtrades.handleLogin(config.rta, config.rtp)
 }
@@ -485,10 +480,10 @@ function dynStart(account) {
     hiveClient.api.getAccountHistory(accountToQuery, -1, 100, ...walletOperationsBitmask, function(err, result) {
         if (err) {
             console.log(err)
-            dynStart('dlux-io')
+            dynStart(config.leader)
         } else {
 
-            let ebus = result.filter(tx => tx[1].op[1].id === 'dlux_report')
+            let ebus = result.filter(tx => tx[1].op[1].id === `${config.prefix}report`)
             for (i = ebus.length - 1; i >= 0; i--) {
                 if (JSON.parse(ebus[i][1].op[1].json).hash && parseInt(JSON.parse(ebus[i][1].op[1].json).block) > parseInt(config.override)) {
                     recents.push(JSON.parse(ebus[i][1].op[1].json).hash)
@@ -562,17 +557,18 @@ function startWith(hash) {
                 }
             } else {
                 startWith(config.engineCrank)
-                console.log(`${sh} failed to load, Replaying from genesis.\nYou may want to set the env var STARTHASH\nFind it at any token API such as token.dlux.io`)
+                console.log(`${sh} failed to load, Replaying from genesis.\nYou may want to set the env var STARTHASH\nFind it at any token API such as ${config.mainAPI}`)
             }
         });
     } else {
+        //initial state load
         startApp()
     }
 }
 
 //starts block processor after memory has been loaded
 function startApp() {
-    processor = hiveState(client, hive, startingBlock, 10, prefix, streamMode, cycleAPI);
+    processor = hiveState(client, hive, startingBlock, 10, config.prefix, streamMode, cycleAPI);
 
     //handles simple layer 2 token sends
     processor.on('send', function(json, from, active, pc) {
@@ -587,7 +583,7 @@ function startApp() {
                 if (json.to && typeof json.to == 'string' && send >= 0 && fbal >= send && active) { //balance checks
                     ops.push({ type: 'put', path: ['balances', from], data: parseInt(fbal - send) })
                     ops.push({ type: 'put', path: ['balances', json.to], data: parseInt(tbal + send) })
-                    ops.push({ type: 'put', path: ['feed', `${json.block_num}:${json.transaction_id}`], data: `@${from}| Sent @${json.to} ${parseFloat(parseInt(json.amount)/1000).toFixed(3)}DLUX` })
+                    ops.push({ type: 'put', path: ['feed', `${json.block_num}:${json.transaction_id}`], data: `@${from}| Sent @${json.to} ${parseFloat(parseInt(json.amount)/1000).toFixed(3)} ${config.TOKEN}` })
                 } else {
                     ops.push({ type: 'put', path: ['feed', `${json.block_num}:${json.transaction_id}`], data: `@${from}| Invalid send operation` })
                 }
@@ -616,7 +612,7 @@ function startApp() {
                     ops.push({ type: 'put', path: ['balances', from], data: lbal - amount })
                     ops.push({ type: 'put', path: ['pow', from], data: pbal + amount })
                     ops.push({ type: 'put', path: ['pow', 't'], data: tpow + amount })
-                    ops.push({ type: 'put', path: ['feed', `${json.block_num}:${json.transaction_id}`], data: `@${from}| Powered up ${parseFloat(json.amount/1000).toFixed(3)} DLUX` })
+                    ops.push({ type: 'put', path: ['feed', `${json.block_num}:${json.transaction_id}`], data: `@${from}| Powered up ${parseFloat(json.amount/1000).toFixed(3)} ${config.TOKEN}` })
                 } else {
                     ops.push({ type: 'put', path: ['feed', `${json.block_num}:${json.transaction_id}`], data: `@${from}| Invalid power up` })
                 }
@@ -662,7 +658,7 @@ function startApp() {
                             }
                             ops.push({ type: 'put', path: ['powd', from], data: newdowns })
 
-                            ops.push({ type: 'put', path: ['feed', `${json.block_num}:${json.transaction_id}`], data: `@${from}| Powered down ${parseFloat(amount/1000).toFixed(3)} DLUX` })
+                            ops.push({ type: 'put', path: ['feed', `${json.block_num}:${json.transaction_id}`], data: `@${from}| Powered down ${parseFloat(amount/1000).toFixed(3)} ${config.TOKEN}` })
                             store.batch(ops, pc)
                         })
                 } else if (typeof amount == 'number' && amount == 0 && active) {
@@ -715,7 +711,7 @@ function startApp() {
                         ops.push({ type: 'put', path: ['feed', `${json.block_num}:${json.transaction_id}`], data: `@${from}| tried to vote for an unknown post` })
                     }
                 } else {
-                    ops.push({ type: 'put', path: ['feed', `${json.block_num}:${json.transaction_id}`], data: `@${from}| doesn't have the dlux power to vote` })
+                    ops.push({ type: 'put', path: ['feed', `${json.block_num}:${json.transaction_id}`], data: `@${from}| doesn't have the ${config.TOKEN} POWER to vote` })
                 }
                 store.batch(ops, pc)
             })
@@ -789,14 +785,14 @@ function startApp() {
                                     forceCancel(hiveVWMA.rate, 'hive')
                                 }
                                 if (found.hive) {
-                                    ops.push({ type: 'put', path: ['feed', `${json.block_num}:${json.transaction_id}`], data: `@${from}| purchased ${parseFloat(found.hive/1000).toFixed(3)} HIVE with ${parseFloat(found.amount/1000).toFixed(3)} DLUX via DEX` })
+                                    ops.push({ type: 'put', path: ['feed', `${json.block_num}:${json.transaction_id}`], data: `@${from}| purchased ${parseFloat(found.hive/1000).toFixed(3)} HIVE with ${parseFloat(found.amount/1000).toFixed(3)} ${config.TOKEN} via DEX` })
                                     found.auths[2] = [agent, [
                                         "transfer",
                                         {
                                             "from": agent,
                                             "to": from,
                                             "amount": (found.hive / 1000).toFixed(3) + ' HIVE',
-                                            "memo": `${json.contract.split(':')[1]} by ${found.from} purchased with ${found.amount} DLUX`
+                                            "memo": `${json.contract.split(':')[1]} by ${found.from} purchased with ${found.amount} ${config.TOKEN}`
                                         }
                                     ]]
                                 } else {
@@ -807,7 +803,7 @@ function startApp() {
                                             "from": agent,
                                             "to": from,
                                             "amount": (found.hbd / 1000).toFixed(3) + ' HBD',
-                                            "memo": `${json.contract.split(':')[1]} by ${found.from} fulfilled with ${parseFloat(found.amount/1000).toFixed(3)} DLUX`
+                                            "memo": `${json.contract.split(':')[1]} by ${found.from} fulfilled with ${parseFloat(found.amount/1000).toFixed(3)} ${config.TOKEN}`
                                         }
                                     ]]
                                 }
@@ -842,12 +838,12 @@ function startApp() {
         Promise.all([PfromBal, PhiveVWMA]).then(a => {
             let b = a[0],
                 hiveVWMA = a[1],
-                rate = parseFloat((buyAmount) / (json.dlux)).toFixed(6)
+                rate = parseFloat((buyAmount) / (json[config.jsonTokenName])).toFixed(6)
             let hours = parseInt(json.hours) || 1
             if (hours > 120) { hours = 120 }
             const expBlock = json.block_num + (hours * 1200)
-            if (json.dlux <= b && typeof buyAmount == 'number' && allowedPrice(hiveVWMA.rate, rate) && active) {
-                var txid = 'DLUX' + hashThis(from + json.block_num)
+            if (json[config.jsonTokenName] <= b && typeof buyAmount == 'number' && allowedPrice(hiveVWMA.rate, rate) && active) {
+                var txid = config.TOKEN + hashThis(from + json.block_num)
                 const contract = {
                     txid,
                     type: 'ss',
@@ -855,8 +851,8 @@ function startApp() {
                     from: from,
                     hive: buyAmount,
                     hbd: 0,
-                    amount: parseInt(json.dlux),
-                    rate: parseFloat((buyAmount) / (json.dlux)).toFixed(6),
+                    amount: parseInt(json[config.jsonTokenName]),
+                    rate: parseFloat((buyAmount) / (json[config.jsonTokenName])).toFixed(6),
                     block: json.block_num
                 }
                 var path = chronAssign(expBlock, {
@@ -872,12 +868,12 @@ function startApp() {
                             { type: 'put', path: ['dex', 'hive', 'sellOrders', `${contract.rate}:${contract.txid}`], data: contract },
                             { type: 'put', path: ['balances', from], data: b - contract.amount },
                             { type: 'put', path: ['contracts', from, contract.txid], data: contract },
-                            { type: 'put', path: ['feed', `${json.block_num}:${json.transaction_id}`], data: `@${from}| has placed order ${txid} to sell ${parseFloat(json.dlux/1000).toFixed(3)} for ${parseFloat(json.hive/1000).toFixed(3)} HIVE` }
+                            { type: 'put', path: ['feed', `${json.block_num}:${json.transaction_id}`], data: `@${from}| has placed order ${txid} to sell ${parseFloat(json[config.jsonTokenName]/1000).toFixed(3)} for ${parseFloat(json.hive/1000).toFixed(3)} HIVE` }
                         ], pc)
                     })
                     .catch((e) => console.log(e))
             } else {
-                store.batch([{ type: 'put', path: ['feed', `${json.block_num}:${json.transaction_id}`], data: `@${from}| tried to place an order to sell ${parseFloat(json.dlux/1000).toFixed(3)} for ${parseFloat(json.hive/1000).toFixed(3)} HIVE` }], pc)
+                store.batch([{ type: 'put', path: ['feed', `${json.block_num}:${json.transaction_id}`], data: `@${from}| tried to place an order to sell ${parseFloat(json[config.jsonTokenName]/1000).toFixed(3)} for ${parseFloat(json.hive/1000).toFixed(3)} HIVE` }], pc)
             }
         }).catch(e => {
             console.log(e)
@@ -892,12 +888,12 @@ function startApp() {
         Promise.all([PfromBal, PhbdHis]).then(a => {
                 let b = a[0],
                     hbdVWMA = a[1],
-                    rate = parseFloat((buyAmount) / (json.dlux)).toFixed(6)
+                    rate = parseFloat((buyAmount) / (json[config.jsonTokenName])).toFixed(6)
                 let hours = parseInt(json.hours) || 1
                 if (hours > 120) { hours = 120 }
                 const expBlock = json.block_num + (hours * 1200)
-                if (json.dlux <= b && typeof buyAmount == 'number' && allowedPrice(hbdVWMA.rate, rate) && active) {
-                    var txid = 'DLUX' + hashThis(from + json.block_num)
+                if (json[config.jsonTokenName] <= b && typeof buyAmount == 'number' && allowedPrice(hbdVWMA.rate, rate) && active) {
+                    var txid = config.TOKEN + hashThis(from + json.block_num)
                     const contract = {
                         txid,
                         type: 'ds',
@@ -905,7 +901,7 @@ function startApp() {
                         hive: 0,
                         co: from,
                         hbd: buyAmount,
-                        amount: json.dlux,
+                        amount: json[config.jsonTokenName],
                         rate,
                         block: json.block_num
                     }
@@ -922,12 +918,12 @@ function startApp() {
                                 { type: 'put', path: ['dex', 'hbd', 'sellOrders', `${contract.rate}:${contract.txid}`], data: contract },
                                 { type: 'put', path: ['balances', from], data: b - contract.amount },
                                 { type: 'put', path: ['contracts', from, contract.txid], data: contract },
-                                { type: 'put', path: ['feed', `${json.block_num}:${json.transaction_id}`], data: `@${from}| has placed order ${txid} to sell ${parseFloat(json.dlux/1000).toFixed(3)} for ${parseFloat(json.hbd/1000).toFixed(3)} HBD` }
+                                { type: 'put', path: ['feed', `${json.block_num}:${json.transaction_id}`], data: `@${from}| has placed order ${txid} to sell ${parseFloat(json[config.jsonTokenName]/1000).toFixed(3)} for ${parseFloat(json.hbd/1000).toFixed(3)} HBD` }
                             ], pc)
                         })
                         .catch((e) => console.log(e))
                 } else {
-                    store.batch([{ type: 'put', path: ['feed', `${json.block_num}:${json.transaction_id}`], data: `@${from}| tried to place an order to sell ${parseFloat(json.dlux/1000).toFixed(3)} for ${parseFloat(json.hbd/1000).toFixed(3)} HBD` }], pc)
+                    store.batch([{ type: 'put', path: ['feed', `${json.block_num}:${json.transaction_id}`], data: `@${from}| tried to place an order to sell ${parseFloat(json[config.jsonTokenName]/1000).toFixed(3)} for ${parseFloat(json.hbd/1000).toFixed(3)} HBD` }], pc)
                 }
             })
             .catch(e => {
@@ -989,12 +985,12 @@ function startApp() {
     })
 
     processor.onOperation('escrow_transfer', function(json, pc) {
-        var ops, dextx, seller, contract, isAgent, isDAgent, dextxdlux, meta, done = 0,
+        var ops, dextx, seller, contract, isAgent, isDAgent, dextxamount, meta, done = 0,
             type = 'hive',
             hours
         try {
             dextx = JSON.parse(json.json_meta).dextx
-            dextxdlux = parseInt(dextx.dlux)
+            dextxamount = parseInt(dextx[config.jsonTokenName])
             hours = JSON.parse(json.json_meta).hours
         } catch (e) {}
         if (!hours) { hours = 1 }
@@ -1044,7 +1040,7 @@ function startApp() {
 
             buy = contract.amount
             console.log(buy, isAgent, isDAgent)
-            if (typeof buy === 'number' && isAgent && isDAgent && btime) { //{txid, from: from, buying: buyAmount, amount: json.dlux, [json.dlux]:buyAmount, rate:parseFloat((json.dlux)/(buyAmount)).toFixed(6), block:current, partial: json.partial || true
+            if (typeof buy === 'number' && isAgent && isDAgent && btime) { //{txid, from: from, buying: buyAmount, amount: json[config.jsonTokenName], [json[config.jsonTokenName]]:buyAmount, rate:parseFloat((json[config.jsonTokenName])/(buyAmount)).toFixed(6), block:current, partial: json.partial || true
                 console.log(contract.hive, parseInt(parseFloat(json.hive_amount) * 1000), contract.hbd, contract.hbd, parseInt(parseFloat(json.hbd_amount) * 1000), check)
                 if (contract.hive == parseInt(parseFloat(json.hive_amount) * 1000) && contract.hbd == parseInt(parseFloat(json.hbd_amount) * 1000) && btime) {
                     console.log(1)
@@ -1154,7 +1150,7 @@ function startApp() {
                                             "from": json.to,
                                             "to": contract.co,
                                             "amount": samount,
-                                            "memo": `${contract.txid} by ${contract.from} purchased with ${parseFloat(contract.amount/1000).toFixed(3)} DLUX`
+                                            "memo": `${contract.txid} by ${contract.from} purchased with ${parseFloat(contract.amount/1000).toFixed(3)} ${config.TOKEN}`
                                         }
                                     ]]
                                 ]
@@ -1223,13 +1219,13 @@ function startApp() {
                         })
                         .catch(e => console.log(e))
                 }
-            } else if (toBal > (dextxdlux * 2) && agentBal > (dextxdlux * 2) && typeof dextxdlux === 'number' && dextxdlux > 0 && isAgent && isDAgent && btime) {
+            } else if (toBal > (dextxamount * 2) && agentBal > (dextxamount * 2) && typeof dextxamount === 'number' && dextxamount > 0 && isAgent && isDAgent && btime) {
                 console.log(4)
-                var txid = 'DLUX' + hashThis(`${json.from}${json.block_num}`),
-                    rate = parseFloat(parseInt(parseFloat(json.hive_amount) * 1000) / dextx.dlux).toFixed(6),
+                var txid = config.TOKEN + hashThis(`${json.from}${json.block_num}`),
+                    rate = parseFloat(parseInt(parseFloat(json.hive_amount) * 1000) / dextx[config.jsonTokenName]).toFixed(6),
                     allowed = false
                 if (!parseFloat(rate)) {
-                    rate = parseFloat(parseInt(parseFloat(json.hbd_amount) * 1000) / dextx.dlux).toFixed(6)
+                    rate = parseFloat(parseInt(parseFloat(json.hbd_amount) * 1000) / dextx[config.jsonTokenName]).toFixed(6)
                     allowed = allowedPrice(hbdVWMA.rate, rate)
                 } else {
                     allowed = allowedPrice(hiveVWMA.rate, rate)
@@ -1318,12 +1314,12 @@ function startApp() {
                             from: json.from,
                             hive: parseInt(parseFloat(json.hive_amount) * 1000),
                             hbd: parseInt(parseFloat(json.hbd_amount) * 1000),
-                            amount: dextx.dlux,
+                            amount: dextx[config.jsonTokenName],
                             rate,
                             block: json.block_num,
                             escrow_id: json.escrow_id,
                             eo: json.from,
-                            escrow: (dextx.dlux * 4),
+                            escrow: (dextx[config.jsonTokenName] * 4),
                             agent: json.agent,
                             tagent: json.to,
                             fee: json.fee,
@@ -1345,16 +1341,16 @@ function startApp() {
                         })
                         .then(expire_path => {
                             contract.expire_path = expire_path
-                            ops.push({ type: 'put', path: ['balances', json.to], data: toBal - (dextxdlux * 2) })
-                            ops.push({ type: 'put', path: ['balances', json.agent], data: agentBal - (dextxdlux * 2) })
-                            ops.push({ type: 'put', path: ['col', json.to], data: toCol + (dextxdlux * 2) })
-                            ops.push({ type: 'put', path: ['col', json.agent], data: agentCol + (dextxdlux * 2) })
-                            console.log(contract.type, { col: toCol + (dextxdlux * 2), to: json.to, agent: json.agent })
+                            ops.push({ type: 'put', path: ['balances', json.to], data: toBal - (dextxamount * 2) })
+                            ops.push({ type: 'put', path: ['balances', json.agent], data: agentBal - (dextxamount * 2) })
+                            ops.push({ type: 'put', path: ['col', json.to], data: toCol + (dextxamount * 2) })
+                            ops.push({ type: 'put', path: ['col', json.agent], data: agentCol + (dextxamount * 2) })
+                            console.log(contract.type, { col: toCol + (dextxamount * 2), to: json.to, agent: json.agent })
                             ops.push({ type: 'put', path: ['contracts', json.from, txid], data: contract })
                             store.batch(ops, pc)
                         })
                 } else {
-                    console.log(toBal > (dextxdlux * 2), agentBal > (dextxdlux * 2), typeof dextxdlux === 'number', dextxdlux > 0, isAgent, isDAgent, btime, 'buy checks')
+                    console.log(toBal > (dextxamount * 2), agentBal > (dextxamount * 2), typeof dextxamount === 'number', dextxamount > 0, isAgent, isDAgent, btime, 'buy checks')
                     var ops = []
                     ops.push({ type: 'put', path: ['feed', `${json.block_num}:${json.transaction_id}`], data: `@${json.from}| requested a trade outside of price curbs.` })
                     ops.push({
@@ -1377,7 +1373,7 @@ function startApp() {
                 }
             } else if (isDAgent && isAgent) {
                 var ops = []
-                console.log(toBal > (dextxdlux * 2), agentBal > (dextxdlux * 2), typeof dextxdlux === 'number', dextxdlux > 0, isAgent, isDAgent, btime, 'buy checks')
+                console.log(toBal > (dextxamount * 2), agentBal > (dextxamount * 2), typeof dextxamount === 'number', dextxamount > 0, isAgent, isDAgent, btime, 'buy checks')
                 ops.push({ type: 'put', path: ['feed', `${json.block_num}:${json.transaction_id}`], data: `@${json.from}| improperly attempted to use the escrow network. Attempting escrow deny.` })
 
                 ops.push({
@@ -1694,29 +1690,35 @@ function startApp() {
             var Pqueue = getPathObj(['queue']),
                 Pnode = getPathObj(['markets', 'node', from])
             Promise.all([Pqueue, Pnode, Prunners]).then(function(v) {
-                var q = v[0],
-                    n = v[1],
-                    r = v[2]
-                if (typeof n.bidRate == 'number') {
-                    for (var i = 0; i < q.length; i++) {
-                        if (qe[i] == from) {
-                            found = i
-                            break;
+                deleteObjs([
+                        ['queue']
+                    ])
+                    .then(empty => {
+                        var q = v[0],
+                            n = v[1],
+                            r = v[2]
+                        if (typeof n.bidRate == 'number') {
+                            for (var i = 0; i < q.length; i++) {
+                                if (qe[i] == from) {
+                                    found = i
+                                    break;
+                                }
+                            }
+                            if (found >= 0) {
+                                q.splice(found, 1)
+                                ops.push({ type: 'put', path: ['queue'], data: q })
+                            }
+                            delete b.domain
+                            delete b.bidRate
+                            delete b.escrow
+                            delete b.marketingRate
+                            ops.push({ type: 'del', path: ['runners', from] })
+                            ops.push({ type: 'put', path: ['markets', 'node', from], data: b })
                         }
-                    }
-                    if (found >= 0) {
-                        q.splice(found, 1)
-                        ops.push({ type: 'put', path: ['queue'], data: q })
-                    }
-                    delete b.domain
-                    delete b.bidRate
-                    delete b.escrow
-                    delete b.marketingRate
-                    ops.push({ type: 'del', path: ['runners', from] })
-                    ops.push({ type: 'put', path: ['markets', 'node', from], data: b })
-                }
-                ops.push({ type: 'put', path: ['feed', `${json.block_num}:${json.transaction_id}`], data: `@${from}| has signed off their dlux node` })
-                store.batch(ops, pc)
+                        ops.push({ type: 'put', path: ['feed', `${json.block_num}:${json.transaction_id}`], data: `@${from}| has signed off their ${config.TOKEN} node` })
+                        store.batch(ops, pc)
+                    })
+                    .catch(e => { console.log(e) })
             }).catch(function(e) { console.log(e) })
         }
     });
@@ -1762,7 +1764,7 @@ function startApp() {
 
     //allows the daily DAO report to have announcements or posts inserted with out changing consensus code
     processor.on('queueForDaily', function(json, from, active, pc) {
-        if (from = 'dlux-io' && json.text && json.title) {
+        if (from = config.leader && json.text && json.title) {
             store.batch([{
                 type: 'put',
                 path: ['postQueue', json.title],
@@ -1823,114 +1825,119 @@ function startApp() {
         }
         var ops = []
         for (var i = 0; i < filter.length; i++) {
-            if (filter[i].account == 'dlux-io' && filter[i].weight > 999) {
+            if (filter[i].account == config.ben && filter[i].weight > 999) {
                 store.get(['queue'], function(e, a) {
                     if (e) console.log(e)
-                    var queue = []
-                    for (var numb in a) {
-                        queue.push(a[numb])
-                    }
-                    chronAssign(json.block_num + 144000, {
-                        block: parseInt(json.block_num + 144000),
-                        op: 'post_reward',
-                        author: json.author,
-                        permlink: json.permlink
-                    })
-                    var assignments = [0, 0, 0, 0]
-                    if (config.username == 'dlux-io') { //pin content ... hard set here since rewards are still hard set as well
-                        assignments[0] = 1
-                    }
-                    if (!e) {
-                        assignments[1] = queue.shift()
-                        assignments[2] = queue.shift()
-                        assignments[3] = queue.shift()
-                        queue.push(assignments[1])
-                        queue.push(assignments[2])
-                        queue.push(assignments[3])
-                    }
-                    ops.push({
-                        type: 'put',
-                        path: ['posts', `${json.author}/${json.permlink}`],
-                        data: {
-                            block: json.block_num,
-                            author: json.author,
-                            permlink: json.permlink,
-                            totalWeight: 1,
-                            voters: {},
-                            reblogs: {},
-                            credentials: {},
-                            signatures: {},
-                            customJSON: {
-                                assignments: ['dlux-io', assignments[1], assignments[2], assignments[3]]
-                            },
-                        }
-                    })
-                    ops.push({ type: 'put', path: ['queue'], data: queue })
-                    ops.push({ type: 'put', path: ['feed', `${json.block_num}:${json.transaction_id}`], data: `@${json.author}|${json.permlink} added to dlux rewardable content` })
-                    store.batch(ops, pc)
-                    if (assignments[0] || assignments[1] || assignments[2] || assignments[3]) {
-                        client.database.call('get_content', [json.author, json.permlink])
-                            .then(result => {
-                                console.log('hive content', result)
-                                var trimmed = JSON.parse(result.json_metadata),
-                                    final = { a: [] }
-                                for (j in trimmed.assets) {
-                                    if (trimmed.assets[j].hash.length == 46) final.a.push(trimmed.assets[j].hash) //a for assets
+                    deleteObjs([
+                            ['queue']
+                        ]).then(empty => {
+                            var queue = []
+                            for (var numb in a) {
+                                queue.push(a[numb])
+                            }
+                            chronAssign(json.block_num + 144000, {
+                                block: parseInt(json.block_num + 144000),
+                                op: 'post_reward',
+                                author: json.author,
+                                permlink: json.permlink
+                            })
+                            var assignments = [0, 0, 0, 0]
+                            if (config.username == config.leader || config.mirror) { //pin content ... hard set here since rewards are still hard set as well
+                                assignments[0] = config.username
+                            }
+                            if (!e) {
+                                assignments[1] = queue.shift() //consensus accounts for API retrivals
+                                assignments[2] = queue.shift()
+                                assignments[3] = queue.shift()
+                                queue.push(assignments[1])
+                                queue.push(assignments[2])
+                                queue.push(assignments[3])
+                            }
+                            ops.push({
+                                type: 'put',
+                                path: ['posts', `${json.author}/${json.permlink}`],
+                                data: {
+                                    block: json.block_num,
+                                    author: json.author,
+                                    permlink: json.permlink,
+                                    totalWeight: 1,
+                                    voters: {},
+                                    reblogs: {},
+                                    credentials: {},
+                                    signatures: {},
+                                    customJSON: {
+                                        assignments: [config.leader, assignments[1], assignments[2], assignments[3]]
+                                    },
                                 }
-                                if (trimmed.app.length < 33) { //p for process
-                                    final.p = trimmed.app
-                                }
-                                try {
-                                    if (trimmed.Hash360.length == 46) { //s for surround
-                                        final.s = trimmed.Hash360
-                                    }
-                                } catch (e) {}
-                                if (trimmed.vrHash.length == 46) { //e for executable
-                                    final.e = trimmed.vrHash
-                                }
-                                try {
-                                    if (JSON.stringify(trimmed.loc).length < 1024) { //l for spactial indexing
-                                        final.l = trimmed.loc
-                                    }
-                                } catch (e) {}
-                                final.t = trimmed.tags
-                                final.d = result.title
-                                if (assignments[0]) {
-                                    var bytes = rtrades.checkNpin(JSON.parse(result.json_metadata)
-                                        .assets)
-                                    bytes.then(function(value) {
-                                        var op = ["custom_json", {
-                                            required_auths: [config.username],
-                                            required_posting_auths: [],
-                                            id: 'dlux_cjv', //custom json verification
-                                            json: JSON.stringify({
-                                                a: json.author,
-                                                p: json.permlink,
-                                                c: final, //customJson trimmed
-                                                b: value //amount of bytes posted
-                                            })
-                                        }]
-                                        NodeOps.unshift([
-                                            [0, 0], op
-                                        ])
-                                    }).catch(e => { console.log(e) })
-                                } else {
-                                    var op = ["custom_json", {
-                                        required_auths: [config.username],
-                                        required_posting_auths: [],
-                                        id: 'dlux_cjv', //custom json verification
-                                        json: JSON.stringify({
-                                            a: json.author,
-                                            p: json.permlink,
-                                            c: final
-                                        })
-                                    }]
-                                    NodeOps.unshift([
-                                        [0, 0], op
-                                    ])
-                                }
-                            }).catch(e => { console.log(e) });
-                    }
+                            })
+                            ops.push({ type: 'put', path: ['queue'], data: queue })
+                            ops.push({ type: 'put', path: ['feed', `${json.block_num}:${json.transaction_id}`], data: `@${json.author}|${json.permlink} added to ${config.TOKEN} rewardable content` })
+                            store.batch(ops, pc)
+                            if (assignments[0] == config.username || assignments[1] == config.username || assignments[2] == config.username || assignments[3] == config.username) {
+                                client.database.call('get_content', [json.author, json.permlink])
+                                    .then(result => {
+                                        console.log('hive content', result)
+                                        var trimmed = JSON.parse(result.json_metadata),
+                                            final = { a: [] }
+                                        for (j in trimmed.assets) {
+                                            if (trimmed.assets[j].hash.length == 46) final.a.push(trimmed.assets[j].hash) //a for assets
+                                        }
+                                        if (trimmed.app.length < 33) { //p for process
+                                            final.p = trimmed.app
+                                        }
+                                        try {
+                                            if (trimmed.Hash360.length == 46) { //s for surround
+                                                final.s = trimmed.Hash360
+                                            }
+                                        } catch (e) {}
+                                        if (trimmed.vrHash.length == 46) { //e for executable
+                                            final.e = trimmed.vrHash
+                                        }
+                                        try {
+                                            if (JSON.stringify(trimmed.loc).length < 1024) { //l for spactial indexing
+                                                final.l = trimmed.loc
+                                            }
+                                        } catch (e) {}
+                                        final.t = trimmed.tags
+                                        final.d = result.title
+                                        if (assignments[0]) { //mirror username will need rtrades login
+                                            var bytes = rtrades.checkNpin(JSON.parse(result.json_metadata)
+                                                .assets)
+                                            bytes.then(function(value) {
+                                                var op = ["custom_json", {
+                                                    required_auths: [config.username],
+                                                    required_posting_auths: [],
+                                                    id: `${config.prefix}cjv`, //custom json verification
+                                                    json: JSON.stringify({
+                                                        a: json.author,
+                                                        p: json.permlink,
+                                                        c: final, //customJson trimmed
+                                                        b: value //amount of bytes posted
+                                                    })
+                                                }]
+                                                NodeOps.unshift([
+                                                    [0, 0], op
+                                                ])
+                                            }).catch(e => { console.log(e) })
+                                        } else {
+                                            var op = ["custom_json", {
+                                                required_auths: [config.username],
+                                                required_posting_auths: [],
+                                                id: `${config.prefix}cjv`, //custom json verification
+                                                json: JSON.stringify({
+                                                    a: json.author,
+                                                    p: json.permlink,
+                                                    c: final
+                                                })
+                                            }]
+                                            NodeOps.unshift([
+                                                [0, 0], op
+                                            ])
+                                        }
+                                    }).catch(e => { console.log(e) });
+                            }
+                        })
+                        .catch(e => { console.log(e) })
                 })
             } else {
                 pc[0](pc[2])
@@ -2039,7 +2046,7 @@ function startApp() {
 
     // layer 2 proof of brain voting
     processor.onOperation('vote', function(json, pc) {
-        if (json.voter == 'dlux-io') {
+        if (json.voter == config.leader) {
             console.log('the vote')
             store.get(['escrow', json.voter], function(e, a) {
                 if (!e) {
@@ -2147,7 +2154,7 @@ function startApp() {
                     if (purchase < i) {
                         i -= purchase
                         b += purchase
-                        store.batch([{ type: 'put', path: ['feed', `${json.block_num}:${json.transaction_id}`], data: `@${json.from}| bought ${parseFloat(purchase/1000).toFixed(3)} DLUX with ${parseFloat(amount/1000).toFixed(3)} HIVE` }], pc)
+                        store.batch([{ type: 'put', path: ['feed', `${json.block_num}:${json.transaction_id}`], data: `@${json.from}| bought ${parseFloat(purchase/1000).toFixed(3)} ${config.TOKEN} with ${parseFloat(amount/1000).toFixed(3)} HIVE` }], pc)
                     } else {
                         b += i
                         const left = purchase - i
@@ -2157,13 +2164,13 @@ function startApp() {
                             { type: 'put', path: ['balances', json.from], data: b },
                             { type: 'put', path: ['balances', 'ri'], data: i },
                             { type: 'put', path: ['stats'], data: stats },
-                            { type: 'put', path: ['feed', `${json.block_num}:${json.transaction_id}`], data: `@${json.from}| bought ALL ${parseFloat(parseInt(purchase - left)).toFixed(3)} DLUX with ${parseFloat(parseInt(amount)/1000).toFixed(3)} HIVE. And bid in the over-auction` }
+                            { type: 'put', path: ['feed', `${json.block_num}:${json.transaction_id}`], data: `@${json.from}| bought ALL ${parseFloat(parseInt(purchase - left)).toFixed(3)} ${config.TOKEN} with ${parseFloat(parseInt(amount)/1000).toFixed(3)} HIVE. And bid in the over-auction` }
                         ], pc)
                     }
                 } else {
                     store.batch([
                         { type: 'put', path: ['ico', json.block_num, json.from], data: parseInt(amount) },
-                        { type: 'put', path: ['feed', `${json.block_num}:${json.transaction_id}`], data: `@${json.from}| bought ALL ${parseFloat(parseInt(purchase - left)).toFixed(3)} DLUX with ${parseFloat(parseInt(amount)/1000).toFixed(3)} HIVE. And bid in the over-auction` }
+                        { type: 'put', path: ['feed', `${json.block_num}:${json.transaction_id}`], data: `@${json.from}| bought ALL ${parseFloat(parseInt(purchase - left)).toFixed(3)} ${config.TOKEN} with ${parseFloat(parseInt(amount)/1000).toFixed(3)} HIVE. And bid in the over-auction` }
                     ], pc)
                 }
             });
@@ -2172,17 +2179,17 @@ function startApp() {
         }
     });
 
-    //inflation is rewarded to delegators to dlux-io, could be built for multi-sig account as well
+    //inflation is rewarded to delegators to the config.delegation account, could be built for multi-sig account as well
     //multi-sig delegation is more secure than holding HP or liquid hive for multi-sig
     processor.onOperation('delegate_vesting_shares', function(json, pc) { //grab posts to reward
         var ops = []
         const vests = parseInt(parseFloat(json.vesting_shares) * 1000000)
-        if (json.delegatee == 'dlux-io' && vests) {
+        if (json.delegatee == config.delegation && vests) {
             ops.push({ type: 'put', path: ['delegations', json.delegator], data: vests })
-            ops.push({ type: 'put', path: ['feed', `${json.block_num}:${json.transaction_id}`], data: `@${json.delegator}| has delegated ${vests} vests to @dlux-io` })
-        } else if (json.delegatee == 'dlux-io' && !vests) {
+            ops.push({ type: 'put', path: ['feed', `${json.block_num}:${json.transaction_id}`], data: `@${json.delegator}| has delegated ${vests} vests to @${config.delegation}` })
+        } else if (json.delegatee == config.delegation && !vests) {
             ops.push({ type: 'del', path: ['delegations', json.delegator] })
-            ops.push({ type: 'put', path: ['feed', `${json.block_num}:${json.transaction_id}`], data: `@${json.delegator}| has removed delegation to @dlux-io` })
+            ops.push({ type: 'put', path: ['feed', `${json.block_num}:${json.transaction_id}`], data: `@${json.delegator}| has removed delegation to @${config.delegation}` })
         }
         store.batch(ops, pc)
     });
@@ -2193,7 +2200,7 @@ function startApp() {
     */
 
     processor.onOperation('comment', function(json, pc) { //grab posts to reward
-        if (json.author == 'dlux-io') {
+        if (json.author == config.leader) {
             store.get(['escrow', json.author], function(e, a) {
                 if (!e) {
                     var ops = []
@@ -2220,6 +2227,93 @@ function startApp() {
             pc[0](pc[2])
         }
     });
+
+    //multi-sig ops
+    /*
+    processor.onOperation('account_update', function(json, pc) { //ensure proper keys are on record for DAO accounts
+        let agentsP = getPathObj(['agents']),
+            statsP = getPathObj(['stats']),
+            keysP = getPathObj(['keyPairs'])
+        Promise.all([agentsP, statsP, keysP])
+            .then(a => {
+                let agents = a[0],
+                    stats = a[1],
+                    keyPairs = a[2],
+                    ops = []
+                if (json.account == config.msaccount) {
+                    stats.auths = {}
+                    for (var agent in agents) {
+                        agents[agent].o = 0
+                    }
+                    for (var i = 0; i < json.owner.key_auths.length; i++) {
+                        stats.auth[json.owner.key_auths[i][0]] = 1
+                        agents[keyPairs[json.owner.key_auths[i][0]]].o = 1
+                    }
+                    //auto update active public keys
+                    ops.push({ type: 'put', path: ['stats'], data: stats })
+                    ops.push({ type: 'put', path: ['agents'], data: agents })
+                    console.log(ops);
+                    store.batch(ops, pc)
+                } else if (agents[json.account] != null && json.active != null) {
+                    ops.push({ type: 'put', path: ['agents', json.account, 'p'], data: json.active.key_auths[0][0] }) //keep record of public keys of agents
+                    ops.push({ type: 'put', path: ['keyPairs', json.active.key_auths[0][0]], data: json.account })
+                    console.log(ops);
+                    store.batch(ops, pc)
+                } else {
+                    pc[0](pc[2])
+                }
+            })
+            .catch(e => { console.log(e) })
+    });
+
+    processor.onOperation('claim_account', function(json, pc) {
+        getPathObj(['agents', json.creator])
+            .then(re => {
+                let r = re,
+                    ops = []
+                if (Object.keys(r).length) { //adjust inventories
+                    r.i++
+                        ops.push({ type: 'put', path: ['agents', json.creator], data: r })
+                    ops.push({ type: 'put', path: ['feed', `${json.block_num}:${json.transaction_id}`], data: `${json.creator} claimed an ACT` })
+                    console.log({ msg: 'claim', ops });
+                    store.batch(ops, pc)
+                } else {
+                    pc[0](pc[2])
+                }
+            })
+            .catch(e => { console.log(e) })
+    });
+
+
+    processor.onOperation('create_claimed_account', function(json, pc) {
+        let agentP = getPathObj(['agents', json.creator]),
+            conP = getPathObj(['contracts', json.creator, json.new_account_name + ':c'])
+        Promise.all([agentP, conP])
+            .then(a => {
+                let r = a[0],
+                    con = a[1],
+                    ops = []
+                if (Object.keys(r).length) { //adjust inventories
+                    r.i--
+                    ops.push({ type: 'put', path: ['agents', json.creator], data: r })
+                    ops.push({ type: 'put', path: ['feed', `${json.block_num}:${json.transaction_id}`], data: `@${json.creator} redeemed DACT for ${json.new_account_name}` })
+                    console.log(ops, 'adjust ACT inventories'); //needs more work
+                }
+                if (Object.keys(con).length) { //if a contract account --ACT options ---probably too advanced to build and test together
+                    if (con[`${json.new_account_name}:c`] != null) {
+                        r.ir++ //update redeemed total
+                            //state.bot.push(con[`${json.new_account_name}:c`]) //push payment to multisig bot build a thing for this
+                            ops.push({ type: 'del', path: ['contracts', json.creator, json.new_account_name + ':c'] })
+                    }
+                    ops.push({ type: 'put', path: ['agents', json.creator], data: r })
+                    console.log(ops, 'create'); //needs more work
+                    store.batch(ops, pc)
+                }
+            })
+            .catch(e => { console.log(e) })
+    });
+*/
+    //end multi-sig ops
 
     //do things in cycles based on block time
     processor.onBlock(function(num, pc) {
@@ -2268,7 +2362,7 @@ function startApp() {
                                                 ops.push({ type: 'put', path: ['balances', from], data: lbal + b.amount })
                                                 ops.push({ type: 'put', path: ['pow', from], data: pbal - b.amount })
                                                 ops.push({ type: 'put', path: ['pow', 't'], data: tpow - b.amount })
-                                                ops.push({ type: 'put', path: ['feed', `${num}:vop_${id}`], data: `@${b.by}| powered down ${parseFloat(b.amount/1000).toFixed(3)} DLUX` })
+                                                ops.push({ type: 'put', path: ['feed', `${num}:vop_${id}`], data: `@${b.by}| powered down ${parseFloat(b.amount/1000).toFixed(3)} ${config.TOKEN}` })
                                                 ops.push({ type: 'del', path: ['chrono', delKey] })
                                                 store.batch(ops, [resolve, reject])
                                             })
@@ -2436,7 +2530,7 @@ function startApp() {
                 var op = ["custom_json", {
                     required_auths: [config.username],
                     required_posting_auths: [],
-                    id: `${prefix}node_add`,
+                    id: `${config.prefix}node_add`,
                     json: JSON.stringify({
                         domain: config.NODEDOMAIN,
                         bidRate: config.bidRate,
@@ -2530,152 +2624,159 @@ function tally(num) {
             Pstats = getPathObj(['stats']),
             Prb = getPathNum(['balances', 'ra'])
         Promise.all([Prunners, Pnode, Pstats, Prb]).then(function(v) {
-            var runners = v[0],
-                nodes = v[1],
-                stats = v[2],
-                rbal = v[3],
-                queue = []
-            var tally = {
-                agreements: {
-                    runners: {},
-                    tally: {},
-                    votes: 0
-                },
-                election: {},
-                winner: {},
-                results: []
-            }
-            for (var node in runners) {
-                tally.agreements.runners[node] = nodes[node]
-                var getHash
-                try { getHash = nodes[node].report.hash } catch (e) {}
-                tally.agreements.tally[node] = {
-                        self: node,
-                        hash: getHash,
-                        votes: 0
-                    } //build a dataset to count
-            }
-            for (var node in tally.agreements.runners) {
-                var agreements
-                try { agreements = tally.agreements.runners[node].report.agreements } catch (e) {}
-                for (var subnode in agreements) {
-                    if (tally.agreements.tally[subnode]) {
-                        if (tally.agreements.tally[subnode].hash == tally.agreements.tally[node].hash && nodes[node].report.block === num - 99) {
-                            tally.agreements.tally[subnode].votes++
+            deleteObjs([
+                    ['runners'],
+                    ['queue']
+                ])
+                .then(empty => {
+                    var runners = v[0],
+                        nodes = v[1],
+                        stats = v[2],
+                        rbal = v[3],
+                        queue = []
+                    var tally = {
+                        agreements: {
+                            runners: {},
+                            tally: {},
+                            votes: 0
+                        },
+                        election: {},
+                        winner: {},
+                        results: []
+                    }
+                    for (var node in runners) {
+                        tally.agreements.runners[node] = nodes[node]
+                        var getHash
+                        try { getHash = nodes[node].report.hash } catch (e) {}
+                        tally.agreements.tally[node] = {
+                                self: node,
+                                hash: getHash,
+                                votes: 0
+                            } //build a dataset to count
+                    }
+                    for (var node in tally.agreements.runners) {
+                        var agreements
+                        try { agreements = tally.agreements.runners[node].report.agreements } catch (e) {}
+                        for (var subnode in agreements) {
+                            if (tally.agreements.tally[subnode]) {
+                                if (tally.agreements.tally[subnode].hash == tally.agreements.tally[node].hash && nodes[node].report.block === num - 99) {
+                                    tally.agreements.tally[subnode].votes++
+                                }
+                            }
+                        }
+                        tally.agreements.votes++
+                    }
+                    var l = 0
+                    var consensus, firstCatch, first = []
+                    for (var node in runners) {
+                        l++
+                        var forblock = 0
+                        try {
+                            forblock = nodes[node].report.block
+                        } catch (e) {
+                            console.log(e)
+                        }
+                        if (tally.agreements.tally[node].votes / tally.agreements.votes >= 2 / 3) {
+                            consensus = tally.agreements.runners[node].report.hash
+                            if (firstCatch) {
+                                firstCatch();
+                                firstCatch = null
+                            }
+                        } else if (l > 1) {
+                            if (first.length && tally.agreements.runners[node].report.hash == tally.agreements.runners[first[0]].report.hash) {
+                                first.push(node)
+                                console.log(node + ' also scheduled for removal')
+                            } else {
+                                remove(node)
+                                console.log('uh-oh:' + node + ' scored ' + tally.agreements.tally[node].votes + '/' + tally.agreements.votes)
+                            }
+                        } else if (l == 1) {
+                            if (nodes[node].report.block === num - 99) consensus = nodes[node].report.hash
+                            console.log('old-consensus catch scheduled for removal upon consensus: ' + node)
+                            first = [node]
+                            firstCatch = () => { for (i in first) { remove(first[i]) } }
+                        }
+
+                        function remove(node) { delete runners[node] }
+                    }
+                    console.log('Consensus: ' + consensus)
+                    plasma.consensus = consensus
+                    stats.lastBlock = stats.hashLastIBlock
+                    if (consensus) stats.hashLastIBlock = consensus
+                    for (var node in nodes) {
+                        nodes[node].attempts++
+                            var getHash
+                        try { getHash = nodes[node].report.hash } catch (e) {}
+                        if (getHash == stats.hashLastIBlock) {
+                            nodes[node].yays++
+                                nodes[node].lastGood = num
                         }
                     }
-                }
-                tally.agreements.votes++
-            }
-            var l = 0
-            var consensus, firstCatch, first = []
-            for (var node in runners) {
-                l++
-                var forblock = 0
-                try {
-                    forblock = nodes[node].report.block
-                } catch (e) {
-                    console.log(e)
-                }
-                if (tally.agreements.tally[node].votes / tally.agreements.votes >= 2 / 3) {
-                    consensus = tally.agreements.runners[node].report.hash
-                    if (firstCatch) {
-                        firstCatch();
-                        firstCatch = null
+                    if (l < 20) {
+                        for (var node in nodes) {
+                            tally.election[node] = nodes[node]
+                        }
+                        tally.results = []
+                        for (var node in runners) {
+                            queue.push(node)
+                            delete tally.election[node]
+                        }
+                        for (var node in tally.election) {
+                            var getHash
+                            try { getHash = nodes[node].report.hash } catch (e) {}
+                            if (getHash !== stats.hashLastIBlock && stats.hashLastIBlock) {
+                                delete tally.election[node]
+                            }
+                        }
+                        var t = 0
+                        for (var node in tally.election) {
+                            t++
+                            tally.results.push([node, parseInt(((tally.election[node].yays / tally.election[node].attempts) * tally.election[node].attempts))])
+                        }
+                        if (t) {
+                            tally.results.sort(function(a, b) {
+                                return a[1] - b[1];
+                            })
+                            for (p = 0; p < tally.results.length; p++) {
+                                queue.push(tally.results[p][0])
+                            }
+                            tally.winner = tally.results.pop()
+                            runners[tally.winner[0]] = {
+                                self: nodes[tally.winner[0]].self,
+                                domain: nodes[tally.winner[0]].domain
+                            }
+                        }
                     }
-                } else if (l > 1) {
-                    if (first.length && tally.agreements.runners[node].report.hash == tally.agreements.runners[first[0]].report.hash) {
-                        first.push(node)
-                        console.log(node + ' also scheduled for removal')
-                    } else {
-                        remove(node)
-                        console.log('uh-oh:' + node + ' scored ' + tally.agreements.tally[node].votes + '/' + tally.agreements.votes)
+                    for (var node in runners) {
+                        nodes[node].wins++
                     }
-                } else if (l == 1) {
-                    if (nodes[node].report.block === num - 99) consensus = nodes[node].report.hash
-                    console.log('old-consensus catch scheduled for removal upon consensus: ' + node)
-                    first = [node]
-                    firstCatch = () => { for (i in first) { remove(first[i]) } }
-                }
-
-                function remove(node) { delete runners[node] }
-            }
-            console.log('Consensus: ' + consensus)
-            plasma.consensus = consensus
-            stats.lastBlock = stats.hashLastIBlock
-            if (consensus) stats.hashLastIBlock = consensus
-            for (var node in nodes) {
-                nodes[node].attempts++
-                    var getHash
-                try { getHash = nodes[node].report.hash } catch (e) {}
-                if (getHash == stats.hashLastIBlock) {
-                    nodes[node].yays++
-                        nodes[node].lastGood = num
-                }
-            }
-            if (l < 20) {
-                for (var node in nodes) {
-                    tally.election[node] = nodes[node]
-                }
-                tally.results = []
-                for (var node in runners) {
-                    queue.push(node)
-                    delete tally.election[node]
-                }
-                for (var node in tally.election) {
-                    var getHash
-                    try { getHash = nodes[node].report.hash } catch (e) {}
-                    if (getHash !== stats.hashLastIBlock && stats.hashLastIBlock) {
-                        delete tally.election[node]
+                    //count agreements and make the runners list, update market rate for node services
+                    if (num > 30900000) {
+                        var mint = parseInt(stats.tokenSupply / stats.interestRate)
+                        stats.tokenSupply += mint
+                        rbal += mint
                     }
-                }
-                var t = 0
-                for (var node in tally.election) {
-                    t++
-                    tally.results.push([node, parseInt(((tally.election[node].yays / tally.election[node].attempts) * tally.election[node].attempts))])
-                }
-                if (t) {
-                    tally.results.sort(function(a, b) {
-                        return a[1] - b[1];
-                    })
-                    for (p = 0; p < tally.results.length; p++) {
-                        queue.push(tally.results[p][0])
+                    console.log(runners)
+                    store.batch([
+                        { type: 'put', path: ['stats'], data: stats },
+                        { type: 'put', path: ['queue'], data: queue },
+                        { type: 'put', path: ['runners'], data: runners },
+                        { type: 'put', path: ['markets', 'node'], data: nodes },
+                        { type: 'put', path: ['balances', 'ra'], data: rbal }
+                    ], [resolve, reject])
+                    if (consensus && (consensus != plasma.hashLastIBlock || consensus != nodes[config.username].report.hash) && processor.isStreaming()) {
+                        exit(consensus)
+                        var errors = ['failed Consensus']
+                        if (VERSION != nodes[node].report.version) {
+                            console.log(current + `:Abandoning ${plasma.hashLastIBlock} because ${errors[0]}`)
+                        }
+                        //const blockState = Buffer.from(JSON.stringify([num, state]))
+                        plasma.hashBlock = ''
+                        plasma.hashLastIBlock = ''
+                        console.log(current + `:Abandoning ${plasma.hashLastIBlock} because ${errors[0]}`)
                     }
-                    tally.winner = tally.results.pop()
-                    runners[tally.winner[0]] = {
-                        self: nodes[tally.winner[0]].self,
-                        domain: nodes[tally.winner[0]].domain
-                    }
-                }
-            }
-            for (var node in runners) {
-                nodes[node].wins++
-            }
-            //count agreements and make the runners list, update market rate for node services
-            if (num > 30900000) {
-                var mint = parseInt(stats.tokenSupply / stats.interestRate)
-                stats.tokenSupply += mint
-                rbal += mint
-            }
-            console.log(runners)
-            store.batch([
-                { type: 'put', path: ['stats'], data: stats },
-                { type: 'put', path: ['queue'], data: queue },
-                { type: 'put', path: ['runners'], data: runners },
-                { type: 'put', path: ['markets', 'node'], data: nodes },
-                { type: 'put', path: ['balances', 'ra'], data: rbal }
-            ], [resolve, reject])
-            if (consensus && (consensus != plasma.hashLastIBlock || consensus != nodes[config.username].report.hash) && processor.isStreaming()) {
-                exit(consensus)
-                var errors = ['failed Consensus']
-                if (VERSION != nodes[node].report.version) {
-                    console.log(current + `:Abandoning ${plasma.hashLastIBlock} because ${errors[0]}`)
-                }
-                //const blockState = Buffer.from(JSON.stringify([num, state]))
-                plasma.hashBlock = ''
-                plasma.hashLastIBlock = ''
-                console.log(current + `:Abandoning ${plasma.hashLastIBlock} because ${errors[0]}`)
-            }
+                })
+                .catch(e => { console.log(e) })
         });
     })
 }
@@ -2878,306 +2979,306 @@ function release(from, txid, bn) {
 //the daily post, the inflation point for tokennomics
 function dao(num) {
     return new Promise((resolve, reject) => {
-        let post = `## DLUX DAO REPORT\n`,
-            news = '',
-            daops = [],
-            Pnews = new Promise(function(resolve, reject) {
-                store.get(['postQueue'], function(err, obj) {
-                    if (err) {
-                        reject(err)
-                    } else {
-                        var news = isEmpty(obj) ? '' : '*****\n### News from Humans!\n'
-                        for (var title in obj) { //postQueue[title].{title,text}
-                            news = news + `#### ${title}\n`
-                            news = news + `${obj[title].text}\n\n`
-                        }
-                        resolve(news)
-                    }
-                });
-            }),
-            Pbals = getPathObj(['balances']),
-            Prunners = getPathObj(['runners']),
-            Pnodes = getPathObj(['markets', 'node']),
-            Pstats = getPathObj(['stats']),
-            Pdelegations = getPathObj(['delegations']),
-            Pico = getPathObj(['ico']),
-            Pdex = getPathObj(['dex']),
-            Pbr = getPathObj(['br']),
-            Ppbal = getPathNum(['pow', 't']),
-            Pnomen = getPathObj(['nomention']),
-            Pposts = getPathObj(['posts']),
-            Pfeed = getPathObj(['feed'])
-        Promise.all([Pnews, Pbals, Prunners, Pnodes, Pstats, Pdelegations, Pico, Pdex, Pbr, Ppbal, Pnomen, Pposts, Pfeed]).then(function(v) {
-            daops.push({ type: 'del', path: ['postQueue'] })
-            daops.push({ type: 'del', path: ['br'] })
-            daops.push({ type: 'del', path: ['rolling'] })
-            daops.push({ type: 'del', path: ['ico'] })
-            news = v[0] + '*****\n'
-            const header = post + news
-            var bals = v[1],
-                runners = v[2],
-                mnode = v[3],
-                stats = v[4],
-                deles = v[5],
-                ico = v[6],
-                dex = v[7],
-                br = v[8],
-                powBal = v[9],
-                nomention = v[10],
-                cpost = v[11],
-                feedCleaner = v[12],
-                feedKeys = Object.keys(feedCleaner)
-            console.log(cpost)
-            for (feedi = 0; feedi < feedKeys.length; feedi++) {
-                if (feedKeys[feedi].split(':')[0] < num - 30240) {
-                    daops.push({ type: 'del', path: ['feed', feedKeys[feedi]] })
-                }
-            }
-            news = news
-            var i = 0,
-                j = 0,
-                b = 0,
-                t = 0
-            t = parseInt(bals.ra)
-            for (var node in runners) { //node rate
-                b = parseInt(b) + parseInt(mnode[node].marketingRate) || 2500
-                j = parseInt(j) + parseInt(mnode[node].bidRate) || 2500
-                i++
-                console.log(b, j, i)
-            }
-            if (!i) {
-                b = mnode['dlux-io'].marketingRate
-                j = mnode['dlux-io'].bidRate
-                i++
-            }
-            stats.marketingRate = parseInt(b / i)
-            stats.nodeRate = parseInt(j / i)
-            post = `![Dlux Advert](https://camo.githubusercontent.com/954558e3ca2d68e0034cae13663d9807dcce3fcf/68747470733a2f2f697066732e627573792e6f72672f697066732f516d64354b78395548366a666e5a6748724a583339744172474e6b514253376359465032357a3467467132576f50)\n#### Daily Accounting\n`
-            post = post + `Total Supply: ${parseFloat(parseInt(stats.tokenSupply)/1000).toFixed(3)} DLUX\n* ${parseFloat(parseInt(stats.tokenSupply-powBal-(bals.ra +bals.rb +bals.rc +bals.rd +bals.re +bals.ri +bals.rr +bals.rn+bals.rm))/1000).toFixed(3)} DLUX liquid\n`
-            post = post + `* ${parseFloat(parseInt(powBal)/1000).toFixed(3)} DLUX Powered up for Voting\n`
-            post = post + `* ${parseFloat(parseInt(bals.ra +bals.rb +bals.rc +bals.rd +bals.re +bals.ri +bals.rr +bals.rn+bals.rm)/1000).toFixed(3)} DLUX in distribution accounts\n`
-            post = post + `${parseFloat(parseInt(t)/1000).toFixed(3)} DLUX has been generated today. 5% APY.\n${parseFloat(stats.marketingRate/10000).toFixed(4)} is the marketing rate.\n${parseFloat(stats.nodeRate/10000).toFixed(4)} is the node rate.\n`
-            console.log(`DAO Accounting In Progress:\n${t} has been generated today\n${stats.marketingRate} is the marketing rate.\n${stats.nodeRate} is the node rate.`)
-            bals.rn += parseInt(t * parseInt(stats.nodeRate) / 10000)
-            bals.ra = parseInt(bals.ra) - parseInt(t * parseInt(stats.nodeRate) / 10000)
-            bals.rm += parseInt(t * stats.marketingRate / 10000)
-            post = post + `${parseFloat(parseInt(t * stats.marketingRate / 10000)/1000).toFixed(3)} DLUX moved to Marketing Allocation.\n`
-            if (bals.rm > 1000000000) {
-                bals.rc += bals.rm - 1000000000;
-                post = post + `${parseFloat((bals.rm - 1000000000)/1000).toFixed(3)} moved from Marketing Allocation to Content Allocation due to Marketing Holdings Cap of 1,000,000.000 DLUX\n`
-                bals.rm = 1000000000
-            }
-            bals.ra = parseInt(bals.ra) - parseInt(t * stats.marketingRate / 10000)
+                let post = `## ${config.TOKEN} DAO REPORT\n`,
+                    news = '',
+                    daops = [],
+                    Pnews = new Promise(function(resolve, reject) {
+                        store.get(['postQueue'], function(err, obj) {
+                            if (err) {
+                                reject(err)
+                            } else {
+                                var news = isEmpty(obj) ? '' : '*****\n### News from Humans!\n'
+                                for (var title in obj) { //postQueue[title].{title,text}
+                                    news = news + `#### ${title}\n`
+                                    news = news + `${obj[title].text}\n\n`
+                                }
+                                resolve(news)
+                            }
+                        });
+                    }),
+                    Pbals = getPathObj(['balances']),
+                    Prunners = getPathObj(['runners']),
+                    Pnodes = getPathObj(['markets', 'node']),
+                    Pstats = getPathObj(['stats']),
+                    Pdelegations = getPathObj(['delegations']),
+                    Pico = getPathObj(['ico']),
+                    Pdex = getPathObj(['dex']),
+                    Pbr = getPathObj(['br']),
+                    Ppbal = getPathNum(['pow', 't']),
+                    Pnomen = getPathObj(['nomention']),
+                    Pposts = getPathObj(['posts']),
+                    Pfeed = getPathObj(['feed'])
+                Promise.all([Pnews, Pbals, Prunners, Pnodes, Pstats, Pdelegations, Pico, Pdex, Pbr, Ppbal, Pnomen, Pposts, Pfeed]).then(function(v) {
+                            daops.push({ type: 'del', path: ['postQueue'] })
+                            daops.push({ type: 'del', path: ['br'] })
+                            daops.push({ type: 'del', path: ['rolling'] })
+                            daops.push({ type: 'del', path: ['ico'] })
+                            news = v[0] + '*****\n'
+                            const header = post + news
+                            var bals = v[1],
+                                runners = v[2],
+                                mnode = v[3],
+                                stats = v[4],
+                                deles = v[5],
+                                ico = v[6],
+                                dex = v[7],
+                                br = v[8],
+                                powBal = v[9],
+                                nomention = v[10],
+                                cpost = v[11],
+                                feedCleaner = v[12],
+                                feedKeys = Object.keys(feedCleaner)
+                            console.log(cpost)
+                            for (feedi = 0; feedi < feedKeys.length; feedi++) {
+                                if (feedKeys[feedi].split(':')[0] < num - 30240) {
+                                    daops.push({ type: 'del', path: ['feed', feedKeys[feedi]] })
+                                }
+                            }
+                            news = news
+                            var i = 0,
+                                j = 0,
+                                b = 0,
+                                t = 0
+                            t = parseInt(bals.ra)
+                            for (var node in runners) { //node rate
+                                b = parseInt(b) + parseInt(mnode[node].marketingRate) || 2500
+                                j = parseInt(j) + parseInt(mnode[node].bidRate) || 2500
+                                i++
+                                console.log(b, j, i)
+                            }
+                            if (!i) {
+                                b = mnode[config.leader].marketingRate
+                                j = mnode[config.leader].bidRate
+                                i++
+                            }
+                            stats.marketingRate = parseInt(b / i)
+                            stats.nodeRate = parseInt(j / i)
+                            post = `![${config.TOKEN} Advert](https://camo.githubusercontent.com/954558e3ca2d68e0034cae13663d9807dcce3fcf/68747470733a2f2f697066732e627573792e6f72672f697066732f516d64354b78395548366a666e5a6748724a583339744172474e6b514253376359465032357a3467467132576f50)\n#### Daily Accounting\n`
+                            post = post + `Total Supply: ${parseFloat(parseInt(stats.tokenSupply)/1000).toFixed(3)} ${config.TOKEN}\n* ${parseFloat(parseInt(stats.tokenSupply-powBal-(bals.ra +bals.rb +bals.rc +bals.rd +bals.re +bals.ri +bals.rr +bals.rn+bals.rm))/1000).toFixed(3)} ${config.TOKEN} liquid\n`
+                            post = post + `* ${parseFloat(parseInt(powBal)/1000).toFixed(3)} ${config.TOKEN} Powered up for Voting\n`
+                            post = post + `* ${parseFloat(parseInt(bals.ra +bals.rb +bals.rc +bals.rd +bals.re +bals.ri +bals.rr +bals.rn+bals.rm)/1000).toFixed(3)} ${config.TOKEN} in distribution accounts\n`
+                            post = post + `${parseFloat(parseInt(t)/1000).toFixed(3)} ${config.TOKEN} has been generated today. 5% APY.\n${parseFloat(stats.marketingRate/10000).toFixed(4)} is the marketing rate.\n${parseFloat(stats.nodeRate/10000).toFixed(4)} is the node rate.\n`
+                            console.log(`DAO Accounting In Progress:\n${t} has been generated today\n${stats.marketingRate} is the marketing rate.\n${stats.nodeRate} is the node rate.`)
+                            bals.rn += parseInt(t * parseInt(stats.nodeRate) / 10000)
+                            bals.ra = parseInt(bals.ra) - parseInt(t * parseInt(stats.nodeRate) / 10000)
+                            bals.rm += parseInt(t * stats.marketingRate / 10000)
+                            post = post + `${parseFloat(parseInt(t * stats.marketingRate / 10000)/1000).toFixed(3)} ${config.TOKEN} moved to Marketing Allocation.\n`
+                            if (bals.rm > 1000000000) {
+                                bals.rc += bals.rm - 1000000000;
+                                post = post + `${parseFloat((bals.rm - 1000000000)/1000).toFixed(3)} moved from Marketing Allocation to Content Allocation due to Marketing Holdings Cap of 1,000,000.000 ${config.TOKEN}\n`
+                                bals.rm = 1000000000
+                            }
+                            bals.ra = parseInt(bals.ra) - parseInt(t * stats.marketingRate / 10000)
 
-            i = 0, j = 0
-            post = post + `${parseFloat(parseInt(bals.rm)/1000).toFixed(3)} DLUX is in the Marketing Allocation.\n##### Node Rewards for Elected Reports and Escrow Transfers\n`
-            console.log(num + `:${bals.rm} is availible in the marketing account\n${bals.rn} DLUX set asside to distribute to nodes`)
-            for (var node in mnode) { //tally the wins
-                j = j + parseInt(mnode[node].wins)
-            }
-            b = bals.rn
+                            i = 0, j = 0
+                            post = post + `${parseFloat(parseInt(bals.rm)/1000).toFixed(3)} ${config.TOKEN} is in the Marketing Allocation.\n##### Node Rewards for Elected Reports and Escrow Transfers\n`
+                            console.log(num + `:${bals.rm} is availible in the marketing account\n${bals.rn} ${config.TOKEN} set asside to distribute to nodes`)
+                            for (var node in mnode) { //tally the wins
+                                j = j + parseInt(mnode[node].wins)
+                            }
+                            b = bals.rn
 
-            function _atfun(node) {
-                if (nomention[node]) {
-                    return '@_'
-                } else {
-                    return '@'
-                }
-            }
-            for (var node in mnode) { //and pay them
-                i = parseInt(mnode[node].wins / j * b)
-                if (bals[node]) {
-                    bals[node] += i
-                } else {
-                    bals[node] = i
-                }
-                bals.rn -= i
-                const _at = _atfun(node)
-                post = post + `* ${_at}${node} awarded ${parseFloat(i/1000).toFixed(3)} DLUX for ${mnode[node].wins} credited transaction(s)\n`
-                console.log(current + `:@${node} awarded ${i} DLUX for ${mnode[node].wins} credited transaction(s)`)
-                mnode[node].wins = 0
-            }
-            bals.rd += parseInt(t * stats.delegationRate / 10000) // 10% to delegators
-            post = post + `### ${parseFloat(parseInt(bals.rd)/1000).toFixed(3)} DLUX set aside for @dlux-io delegators\n`
-            bals.ra -= parseInt(t * stats.delegationRate / 10000)
-            b = bals.rd
-            j = 0
-            console.log(current + `:${b} DLUX to distribute to delegators`)
-            for (i in deles) { //count vests
-                j += deles[i]
-            }
-            for (i in deles) { //reward vests
-                k = parseInt(b * deles[i] / j)
-                if (bals[i] === undefined) {
-                    bals[i] = 0
-                }
-                bals[i] += k
-                bals.rd -= k
-                const _at = _atfun(i)
-                post = post + `* ${parseFloat(parseInt(k)/1000).toFixed(3)} DLUX for ${_at}${i}'s ${parseFloat(deles[i]/1000000).toFixed(1)} Mvests.\n`
-                console.log(current + `:${k} DLUX awarded to ${i} for ${deles[i]} VESTS`)
-            }
-            post = post + `*****\n ## ICO Status\n`
-            if (bals.ri < 100000000 && stats.tokenSupply < 100000000000) {
-                if (bals.ri == 0) {
-                    stats.tokenSupply += 100000000
-                    bals.ri = 100000000
-                    var ago = num - stats.outOnBlock,
-                        dil = ' seconds'
-                    if (ago !== num) {
-                        bals.rl = parseInt(ago / 30240 * 50000000)
-                        bals.ri = 100000000 - parseInt(ago / 30240 * 50000000)
-                        stats.icoPrice = stats.icoPrice * (1 + (ago / 30240) / 2)
-                    }
-                    if (ago > 20) {
-                        dil = ' minutes';
-                        ago = parseFloat(ago / 20)
-                            .toFixed(1)
-                    } else {
-                        ago = ago * 3
-                    }
-                    if (ago > 60) {
-                        dil = ' hours';
-                        ago = parseFloat(ago / 60)
-                            .toFixed(1)
-                    }
-                    post = post + `### We sold out ${ago}${dil}\nThere are now ${parseFloat(bals.ri/1000).toFixed(3)} DLUX for sale from @robotolux for ${parseFloat(stats.icoPrice/1000).toFixed(3)} HIVE each.\n`
-                } else {
-                    var left = bals.ri
-                    stats.tokenSupply += 100000000 - left
-                    bals.ri = 100000000
-                    stats.icoPrice = stats.icoPrice - (left / 1000000000)
-                    if (stats.icoPrice < 220) stats.icoPrice = 220
-                    post = post + `### We Sold out ${100000000 - left} today.\nThere are now ${parseFloat(bals.ri/1000).toFixed(3)} DLUX for sale from @robotolux for ${parseFloat(stats.icoPrice/1000).toFixed(3)} HIVE each.\n`
-                }
-            } else {
-                post = post + `### We have ${parseFloat(parseInt(bals.ri - 100000000)/1000).toFixed(3)} DLUX left for sale at 0.22 HIVE in our Pre-ICO.\n`
-            }
-            if (bals.rl) {
-                var dailyICODistrobution = bals.rl,
-                    y = 0
-                for (i = 0; i < ico.length; i++) {
-                    for (var node in ico[i]) {
-                        y += ico[i][node]
-                    }
-                }
-                post = post + `### ICO Over Auction Results:\n${parseFloat(bals.rl/1000).toFixed(3)} DLUX was set aside from today's ICO to divide between people who didn't get a chance at fixed price tokens and donated ${parseFloat(y/1000).toFixed(3)} HIVE today.\n`
-                for (i = 0; i < ico.length; i++) {
-                    for (var node in ico[i]) {
-                        if (!bals[node]) {
-                            bals[node] = 0
-                        }
-                        bals[node] += parseInt(ico[i][node] / y * bals.rl)
-                        dailyICODistrobution -= parseInt(ico[i][node] / y * bals.rl)
-                        post = post + `* @${node} awarded  ${parseFloat(parseInt(ico[i][node]/y*bals.rl)/1000).toFixed(3)} DLUX for ICO auction\n`
-                        console.log(current + `:${node} awarded  ${parseInt(ico[i][node]/y*bals.rl)} DLUX for ICO auction`)
-                        if (i == ico.length - 1) {
-                            bals[node] += dailyICODistrobution
-                            post = post + `* @${node} awarded  ${parseFloat(parseInt(dailyICODistrobution)/1000).toFixed(3)} DLUX for ICO auction\n`
-                            console.log(current + `:${node} given  ${dailyICODistrobution} remainder`)
-                        }
-                    }
-                }
-                bals.rl = 0
-                ico = []
-            }
-            var vol = 0,
-                volhbd = 0,
-                vols = 0,
-                his = [],
-                hisb = [],
-                hi = {},
-                hib = {}
-            for (var int in dex.hive.his) {
-                if (dex.hive.his[int].block < num - 30240) {
-                    his.push(dex.hive.his[int])
-                    daops.push({ type: 'del', path: ['dex', 'hive', 'his', int] })
-                } else {
-                    vol = parseInt(parseInt(dex.hive.his[int].amount) + vol)
-                    vols = parseInt(parseInt(parseInt(dex.hive.his[int].amount) * parseFloat(dex.hive.his[int].rate)) + vols)
-                }
-            }
-            for (var int in dex.hbd.his) {
-                if (dex.hbd.his[int].block < num - 30240) {
-                    hisb.push(dex.hbd.his[int])
-                    daops.push({ type: 'del', path: ['dex', 'hbd', 'his', int] })
-                } else {
-                    vol = parseInt(parseInt(dex.hbd.his[int].amount) + vol)
-                    volhbd = parseInt(parseInt(parseInt(dex.hbd.his[int].amount) * parseFloat(dex.hbd.his[int].rate)) + volhbd)
-                }
-            }
-            if (his.length) {
-                hi.o = parseFloat(his[0].rate) // open, close, top bottom, dlux, volumepair
-                hi.c = parseFloat(his[his.length - 1].rate)
-                hi.t = 0
-                hi.b = hi.o
-                hi.d = 0
-                hi.v = 0
-                for (var int = 0; int < his.length; int++) {
-                    if (hi.t < parseFloat(his[int].rate)) {
-                        hi.t = parseFloat(his[int].rate)
-                    }
-                    if (hi.b > parseFloat(his[int].rate)) {
-                        hi.b = parseFloat(his[int].rate)
-                    }
+                            function _atfun(node) {
+                                if (nomention[node]) {
+                                    return '@_'
+                                } else {
+                                    return '@'
+                                }
+                            }
+                            for (var node in mnode) { //and pay them
+                                i = parseInt(mnode[node].wins / j * b)
+                                if (bals[node]) {
+                                    bals[node] += i
+                                } else {
+                                    bals[node] = i
+                                }
+                                bals.rn -= i
+                                const _at = _atfun(node)
+                                post = post + `* ${_at}${node} awarded ${parseFloat(i/1000).toFixed(3)} ${config.TOKEN} for ${mnode[node].wins} credited transaction(s)\n`
+                                console.log(current + `:@${node} awarded ${i} ${config.TOKEN} for ${mnode[node].wins} credited transaction(s)`)
+                                mnode[node].wins = 0
+                            }
+                            bals.rd += parseInt(t * stats.delegationRate / 10000) // 10% to delegators
+                            post = post + `### ${parseFloat(parseInt(bals.rd)/1000).toFixed(3)} ${config.TOKEN} set aside for @${config.delegation} delegators\n`
+                            bals.ra -= parseInt(t * stats.delegationRate / 10000)
+                            b = bals.rd
+                            j = 0
+                            console.log(current + `:${b} ${config.TOKEN} to distribute to delegators`)
+                            for (i in deles) { //count vests
+                                j += deles[i]
+                            }
+                            for (i in deles) { //reward vests
+                                k = parseInt(b * deles[i] / j)
+                                if (bals[i] === undefined) {
+                                    bals[i] = 0
+                                }
+                                bals[i] += k
+                                bals.rd -= k
+                                const _at = _atfun(i)
+                                post = post + `* ${parseFloat(parseInt(k)/1000).toFixed(3)} ${config.TOKEN} for ${_at}${i}'s ${parseFloat(deles[i]/1000000).toFixed(1)} Mvests.\n`
+                                console.log(current + `:${k} ${config.TOKEN} awarded to ${i} for ${deles[i]} VESTS`)
+                            }
+                            post = post + `*****\n ## ICO Status\n`
+                            if (bals.ri < 100000000 && stats.tokenSupply < 100000000000) {
+                                if (bals.ri == 0) {
+                                    stats.tokenSupply += 100000000
+                                    bals.ri = 100000000
+                                    var ago = num - stats.outOnBlock,
+                                        dil = ' seconds'
+                                    if (ago !== num) {
+                                        bals.rl = parseInt(ago / 30240 * 50000000)
+                                        bals.ri = 100000000 - parseInt(ago / 30240 * 50000000)
+                                        stats.icoPrice = stats.icoPrice * (1 + (ago / 30240) / 2)
+                                    }
+                                    if (ago > 20) {
+                                        dil = ' minutes';
+                                        ago = parseFloat(ago / 20)
+                                            .toFixed(1)
+                                    } else {
+                                        ago = ago * 3
+                                    }
+                                    if (ago > 60) {
+                                        dil = ' hours';
+                                        ago = parseFloat(ago / 60)
+                                            .toFixed(1)
+                                    }
+                                    post = post + `### We sold out ${ago}${dil}\nThere are now ${parseFloat(bals.ri/1000).toFixed(3)} ${config.TOKEN} for sale from @robotolux for ${parseFloat(stats.icoPrice/1000).toFixed(3)} HIVE each.\n`
+                                } else {
+                                    var left = bals.ri
+                                    stats.tokenSupply += 100000000 - left
+                                    bals.ri = 100000000
+                                    stats.icoPrice = stats.icoPrice - (left / 1000000000)
+                                    if (stats.icoPrice < 220) stats.icoPrice = 220
+                                    post = post + `### We Sold out ${100000000 - left} today.\nThere are now ${parseFloat(bals.ri/1000).toFixed(3)} ${config.TOKEN} for sale from @robotolux for ${parseFloat(stats.icoPrice/1000).toFixed(3)} HIVE each.\n`
+                                }
+                            } else {
+                                post = post + `### We have ${parseFloat(parseInt(bals.ri - 100000000)/1000).toFixed(3)} ${config.TOKEN} left for sale at 0.22 HIVE in our Pre-ICO.\n`
+                            }
+                            if (bals.rl) {
+                                var dailyICODistrobution = bals.rl,
+                                    y = 0
+                                for (i = 0; i < ico.length; i++) {
+                                    for (var node in ico[i]) {
+                                        y += ico[i][node]
+                                    }
+                                }
+                                post = post + `### ICO Over Auction Results:\n${parseFloat(bals.rl/1000).toFixed(3)} ${config.TOKEN} was set aside from today's ICO to divide between people who didn't get a chance at fixed price tokens and donated ${parseFloat(y/1000).toFixed(3)} HIVE today.\n`
+                                for (i = 0; i < ico.length; i++) {
+                                    for (var node in ico[i]) {
+                                        if (!bals[node]) {
+                                            bals[node] = 0
+                                        }
+                                        bals[node] += parseInt(ico[i][node] / y * bals.rl)
+                                        dailyICODistrobution -= parseInt(ico[i][node] / y * bals.rl)
+                                        post = post + `* @${node} awarded  ${parseFloat(parseInt(ico[i][node]/y*bals.rl)/1000).toFixed(3)} ${config.TOKEN} for ICO auction\n`
+                                        console.log(current + `:${node} awarded  ${parseInt(ico[i][node]/y*bals.rl)} ${config.TOKEN} for ICO auction`)
+                                        if (i == ico.length - 1) {
+                                            bals[node] += dailyICODistrobution
+                                            post = post + `* @${node} awarded  ${parseFloat(parseInt(dailyICODistrobution)/1000).toFixed(3)} ${config.TOKEN} for ICO auction\n`
+                                            console.log(current + `:${node} given  ${dailyICODistrobution} remainder`)
+                                        }
+                                    }
+                                }
+                                bals.rl = 0
+                                ico = []
+                            }
+                            var vol = 0,
+                                volhbd = 0,
+                                vols = 0,
+                                his = [],
+                                hisb = [],
+                                hi = {},
+                                hib = {}
+                            for (var int in dex.hive.his) {
+                                if (dex.hive.his[int].block < num - 30240) {
+                                    his.push(dex.hive.his[int])
+                                    daops.push({ type: 'del', path: ['dex', 'hive', 'his', int] })
+                                } else {
+                                    vol = parseInt(parseInt(dex.hive.his[int].amount) + vol)
+                                    vols = parseInt(parseInt(parseInt(dex.hive.his[int].amount) * parseFloat(dex.hive.his[int].rate)) + vols)
+                                }
+                            }
+                            for (var int in dex.hbd.his) {
+                                if (dex.hbd.his[int].block < num - 30240) {
+                                    hisb.push(dex.hbd.his[int])
+                                    daops.push({ type: 'del', path: ['dex', 'hbd', 'his', int] })
+                                } else {
+                                    vol = parseInt(parseInt(dex.hbd.his[int].amount) + vol)
+                                    volhbd = parseInt(parseInt(parseInt(dex.hbd.his[int].amount) * parseFloat(dex.hbd.his[int].rate)) + volhbd)
+                                }
+                            }
+                            if (his.length) {
+                                hi.o = parseFloat(his[0].rate) // open, close, top bottom, dlux, volumepair
+                                hi.c = parseFloat(his[his.length - 1].rate)
+                                hi.t = 0
+                                hi.b = hi.o
+                                hi.d = 0
+                                hi.v = 0
+                                for (var int = 0; int < his.length; int++) {
+                                    if (hi.t < parseFloat(his[int].rate)) {
+                                        hi.t = parseFloat(his[int].rate)
+                                    }
+                                    if (hi.b > parseFloat(his[int].rate)) {
+                                        hi.b = parseFloat(his[int].rate)
+                                    }
 
-                    hi.v += parseInt(parseInt(his[int].amount) * parseInt(his[int].rate))
-                    hi.d += parseInt(his[int].amount)
-                }
-                if (!dex.hive.days) dex.hive.days = {}
-                dex.hive.days[num] = hi
-            }
-            if (hisb.length) {
-                hib.o = parseFloat(hisb[0].rate) // open, close, top bottom, dlux, volumepair
-                hib.c = parseFloat(hisb[hisb.length - 1].rate)
-                hib.t = 0
-                hib.b = hib.o
-                hib.v = 0
-                hib.d = 0
-                for (var int = 0; int < hisb.length; int++) {
-                    if (hib.t < parseFloat(hisb[int].rate)) {
-                        hib.t = parseFloat(hisb[int].rate)
-                    }
-                    if (hib.b > parseFloat(hisb[int].rate)) {
-                        hib.b = parseFloat(hisb[int].rate)
-                    }
-                    hib.v += parseInt(parseInt(hisb[int].amount) * parseInt(hisb[int].rate))
-                    hib.d += parseInt(hisb[int].amount)
-                }
-                if (!dex.hbd.days) dex.hbd.days = {}
-                dex.hbd.days[num] = hib
-            }
-            post = post + `*****\n### DEX Report\n#### Spot Information\n* Price: ${parseFloat(dex.hive.tick).toFixed(3)} HIVE per DLUX\n* Price: ${parseFloat(dex.hbd.tick).toFixed(3)} HBD per DLUX\n#### Daily Volume:\n* ${parseFloat(vol/1000).toFixed(3)} DLUX\n* ${parseFloat(vols/1000).toFixed(3)} HIVE\n* ${parseFloat(parseInt(volhbd)/1000).toFixed(3)} HBD\n*****\n`
-            bals.rc = bals.rc + bals.ra
-            bals.ra = 0
-            var q = 0,
-                r = bals.rc
-            for (var i in br) {
-                q += br[i].post.totalWeight
-            }
-            var contentRewards = ``,
-                vo = []
-            if (Object.keys(br).length) {
-                bucket = parseInt(bals.rc / 100)
-                bals.rc = bals.rc - bucket
-                contentRewards = `#### Top Paid Posts\n`
-                const compa = bucket
-                for (var i in br) {
-                    var dif = bucket
-                    for (var j in br[i].post.voters) {
-                        bals[br[i].post.author] += parseInt((br[i].post.voters[j].weight * 2 / q * 3) * compa)
-                        bucket -= parseInt((br[i].post.voters[j].weight / q * 3) * compa)
-                        bals[br[i].post.voters[j].from] += parseInt((br[i].post.voters[j].weight / q * 3) * compa)
-                        bucket -= parseInt((br[i].post.voters[j].weight * 2 / q * 3) * compa)
-                    }
-                    vo.push(br[i].post)
-                    cpost[i] = {
-                        v: br[i].post.voters.length,
-                        d: parseFloat(parseInt(dif - bucket) / 1000).toFixed(3),
-                    }
-                    cpost[`s/${br[i].post.author}/${br[i].post.permlink}`] = cpost[i]
-                    delete cpost[i]
-                    contentRewards = contentRewards + `* [${br[i].post.title || 'DLUX Content'}](https://ipfs.dlux.io/dlux/@${br[i].post.author}/${br[i].post.permlink}) by @${br[i].post.author} awarded ${parseFloat(parseInt(dif - bucket)/1000).toFixed(3)} DLUX\n`
+                                    hi.v += parseInt(parseInt(his[int].amount) * parseInt(his[int].rate))
+                                    hi.d += parseInt(his[int].amount)
+                                }
+                                if (!dex.hive.days) dex.hive.days = {}
+                                dex.hive.days[num] = hi
+                            }
+                            if (hisb.length) {
+                                hib.o = parseFloat(hisb[0].rate) // open, close, top bottom, dlux, volumepair
+                                hib.c = parseFloat(hisb[hisb.length - 1].rate)
+                                hib.t = 0
+                                hib.b = hib.o
+                                hib.v = 0
+                                hib.d = 0
+                                for (var int = 0; int < hisb.length; int++) {
+                                    if (hib.t < parseFloat(hisb[int].rate)) {
+                                        hib.t = parseFloat(hisb[int].rate)
+                                    }
+                                    if (hib.b > parseFloat(hisb[int].rate)) {
+                                        hib.b = parseFloat(hisb[int].rate)
+                                    }
+                                    hib.v += parseInt(parseInt(hisb[int].amount) * parseInt(hisb[int].rate))
+                                    hib.d += parseInt(hisb[int].amount)
+                                }
+                                if (!dex.hbd.days) dex.hbd.days = {}
+                                dex.hbd.days[num] = hib
+                            }
+                            post = post + `*****\n### DEX Report\n#### Spot Information\n* Price: ${parseFloat(dex.hive.tick).toFixed(3)} HIVE per ${config.TOKEN}\n* Price: ${parseFloat(dex.hbd.tick).toFixed(3)} HBD per ${config.TOKEN}\n#### Daily Volume:\n* ${parseFloat(vol/1000).toFixed(3)} ${config.TOKEN}\n* ${parseFloat(vols/1000).toFixed(3)} HIVE\n* ${parseFloat(parseInt(volhbd)/1000).toFixed(3)} HBD\n*****\n`
+                            bals.rc = bals.rc + bals.ra
+                            bals.ra = 0
+                            var q = 0,
+                                r = bals.rc
+                            for (var i in br) {
+                                q += br[i].post.totalWeight
+                            }
+                            var contentRewards = ``,
+                                vo = []
+                            if (Object.keys(br).length) {
+                                bucket = parseInt(bals.rc / 100)
+                                bals.rc = bals.rc - bucket
+                                contentRewards = `#### Top Paid Posts\n`
+                                const compa = bucket
+                                for (var i in br) {
+                                    var dif = bucket
+                                    for (var j in br[i].post.voters) {
+                                        bals[br[i].post.author] += parseInt((br[i].post.voters[j].weight * 2 / q * 3) * compa)
+                                        bucket -= parseInt((br[i].post.voters[j].weight / q * 3) * compa)
+                                        bals[br[i].post.voters[j].from] += parseInt((br[i].post.voters[j].weight / q * 3) * compa)
+                                        bucket -= parseInt((br[i].post.voters[j].weight * 2 / q * 3) * compa)
+                                    }
+                                    vo.push(br[i].post)
+                                    cpost[i] = {
+                                        v: br[i].post.voters.length,
+                                        d: parseFloat(parseInt(dif - bucket) / 1000).toFixed(3),
+                                    }
+                                    cpost[`s/${br[i].post.author}/${br[i].post.permlink}`] = cpost[i]
+                                    delete cpost[i]
+                                    contentRewards = contentRewards + `* [${br[i].post.title || `${config.TOKEN} Content`}](https://www.${config.mainFE}/@${br[i].post.author}/${br[i].post.permlink}) by @${br[i].post.author} awarded ${parseFloat(parseInt(dif - bucket)/1000).toFixed(3)} ${config.TOKEN}\n` 
                 }
                 bals.rc += bucket
                 contentRewards = contentRewards + `\n*****\n`
@@ -3197,10 +3298,10 @@ function dao(num) {
                 if (weight > 10000) weight = 10000
                 daops.push({
                     type: 'put',
-                    path: ['escrow', 'dlux-io', `vote:${vo[oo].author}:${vo[oo].permlink}`],
+                    path: ['escrow', config.delegation, `vote:${vo[oo].author}:${vo[oo].permlink}`],
                     data: [
                         "vote", {
-                            "voter": "dlux-io",
+                            "voter": config.delegation,
                             "author": vo[oo].author,
                             "permlink": vo[oo].permlink,
                             "weight": weight
@@ -3208,21 +3309,21 @@ function dao(num) {
                     ]
                 })
                 cpost[`s/${vo[oo].author}/${vo[oo].permlink}`].b = weight
-                hiveVotes = hiveVotes + `* [${vo[oo].title || 'DLUX Content'}](https://dlux.io/@${vo[oo].author}/${vo[oo].permlink}) by @${vo[oo].author} | ${parseFloat(weight/100).toFixed(2)}% \n`
+                hiveVotes = hiveVotes + `* [${vo[oo].title || `${config.TOKEN} Content`}](https://www.${config.mainFE}/@${vo[oo].author}/${vo[oo].permlink}) by @${vo[oo].author} | ${parseFloat(weight/100).toFixed(2)}% \n`
             }
-            const footer = `[Visit dlux.io](https://dlux.io)\n[Find us on Discord](https://discord.gg/Beeb38j)\n[Visit our DEX/Wallet](https://www.dlux.io/dex)\n[Learn how to use DLUX](https://github.com/dluxio/dluxio/wiki)\n*Price for 25.2 Hrs from posting or until daily 100,000.000 DLUX sold.`
-            if (hiveVotes) hiveVotes = `#### Community Voted DLUX Posts\n` + hiveVotes + `*****\n`
+            const footer = `[Visit ${config.mainFE}](https://www.${config.mainFE})\n[Find us on Discord](https://discord.gg/Beeb38j)\n[Visit our DEX/Wallet](https://www.${config.mainFE}/dex)\n[Learn how to use ${config.TOKEN}](https://github.com/dluxio/dluxio/wiki)\n*Price for 25.2 Hrs from posting or until daily 100,000.000 ${config.TOKEN} sold.`
+            if (hiveVotes) hiveVotes = `#### Community Voted ${config.TOKEN} Posts\n` + hiveVotes + `*****\n`
             post = header + contentRewards + hiveVotes + post + footer
             var op = ["comment",
                 {
                     "parent_author": "",
-                    "parent_permlink": "dlux",
-                    "author": "dlux-io",
-                    "permlink": 'dlux' + num,
-                    "title": `DLUX DAO | Block Report ${num}`,
+                    "parent_permlink": config.tag,
+                    "author": config.leader,
+                    "permlink": config.tag + num,
+                    "title": `${config.TOKEN} DAO | Block Report ${num}`,
                     "body": post,
                     "json_metadata": JSON.stringify({
-                        tags: ["dlux", "ico", "dex", "cryptocurrency"]
+                        tags: [config.tag]
                     })
                 }
             ]
@@ -3233,7 +3334,7 @@ function dao(num) {
             daops.push({ type: 'put', path: ['posts'], data: cpost })
             daops.push({ type: 'put', path: ['markets', 'node'], data: mnode })
             daops.push({ type: 'put', path: ['delegations'], data: deles })
-            daops.push({ type: 'put', path: ['escrow', 'dlux-io', 'comment'], data: op })
+            daops.push({ type: 'put', path: ['escrow', config.leader, 'comment'], data: op })
             for (var i = daops.length - 1; i >= 0; i--) {
                 if (daops[i].type == 'put' && Object.keys(daops[i].data).length == 0 && typeof daops[i].data != 'number' && typeof daops[i].data != 'string') {
                     daops.splice(i, 1)
@@ -3249,7 +3350,7 @@ function report() {
     var op = ["custom_json", {
         required_auths: [config.username],
         required_posting_auths: [],
-        id: 'dlux_report',
+        id: `${config.prefix}report`,
         json: JSON.stringify({
             hash: plasma.hashLastIBlock,
             block: plasma.hashBlock,
@@ -3270,7 +3371,7 @@ function exit(consensus) {
         if (consensus) {
             startWith(consensus)
         } else {
-            dynStart('dlux-io')
+            dynStart(config.leader)
         }
     });
 }
@@ -3449,6 +3550,16 @@ function forceCancel(rate, type, bn) {
             }
         })
         .catch(e => console.log(e))
+}
+
+function deleteObjs(paths) {
+    return new Promise((resolve, reject) => {
+        var ops=[]
+        for (i=0; i<paths.length;i++){
+            ops.push({ type: 'del', path: paths[i]})
+        }
+        store.batch(ops, [resolve, reject, paths.length])
+    })
 }
 
 function deletePointer(escrowID, user) {
