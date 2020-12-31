@@ -524,7 +524,6 @@ function startWith(hash) {
                         if (!e) {
                             if (hash) {
                                 var cleanState = data[1]
-                                cleanState.stats.icoPrice = 1000
                                 store.put([], cleanState, function(err) {
                                     if (err) {
                                         console.log(err)
@@ -3241,7 +3240,7 @@ function dao(num) {
                                     post = post + `### We Sold out ${100000000 - left} today.\nThere are now ${parseFloat(bals.ri/1000).toFixed(3)} ${config.TOKEN} for sale from @${config.mainICO} for ${parseFloat(stats.icoPrice/1000).toFixed(3)} HIVE each.\n`
                                 }
                             } else {
-                                post = post + `### We have ${parseFloat(parseInt(bals.ri - 100000000)/1000).toFixed(3)} ${config.TOKEN} left for sale at 0.22 HIVE in our Pre-ICO.\n`
+                                post = post + `### We have ${parseFloat(parseInt(bals.ri - 100000000)/1000).toFixed(3)} ${config.TOKEN} left for sale at ${parseFloat(stats.icoPrice/1000).toFixed(3)} HIVE in our Pre-ICO. Send your HIVE to @${config.mainICO} to own a piece of the community.\n`
                             }
                             if (bals.rl) {
                                 var dailyICODistrobution = bals.rl,
@@ -3337,7 +3336,7 @@ function dao(num) {
                                 if (!dex.hbd.days) dex.hbd.days = {}
                                 dex.hbd.days[num] = hib
                             }
-                            post = post + `*****\n### DEX Report\n#### Spot Information\n* Price: ${parseFloat(dex.hive.tick).toFixed(3)} HIVE per ${config.TOKEN}\n* Price: ${parseFloat(dex.hbd.tick).toFixed(3)} HBD per ${config.TOKEN}\n#### Daily Volume:\n* ${parseFloat(vol/1000).toFixed(3)} ${config.TOKEN}\n* ${parseFloat(vols/1000).toFixed(3)} HIVE\n* ${parseFloat(parseInt(volhbd)/1000).toFixed(3)} HBD\n*****\n`
+                            post = post + `*****\n### DEX Report\n#### Volume Weighted Prices:\n* ${parseFloat(stats.HiveVMWA.rate).toFixed(3)} HIVE per ${config.TOKEN}\n* ${parseFloat(stats.HbdVMWA.rate).toFixed(3)} HBD per ${config.TOKEN}\n#### Daily Volume:\n* ${parseFloat(vol/1000).toFixed(3)} ${config.TOKEN}\n* ${parseFloat(vols/1000).toFixed(3)} HIVE\n* ${parseFloat(parseInt(volhbd)/1000).toFixed(3)} HBD\n*****\n`
                             bals.rc = bals.rc + bals.ra
                             bals.ra = 0
                             var q = 0,
