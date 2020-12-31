@@ -47,10 +47,10 @@ var recents = []
 const { ChainTypes, makeBitMaskFilter, ops } = require('@hiveio/hive-js/lib/auth/serializer')
 const op = ChainTypes.operations
 const walletOperationsBitmask = makeBitMaskFilter([
-    op.custom_json
-])
-startWith(config.engineCrank) //for testing and replaying
-    //dynStart(config.leader)
+        op.custom_json
+    ])
+    //startWith(config.engineCrank) //for testing and replaying
+dynStart(config.leader)
     /*
     function hashThis2(datum) {
         const data = Buffer.from(datum, 'ascii')
