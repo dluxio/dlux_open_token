@@ -2186,7 +2186,7 @@ function startApp() {
                 Pbal = getPathNum(['balances', json.from]),
                 Pinv = getPathNum(['balances', 'ri'])
             Promise.all([Pstats, Pbal, Pinv]).then(function(v) {
-                stats = v[0], //stats 
+                var stats = v[0], //stats 
                     b = v[1], //balance of purchaser
                     i = v[2], //inventory
                     ops = []
