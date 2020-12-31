@@ -1,18 +1,19 @@
+const config = require('./config');
 module.exports = {
     "balances": {
-        "config.leader": 1000000,
-        "community.member": 1000000,
+        [config.leader]: 1000000,
+        "community.member": 1000000, //additional distributions
         "ra": 0,
         "rb": 0,
         "rc": 0,
         "rd": 0,
         "re": 0,
-        "ri": 100000000, //in ICO account
+        "ri": 100000000, //in ICO account for fixed price
         "rm": 0,
         "rn": 0,
         "rr": 0
     },
-    "delegations": {},
+    "delegations": {}, //these need to be preloaded if already on account before starting block
     "dex": {
         "hbd": {
             "tick": "0.012500" //ICO price
@@ -23,32 +24,32 @@ module.exports = {
     },
     "markets": {
         "node": {
-            "config.leader": {
+            [config.leader]: {
                 "attempts": 0,
                 "bidRate": 2000,
                 "contracts": 0,
-                "domain": "http://dlux-token.herokuapp.com",
+                "domain": config.mainAPI,
                 "escrow": true,
                 "escrows": 0,
                 "lastGood": 49994100, //genesisblock
                 "marketingRate": 0,
-                "self": "config.leader",
+                "self": [config.leader],
                 "wins": 0,
-                "yays": 40400
+                "yays": 0
             }
         }
     },
     "pow": {
-        "config.leader": 100000000,
+        [config.leader]: 100000000,
         "t": 100000000 //total in other accounts
     },
     "queue": {
-        "0": "config.leader"
+        "0": [config.leader]
     },
     "runners": {
-        "config.leader": { //config.leader
-            "domain": "https://config.leader.yourcommunity.com/", //config.mainAPI
-            "self": "config.leader" //config.leader
+        [config.leader]: { //config.leader
+            "domain": config.mainAPI, //config.mainAPI
+            "self": config.leader //config.leader
         }
     },
     "stats": {

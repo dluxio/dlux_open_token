@@ -23,7 +23,7 @@ var store = new Pathwise(level('./db', { createIfEmpty: true }));
 const crypto = require('crypto');
 const bs58 = require('bs58');
 const hashFunction = Buffer.from('12', 'hex');
-const VERSION = 'v0.0.5a'
+const VERSION = 'v0.9.0a'
 const api = express()
 var http = require('http').Server(api);
 var escrow = false
@@ -1736,7 +1736,7 @@ function startApp() {
                             r = v[2]
                         if (typeof n.bidRate == 'number') {
                             for (var i = 0; i < q.length; i++) {
-                                if (qe[i] == from) {
+                                if (q[i] == from) {
                                     found = i
                                     break;
                                 }
@@ -1751,12 +1751,16 @@ function startApp() {
                             delete b.marketingRate
                             ops.push({ type: 'del', path: ['runners', from] })
                             ops.push({ type: 'put', path: ['markets', 'node', from], data: b })
+                            ops.push({ type: 'put', path: ['feed', `${json.block_num}:${json.transaction_id}`], data: `@${from}| has signed off their ${config.TOKEN} node` })
+                            store.batch(ops, pc)
+                        } else {
+                            pc[0](pc[2])
                         }
-                        ops.push({ type: 'put', path: ['feed', `${json.block_num}:${json.transaction_id}`], data: `@${from}| has signed off their ${config.TOKEN} node` })
-                        store.batch(ops, pc)
                     })
                     .catch(e => { console.log(e) })
             }).catch(function(e) { console.log(e) })
+        } else {
+            pc[0](pc[2])
         }
     });
 
@@ -1765,18 +1769,17 @@ function startApp() {
         store.get(['markets', 'node', from], function(e, a) {
             if (!e) {
                 var b = a
-                if (from == b.self && b.domain) {
+                if (from == b.self) {
                     b.report = json
-                    delete b.timestamp
-                    delete b.transaction_id
-                    delete b.block_num
+                    delete b.report.timestamp
+                    delete b.report.transaction_id
                     var ops = [
                         { type: 'put', path: ['markets', 'node', from], data: b },
                         { type: 'put', path: ['feed', `${json.block_num}:${json.transaction_id}`], data: `@${from}| Report processed` }
                     ]
                     store.batch(ops, pc)
                 } else {
-                    if (from === config.username && config.NODEDOMAIN) {
+                    if (from === config.username) {
                         var op = { required_auth: json.required_auths, required_posting_auths: json.required_posting_auths, id: json.id, custom_json: json.custom_json }
                         var checker = ['custom_json', op]
                         if (plasma.pending[hashThis(JSON.stringify(checker))]) {
@@ -1795,7 +1798,10 @@ function startApp() {
                         console.log(json.transaction_id + '|' + json.block_num + `:@${from} has posted a spurious report`)
                     }
                 }
-            } else { console.log(e) }
+            } else {
+                pc[0](pc[2])
+                console.log(e)
+            }
         })
     });
 
@@ -1810,6 +1816,8 @@ function startApp() {
                     title: json.title
                 }
             }], pc)
+        } else {
+            pc[0](pc[2])
         }
     })
 
@@ -1825,6 +1833,8 @@ function startApp() {
                     }
                     store.batch(ops, pc)
                 })
+            } else {
+                pc[0](pc[2])
             }
         })
         /* //I don't like the idea of token distribution for reblogs but maybe you do
@@ -1862,7 +1872,7 @@ function startApp() {
         }
         var ops = []
         for (var i = 0; i < filter.length; i++) {
-            if (filter[i].account == config.ben && filter[i].weight > 999) {
+            if (filter[i].account == config.ben && filter[i].weight >= config.delegationWeight) {
                 store.get(['queue'], function(e, a) {
                     if (e) console.log(e)
                     deleteObjs([
@@ -2035,7 +2045,11 @@ function startApp() {
                         ops.push({ type: 'put', path: ['posts', `${json.a}/${json.p}`], data: post })
                         console.log(ops)
                         store.batch(ops, pc)
+                    } else {
+                        pc[0](pc[2])
                     }
+                } else {
+                    pc[0](pc[2])
                 }
             })
             .catch(function(e) {
@@ -2055,6 +2069,8 @@ function startApp() {
                     ops.push({ type: 'put', path: ['posts', `${json.author}/${json.permlink}`], data: post })
                     ops.push({ type: 'put', path: ['feed', `${json.block_num}:${json.transaction_id}`], data: `@${from}| Signed on ${json.author}/${json.permlink}` })
                     store.batch(ops, pc)
+                } else {
+                    pc[0](pc[2])
                 }
             })
             .catch(function(e) {
@@ -2074,6 +2090,8 @@ function startApp() {
                     ops.push({ type: 'put', path: ['posts', `${json.author}/${json.permlink}`], data: post })
                     ops.push({ type: 'put', path: ['feed', `${json.block_num}:${json.transaction_id}`], data: `@${from}| Signed a certificate on ${json.author}/${json.permlink}` })
                     store.batch(ops, pc)
+                } else {
+                    pc[0](pc[2])
                 }
             })
             .catch(function(e) {
@@ -2104,6 +2122,8 @@ function startApp() {
                                 }
                             }
                             break;
+                        } else {
+                            pc[0](pc[2])
                         }
                     }
                     if (!found) {
@@ -2259,10 +2279,10 @@ function startApp() {
                                 }
                                 delete plasma.pending[b]
                             }
-                            store.batch(ops, pc)
                             break;
                         }
                     }
+                    store.batch(ops, pc)
                 } else {
                     console.log(e)
                 }
@@ -3347,7 +3367,7 @@ function dao(num) {
                             var contentRewards = ``,
                                 vo = []
                             if (Object.keys(br).length) {
-                                bucket = parseInt(bals.rc / 100)
+                                bucket = parseInt(bals.rc / 200)
                                 bals.rc = bals.rc - bucket
                                 contentRewards = `#### Top Paid Posts\n`
                                 const compa = bucket
@@ -3524,7 +3544,7 @@ function penalty(node, amount) {
     })
 }
 
-function chronAssign(block, op) {
+function chronAssign(block, op) { //just hash the op dummy... or is order important?
     return new Promise((resolve, reject) => {
         store.someChildren(['chrono'], {
             gte: "" + parseInt(parseInt(block)),

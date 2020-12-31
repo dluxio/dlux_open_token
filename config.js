@@ -51,6 +51,7 @@ const jsonTokenName = 'dlux' //what customJSON in Escrows and sends is looking f
 const leader = 'dlux-io' //Default account to pull state from, will post token 
 const ben = 'dlux-io' //Account where comment benifits trigger token action
 const delegation = 'dlux-io' //account people can delegate to for rewards
+const delegationWeight = 1000 //when to trigger community rewards with bens
 const msaccount = 'dac.escrow' //account controlled by community leaders
 const mainAPI = 'token.dlux.io' //leaders API probably
 const mainFE = 'dlux.io' //frontend for content
@@ -81,6 +82,7 @@ let config = {
     msaccount,
     ben,
     delegation,
+    delegationWeight,
     TOKEN,
     tag,
     mainAPI,
