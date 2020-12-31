@@ -524,6 +524,7 @@ function startWith(hash) {
                         if (!e) {
                             if (hash) {
                                 var cleanState = data[1]
+                                cleanState.stats.icoPrice = 1000
                                 store.put([], cleanState, function(err) {
                                     if (err) {
                                         console.log(err)
@@ -2185,28 +2186,35 @@ function startApp() {
                 Pbal = getPathNum(['balances', json.from]),
                 Pinv = getPathNum(['balances', 'ri'])
             Promise.all([Pstats, Pbal, Pinv]).then(function(v) {
-                stats = v[0], b = v[1], i = v[2], ops = []
+                stats = v[0], //stats 
+                    b = v[1], //balance of purchaser
+                    i = v[2], //inventory
+                    ops = []
                 if (!stats.outOnBlock) {
                     purchase = parseInt(amount / stats.icoPrice * 1000)
                     if (purchase < i) {
                         i -= purchase
                         b += purchase
-                        store.batch([{ type: 'put', path: ['feed', `${json.block_num}:${json.transaction_id}`], data: `@${json.from}| bought ${parseFloat(purchase/1000).toFixed(3)} ${config.TOKEN} with ${parseFloat(amount/1000).toFixed(3)} HIVE` }], pc)
+                        store.batch([{ type: 'put', path: ['feed', `${json.block_num}:${json.transaction_id}`], data: `@${json.from}| bought ${parseFloat(purchase/1000).toFixed(3)} ${config.TOKEN} with ${parseFloat(amount/1000).toFixed(3)} HIVE` },
+                            { type: 'put', path: ['balances', json.from], data: b },
+                            { type: 'put', path: ['balances', 'ri'], data: i }
+                        ], pc)
+
                     } else {
                         b += i
                         const left = purchase - i
                         stats.outOnBlock = json.block_num
                         store.batch([
-                            { type: 'put', path: ['ico', json.block_num, json.from], data: parseInt(amount * left / purchase) },
+                            { type: 'put', path: ['ico', `${json.block_num}`, json.from], data: parseInt(amount * left / purchase) },
                             { type: 'put', path: ['balances', json.from], data: b },
-                            { type: 'put', path: ['balances', 'ri'], data: i },
+                            { type: 'put', path: ['balances', 'ri'], data: 0 },
                             { type: 'put', path: ['stats'], data: stats },
                             { type: 'put', path: ['feed', `${json.block_num}:${json.transaction_id}`], data: `@${json.from}| bought ALL ${parseFloat(parseInt(purchase - left)).toFixed(3)} ${config.TOKEN} with ${parseFloat(parseInt(amount)/1000).toFixed(3)} HIVE. And bid in the over-auction` }
                         ], pc)
                     }
                 } else {
                     store.batch([
-                        { type: 'put', path: ['ico', json.block_num, json.from], data: parseInt(amount) },
+                        { type: 'put', path: ['ico', `${json.block_num}`, json.from], data: parseInt(amount) },
                         { type: 'put', path: ['feed', `${json.block_num}:${json.transaction_id}`], data: `@${json.from}| bought ALL ${parseFloat(parseInt(purchase - left)).toFixed(3)} ${config.TOKEN} with ${parseFloat(parseInt(amount)/1000).toFixed(3)} HIVE. And bid in the over-auction` }
                     ], pc)
                 }

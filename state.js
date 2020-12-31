@@ -73,8 +73,8 @@ module.exports = {
         "marketingRate": 2500,
         "maxBudget": 1000000000,
         "nodeRate": 2000,
-        "outOnBlock": 0,
-        "resteemReward": 10000,
+        "outOnBlock": 0, //amm ICO pricing
+        "reblogReward": 10000, //unused
         "savingsRate": 1000,
         "tokenSupply": 202000000 //your starting token supply
     }
