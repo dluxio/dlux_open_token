@@ -1772,7 +1772,6 @@ function startApp() {
                 if (from == b.self) {
                     b.report = json
                     delete b.report.timestamp
-                    delete b.report.transaction_id
                     var ops = [
                         { type: 'put', path: ['markets', 'node', from], data: b },
                         { type: 'put', path: ['feed', `${json.block_num}:${json.transaction_id}`], data: `@${from}| Report processed` }
@@ -2821,7 +2820,7 @@ function tally(num) {
                     //count agreements and make the runners list, update market rate for node services
                     if (num > 30900000) {
                         var mint = parseInt(stats.tokenSupply / stats.interestRate)
-                        stats.tokenSupply += mint
+                        stats.tokenSupply += mint //collateral burns should also adjust this number
                         rbal += mint
                     }
                     console.log(runners)
@@ -2832,7 +2831,7 @@ function tally(num) {
                         { type: 'put', path: ['markets', 'node'], data: nodes },
                         { type: 'put', path: ['balances', 'ra'], data: rbal }
                     ], [resolve, reject])
-                    if (consensus && (consensus != plasma.hashLastIBlock || consensus != nodes[config.username].report.hash) && processor.isStreaming()) {
+                    if (consensus && (consensus != plasma.hashLastIBlock || consensus != nodes[config.username].report.hash) && processor.isStreaming()) { //this doesn't seem to be catching failures
                         exit(consensus)
                         var errors = ['failed Consensus']
                         if (VERSION != nodes[node].report.version) {
