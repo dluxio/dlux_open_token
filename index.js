@@ -654,6 +654,7 @@ function startApp() {
                     }
                     Promise.all(assigns)
                         .then(a => {
+                            var newdowns = {}
                             for (d in a) {
                                 newdowns[d] = weekly
                             }
