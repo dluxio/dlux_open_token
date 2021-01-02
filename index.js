@@ -36,12 +36,6 @@ var client = new hive.Client(config.clientURL);
 var processor;
 var live_dex = {}, //for feedback, unused currently
     pa = []
-    /* old hashing function
-    const Unixfs = require('ipfs-unixfs')
-    const {
-        DAGNode
-    } = require('ipld-dag-pb')
-    */
 var recents = []
     //HIVE API CODE
 const { ChainTypes, makeBitMaskFilter, ops } = require('@hiveio/hive-js/lib/auth/serializer')
@@ -51,31 +45,18 @@ const walletOperationsBitmask = makeBitMaskFilter([
     ])
     //startWith(config.engineCrank) //for testing and replaying
 dynStart(config.leader)
-    /*
-    function hashThis2(datum) {
-        const data = Buffer.from(datum, 'ascii')
-        const unixFs = new Unixfs('file', data)
-        DAGNode.create(unixFs.marshal(), (err, dagNode) => {
-            if (err) {
-                return console.error(err)
-            }
-            console.log(hashThis2(JSON.stringify(dagNode)))
-            return hashThis2(JSON.stringify(dagNode)) // Qmf412jQZiuVUtdgnB36FXFX7xg5V6KEbSJ4dpQuhkLyfD
-        })
-    }
-    */
 
 // Cycle through good public IPFS gateways
+/*
 var cycle = 0
-    /*
-    function cycleipfs(num) {
-        //ipfs = new IPFS({ host: state.gateways[num], port: 5001, protocol: 'https' });
-    }
-    */
-    /*
+function cycleipfs(num) {
+    //ipfs = new IPFS({ host: state.gateways[num], port: 5001, protocol: 'https' });
+}
+*/
+/*
 if (config.active && config.NODEDOMAIN) {
     escrow = true
-    dhive = new hive.Client(config.clientURL)
+    dhive = new hive.Client(config.clientURL) //no reason to also use dhive?
 }
 */
 
@@ -470,7 +451,7 @@ function cycleAPI() {
     }
     config.clientURL = config.clients[c + 1]
     client = new hive.Client(config.clientURL)
-    exit(plasma.consensus)
+    exit(plasma.hashLastIBlock)
 }
 
 //pulls the latest activity of an account to find the last state put in by an account to dynamically start the node. 
@@ -524,6 +505,27 @@ function startWith(hash) {
                         if (!e) {
                             if (hash) {
                                 var cleanState = data[1]
+                                var supply = 0
+                                for (bal in cleanState.balances) {
+                                    supply += cleanState.balances[bal]
+                                }
+                                for (user in cleanState.contracts) {
+                                    for (contract in cleanState.contracts[user]) {
+                                        supply += cleanState.contracts[user][contract].amount
+                                    }
+                                }
+                                for (user in cleanState.col) {
+                                    supply += cleanState.col[user]
+                                }
+                                supply += cleanState.pow.t
+                                cleanState.stats.tokenSupply = supply
+                                for (node in cleanState.markets.node) {
+                                    delete cleanState.markets.node[node].report.timestamp
+                                    delete cleanState.markets.node[node].strikes
+                                    delete cleanState.markets.node[node].burned
+                                    delete cleanState.markets.node[node].report.agreements
+                                    delete cleanState.markets.node[node].report.feed
+                                }
                                 store.put([], cleanState, function(err) {
                                     if (err) {
                                         console.log(err)
@@ -2817,13 +2819,9 @@ function tally(num) {
                     for (var node in runners) {
                         nodes[node].wins++
                     }
-                    //count agreements and make the runners list, update market rate for node services
-                    if (num > 30900000) {
-                        var mint = parseInt(stats.tokenSupply / stats.interestRate)
-                        stats.tokenSupply += mint //collateral burns should also adjust this number
-                        rbal += mint
-                    }
-                    console.log(runners)
+                    const mint = parseInt(stats.tokenSupply / stats.interestRate)
+                    stats.tokenSupply += mint
+                    rbal += mint
                     store.batch([
                         { type: 'put', path: ['stats'], data: stats },
                         { type: 'put', path: ['queue'], data: queue },
@@ -2853,10 +2851,13 @@ function enforce(agent, txid, pointer, block_num) { //checks status of required 
     return new Promise((resolve, reject) => {
         Pop = getPathObj(['escrow', agent, txid])
         Ppointer = getPathObj(['escrow', pointer.id, pointer.acc])
-        Promise.all([Pop, Ppointer])
+        PtokenSupply = getPathNum(['stats', 'tokenSupply'])
+        PtokenSupply = getPathNum(['balances', 'tokenSupply'])
+        Promise.all([Pop, Ppointer, PtokenSupply])
             .then(r => {
                 a = r[0]
                 p = r[1]
+                s = r[2]
                 console.log('enforce:', { a })
                 if (Object.keys(a).length) {
                     let op = txid.split(":")[1],
@@ -2870,13 +2871,10 @@ function enforce(agent, txid, pointer, block_num) { //checks status of required 
                                 case 'denyA':
                                     getPathObj(['escrow', '.' + c.to, `${c.from}/${c.escrow_id}:deny`])
                                         .then(toOp => {
-                                            ops.push({ type: 'put', path: ['escrow', c.to, `${c.from}/${c.escrow_id}:deny`], data: toOp })
-                                            ops.push({ type: 'del', path: ['escrow', c.agent, `${c.from}/${c.escrow_id}:deny`] })
-                                            ops.push({ type: 'del', path: ['escrow', '.' + c.to, `${c.from}/${c.escrow_id}:deny`] })
                                             chronAssign(json.block_num + 200, { op: 'deny', agent: c.to, txid: `${ c.from }/${c.escrow_id}:deny`, acc: c.from, id: c.escrow_id })
                                             penalty(c.agent, c.coll)
                                                 .then(col => {
-                                                    c.recovered = col
+                                                    c.recovered = col //token supply gets weird here... should the confiscated tokens go toward content rewards or somewhere easier to math?
                                                     ops.push({ type: 'put', path: ['escrow', c.to, `${c.from}/${c.escrow_id}:deny`], data: toOp })
                                                     ops.push({ type: 'del', path: ['escrow', c.agent, `${c.from}/${c.escrow_id}:deny`] })
                                                     ops.push({ type: 'del', path: ['escrow', '.' + c.to, `${c.from}/${c.escrow_id}:deny`] })
@@ -2912,6 +2910,7 @@ function enforce(agent, txid, pointer, block_num) { //checks status of required 
                                     ops.push({ type: 'del', path: ['escrow', agent, txid] })
                                     ops.push({ type: 'del', path: ['chrono', c.expire_path] })
                                     ops.push({ type: 'del', path: ['contracts', co, id] })
+                                    ops.push({ type: 'put', path: ['stats', 'tokenSupply'], data: s - parseInt(c.escrow / 4) })
                                     add(c.agent, parseInt(c.escrow / 2)) //good node gets back
                                     add(c.eo, parseInt(c.escrow / 4)) //originator gets covered
                                     addCol(c.agent, -parseInt(c.escrow / 2)) //trackers get emptied
@@ -2924,6 +2923,7 @@ function enforce(agent, txid, pointer, block_num) { //checks status of required 
                                     ops.push({ type: 'del', path: ['escrow', agent, txid] })
                                     ops.push({ type: 'del', path: ['chrono', c.expire_path] })
                                     ops.push({ type: 'del', path: ['contracts', co, id] })
+                                    ops.push({ type: 'put', path: ['stats', 'tokenSupply'], data: s - parseInt(c.escrow / 4) })
                                     add(c.agent, parseInt(c.escrow / 2))
                                     addCol(c.agent, -parseInt(c.escrow / 2))
                                     addCol(c.tagent, -parseInt(c.escrow / 2))
@@ -2936,6 +2936,7 @@ function enforce(agent, txid, pointer, block_num) { //checks status of required 
                                     ops.push({ type: 'del', path: ['escrow', agent, txid] })
                                     ops.push({ type: 'del', path: ['chrono', c.expire_path] })
                                     ops.push({ type: 'del', path: ['contracts', co, id] })
+                                    ops.push({ type: 'put', path: ['stats', 'tokenSupply'], data: s - parseInt(c.escrow / 4) })
                                     add(c.tagent, parseInt(c.escrow / 2))
                                     addCol(c.agent, -parseInt(c.escrow / 2))
                                     addCol(c.tagent, -parseInt(c.escrow / 2))
@@ -2948,6 +2949,7 @@ function enforce(agent, txid, pointer, block_num) { //checks status of required 
                                     ops.push({ type: 'del', path: ['escrow', agent, txid] })
                                     ops.push({ type: 'del', path: ['chrono', c.expire_path] })
                                     ops.push({ type: 'del', path: ['contracts', co, id] })
+                                    ops.push({ type: 'put', path: ['stats', 'tokenSupply'], data: s - parseInt(c.escrow / 4) })
                                     add(c.agent, parseInt(c.escrow / 2))
                                     add(c.eo, parseInt(c.escrow / 4))
                                     addCol(c.agent, -parseInt(c.escrow / 2))
@@ -2960,6 +2962,7 @@ function enforce(agent, txid, pointer, block_num) { //checks status of required 
                                     ops.push({ type: 'del', path: ['escrow', agent, txid] })
                                     ops.push({ type: 'del', path: ['chrono', c.expire_path] })
                                     ops.push({ type: 'del', path: ['contracts', co, id] })
+                                    ops.push({ type: 'put', path: ['stats', 'tokenSupply'], data: s - parseInt(c.escrow / 4) })
                                     add(c.tagent, parseInt(c.escrow / 2))
                                     add(c.eo, parseInt(c.escrow / 4))
                                     addCol(c.agent, -parseInt(c.escrow / 2))
@@ -2972,6 +2975,7 @@ function enforce(agent, txid, pointer, block_num) { //checks status of required 
                                     ops.push({ type: 'del', path: ['escrow', agent, txid] })
                                     ops.push({ type: 'del', path: ['chrono', c.expire_path] })
                                     ops.push({ type: 'del', path: ['contracts', co, id] })
+                                    ops.push({ type: 'put', path: ['stats', 'tokenSupply'], data: s - parseInt(c.escrow / 4) })
                                     add(c.tagent, parseInt(c.escrow / 2))
                                     add(c.eo, parseInt(c.escrow / 4))
                                     deletePointer(pointer.id, pointer.acc)
@@ -2982,6 +2986,7 @@ function enforce(agent, txid, pointer, block_num) { //checks status of required 
                                     ops.push({ type: 'del', path: ['escrow', agent, txid] })
                                     ops.push({ type: 'del', path: ['chrono', c.expire_path] })
                                     ops.push({ type: 'del', path: ['contracts', co, id] })
+                                    ops.push({ type: 'put', path: ['stats', 'tokenSupply'], data: s - parseInt(c.escrow / 2) })
                                     add(c.eo, parseInt(c.escrow / 2))
                                     addCol(c.tagent, -parseInt(c.escrow))
                                     deletePointer(pointer.id, pointer.acc)
@@ -2992,6 +2997,7 @@ function enforce(agent, txid, pointer, block_num) { //checks status of required 
                                     ops.push({ type: 'del', path: ['escrow', agent, txid] })
                                     ops.push({ type: 'del', path: ['chrono', c.expire_path] })
                                     ops.push({ type: 'del', path: ['contracts', co, id] })
+                                    ops.push({ type: 'put', path: ['stats', 'tokenSupply'], data: s - parseInt(c.escrow / 4) })
                                     add(c.agent, parseInt(c.escrow / 2))
                                     add(c.eo, parseInt(c.escrow / 4))
                                     addCol(c.agent, -parseInt(c.escrow / 2))
@@ -3592,13 +3598,15 @@ function ipfsSaveState(blocknum, hashable) {
             console.log(current + `:Saved:  ${hash}`)
         } else {
             console.log({
-                cycle
+                //cycle
             }, 'IPFS Error', err)
+            /*
             cycleipfs(cycle++)
             if (cycle >= 25) {
                 cycle = 0;
                 return;
             }
+            */
         }
     })
 };
@@ -3690,7 +3698,7 @@ function deleteObjs(paths) {
     })
 }
 
-function deletePointer(escrowID, user) {
+function deletePointer(escrowID, user) { //escrow IDs are unique to user, this checks for a collision before deleting the whole pointer
     return new Promise((resolve, reject) => {
         store.get(['escrow', escrowID.toString()], function(e, a) {
             if (!e) {
@@ -3712,7 +3720,7 @@ function deletePointer(escrowID, user) {
     })
 }
 
-function nodeUpdate(node, op, val) {
+function nodeUpdate(node, op, val) { //for keeping node stats
     return new Promise((resolve, reject) => {
         store.get(['markets', 'node', node], function(e, a) {
             if (!e) {
@@ -3722,11 +3730,11 @@ function nodeUpdate(node, op, val) {
                 switch (op) {
                     case 'strike':
                         a.strikes++
-                            a.burned += val
+                        a.burned += val
                         break;
                     case 'ops':
                         a.escrows++
-                            a.moved += val
+                        a.moved += val
                         break;
                     default:
                 }
