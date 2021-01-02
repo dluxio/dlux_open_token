@@ -635,8 +635,8 @@ function startApp() {
         Promise.all([powp, powd])
             .then(o => {
                 let p = typeof o[0] != 'number' ? 0 : o[0],
-                    downs = 0[1] || {}
-                ops = [],
+                    downs = 0[1] || {},
+                    ops = [],
                     assigns = []
                 if (typeof amount == 'number' && amount >= 0 && p >= amount && active) {
                     var odd = parseInt(amount % 13),
