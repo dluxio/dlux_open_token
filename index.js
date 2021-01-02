@@ -505,27 +505,6 @@ function startWith(hash) {
                         if (!e) {
                             if (hash) {
                                 var cleanState = data[1]
-                                var supply = 0
-                                for (bal in cleanState.balances) {
-                                    supply += cleanState.balances[bal]
-                                }
-                                for (user in cleanState.contracts) {
-                                    for (contract in cleanState.contracts[user]) {
-                                        supply += cleanState.contracts[user][contract].amount
-                                    }
-                                }
-                                for (user in cleanState.col) {
-                                    supply += cleanState.col[user]
-                                }
-                                supply += cleanState.pow.t
-                                cleanState.stats.tokenSupply = supply
-                                for (node in cleanState.markets.node) {
-                                    delete cleanState.markets.node[node].report.timestamp
-                                    delete cleanState.markets.node[node].strikes
-                                    delete cleanState.markets.node[node].burned
-                                    delete cleanState.markets.node[node].report.agreements
-                                    delete cleanState.markets.node[node].report.feed
-                                }
                                 store.put([], cleanState, function(err) {
                                     if (err) {
                                         console.log(err)
@@ -533,6 +512,20 @@ function startWith(hash) {
                                         store.get(['stats', 'lastBlock'], function(error, returns) {
                                             if (!error) {
                                                 console.log(`State Check:  ${returns}\nAccount: ${config.username}\nKey: ${config.active.substr(0,3)}...`)
+                                                var supply = 0
+                                                for (bal in cleanState.balances) {
+                                                    supply += cleanState.balances[bal]
+                                                }
+                                                for (user in cleanState.contracts) {
+                                                    for (contract in cleanState.contracts[user]) {
+                                                        supply += cleanState.contracts[user][contract].amount
+                                                    }
+                                                }
+                                                for (user in cleanState.col) {
+                                                    supply += cleanState.col[user]
+                                                }
+                                                supply += cleanState.pow.t
+                                                console.log(`supply check:state:${cleanState.stats.tokenSupply} vs check: ${supply}`)
                                             }
                                         })
                                         startApp()
