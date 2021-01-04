@@ -457,6 +457,33 @@ function startApp() {
 
     });
 
+    processor.on('gov_up', function(json, from, active, pc) {
+        var amount = parseInt(json.amount),
+            lpp = getPathNum(['balances', from]),
+            tpowp = getPathNum(['gov', 't']),
+            powp = getPathNum(['gov', from])
+
+        Promise.all([lpp, tpowp, powp])
+            .then(bals => {
+                let lb = bals[0],
+                    tpow = bals[1],
+                    pow = bals[2],
+                    lbal = typeof lb != 'number' ? 0 : lb,
+                    pbal = typeof pow != 'number' ? 0 : pow,
+                    ops = []
+                if (amount < lbal && active) {
+                    ops.push({ type: 'put', path: ['balances', from], data: lbal - amount })
+                    ops.push({ type: 'put', path: ['gov', from], data: pbal + amount })
+                    ops.push({ type: 'put', path: ['gov', 't'], data: tpow + amount })
+                    ops.push({ type: 'put', path: ['feed', `${json.block_num}:${json.transaction_id}`], data: `@${from}| Powered up ${parseFloat(json.amount/1000).toFixed(3)} ${config.TOKEN} to Governance` })
+                } else {
+                    ops.push({ type: 'put', path: ['feed', `${json.block_num}:${json.transaction_id}`], data: `@${from}| Invalid power up to Governance` })
+                }
+                store.batch(ops, pc)
+            })
+            .catch(e => { console.log(e) })
+
+    });
     // power down tokens - untested
     processor.on('power_down', function(json, from, active, pc) {
         var amount = parseInt(json.amount),
@@ -469,14 +496,14 @@ function startApp() {
                     ops = [],
                     assigns = []
                 if (typeof amount == 'number' && amount >= 0 && p >= amount && active) {
-                    var odd = parseInt(amount % 13),
-                        weekly = parseInt(amount / 13)
-                    for (var i = 0; i < 13; i++) {
-                        if (i == 12) {
+                    var odd = parseInt(amount % 4),
+                        weekly = parseInt(amount / 4)
+                    for (var i = 0; i < 4; i++) {
+                        if (i == 3) {
                             weekly += odd
                         }
-                        assigns.push(chronAssign(parseInt(json.block_num + (200000 * (i + 1))), {
-                            block: parseInt(json.block_num + (200000 * (i + 1))),
+                        assigns.push(chronAssign(parseInt(json.block_num + (201600 * (i + 1))), {
+                            block: parseInt(json.block_num + (201600 * (i + 1))),
                             op: 'power_down',
                             amount: weekly,
                             by: from
@@ -513,6 +540,63 @@ function startApp() {
 
     })
 
+    // power down tokens - untested
+    processor.on('gov_down', function(json, from, active, pc) {
+        var amount = parseInt(json.amount),
+            powp = getPathNum(['gov', from])
+        powd = getPathObj(['govd', from])
+        Promise.all([powp, powd])
+            .then(o => {
+                let p = typeof o[0] != 'number' ? 0 : o[0],
+                    downs = 0[1] || {},
+                    ops = [],
+                    assigns = []
+                if (typeof amount == 'number' && amount >= 0 && p >= amount && active) {
+                    var odd = parseInt(amount % 4),
+                        weekly = parseInt(amount / 4)
+                    for (var i = 0; i < 4; i++) {
+                        if (i == 3) {
+                            weekly += odd
+                        }
+                        assigns.push(chronAssign(parseInt(json.block_num + (201600 * (i + 1))), {
+                            block: parseInt(json.block_num + (201600 * (i + 1))),
+                            op: 'gov_down',
+                            amount: weekly,
+                            by: from
+                        }))
+                    }
+                    Promise.all(assigns)
+                        .then(a => {
+                            var newdowns = {}
+                            for (d in a) {
+                                newdowns[d] = a[d]
+                            }
+
+                            for (i in downs) {
+                                ops.push({ type: 'del', path: ['chrono', downs[i]] })
+                            }
+                            ops.push({ type: 'put', path: ['govd', from], data: newdowns })
+
+                            ops.push({ type: 'put', path: ['feed', `${json.block_num}:${json.transaction_id}`], data: `@${from}| Orders a power down of ${parseFloat(amount/1000).toFixed(3)} ${config.TOKEN} from Governance` })
+                            store.batch(ops, pc)
+                        })
+                } else if (typeof amount == 'number' && amount == 0 && active) {
+                    for (i in downs) {
+                        ops.push({ type: 'del', path: ['chrono', downs[i]] })
+                    }
+                    ops.push({ type: 'put', path: ['feed', `${json.block_num}:${json.transaction_id}`], data: `@${from}| Canceled Gov Power Down` })
+                    store.batch(ops, pc)
+                } else {
+                    ops.push({ type: 'put', path: ['feed', `${json.block_num}:${json.transaction_id}`], data: `@${from}| Invalid Gov Power Down` })
+                    store.batch(ops, pc)
+                }
+
+            })
+            .catch(e => { console.log(e) })
+
+    })
+
+    /*
     // vote on content with powered token
     processor.on('vote_content', function(json, from, active, pc) {
         var powPromise = getPathNum(['pow', from]),
@@ -555,7 +639,7 @@ function startApp() {
                 console.log(e)
             });
     });
-
+*/
 
     processor.on('dex_buy', function(json, from, active, pc) {
         let Pbal = getPathNum(['balances', from]),
@@ -1589,25 +1673,57 @@ function startApp() {
             */
     });
 
-    //inflation is rewarded to delegators to the config.delegation account, could be built for multi-sig account as well
-    //multi-sig delegation is more secure than holding HP or liquid hive for multi-sig
-    processor.onOperation('delegate_vesting_shares', function(json, pc) { //grab posts to reward
-        var ops = []
-        const vests = parseInt(parseFloat(json.vesting_shares) * 1000000)
-        if (json.delegatee == config.delegation && vests) {
-            ops.push({ type: 'put', path: ['delegations', json.delegator], data: vests })
-            ops.push({ type: 'put', path: ['feed', `${json.block_num}:${json.transaction_id}`], data: `@${json.delegator}| has delegated ${vests} vests to @${config.delegation}` })
-        } else if (json.delegatee == config.delegation && !vests) {
-            ops.push({ type: 'del', path: ['delegations', json.delegator] })
-            ops.push({ type: 'put', path: ['feed', `${json.block_num}:${json.transaction_id}`], data: `@${json.delegator}| has removed delegation to @${config.delegation}` })
+    processor.onOperation('comment', function(json, pc) { //grab posts to reward
+        let meta = JSON.parse(json.json_metadata)
+        let leoPost = false
+        for (tag in meta.tags) {
+            if (tag == 'hive-167922') {
+                leoPost = true
+            } else if (tag == 'leofinance') {
+                leoPost = true
+            } else if (tag == 'leo') {
+                leoPost = true
+            }
         }
-        store.batch(ops, pc)
+        if (leoPost) {
+            console.log(json)
+        } else {
+            pc[0](pc[2])
+        }
+        /*
+        if (json.author == config.leader) {
+            store.get(['escrow', json.author], function(e, a) {
+                if (!e) {
+                    var ops = []
+                    for (b in a) {
+                        if (a[b][1].permlink == json.permlink && b == 'comment') {
+                            ops.push({ type: 'del', path: ['escrow', json.author, b] })
+                            if (json.author == config.username) {
+                                for (var i = 0; i < NodeOps.length; i++) {
+                                    if (NodeOps[i][1][1].permlink == json.permlink && NodeOps[i][1][0] == 'comment') {
+                                        NodeOps.splice(i, 1)
+                                    }
+                                }
+                                delete plasma.pending[b]
+                            }
+                            break;
+                        }
+                    }
+                    store.batch(ops, pc)
+                } else {
+                    console.log(e)
+                }
+            })
+        } else {
+            pc[0](pc[2])
+        }
+        */
     });
 
-    // layer 1 proof of brain voting
-    processor.onOperation('vote', function(json, pc) {
+    // layer 1 proof of brain voting, layer 2 PoB voting
+    processor.onOperation('vote', function(json, pc) { //rework more than just the vote remover.
         if (json.voter == config.leader) {
-            console.log('the vote')
+            console.log('Hive Vote')
             store.get(['escrow', json.voter], function(e, a) {
                 if (!e) {
                     var found = 0
@@ -1641,7 +1757,22 @@ function startApp() {
         } else {
             pc[0](pc[2])
         }
-    })
+    });
+
+    //inflation is rewarded to delegators to the config.delegation account, could be built for multi-sig account as well
+    //multi-sig delegation is more secure than holding HP or liquid hive for multi-sig
+    processor.onOperation('delegate_vesting_shares', function(json, pc) { //grab posts to reward
+        var ops = []
+        const vests = parseInt(parseFloat(json.vesting_shares) * 1000000)
+        if (json.delegatee == config.delegation && vests) {
+            ops.push({ type: 'put', path: ['delegations', json.delegator], data: vests })
+            ops.push({ type: 'put', path: ['feed', `${json.block_num}:${json.transaction_id}`], data: `@${json.delegator}| has delegated ${vests} vests to @${config.delegation}` })
+        } else if (json.delegatee == config.delegation && !vests) {
+            ops.push({ type: 'del', path: ['delegations', json.delegator] })
+            ops.push({ type: 'put', path: ['feed', `${json.block_num}:${json.transaction_id}`], data: `@${json.delegator}| has removed delegation to @${config.delegation}` })
+        }
+        store.batch(ops, pc)
+    });
 
     // join the node network
     processor.on('node_add', function(json, from, active, pc) {
@@ -2092,35 +2223,6 @@ function startApp() {
     });
     */
 
-    processor.onOperation('comment', function(json, pc) { //grab posts to reward
-        if (json.author == config.leader) {
-            store.get(['escrow', json.author], function(e, a) {
-                if (!e) {
-                    var ops = []
-                    for (b in a) {
-                        if (a[b][1].permlink == json.permlink && b == 'comment') {
-                            ops.push({ type: 'del', path: ['escrow', json.author, b] })
-                            if (json.author == config.username) {
-                                for (var i = 0; i < NodeOps.length; i++) {
-                                    if (NodeOps[i][1][1].permlink == json.permlink && NodeOps[i][1][0] == 'comment') {
-                                        NodeOps.splice(i, 1)
-                                    }
-                                }
-                                delete plasma.pending[b]
-                            }
-                            break;
-                        }
-                    }
-                    store.batch(ops, pc)
-                } else {
-                    console.log(e)
-                }
-            })
-        } else {
-            pc[0](pc[2])
-        }
-    });
-
     //multi-sig ops
     /*
     processor.onOperation('account_update', function(json, pc) { //ensure proper keys are on record for DAO accounts
@@ -2247,7 +2349,7 @@ function startApp() {
                                 let lbp = getPathNum(['balances', from]),
                                     tpowp = getPathNum(['pow', 't']),
                                     powp = getPathNum(['pow', from])
-                                promises.push(powerDownOp([lbp, tpowp, powp], from, delkey, num, chrops[i].split(':')[1], b))
+                                promises.push(powerDownOp([lbp, tpowp, powp], from, delKey, num, chrops[i].split(':')[1], b))
 
                                 function powerDownOp(promies, from, delkey, num, id, b) {
                                     return new Promise((resolve, reject) => {
@@ -2260,7 +2362,33 @@ function startApp() {
                                                 ops.push({ type: 'put', path: ['pow', from], data: pbal - b.amount })
                                                 ops.push({ type: 'put', path: ['pow', 't'], data: tpow - b.amount })
                                                 ops.push({ type: 'put', path: ['feed', `${num}:vop_${id}`], data: `@${b.by}| powered down ${parseFloat(b.amount/1000).toFixed(3)} ${config.TOKEN}` })
-                                                ops.push({ type: 'del', path: ['chrono', delKey] })
+                                                ops.push({ type: 'del', path: ['chrono', delkey] })
+                                                ops.push({ type: 'del', path: ['powd', b.by, delkey] })
+                                                store.batch(ops, [resolve, reject])
+                                            })
+                                            .catch(e => { console.log(e) })
+                                    })
+                                }
+                                break;
+                            case 'gov_down': //needs work and testing
+                                let lbp = getPathNum(['balances', from]),
+                                    tpowp = getPathNum(['gov', 't']),
+                                    powp = getPathNum(['gov', from])
+                                promises.push(govDownOp([lbp, tpowp, powp], from, delKey, num, chrops[i].split(':')[1], b))
+
+                                function govDownOp(promies, from, delkey, num, id, b) {
+                                    return new Promise((resolve, reject) => {
+                                        Promise.all(promies)
+                                            .then(bals => {
+                                                let lbal = bals[0],
+                                                    tpow = bals[1],
+                                                    pbal = bals[2]
+                                                ops.push({ type: 'put', path: ['balances', from], data: lbal + b.amount })
+                                                ops.push({ type: 'put', path: ['gov', from], data: pbal - b.amount })
+                                                ops.push({ type: 'put', path: ['gov', 't'], data: tpow - b.amount })
+                                                ops.push({ type: 'put', path: ['feed', `${num}:vop_${id}`], data: `@${b.by}| powered down ${parseFloat(b.amount/1000).toFixed(3)} ${config.TOKEN} from Governance` })
+                                                ops.push({ type: 'del', path: ['chrono', delkey] })
+                                                ops.push({ type: 'del', path: ['govd', b.by, delkey] })
                                                 store.batch(ops, [resolve, reject])
                                             })
                                             .catch(e => { console.log(e) })
