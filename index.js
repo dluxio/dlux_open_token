@@ -2823,6 +2823,8 @@ function tally(num) {
                         { type: 'put', path: ['markets', 'node'], data: nodes },
                         { type: 'put', path: ['balances', 'ra'], data: rbal }
                     ], [resolve, reject])
+                    console.log({ "con && plasma": consensus != plasma.hashLastIBlock, "con && report": consensus != nodes[config.username].report.hash, "Processor, streaming": processor.isStreaming() })
+
                     if (consensus && (consensus != plasma.hashLastIBlock || consensus != nodes[config.username].report.hash) && processor.isStreaming()) { //this doesn't seem to be catching failures
                         exit(consensus)
                         var errors = ['failed Consensus']
