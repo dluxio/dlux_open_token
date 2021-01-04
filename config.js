@@ -45,18 +45,18 @@ const clients = [
 //TOKEN CONFIGS -- ALL COMMUNITY RUNNERS NEED THESE SAME VALUES
 const starting_block = 49988008; //from what block does your token start
 const prefix = 'dlux_' //Community token name for Custom Json IDs
-const TOKEN = 'DLUX' //Token name
-const tag = 'dlux' //the fe.com/<tag>/@<leader>/<permlink>
-const jsonTokenName = 'dlux' //what customJSON in Escrows and sends is looking for
-const leader = 'dlux-io' //Default account to pull state from, will post token 
-const ben = 'dlux-io' //Account where comment benifits trigger token action
-const delegation = 'dlux-io' //account people can delegate to for rewards
+const TOKEN = 'TLEO' //Token name
+const tag = 'tleo' //the fe.com/<tag>/@<leader>/<permlink>
+const jsonTokenName = 'tleo' //what customJSON in Escrows and sends is looking for
+const leader = 'test-leo' //Default account to pull state from, will post token 
+const ben = 'test-leo' //Account where comment benifits trigger token action
+const delegation = 'test-leo' //account people can delegate to for rewards
 const delegationWeight = 1000 //when to trigger community rewards with bens
-const msaccount = 'dac.escrow' //account controlled by community leaders
-const mainAPI = 'token.dlux.io' //leaders API probably
-const mainFE = 'dlux.io' //frontend for content
-const mainIPFS = 'a.ipfs.dlux.io' //IPFS service
-const mainICO = 'robotolux' //Account collecting ICO HIVE
+const msaccount = 'dac.tleo' //account controlled by community leaders
+const mainAPI = 'token-test.leofiniance.io' //leaders API probably
+const mainFE = 'leofiniance.io' //frontend for content
+const mainIPFS = 'leofiniance.io' //IPFS service
+const mainICO = 'test-leo' //Account collecting ICO HIVE
 
 //Aditionally on your branch, look closely at dao, this is where tokenomics happen and custom status posts are made
 

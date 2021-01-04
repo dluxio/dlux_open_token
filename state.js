@@ -2,16 +2,12 @@ const config = require('./config');
 module.exports = {
     "balances": {
         [config.leader]: 1000000,
-        "community.member": 1000000, //additional distributions
-        "ra": 0,
-        "rb": 0,
-        "rc": 0,
-        "rd": 0,
-        "re": 0,
-        "ri": 100000000, //in ICO account for fixed price
-        "rm": 0,
-        "rn": 0,
-        "rr": 0
+        "disregardfiat": 1000000, //additional distributions
+        "it": 0, //inflation total
+        "ib": 0, //inflation bounties
+        "ic": 0, //inflation curation
+        "id": 0, //inflation delegation
+        "in": 0 //inflation nodes
     },
     "delegations": {}, //these need to be preloaded if already on account before starting block
     "dex": {
@@ -26,7 +22,8 @@ module.exports = {
         "node": {
             [config.leader]: {
                 "attempts": 0,
-                "bidRate": 2000,
+                "bidRate": 1500,
+                "geyserRate": 1500,
                 "contracts": 0,
                 "domain": config.mainAPI,
                 "escrow": true,
@@ -55,28 +52,22 @@ module.exports = {
     "stats": {
         "HbdVWMA": {
             "block": 49747169,
-            "rate": "0.12500", //set this at ICO price
+            "rate": "0.330000", //set this at ICO price
             "vol": 1000
         },
         "HiveVWMA": {
             "block": 49936405,
-            "rate": "0.100000", //set this at ICO price
+            "rate": "3.00000", //set this at ICO price
             "vol": 1470
         },
-        "IPFSRate": 2000,
-        "budgetRate": 2000,
-        "currationRate": 2000,
-        "delegationRate": 2000,
+        "bountyRate": 250, //for DLF
+        "currationRate": 7000, //for content
+        "delegationRate": 250, //for delegators
+        "geyserRate": 1000, //for liquidity pool
         "hashLastIBlock": "Genesis",
-        "icoPrice": 100, //in millihive
-        "interestRate": 2100000, //mints 1 millitoken per this many millitokens in your DAO period
         "lastBlock": "",
-        "marketingRate": 2500,
-        "maxBudget": 1000000000,
-        "nodeRate": 2000,
-        "outOnBlock": 0, //amm ICO pricing
-        "reblogReward": 10000, //unused
-        "savingsRate": 1000,
-        "tokenSupply": 202000000 //your starting token supply
+        "nodeRate": 1500, //for miners
+        "tokenSupply": 6804000000, //your starting token supply
+        "maxSupply": 1000000000000 //
     }
 }

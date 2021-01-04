@@ -46,20 +46,6 @@ const walletOperationsBitmask = makeBitMaskFilter([
     //startWith('QmYewTaf2YW2oQ2hpVoEfrBBZFzKhxUMtBf4arDK8NCCwd') //for testing and replaying
 dynStart(config.leader)
 
-// Cycle through good public IPFS gateways
-/*
-var cycle = 0
-function cycleipfs(num) {
-    //ipfs = new IPFS({ host: state.gateways[num], port: 5001, protocol: 'https' });
-}
-*/
-/*
-if (config.active && config.NODEDOMAIN) {
-    escrow = true
-    dhive = new hive.Client(config.clientURL) //no reason to also use dhive?
-}
-*/
-
 //heroku force https
 var https_redirect = function(req, res, next) {
     if (process.env.NODE_ENV === 'production') {
@@ -85,162 +71,6 @@ api.get('/', (req, res, next) => {
             }, null, 3))
     });
 });
-
-// Some HIVE APi is wrapped here to support a stateless frontend built on the cheap with dreamweaver
-// None of these functions are required for token functionality and should likely be removed from the community version
-//
-//
-api.get('/getwrap', (req, res, next) => {
-    let method = req.query.method || 'condenser_api.get_discussions_by_blog'
-    method.replace('%27', '')
-    let iparams = JSON.parse(decodeURIcomponent((req.query.params.replace("%27", '')).replace('%2522', '%22')))
-    switch (method) {
-        case 'tags_api.get_discussions_by_blog':
-        default:
-            iparams = {
-                tag: iparams[0]
-            }
-    }
-    let params = iparams || { "tag": "robotolux" }
-    res.setHeader('Content-Type', 'application/json')
-    let body = {
-        jsonrpc: "2.0",
-        method,
-        params,
-        id: 1
-    }
-    fetch(config.clientURL, {
-            body: JSON.stringify(body),
-            headers: {
-                "Content-Type": "application/x-www-form-urlencoded"
-            },
-            method: "POST"
-        })
-        .then(j => j.json())
-        .then(r => {
-            res.send(JSON.stringify(r, null, 3))
-        })
-});
-
-api.get('/getauthorpic/:un', (req, res, next) => {
-    let un = req.params.un || ''
-    let body = {
-        jsonrpc: "2.0",
-        method: 'condenser_api.get_accounts',
-        params: [
-            [un]
-        ],
-        id: 1
-    }
-    fetch(config.clientURL, {
-            body: JSON.stringify(body),
-            headers: {
-                "Content-Type": "application/x-www-form-urlencoded"
-            },
-            method: "POST"
-        })
-        .then(j => j.json())
-        .then(r => {
-            let image, i = 0
-            try {
-                image = JSON.parse(r.result[0].json_metadata).profile.profile_image
-            } catch (e) {
-                try {
-                    i = 1
-                    image = JSON.parse(r.result[0].posting_json_metadata).profile.profile_image
-                } catch (e) {
-                    i = 2
-                    image = 'https://a.ipfs.dlux.io/images/user-icon.svg'
-                }
-            }
-            if (image) {
-                fetch(image)
-                    .then(response => {
-                        response.body.pipe(res)
-                    })
-                    .catch(e => {
-                        if (i == 0) {
-                            try {
-                                i = 1
-                                image = JSON.parse(r.result[0].posting_json_metadata).profile.profile_image
-                            } catch (e) {
-                                i = 2
-                                image = 'https://a.ipfs.dlux.io/images/user-icon.svg'
-                            }
-                        } else {
-                            i = 2
-                            image = 'https://a.ipfs.dlux.io/images/user-icon.svg'
-                        }
-                        fetch(image)
-                            .then(response => {
-                                response.body.pipe(res)
-                            })
-                            .catch(e => {
-                                if (i == 1) {
-                                    image = 'https://a.ipfs.dlux.io/images/user-icon.svg'
-                                    fetch(image)
-                                        .then(response => {
-                                            response.body.pipe(res)
-                                        })
-                                        .catch(e => {
-                                            res.status(404)
-                                            res.send(e)
-
-                                        })
-                                } else {
-                                    res.status(404)
-                                    res.send(e)
-                                }
-                            })
-                    })
-            } else {
-                res.status(404)
-                res.send('Image not found')
-            }
-        })
-});
-
-api.get('/getblog/:un', (req, res, next) => {
-    let un = req.params.un
-    let start = req.query.s || 0
-    res.setHeader('Content-Type', 'application/json')
-    fetch(config.clientURL, {
-            body: `{\"jsonrpc\":\"2.0\", \"method\":\"follow_api.get_blog_entries\", \"params\":{\"account\":\"${un}\",\"start_entry_id\":${start},\"limit\":10}, \"id\":1}`,
-            headers: {
-                "Content-Type": "application/x-www-form-urlencoded"
-            },
-            method: "POST"
-        })
-        .then(j => j.json())
-        .then(r => {
-            var out = { items: [] }
-            for (i in r.result) {
-                r.result[i].media = { m: "https://a.ipfs.dlux.io/images/400X200.gif" }
-            }
-            out.id = r.id
-            out.jsonrpc = r.jsonrpc
-            out.items = r.result
-            res.send(JSON.stringify(out, null, 3))
-        })
-});
-
-//these calls have not been implemented
-/*
-api.get('/pendex/:un', (req, res, next) => { //pending dex transactions and feedback un=username returns pending transaction IDs
-    let un = req.params.un
-    res.setHeader('Content-Type', 'application/json')
-    let ret = Object.keys(live_dex[un])
-    res.send(JSON.stringify(ret, null, 3))
-});
-
-api.get('/pendex/:un/:id', (req, res, next) => { //pending dex transactions and feedback, un= username, id= transaction ID, returns detail JSON
-    let un = req.params.un
-    let id = req.params.id
-    res.setHeader('Content-Type', 'application/json')
-    let ret = live_dex[un][id]
-    res.send(JSON.stringify(ret, null, 3))
-});
-*/
 
 api.get('/@:un', (req, res, next) => {
     let un = req.params.un,
@@ -480,7 +310,7 @@ function dynStart(account) {
                 }
             } else {
                 startWith(config.engineCrank)
-                console.log('I did it')
+                console.log('From Genesis')
             }
         }
     });
@@ -534,7 +364,7 @@ function startWith(hash) {
                             } else {
                                 store.put([], data[1], function(err) {
                                     if (err) { console.log(err) } else {
-                                        store.get(['balances', 'ra'], function(error, returns) {
+                                        store.get(['balances', 'ia'], function(error, returns) {
                                             if (!error) {
                                                 console.log('there' + returns)
                                             }
@@ -2136,106 +1966,108 @@ function startApp() {
     //look for transfer operations and process state accordingly
     processor.onOperation('transfer', function(json, pc) {
         store.get(['escrow', json.from, json.memo.split(' ')[0] + ':transfer'], function(e, a) {
-            var ops = []
-            if (!e && !isEmpty(a)) {
-                let auth = true,
-                    terms = Object.keys(a[1])
-                for (i = 0; i < terms.length; i++) {
-                    if (json[terms[i]] !== a[1][terms[i]]) {
-                        auth = false
+                var ops = []
+                if (!e && !isEmpty(a)) {
+                    let auth = true,
+                        terms = Object.keys(a[1])
+                    for (i = 0; i < terms.length; i++) {
+                        if (json[terms[i]] !== a[1][terms[i]]) {
+                            auth = false
+                        }
                     }
-                }
-                console.log('authed ' + auth)
-                if (auth) {
-                    ops.push({
-                        type: 'put',
-                        path: ['feed', `${json.block_num}:${json.transaction_id}`],
-                        data: `@${json.from}| sent @${json.to} ${json.amount} for ${json.memo.split(' ')[0]}`
-                    })
-                    let addr = json.memo.split(' ')[0],
-                        co = json.memo.split(' ')[2],
-                        cp = getPathObj(['contracts', co, addr]),
-                        sp = getPathObj(['contracts', json.to, addr]),
-                        gp = getPathNum(['balances', json.from])
-                    Promise.all([cp, gp, sp])
-                        .then(ret => {
-                            let d = ret[1],
-                                c = ret[0]
-                            if (!c.escrow_id) {
-                                c = ret[2]
-                                co = c.co
-                            }
-                            eo = c.buyer,
-                                g = c.escrow
-                            if (c.type === 'sb' || c.type === 'db') eo = c.from
-                            add(json.from, parseInt(c.escrow))
-                            addCol(json.from, -parseInt(c.escrow))
-                            ops.push({ type: 'put', path: ['balances', json.from], data: parseInt(g + d) })
-                            ops.push({ type: 'del', path: ['escrow', json.from, addr + ':transfer'] })
-                            ops.push({ type: 'del', path: ['contracts', co, addr] })
-                            ops.push({ type: 'del', path: ['chrono', c.expire_path] })
-                            deletePointer(c.escrow_id, eo)
-                            if (json.from == config.username) {
-                                delete plasma.pending[i + ':transfer']
-                                for (var i = 0; i < NodeOps.length; i++) {
-                                    if (NodeOps[i][1][1].from == json.from && NodeOps[i][1][1].to == json.to && NodeOps[i][1][0] == 'transfer' && NodeOps[i][1][1].hive_amount == json.hive_amount && NodeOps[i][1][1].hbd_amount == json.hbd_amount) {
-                                        NodeOps.splice(i, 1)
+                    console.log('authed ' + auth)
+                    if (auth) {
+                        ops.push({
+                            type: 'put',
+                            path: ['feed', `${json.block_num}:${json.transaction_id}`],
+                            data: `@${json.from}| sent @${json.to} ${json.amount} for ${json.memo.split(' ')[0]}`
+                        })
+                        let addr = json.memo.split(' ')[0],
+                            co = json.memo.split(' ')[2],
+                            cp = getPathObj(['contracts', co, addr]),
+                            sp = getPathObj(['contracts', json.to, addr]),
+                            gp = getPathNum(['balances', json.from])
+                        Promise.all([cp, gp, sp])
+                            .then(ret => {
+                                let d = ret[1],
+                                    c = ret[0]
+                                if (!c.escrow_id) {
+                                    c = ret[2]
+                                    co = c.co
+                                }
+                                eo = c.buyer,
+                                    g = c.escrow
+                                if (c.type === 'sb' || c.type === 'db') eo = c.from
+                                add(json.from, parseInt(c.escrow))
+                                addCol(json.from, -parseInt(c.escrow))
+                                ops.push({ type: 'put', path: ['balances', json.from], data: parseInt(g + d) })
+                                ops.push({ type: 'del', path: ['escrow', json.from, addr + ':transfer'] })
+                                ops.push({ type: 'del', path: ['contracts', co, addr] })
+                                ops.push({ type: 'del', path: ['chrono', c.expire_path] })
+                                deletePointer(c.escrow_id, eo)
+                                if (json.from == config.username) {
+                                    delete plasma.pending[i + ':transfer']
+                                    for (var i = 0; i < NodeOps.length; i++) {
+                                        if (NodeOps[i][1][1].from == json.from && NodeOps[i][1][1].to == json.to && NodeOps[i][1][0] == 'transfer' && NodeOps[i][1][1].hive_amount == json.hive_amount && NodeOps[i][1][1].hbd_amount == json.hbd_amount) {
+                                            NodeOps.splice(i, 1)
+                                        }
                                     }
                                 }
-                            }
-                            console.log(ops)
-                            credit(json.from)
-                            store.batch(ops, pc)
-                        })
-                        .catch(e => { console.log(e) })
-                } else {
-                    pc[0](pc[2])
-                }
-            }
-        })
-        if (json.to == config.mainICO && json.amount.split(' ')[1] == 'HIVE') { //the ICO disribution... should be in multi sig account
-            const amount = parseInt(parseFloat(json.amount) * 1000)
-            var purchase,
-                Pstats = getPathObj(['stats']),
-                Pbal = getPathNum(['balances', json.from]),
-                Pinv = getPathNum(['balances', 'ri'])
-            Promise.all([Pstats, Pbal, Pinv]).then(function(v) {
-                var stats = v[0], //stats 
-                    b = v[1], //balance of purchaser
-                    i = v[2], //inventory
-                    ops = []
-                if (!stats.outOnBlock) {
-                    purchase = parseInt(amount / stats.icoPrice * 1000)
-                    if (purchase < i) {
-                        i -= purchase
-                        b += purchase
-                        store.batch([{ type: 'put', path: ['feed', `${json.block_num}:${json.transaction_id}`], data: `@${json.from}| bought ${parseFloat(purchase/1000).toFixed(3)} ${config.TOKEN} with ${parseFloat(amount/1000).toFixed(3)} HIVE` },
-                            { type: 'put', path: ['balances', json.from], data: b },
-                            { type: 'put', path: ['balances', 'ri'], data: i }
-                        ], pc)
-
+                                console.log(ops)
+                                credit(json.from)
+                                store.batch(ops, pc)
+                            })
+                            .catch(e => { console.log(e) })
                     } else {
-                        b += i
-                        const left = purchase - i
-                        stats.outOnBlock = json.block_num
+                        pc[0](pc[2])
+                    }
+                }
+            })
+            /*
+            if (json.to == config.mainICO && json.amount.split(' ')[1] == 'HIVE') { //the ICO disribution... should be in multi sig account
+                const amount = parseInt(parseFloat(json.amount) * 1000)
+                var purchase,
+                    Pstats = getPathObj(['stats']),
+                    Pbal = getPathNum(['balances', json.from]),
+                    Pinv = getPathNum(['balances', 'ri'])
+                Promise.all([Pstats, Pbal, Pinv]).then(function(v) {
+                    var stats = v[0], //stats 
+                        b = v[1], //balance of purchaser
+                        i = v[2], //inventory
+                        ops = []
+                    if (!stats.outOnBlock) {
+                        purchase = parseInt(amount / stats.icoPrice * 1000)
+                        if (purchase < i) {
+                            i -= purchase
+                            b += purchase
+                            store.batch([{ type: 'put', path: ['feed', `${json.block_num}:${json.transaction_id}`], data: `@${json.from}| bought ${parseFloat(purchase/1000).toFixed(3)} ${config.TOKEN} with ${parseFloat(amount/1000).toFixed(3)} HIVE` },
+                                { type: 'put', path: ['balances', json.from], data: b },
+                                { type: 'put', path: ['balances', 'ri'], data: i }
+                            ], pc)
+
+                        } else {
+                            b += i
+                            const left = purchase - i
+                            stats.outOnBlock = json.block_num
+                            store.batch([
+                                { type: 'put', path: ['ico', `${json.block_num}`, json.from], data: parseInt(amount * left / purchase) },
+                                { type: 'put', path: ['balances', json.from], data: b },
+                                { type: 'put', path: ['balances', 'ri'], data: 0 },
+                                { type: 'put', path: ['stats'], data: stats },
+                                { type: 'put', path: ['feed', `${json.block_num}:${json.transaction_id}`], data: `@${json.from}| bought ALL ${parseFloat(parseInt(purchase - left)).toFixed(3)} ${config.TOKEN} with ${parseFloat(parseInt(amount)/1000).toFixed(3)} HIVE. And bid in the over-auction` }
+                            ], pc)
+                        }
+                    } else {
                         store.batch([
-                            { type: 'put', path: ['ico', `${json.block_num}`, json.from], data: parseInt(amount * left / purchase) },
-                            { type: 'put', path: ['balances', json.from], data: b },
-                            { type: 'put', path: ['balances', 'ri'], data: 0 },
-                            { type: 'put', path: ['stats'], data: stats },
+                            { type: 'put', path: ['ico', `${json.block_num}`, json.from], data: parseInt(amount) },
                             { type: 'put', path: ['feed', `${json.block_num}:${json.transaction_id}`], data: `@${json.from}| bought ALL ${parseFloat(parseInt(purchase - left)).toFixed(3)} ${config.TOKEN} with ${parseFloat(parseInt(amount)/1000).toFixed(3)} HIVE. And bid in the over-auction` }
                         ], pc)
                     }
-                } else {
-                    store.batch([
-                        { type: 'put', path: ['ico', `${json.block_num}`, json.from], data: parseInt(amount) },
-                        { type: 'put', path: ['feed', `${json.block_num}:${json.transaction_id}`], data: `@${json.from}| bought ALL ${parseFloat(parseInt(purchase - left)).toFixed(3)} ${config.TOKEN} with ${parseFloat(parseInt(amount)/1000).toFixed(3)} HIVE. And bid in the over-auction` }
-                    ], pc)
-                }
-            });
-        } else {
-            pc[0](pc[2])
-        }
+                });
+            } else {
+                pc[0](pc[2])
+            }
+            */
     });
 
     //inflation is rewarded to delegators to the config.delegation account, could be built for multi-sig account as well
@@ -2685,7 +2517,7 @@ function tally(num) {
         var Prunners = getPathObj(['runners']),
             Pnode = getPathObj(['markets', 'node']),
             Pstats = getPathObj(['stats']),
-            Prb = getPathNum(['balances', 'ra'])
+            Prb = getPathNum(['balances', 'it'])
         Promise.all([Prunners, Pnode, Pstats, Prb]).then(function(v) {
             deleteObjs([
                     ['runners'],
@@ -2813,7 +2645,7 @@ function tally(num) {
                     for (var node in runners) {
                         nodes[node].wins++
                     }
-                    const mint = parseInt(stats.tokenSupply / stats.interestRate)
+                    const mint = 19000
                     stats.tokenSupply += mint
                     rbal += mint
                     store.batch([
@@ -2821,8 +2653,9 @@ function tally(num) {
                         { type: 'put', path: ['queue'], data: queue },
                         { type: 'put', path: ['runners'], data: runners },
                         { type: 'put', path: ['markets', 'node'], data: nodes },
-                        { type: 'put', path: ['balances', 'ra'], data: rbal }
+                        { type: 'put', path: ['balances', 'it'], data: rbal }
                     ], [resolve, reject])
+                    console.log({ "con && plasma": consensus != plasma.hashLastIBlock, "con && report": consensus != nodes[config.username].report.hash, "Processor, streaming": processor.isStreaming() })
                     if (consensus && (consensus != plasma.hashLastIBlock || consensus != nodes[config.username].report.hash) && processor.isStreaming()) { //this doesn't seem to be catching failures
                         exit(consensus)
                         var errors = ['failed Consensus']
