@@ -60,7 +60,9 @@ module.exports = function(client, steem, currentBlockNumber = 1, blockComputeSpe
                         .catch(e => { console.log('failed at catch:', e) })
                 })
                 .catch((err) => {
-                    throw err;
+                    console.log('Get Block Error:\n' + err)
+                    cycleapi()
+                        //throw err;
                 })
         }
 

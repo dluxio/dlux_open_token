@@ -1482,6 +1482,167 @@ function startApp() {
             .catch(e => { console.log(e) })
     });
 
+    //look for transfer operations and process state accordingly
+    processor.onOperation('transfer', function(json, pc) {
+        store.get(['escrow', json.from, json.memo.split(' ')[0] + ':transfer'], function(e, a) {
+                var ops = []
+                if (!e && !isEmpty(a)) {
+                    let auth = true,
+                        terms = Object.keys(a[1])
+                    for (i = 0; i < terms.length; i++) {
+                        if (json[terms[i]] !== a[1][terms[i]]) {
+                            auth = false
+                        }
+                    }
+                    console.log('authed ' + auth)
+                    if (auth) {
+                        ops.push({
+                            type: 'put',
+                            path: ['feed', `${json.block_num}:${json.transaction_id}`],
+                            data: `@${json.from}| sent @${json.to} ${json.amount} for ${json.memo.split(' ')[0]}`
+                        })
+                        let addr = json.memo.split(' ')[0],
+                            co = json.memo.split(' ')[2],
+                            cp = getPathObj(['contracts', co, addr]),
+                            sp = getPathObj(['contracts', json.to, addr]),
+                            gp = getPathNum(['balances', json.from])
+                        Promise.all([cp, gp, sp])
+                            .then(ret => {
+                                let d = ret[1],
+                                    c = ret[0]
+                                if (!c.escrow_id) {
+                                    c = ret[2]
+                                    co = c.co
+                                }
+                                eo = c.buyer,
+                                    g = c.escrow
+                                if (c.type === 'sb' || c.type === 'db') eo = c.from
+                                add(json.from, parseInt(c.escrow))
+                                addCol(json.from, -parseInt(c.escrow))
+                                ops.push({ type: 'put', path: ['balances', json.from], data: parseInt(g + d) })
+                                ops.push({ type: 'del', path: ['escrow', json.from, addr + ':transfer'] })
+                                ops.push({ type: 'del', path: ['contracts', co, addr] })
+                                ops.push({ type: 'del', path: ['chrono', c.expire_path] })
+                                deletePointer(c.escrow_id, eo)
+                                if (json.from == config.username) {
+                                    delete plasma.pending[i + ':transfer']
+                                    for (var i = 0; i < NodeOps.length; i++) {
+                                        if (NodeOps[i][1][1].from == json.from && NodeOps[i][1][1].to == json.to && NodeOps[i][1][0] == 'transfer' && NodeOps[i][1][1].hive_amount == json.hive_amount && NodeOps[i][1][1].hbd_amount == json.hbd_amount) {
+                                            NodeOps.splice(i, 1)
+                                        }
+                                    }
+                                }
+                                console.log(ops)
+                                credit(json.from)
+                                store.batch(ops, pc)
+                            })
+                            .catch(e => { console.log(e) })
+                    } else {
+                        pc[0](pc[2])
+                    }
+                }
+            })
+            /*
+            if (json.to == config.mainICO && json.amount.split(' ')[1] == 'HIVE') { //the ICO disribution... should be in multi sig account
+                const amount = parseInt(parseFloat(json.amount) * 1000)
+                var purchase,
+                    Pstats = getPathObj(['stats']),
+                    Pbal = getPathNum(['balances', json.from]),
+                    Pinv = getPathNum(['balances', 'ri'])
+                Promise.all([Pstats, Pbal, Pinv]).then(function(v) {
+                    var stats = v[0], //stats 
+                        b = v[1], //balance of purchaser
+                        i = v[2], //inventory
+                        ops = []
+                    if (!stats.outOnBlock) {
+                        purchase = parseInt(amount / stats.icoPrice * 1000)
+                        if (purchase < i) {
+                            i -= purchase
+                            b += purchase
+                            store.batch([{ type: 'put', path: ['feed', `${json.block_num}:${json.transaction_id}`], data: `@${json.from}| bought ${parseFloat(purchase/1000).toFixed(3)} ${config.TOKEN} with ${parseFloat(amount/1000).toFixed(3)} HIVE` },
+                                { type: 'put', path: ['balances', json.from], data: b },
+                                { type: 'put', path: ['balances', 'ri'], data: i }
+                            ], pc)
+
+                        } else {
+                            b += i
+                            const left = purchase - i
+                            stats.outOnBlock = json.block_num
+                            store.batch([
+                                { type: 'put', path: ['ico', `${json.block_num}`, json.from], data: parseInt(amount * left / purchase) },
+                                { type: 'put', path: ['balances', json.from], data: b },
+                                { type: 'put', path: ['balances', 'ri'], data: 0 },
+                                { type: 'put', path: ['stats'], data: stats },
+                                { type: 'put', path: ['feed', `${json.block_num}:${json.transaction_id}`], data: `@${json.from}| bought ALL ${parseFloat(parseInt(purchase - left)).toFixed(3)} ${config.TOKEN} with ${parseFloat(parseInt(amount)/1000).toFixed(3)} HIVE. And bid in the over-auction` }
+                            ], pc)
+                        }
+                    } else {
+                        store.batch([
+                            { type: 'put', path: ['ico', `${json.block_num}`, json.from], data: parseInt(amount) },
+                            { type: 'put', path: ['feed', `${json.block_num}:${json.transaction_id}`], data: `@${json.from}| bought ALL ${parseFloat(parseInt(purchase - left)).toFixed(3)} ${config.TOKEN} with ${parseFloat(parseInt(amount)/1000).toFixed(3)} HIVE. And bid in the over-auction` }
+                        ], pc)
+                    }
+                });
+            } else {
+                pc[0](pc[2])
+            }
+            */
+    });
+
+    //inflation is rewarded to delegators to the config.delegation account, could be built for multi-sig account as well
+    //multi-sig delegation is more secure than holding HP or liquid hive for multi-sig
+    processor.onOperation('delegate_vesting_shares', function(json, pc) { //grab posts to reward
+        var ops = []
+        const vests = parseInt(parseFloat(json.vesting_shares) * 1000000)
+        if (json.delegatee == config.delegation && vests) {
+            ops.push({ type: 'put', path: ['delegations', json.delegator], data: vests })
+            ops.push({ type: 'put', path: ['feed', `${json.block_num}:${json.transaction_id}`], data: `@${json.delegator}| has delegated ${vests} vests to @${config.delegation}` })
+        } else if (json.delegatee == config.delegation && !vests) {
+            ops.push({ type: 'del', path: ['delegations', json.delegator] })
+            ops.push({ type: 'put', path: ['feed', `${json.block_num}:${json.transaction_id}`], data: `@${json.delegator}| has removed delegation to @${config.delegation}` })
+        }
+        store.batch(ops, pc)
+    });
+
+    // layer 1 proof of brain voting
+    processor.onOperation('vote', function(json, pc) {
+        if (json.voter == config.leader) {
+            console.log('the vote')
+            store.get(['escrow', json.voter], function(e, a) {
+                if (!e) {
+                    var found = 0
+                    for (b in a) {
+                        console.log(a, b, json)
+                        if (a[b][1].permlink == json.permlink && a[b][1].author == json.author) {
+                            found++
+                            let ops = [{ type: 'del', path: ['escrow', json.voter, b] }]
+                            console.log(ops)
+                            store.batch(ops, pc)
+                            if (json.voter == config.username) {
+                                delete plasma.pending[b]
+                                for (var i = 0; i < NodeOps.length; i++) {
+                                    if (NodeOps[i][1][1].author == json.author && NodeOps[i][1][1].permlink == json.permlink && NodeOps[i][1][0] == 'vote') {
+                                        NodeOps.splice(i, 1)
+                                    }
+                                }
+                            }
+                            break;
+                        } else {
+                            pc[0](pc[2])
+                        }
+                    }
+                    if (!found) {
+                        pc[0](pc[2])
+                    }
+                } else {
+                    pc[0](pc[2])
+                }
+            })
+        } else {
+            pc[0](pc[2])
+        }
+    })
+
     // join the node network
     processor.on('node_add', function(json, from, active, pc) {
         if (json.domain && typeof json.domain === 'string') {
@@ -1629,7 +1790,7 @@ function startApp() {
             }
         })
     });
-
+    /*
     //allows the daily DAO report to have announcements or posts inserted with out changing consensus code
     processor.on('queueForDaily', function(json, from, active, pc) {
         if (from = config.leader && json.text && json.title) {
@@ -1684,7 +1845,7 @@ function startApp() {
                     })
                 }
             });
-        */
+        
 
     //looks for posts with benificiaries set and adds them to the layer 2 proof of brain
     //also where IPFS pinning happens
@@ -1923,167 +2084,8 @@ function startApp() {
                 console.log(e)
             });
     });
+*/
 
-    // layer 2 proof of brain voting
-    processor.onOperation('vote', function(json, pc) {
-        if (json.voter == config.leader) {
-            console.log('the vote')
-            store.get(['escrow', json.voter], function(e, a) {
-                if (!e) {
-                    var found = 0
-                    for (b in a) {
-                        console.log(a, b, json)
-                        if (a[b][1].permlink == json.permlink && a[b][1].author == json.author) {
-                            found++
-                            let ops = [{ type: 'del', path: ['escrow', json.voter, b] }]
-                            console.log(ops)
-                            store.batch(ops, pc)
-                            if (json.voter == config.username) {
-                                delete plasma.pending[b]
-                                for (var i = 0; i < NodeOps.length; i++) {
-                                    if (NodeOps[i][1][1].author == json.author && NodeOps[i][1][1].permlink == json.permlink && NodeOps[i][1][0] == 'vote') {
-                                        NodeOps.splice(i, 1)
-                                    }
-                                }
-                            }
-                            break;
-                        } else {
-                            pc[0](pc[2])
-                        }
-                    }
-                    if (!found) {
-                        pc[0](pc[2])
-                    }
-                } else {
-                    pc[0](pc[2])
-                }
-            })
-        } else {
-            pc[0](pc[2])
-        }
-    })
-
-    //look for transfer operations and process state accordingly
-    processor.onOperation('transfer', function(json, pc) {
-        store.get(['escrow', json.from, json.memo.split(' ')[0] + ':transfer'], function(e, a) {
-                var ops = []
-                if (!e && !isEmpty(a)) {
-                    let auth = true,
-                        terms = Object.keys(a[1])
-                    for (i = 0; i < terms.length; i++) {
-                        if (json[terms[i]] !== a[1][terms[i]]) {
-                            auth = false
-                        }
-                    }
-                    console.log('authed ' + auth)
-                    if (auth) {
-                        ops.push({
-                            type: 'put',
-                            path: ['feed', `${json.block_num}:${json.transaction_id}`],
-                            data: `@${json.from}| sent @${json.to} ${json.amount} for ${json.memo.split(' ')[0]}`
-                        })
-                        let addr = json.memo.split(' ')[0],
-                            co = json.memo.split(' ')[2],
-                            cp = getPathObj(['contracts', co, addr]),
-                            sp = getPathObj(['contracts', json.to, addr]),
-                            gp = getPathNum(['balances', json.from])
-                        Promise.all([cp, gp, sp])
-                            .then(ret => {
-                                let d = ret[1],
-                                    c = ret[0]
-                                if (!c.escrow_id) {
-                                    c = ret[2]
-                                    co = c.co
-                                }
-                                eo = c.buyer,
-                                    g = c.escrow
-                                if (c.type === 'sb' || c.type === 'db') eo = c.from
-                                add(json.from, parseInt(c.escrow))
-                                addCol(json.from, -parseInt(c.escrow))
-                                ops.push({ type: 'put', path: ['balances', json.from], data: parseInt(g + d) })
-                                ops.push({ type: 'del', path: ['escrow', json.from, addr + ':transfer'] })
-                                ops.push({ type: 'del', path: ['contracts', co, addr] })
-                                ops.push({ type: 'del', path: ['chrono', c.expire_path] })
-                                deletePointer(c.escrow_id, eo)
-                                if (json.from == config.username) {
-                                    delete plasma.pending[i + ':transfer']
-                                    for (var i = 0; i < NodeOps.length; i++) {
-                                        if (NodeOps[i][1][1].from == json.from && NodeOps[i][1][1].to == json.to && NodeOps[i][1][0] == 'transfer' && NodeOps[i][1][1].hive_amount == json.hive_amount && NodeOps[i][1][1].hbd_amount == json.hbd_amount) {
-                                            NodeOps.splice(i, 1)
-                                        }
-                                    }
-                                }
-                                console.log(ops)
-                                credit(json.from)
-                                store.batch(ops, pc)
-                            })
-                            .catch(e => { console.log(e) })
-                    } else {
-                        pc[0](pc[2])
-                    }
-                }
-            })
-            /*
-            if (json.to == config.mainICO && json.amount.split(' ')[1] == 'HIVE') { //the ICO disribution... should be in multi sig account
-                const amount = parseInt(parseFloat(json.amount) * 1000)
-                var purchase,
-                    Pstats = getPathObj(['stats']),
-                    Pbal = getPathNum(['balances', json.from]),
-                    Pinv = getPathNum(['balances', 'ri'])
-                Promise.all([Pstats, Pbal, Pinv]).then(function(v) {
-                    var stats = v[0], //stats 
-                        b = v[1], //balance of purchaser
-                        i = v[2], //inventory
-                        ops = []
-                    if (!stats.outOnBlock) {
-                        purchase = parseInt(amount / stats.icoPrice * 1000)
-                        if (purchase < i) {
-                            i -= purchase
-                            b += purchase
-                            store.batch([{ type: 'put', path: ['feed', `${json.block_num}:${json.transaction_id}`], data: `@${json.from}| bought ${parseFloat(purchase/1000).toFixed(3)} ${config.TOKEN} with ${parseFloat(amount/1000).toFixed(3)} HIVE` },
-                                { type: 'put', path: ['balances', json.from], data: b },
-                                { type: 'put', path: ['balances', 'ri'], data: i }
-                            ], pc)
-
-                        } else {
-                            b += i
-                            const left = purchase - i
-                            stats.outOnBlock = json.block_num
-                            store.batch([
-                                { type: 'put', path: ['ico', `${json.block_num}`, json.from], data: parseInt(amount * left / purchase) },
-                                { type: 'put', path: ['balances', json.from], data: b },
-                                { type: 'put', path: ['balances', 'ri'], data: 0 },
-                                { type: 'put', path: ['stats'], data: stats },
-                                { type: 'put', path: ['feed', `${json.block_num}:${json.transaction_id}`], data: `@${json.from}| bought ALL ${parseFloat(parseInt(purchase - left)).toFixed(3)} ${config.TOKEN} with ${parseFloat(parseInt(amount)/1000).toFixed(3)} HIVE. And bid in the over-auction` }
-                            ], pc)
-                        }
-                    } else {
-                        store.batch([
-                            { type: 'put', path: ['ico', `${json.block_num}`, json.from], data: parseInt(amount) },
-                            { type: 'put', path: ['feed', `${json.block_num}:${json.transaction_id}`], data: `@${json.from}| bought ALL ${parseFloat(parseInt(purchase - left)).toFixed(3)} ${config.TOKEN} with ${parseFloat(parseInt(amount)/1000).toFixed(3)} HIVE. And bid in the over-auction` }
-                        ], pc)
-                    }
-                });
-            } else {
-                pc[0](pc[2])
-            }
-            */
-    });
-
-    //inflation is rewarded to delegators to the config.delegation account, could be built for multi-sig account as well
-    //multi-sig delegation is more secure than holding HP or liquid hive for multi-sig
-    processor.onOperation('delegate_vesting_shares', function(json, pc) { //grab posts to reward
-        var ops = []
-        const vests = parseInt(parseFloat(json.vesting_shares) * 1000000)
-        if (json.delegatee == config.delegation && vests) {
-            ops.push({ type: 'put', path: ['delegations', json.delegator], data: vests })
-            ops.push({ type: 'put', path: ['feed', `${json.block_num}:${json.transaction_id}`], data: `@${json.delegator}| has delegated ${vests} vests to @${config.delegation}` })
-        } else if (json.delegatee == config.delegation && !vests) {
-            ops.push({ type: 'del', path: ['delegations', json.delegator] })
-            ops.push({ type: 'put', path: ['feed', `${json.block_num}:${json.transaction_id}`], data: `@${json.delegator}| has removed delegation to @${config.delegation}` })
-        }
-        store.batch(ops, pc)
-    });
     /*
     processor.onOperation('account_update', function(json, from) { //grab posts to reward
     Utils.upKey(json.account, json.memo_key)
