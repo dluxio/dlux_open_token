@@ -1652,26 +1652,30 @@ function startApp() {
             .catch(e => { console.log(e) })
     });
 
-    // join the node network
+    //node add and update
     processor.on('node_add', function(json, from, active, pc) {
         if (json.domain && typeof json.domain === 'string') {
-            var z = false
-            if (json.escrow == true) {
-                z = true
+            var escrow = true
+            if (json.escrow == 'false') {
+                escrow = false
             }
-            var int = parseInt(json.bidRate) || 0
-            if (int < 1) {
-                int = 1000
+            var mirror = false
+            if (json.mirror == 'true') {
+                mirror = true
             }
-            if (int > 1000) {
-                int = 1000
+            var bid = parseInt(json.bidRate) || 0
+            if (bid < 1) {
+                bid = 1000
             }
-            var t = parseInt(json.marketingRate) || 0
-            if (t < 1) {
-                int = 2000
+            if (bid > 1000) {
+                bid = 1000
             }
-            if (t > 2000) {
-                int = 2000
+            var daoRate = parseInt(json.marketingRate) || 0
+            if (daoRate < 1) {
+                daoRate = 0
+            }
+            if (daoRate > 2000) {
+                daoRate = 2000
             }
             store.get(['markets', 'node', from], function(e, a) {
                 if (!e) {
@@ -1682,8 +1686,8 @@ function startApp() {
                             data: {
                                 domain: json.domain,
                                 self: from,
-                                bidRate: int,
-                                marketingRate: t,
+                                bidRate: bid,
+                                marketingRate: daoRate,
                                 attempts: 0,
                                 yays: 0,
                                 wins: 0,
@@ -1700,9 +1704,10 @@ function startApp() {
                     } else {
                         var b = a;
                         b.domain = json.domain
-                        b.bidRate = int
-                        b.escrow = z
-                        b.marketingRate = t
+                        b.bidRate = bid
+                        b.escrow = escrow
+                        b.marketingRate = daoRate
+                        b.mirror = mirror
                         store.batch([{ type: 'put', path: ['markets', 'node', from], data: b }], pc)
                     }
                 } else {
@@ -1884,7 +1889,7 @@ function startApp() {
                                 permlink: json.permlink
                             })
                             var assignments = [0, 0, 0, 0]
-                            if (config.username == config.leader || config.mirror) { //pin content ... hard set here since rewards are still hard set as well
+                            if (config.username == config.leader) { //pin content ... hard set here since rewards are still hard set as well
                                 assignments[0] = config.username
                             }
                             if (!e) {
