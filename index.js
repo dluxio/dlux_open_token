@@ -1691,8 +1691,7 @@ function startApp() {
                 .then(r => {
                     const post = {
                         votes: {},
-                        expire_path: r[0],
-                        pay_out: 0
+                        expire_path: r[0]
                     }
                     var ops = [{ type: 'put', path: ['posts', json.author, json.permlink], data: post }]
                     console.log(json, ops)
@@ -1742,12 +1741,19 @@ function startApp() {
                     Promise.all([PvotePow, PdVotePow]).then(function(v) {
                             var up = v[0],
                                 down = v[1],
-                                ops = []
+                                ops = [],
+                                weights
                             if (json.weight >= 0) {
-                                upPowerMagic(up, down, json)
+                                weights = upPowerMagic(up, json)
                             } else {
-                                downPowerMagic(up, down, json)
+                                weights = downPowerMagic(up, down, json)
+                                ops.push({ type: 'put', path: ['down', json.voter], data: weights.down })
                             }
+                            p.votes[json.voter] = {
+                                b: json.block_num,
+                                v: weights.vote
+                            }
+                            ops.push({ type: 'put', path: ['up', json.voter], data: weights.dowupn })
                             ops.push({ type: 'put', path: ['posts', json.author, json.permlink], data: p })
                             store.batch(ops, pc)
                         })
@@ -1814,23 +1820,27 @@ function startApp() {
     // join the node network
     processor.on('node_add', function(json, from, active, pc) {
         if (json.domain && typeof json.domain === 'string') {
-            var z = false
-            if (json.escrow == true) {
-                z = true
+            var escrow = true
+            if (json.escrow == 'false') {
+                escrow = false
             }
-            var int = parseInt(json.bidRate) || 0
-            if (int < 1) {
-                int = 1000
+            var mirror = false
+            if (json.mirror == 'true') {
+                mirror = true
             }
-            if (int > 1000) {
-                int = 1000
+            var bid = parseInt(json.bidRate) || 0
+            if (bid < 1) {
+                bid = 1000
             }
-            var t = parseInt(json.marketingRate) || 0
-            if (t < 1) {
-                int = 2000
+            if (bid > 1000) {
+                bid = 1000
             }
-            if (t > 2000) {
-                int = 2000
+            var daoRate = parseInt(json.marketingRate) || 0
+            if (daoRate < 1) {
+                daoRate = 0
+            }
+            if (daoRate > 2000) {
+                daoRate = 2000
             }
             store.get(['markets', 'node', from], function(e, a) {
                 if (!e) {
@@ -1841,8 +1851,8 @@ function startApp() {
                             data: {
                                 domain: json.domain,
                                 self: from,
-                                bidRate: int,
-                                marketingRate: t,
+                                bidRate: bid,
+                                marketingRate: daoRate,
                                 attempts: 0,
                                 yays: 0,
                                 wins: 0,
@@ -1859,9 +1869,10 @@ function startApp() {
                     } else {
                         var b = a;
                         b.domain = json.domain
-                        b.bidRate = int
-                        b.escrow = z
-                        b.marketingRate = t
+                        b.bidRate = bid
+                        b.escrow = escrow
+                        b.marketingRate = daoRate
+                        b.mirror = mirror
                         store.batch([{ type: 'put', path: ['markets', 'node', from], data: b }], pc)
                     }
                 } else {
@@ -3760,20 +3771,46 @@ function upPowerMagic(up, json){
 }
 
 function downPowerMagic(up, down, json){
-    const healTime = json.block_num - down.last //144000 blocks in 5 days
-    const heal = parseInt(down.max * healTime / 144000)
-    var newPower = down.power + heal
-    if (newPower > down.max){
-        newPower = down.max
+    const downHealTime = json.block_num - down.last //144000 blocks in 5 days
+    const downHeal = parseInt(down.max * downHealTime / 144000)
+    var newDownPower = down.power + downHeal
+    if (newDownPower > down.max){
+        newDownPower = down.max
     }
-    const vote = parseInt(newPower * json.weight / 500000) //5 from max AND 10000 from full weight
-    newPower -= vote
+    const healTime = json.block_num - up.last //144000 blocks in 5 days
+    const heal = parseInt(up.max * healTime / 144000)
+    var newPower = up.power + heal
+    if (newPower > up.max){
+        newPower = up.max
+    }
+    var bigSpender = false
+    var vote
+    var downvote = parseInt(newDownPower * json.weight / 500000) //5 from max AND 10000 from full weight
+    newDownPower -= downvote
+    if (newDownPower < down.max * 0.9){ //further down power vote effect up and down power meters
+        bigSpender = true
+    }
+    if (bigSpender){
+        vote = parseInt(newPower * json.weight / 500000) //50 from max AND 10000 from full weight
+        if (vote > downVote){
+            newPower -= vote
+            newDownPower -= vote
+        } else {
+            newPower -= downVote
+            newDownPower -= downVote
+        }
+    }
     const newUp = {
         max: up.max,
         last: json.block_num,
         power: newPower
     }
-    return {up:newUp, vote: vote}  
+    const newDown = {
+        max: down.max,
+        last: json.block_num,
+        power: newDownPower
+    }
+    return {up:newUp, down: newDown, vote: vote}  
 }
 
 function hashThis(data) {
