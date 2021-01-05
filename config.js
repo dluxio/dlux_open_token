@@ -57,6 +57,7 @@ const mainAPI = 'token-test.leofiniance.io' //leaders API probably
 const mainFE = 'leofiniance.io' //frontend for content
 const mainIPFS = 'leofiniance.io' //IPFS service
 const mainICO = 'test-leo' //Account collecting ICO HIVE
+const community_tags = ['hive-167922', 'leofinance', 'leo'] //community content - PoB
 
 //Aditionally on your branch, look closely at dao, this is where tokenomics happen and custom status posts are made
 
@@ -89,7 +90,8 @@ let config = {
     jsonTokenName,
     mainFE,
     mainIPFS,
-    mainICO
+    mainICO,
+    community_tags
 };
 
 module.exports = config;

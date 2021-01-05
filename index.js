@@ -1675,23 +1675,35 @@ function startApp() {
 
     processor.onOperation('comment', function(json, pc) { //grab posts to reward
         let meta = JSON.parse(json.json_metadata)
-        let leoPost = false
+        let community_post = false
         for (tag in meta.tags) {
-            if (tag == 'hive-167922') {
-                leoPost = true
-            } else if (tag == 'leofinance') {
-                leoPost = true
-            } else if (tag == 'leo') {
-                leoPost = true
+            if (community_post) { break; }
+            for (i = 0; i < config.community_tags.length; i++) {
+                if (tag == config.community_tags[i]) {
+                    community_post = true
+                    break;
+                }
             }
         }
-        if (leoPost) {
-            console.log(json)
+        if (community_post) {
+            var exp_path = chronAssign(json.block_num + 201600, { op: 'post_reward', a: json.author, p: json.permlink })
+            promies.all([exp_path])
+                .then(r => {
+                    const post = {
+                        votes: {},
+                        expire_path: r[0],
+                        pay_out: 0
+                    }
+                    var ops = [{ type: 'put', path: ['posts', json.author, json.permlink], data: post }]
+                    console.log(json, ops)
+                    store.batch(ops, pc)
+                })
+                .catch(e => console.log(e))
         } else {
             pc[0](pc[2])
         }
         /*
-        if (json.author == config.leader) {
+        if (json.author == config.leader) { //clear auto-voter
             store.get(['escrow', json.author], function(e, a) {
                 if (!e) {
                     var ops = []
@@ -1722,42 +1734,67 @@ function startApp() {
 
     // layer 1 proof of brain voting, layer 2 PoB voting
     processor.onOperation('vote', function(json, pc) { //rework more than just the vote remover.
-        if (json.voter == config.leader) {
-            console.log('Hive Vote')
-            store.get(['escrow', json.voter], function(e, a) {
-                if (!e) {
-                    var found = 0
-                    for (b in a) {
-                        console.log(a, b, json)
-                        if (a[b][1].permlink == json.permlink && a[b][1].author == json.author) {
-                            found++
-                            let ops = [{ type: 'del', path: ['escrow', json.voter, b] }]
-                            console.log(ops)
-                            store.batch(ops, pc)
-                            if (json.voter == config.username) {
-                                delete plasma.pending[b]
-                                for (var i = 0; i < NodeOps.length; i++) {
-                                    if (NodeOps[i][1][1].author == json.author && NodeOps[i][1][1].permlink == json.permlink && NodeOps[i][1][0] == 'vote') {
-                                        NodeOps.splice(i, 1)
-                                    }
-                                }
+            console.log(json)
+            getPathObj(['posts', json.author, json.permlink]).then(p => {
+                if (p.votes) { //adequate test?
+                    var PvotePow = getPathObj(['up', json.voter]),
+                        PdVotePow = getPathObj(['down', json.voter])
+                    Promise.all([PvotePow, PdVotePow]).then(function(v) {
+                            var up = v[0],
+                                down = v[1],
+                                ops = []
+                            if (json.weight >= 0) {
+                                upPowerMagic(up, down, json)
+                            } else {
+                                downPowerMagic(up, down, json)
                             }
-                            break;
-                        } else {
-                            pc[0](pc[2])
-                        }
-                    }
-                    if (!found) {
-                        pc[0](pc[2])
-                    }
+                            ops.push({ type: 'put', path: ['posts', json.author, json.permlink], data: p })
+                            store.batch(ops, pc)
+                        })
+                        .catch(e => console.log(e))
                 } else {
                     pc[0](pc[2])
                 }
             })
-        } else {
-            pc[0](pc[2])
-        }
-    });
+        })
+        /*
+                                    if (json.voter == config.leader) {
+                                        console.log('Hive Vote')
+                                        store.get(['escrow', json.voter], function(e, a) {
+                                            if (!e) {
+                                                var found = 0
+                                                for (b in a) {
+                                                    console.log(a, b, json)
+                                                    if (a[b][1].permlink == json.permlink && a[b][1].author == json.author) {
+                                                        found++
+                                                        let ops = [{ type: 'del', path: ['escrow', json.voter, b] }]
+                                                        console.log(ops)
+                                                        store.batch(ops, pc)
+                                                        if (json.voter == config.username) {
+                                                            delete plasma.pending[b]
+                                                            for (var i = 0; i < NodeOps.length; i++) {
+                                                                if (NodeOps[i][1][1].author == json.author && NodeOps[i][1][1].permlink == json.permlink && NodeOps[i][1][0] == 'vote') {
+                                                                    NodeOps.splice(i, 1)
+                                                                }
+                                                            }
+                                                        }
+                                                        break;
+                                                    } else {
+                                                        pc[0](pc[2])
+                                                    }
+                                                }
+                                                if (!found) {
+                                                    pc[0](pc[2])
+                                                }
+                                            } else {
+                                                pc[0](pc[2])
+                                            }
+                                        })
+                                    } else {
+                                        pc[0](pc[2])
+                                    }
+                                });
+                                */
 
     //inflation is rewarded to delegators to the config.delegation account, could be built for multi-sig account as well
     //multi-sig delegation is more secure than holding HP or liquid hive for multi-sig
@@ -1844,6 +1881,7 @@ function startApp() {
             var ops = []
             var Pqueue = getPathObj(['queue']),
                 Pnode = getPathObj(['markets', 'node', from])
+            Prunners = getPathObj(['runners'])
             Promise.all([Pqueue, Pnode, Prunners]).then(function(v) {
                 deleteObjs([
                         ['queue']
@@ -2400,7 +2438,7 @@ function startApp() {
 
                                 function postRewardOP(b, num, id, delkey) {
                                     return new Promise((resolve, reject) => {
-                                        store.get(['posts', `${b.author}/${b.permlink}`], function(e, a) {
+                                        store.get(['posts', `${b.author}`, `${b.permlink}`], function(e, a) {
                                             let ops = []
                                             console.log(a)
                                             a.title = a.customJSON.p.d
@@ -3704,6 +3742,39 @@ function nodeUpdate(node, op, val) { //for keeping node stats
     })
 }
 
+function upPowerMagic(up, json){
+    const healTime = json.block_num - up.last //144000 blocks in 5 days
+    const heal = parseInt(up.max * healTime / 144000)
+    var newPower = up.power + heal
+    if (newPower > up.max){
+        newPower = up.max
+    }
+    const vote = parseInt(newPower * json.weight / 500000) //50 from max AND 10000 from full weight
+    newPower -= vote
+    const newUp = {
+        max: up.max,
+        last: json.block_num,
+        power: newPower
+    }
+    return {up:newUp, vote: vote}
+}
+
+function downPowerMagic(up, down, json){
+    const healTime = json.block_num - down.last //144000 blocks in 5 days
+    const heal = parseInt(down.max * healTime / 144000)
+    var newPower = down.power + heal
+    if (newPower > down.max){
+        newPower = down.max
+    }
+    const vote = parseInt(newPower * json.weight / 500000) //5 from max AND 10000 from full weight
+    newPower -= vote
+    const newUp = {
+        max: up.max,
+        last: json.block_num,
+        power: newPower
+    }
+    return {up:newUp, vote: vote}  
+}
 
 function hashThis(data) {
     const digest = crypto.createHash('sha256').update(data).digest()
