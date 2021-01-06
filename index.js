@@ -3280,6 +3280,7 @@ function dao(num) {
                                 post = post + `* ${parseFloat(parseInt(k)/1000).toFixed(3)} ${config.TOKEN} for ${_at}${i}'s ${parseFloat(deles[i]/1000000).toFixed(1)} Mvests.\n`
                                 console.log(current + `:${k} ${config.TOKEN} awarded to ${i} for ${deles[i]} VESTS`)
                             }
+                            stats.dluxPerDel = parseInt(k / j)
                             post = post + `*****\n ## ICO Status\n`
                             if (bals.ri < 100000000 && stats.tokenSupply < 100000000000) {
                                 if (bals.ri == 0) {
