@@ -95,7 +95,7 @@ api.get('/api/:api_type/:api_call/:param1', (req, res, next) => {
     let method = `${req.params.api_type}.${req.params.api_call}` || 'condenser_api.get_discussions_by_blog'
     let iparams = req.params.param1,
         params
-    switch (req.params.api_type) {
+    switch (req.params.api_call) {
         case 'get_discussions_by_blog':
             params = [{
                 tags: iparams,
