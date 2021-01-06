@@ -98,7 +98,7 @@ api.get('/api/:api_type/:api_call/:param1', (req, res, next) => {
     switch (req.params.api_call) {
         case 'get_discussions_by_blog':
             params = [{
-                tags: iparams,
+                tag: iparams,
                 limit: 100
             }]
             break;
