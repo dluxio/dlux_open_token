@@ -90,6 +90,31 @@ api.get('/', (req, res, next) => {
 // None of these functions are required for token functionality and should likely be removed from the community version
 //
 //
+api.get('/api/:api_type/:api_call', (req, res, next) => {
+    let method = `${req.params.api_type}.${req.params.api_call}` || 'condenser_api.get_discussions_by_blog'
+    let params = {}
+    for (param in req.query) {
+        params[param] = req.query[param]
+    }
+    res.setHeader('Content-Type', 'application/json')
+    let body = {
+        jsonrpc: "2.0",
+        method,
+        params,
+        id: 1
+    }
+    fetch(config.clientURL, {
+            body: JSON.stringify(body),
+            headers: {
+                "Content-Type": "application/x-www-form-urlencoded"
+            },
+            method: "POST"
+        })
+        .then(j => j.json())
+        .then(r => {
+            res.send(JSON.stringify(r, null, 3))
+        })
+});
 
 api.get('/api/:api_type/:api_call/:param1', (req, res, next) => {
     let method = `${req.params.api_type}.${req.params.api_call}` || 'condenser_api.get_discussions_by_blog'
