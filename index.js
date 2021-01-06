@@ -90,6 +90,41 @@ api.get('/', (req, res, next) => {
 // None of these functions are required for token functionality and should likely be removed from the community version
 //
 //
+
+api.get('/api/:api_type/:api_call/:param1', (req, res, next) => {
+    let method = `${req.params.api_type}.${req.params.api_type}` || 'condenser_api.get_discussions_by_blog'
+    let iparams = req.params.param1,
+        params
+    switch (req.params.api_type) {
+        case 'get_discussions_by_blog':
+            params = [{
+                tags: iparams,
+                limit: 100
+            }]
+            break;
+
+    }
+    res.setHeader('Content-Type', 'application/json')
+    let body = {
+        jsonrpc: "2.0",
+        method,
+        params,
+        id: 1
+    }
+    fetch(config.clientURL, {
+            body: JSON.stringify(body),
+            headers: {
+                "Content-Type": "application/x-www-form-urlencoded"
+            },
+            method: "POST"
+        })
+        .then(j => j.json())
+        .then(r => {
+            res.send(JSON.stringify(r, null, 3))
+        })
+});
+
+
 api.get('/getwrap', (req, res, next) => {
     let method = req.query.method || 'condenser_api.get_discussions_by_blog'
     method.replace('%27', '')
@@ -1667,8 +1702,8 @@ function startApp() {
             if (bid < 1) {
                 bid = 1000
             }
-            if (bid > 1000) {
-                bid = 1000
+            if (bid > 2000) {
+                bid = 2000
             }
             var daoRate = parseInt(json.marketingRate) || 0
             if (daoRate < 1) {
