@@ -1691,10 +1691,10 @@ function startApp() {
                 .then(r => {
                     const post = {
                         votes: {},
-                        expire_path: r[0]
+                        expire_path: r[0],
+                        block: json.block_num
                     }
                     var ops = [{ type: 'put', path: ['posts', json.author, json.permlink], data: post }]
-                    console.log(json, ops)
                     store.batch(ops, pc)
                 })
                 .catch(e => console.log(e))
@@ -1733,7 +1733,6 @@ function startApp() {
 
     // layer 1 proof of brain voting, layer 2 PoB voting
     processor.onOperation('vote', function(json, pc) { //rework more than just the vote remover.
-            console.log(json)
             getPathObj(['posts', json.author, json.permlink]).then(p => {
                 if (p.votes) { //adequate test?
                     var PvotePow = getPathObj(['up', json.voter]),
@@ -2447,29 +2446,34 @@ function startApp() {
                             case 'post_reward': //needs work and/or testing
                                 promises.push(postRewardOP(b, num, chrops[i].split(':')[1], delkey))
 
-                                function postRewardOP(b, num, id, delkey) {
+                                function postRewardOP(p, num, id, delkey) {
+                                    let l = p
                                     return new Promise((resolve, reject) => {
-                                        store.get(['posts', `${b.author}`, `${b.permlink}`], function(e, a) {
+                                        store.get(['posts', l.author, l.permlink], function(e, a) {
+                                            let b = a
                                             let ops = []
-                                            console.log(a)
-                                            a.title = a.customJSON.p.d
-                                            delete a.customJSON.p.d
-                                            a.c = a.customJSON.p
-                                            delete a.customJSON.p
-                                            delete a.customJSON.s
-                                            delete a.customJSON.pw
-                                            delete a.customJSON.sw
+                                            let totals = {
+                                                totalWeight: 0,
+                                                linearWeight: 0
+                                            }
+                                            for (vote in b.votes) {
+                                                totals.totalWeight += b.votes[vote].v
+                                                linearWeight = parseInt(b.votes[vote].v * ((201600 - (b.votes[vote].b + b.block)) / 201600))
+                                                totals.linearWeight += linearWeight
+                                                b.votes[vote].w = linearWeight
+                                            }
+                                            let half = parseInt(totals.totalWeight / 2)
+                                            totals.curationTotal = half
+                                            totals.authorTotal = totals.totalWeight - half
+                                            b.t = totals
                                             ops.push({
                                                 type: 'put',
-                                                path: ['br', `${b.author}/${b.permlink}`],
-                                                data: {
-                                                    op: 'dao_content',
-                                                    post: a
-                                                }
+                                                path: ['pendingpayment', `${b.author}/${b.permlink}`],
+                                                data: b
                                             })
-                                            ops.push({ type: 'del', path: ['chrono', delKey] })
+                                            ops.push({ type: 'del', path: ['chrono', delkey] })
                                             ops.push({ type: 'put', path: ['feed', `${num}:vop_${id}`], data: `@${b.author}| Post:${b.permlink} voting expired.` })
-                                            ops.push({ type: 'del', path: ['posts', `${b.author}/${b.permlink}`] })
+                                            ops.push({ type: 'del', path: ['posts', b.author, b.permlink] })
                                             console.log(ops)
                                             store.batch(ops, [resolve, reject])
                                         })
@@ -2486,7 +2490,11 @@ function startApp() {
                 if (num % 100 === 0 && processor.isStreaming()) {
                     client.database.getDynamicGlobalProperties()
                         .then(function(result) {
-                            console.log('At block', num, 'with', result.head_block_number - num, `left until real-time. DAO @ ${(num - 20000) % 30240}`)
+                            if (processor.isStreaming()) {
+                                console.log('At block ', num, '. Real Time!')
+                            } else {
+                                console.log('At block', num, 'with', result.head_block_number - num, `left until real-time.`)
+                            }
                         });
                 }
                 if (num % 100 === 5 && processor.isStreaming()) {
@@ -2696,18 +2704,23 @@ function tally(num) {
         var Prunners = getPathObj(['runners']),
             Pnode = getPathObj(['markets', 'node']),
             Pstats = getPathObj(['stats']),
-            Prb = getPathNum(['balances', 'it'])
-        Promise.all([Prunners, Pnode, Pstats, Prb]).then(function(v) {
+            Prb = getPathNum(['balances', 'it']),
+            Ppending = getPathObj(['pendingpayment']),
+            Prc = getPathNum(['balances', 'ic'])
+        Promise.all([Prunners, Pnode, Pstats, Prb, Ppending, Prc]).then(function(v) {
             deleteObjs([
                     ['runners'],
-                    ['queue']
+                    ['queue'],
+                    ['pendingpayment']
                 ])
                 .then(empty => {
                     var runners = v[0],
                         nodes = v[1],
                         stats = v[2],
                         rbal = v[3],
-                        queue = []
+                        pending = v[4],
+                        rewardBal = v[5]
+                    queue = []
                     var tally = {
                         agreements: {
                             runners: {},
@@ -2824,31 +2837,85 @@ function tally(num) {
                     for (var node in runners) {
                         nodes[node].wins++
                     }
-                    const mint = 19000
-                    stats.tokenSupply += mint
-                    rbal += mint
-                    store.batch([
-                        { type: 'put', path: ['stats'], data: stats },
-                        { type: 'put', path: ['queue'], data: queue },
-                        { type: 'put', path: ['runners'], data: runners },
-                        { type: 'put', path: ['markets', 'node'], data: nodes },
-                        { type: 'put', path: ['balances', 'it'], data: rbal }
-                    ], [resolve, reject])
-                    console.log({ "con && plasma": consensus != plasma.hashLastIBlock, "con && report": consensus != nodes[config.username].report.hash, "Processor, streaming": processor.isStreaming() })
-                    if (consensus && (consensus != plasma.hashLastIBlock || consensus != nodes[config.username].report.hash) && processor.isStreaming()) { //this doesn't seem to be catching failures
-                        exit(consensus)
-                        var errors = ['failed Consensus']
-                        if (VERSION != nodes[node].report.version) {
-                            console.log(current + `:Abandoning ${plasma.hashLastIBlock} because ${errors[0]}`)
-                        }
-                        //const blockState = Buffer.from(JSON.stringify([num, state]))
-                        plasma.hashBlock = ''
-                        plasma.hashLastIBlock = ''
-                        console.log(current + `:Abandoning ${plasma.hashLastIBlock} because ${errors[0]}`)
+                    let weights = 0,
+                        running_weight = parseInt(stats.movingWeight.running / 2016)
+                    for (post in pending) {
+                        weights += pending[post].t.totalWeight
                     }
+                    let this_weight = parseInt(weights / 2016),
+                        this_payout = parseInt(13300 * this_weight / running_weight) //subtract this from the rc account... 13300 is 70% of inflation
+                    stats.movingWeight.running = parseInt(((stats.movingWeight.running * 2015) / 2016) + (weights / 2016)) //7 day average at 5 minute intervals
+                    payout(this_payout, weights, pending)
+                        .then(change => {
+                            const mint = 19000
+                            stats.tokenSupply += mint
+                            rbal += mint + change //cycle millitokens back thru inflation
+                            store.batch([
+                                { type: 'put', path: ['stats'], data: stats },
+                                { type: 'put', path: ['queue'], data: queue },
+                                { type: 'put', path: ['runners'], data: runners },
+                                { type: 'put', path: ['markets', 'node'], data: nodes },
+                                { type: 'put', path: ['balances', 'it'], data: rbal }, //add this to rc,rm(ining),rd(elegation),
+                                { type: 'put', path: ['balances', 'ic'], data: rewardBal - this_payout }
+                            ], [resolve, reject])
+                            console.log({ "con && plasma": consensus != plasma.hashLastIBlock, "con && report": consensus != nodes[config.username].report.hash, "Processor, streaming": processor.isStreaming() })
+                            if (consensus && (consensus != plasma.hashLastIBlock || consensus != nodes[config.username].report.hash) && processor.isStreaming()) { //this doesn't seem to be catching failures
+                                exit(consensus)
+                                var errors = ['failed Consensus']
+                                if (VERSION != nodes[node].report.version) {
+                                    console.log(current + `:Abandoning ${plasma.hashLastIBlock} because ${errors[0]}`)
+                                }
+                                //const blockState = Buffer.from(JSON.stringify([num, state]))
+                                plasma.hashBlock = ''
+                                plasma.hashLastIBlock = ''
+                                console.log(current + `:Abandoning ${plasma.hashLastIBlock} because ${errors[0]}`)
+                            }
+                        })
+                        .catch(e => { console.log(e) })
                 })
                 .catch(e => { console.log(e) })
         });
+    })
+}
+
+function payout(this_payout, weights, pending) {
+    return new Promise((resolve, reject) => {
+        let payments = {},
+            out = 0
+        for (post in pending) {
+            payments[post.split('/')[0]] = 0
+            for (voter in pending[post].votes) {
+                payments[voter] = 0
+            }
+        }
+        for (post in pending) {
+            if (pending[post].t.totalWeight > 0) {
+                const TotalPostPayout = parseInt(this_payout * (pending[post].t.totalWeight) / weights)
+                payments[post.split('/')[0]] += parseInt(TotalPostPayout / 2) //author reward
+                out += parseInt(TotalPostPayout / 2)
+                for (voter in pending[post].votes) {
+                    if (pending[post].votes[voter].v > 0) {
+                        const this_vote = parseInt((TotalPostPayout * pending[post].votes[voter].w) / (pending[post].t.linearWeight * 2))
+                        payments[voter] += this_vote
+                        out += this_vote
+                    }
+                }
+            }
+        }
+        let promises = []
+        for (account in payments) {
+            promises.push(getPathNum(['balances', account]))
+        }
+        Promise.all(promises).then(p => {
+            let i = 0,
+                ops = []
+            for (account in payments) {
+                ops.push({ type: 'put', path: ['balances', account], data: p[i] + payments[account] })
+                i++
+            }
+            let paid = this_payout - out
+            store.batch(ops, [resolve, reject, paid]) //return the paid ammount so millitokens aren't lost
+        })
     })
 }
 
@@ -3128,10 +3195,6 @@ function dao(num) {
                     Pposts = getPathObj(['posts']),
                     Pfeed = getPathObj(['feed'])
                 Promise.all([Pnews, Pbals, Prunners, Pnodes, Pstats, Pdelegations, Pico, Pdex, Pbr, Ppbal, Pnomen, Pposts, Pfeed]).then(function(v) {
-                            daops.push({ type: 'del', path: ['postQueue'] })
-                            daops.push({ type: 'del', path: ['br'] })
-                            daops.push({ type: 'del', path: ['rolling'] })
-                            daops.push({ type: 'del', path: ['ico'] })
                             news = v[0] + '*****\n'
                             const header = post + news
                             var bals = v[1],
@@ -3760,7 +3823,7 @@ function upPowerMagic(up, json){
     if (newPower > up.max){
         newPower = up.max
     }
-    const vote = parseInt(newPower * json.weight / 500000) //50 from max AND 10000 from full weight
+    var vote = parseInt(newPower * json.weight / 500000) //50 from max AND 10000 from full weight
     newPower -= vote
     const newUp = {
         max: up.max,

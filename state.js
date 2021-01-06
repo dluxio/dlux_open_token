@@ -60,6 +60,9 @@ module.exports = {
             "rate": "3.00000", //set this at ICO price
             "vol": 1470
         },
+        "movingWeight": {
+            "running": 0
+        },
         "bountyRate": 250, //for DLF
         "currationRate": 7000, //for content
         "delegationRate": 250, //for delegators
