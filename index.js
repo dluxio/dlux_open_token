@@ -95,10 +95,8 @@ api.get('/api/:api_type/:api_call', (req, res, next) => {
     let params = {}
     let array = false
     for (param in req.query) {
-        console.log(param)
         if (param == "0") {
             array = true
-            console.log('array')
             break;
         }
         params[param] = req.query[param]
@@ -108,6 +106,7 @@ api.get('/api/:api_type/:api_call', (req, res, next) => {
         for (param in req.query) {
             params.push(req.query[param])
         }
+        params = [params]
     }
     switch (req.params.api_call) {
         case 'get_content':
@@ -118,7 +117,6 @@ api.get('/api/:api_type/:api_call', (req, res, next) => {
             break;
         default:
     }
-    console.log(params)
     res.setHeader('Content-Type', 'application/json')
     let body = {
         jsonrpc: "2.0",
