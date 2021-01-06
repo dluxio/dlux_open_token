@@ -93,8 +93,19 @@ api.get('/', (req, res, next) => {
 api.get('/api/:api_type/:api_call', (req, res, next) => {
     let method = `${req.params.api_type}.${req.params.api_call}` || 'condenser_api.get_discussions_by_blog'
     let params = {}
+    let array = false
     for (param in req.query) {
+        if (param == 0) {
+            params = []
+            array = true
+            break
+        }
         params[param] = req.query[param]
+    }
+    if (array) {
+        for (i = 0; i < req.query.length; i++) {
+            params.push(req.query[i])
+        }
     }
     switch (req.params.api_call) {
         case 'get_content':
