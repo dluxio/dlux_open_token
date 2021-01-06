@@ -92,7 +92,7 @@ api.get('/', (req, res, next) => {
 //
 
 api.get('/api/:api_type/:api_call/:param1', (req, res, next) => {
-    let method = `${req.params.api_type}.${req.params.api_type}` || 'condenser_api.get_discussions_by_blog'
+    let method = `${req.params.api_type}.${req.params.api_call}` || 'condenser_api.get_discussions_by_blog'
     let iparams = req.params.param1,
         params
     switch (req.params.api_type) {
