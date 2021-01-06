@@ -98,10 +98,10 @@ api.get('/api/:api_type/:api_call', (req, res, next) => {
     }
     switch (req.params.api_call) {
         case 'get_content':
-            params = [params.auhor, params.permlink]
+            params = [params.author, params.permlink]
             break;
         case 'get_content_replies':
-            params = [params.auhor, params.permlink]
+            params = [params.author, params.permlink]
             break;
         default:
     }
