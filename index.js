@@ -96,6 +96,15 @@ api.get('/api/:api_type/:api_call', (req, res, next) => {
     for (param in req.query) {
         params[param] = req.query[param]
     }
+    switch (req.params.api_call) {
+        case 'get_content':
+            params = [params.auhor, params.permlink]
+            break;
+        case 'get_content_replies':
+            params = [params.auhor, params.permlink]
+            break;
+        default:
+    }
     res.setHeader('Content-Type', 'application/json')
     let body = {
         jsonrpc: "2.0",
