@@ -95,14 +95,14 @@ api.get('/api/:api_type/:api_call', (req, res, next) => {
     let params = {}
     let array = false
     for (param in req.query) {
-        if (param == 0) {
-            params = []
+        if (param == "0") {
             array = true
-            break
+            break;
         }
         params[param] = req.query[param]
     }
     if (array) {
+        params = []
         for (i = 0; i < req.query.length; i++) {
             params.push(req.query[i])
         }
@@ -116,6 +116,7 @@ api.get('/api/:api_type/:api_call', (req, res, next) => {
             break;
         default:
     }
+    console.log(params)
     res.setHeader('Content-Type', 'application/json')
     let body = {
         jsonrpc: "2.0",
