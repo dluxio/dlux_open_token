@@ -89,7 +89,8 @@ module.exports = function(client, steem, currentBlockNumber = 1, blockComputeSpe
         })
         stream.on('error', function(err) {
             cycleapi()
-            throw err;
+            console.log('This place:', err)
+                //throw err;
         })
     }
 
