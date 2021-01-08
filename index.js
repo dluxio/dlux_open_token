@@ -3693,14 +3693,14 @@ function penalty(node, amount) {
     console.log('penalty: ', { node, amount })
     return new Promise((resolve, reject) => {
         pts = getPathNum(['stats', 'tokenSupply'])
-        pnb = getPathNum(['bal', node])
+        pnb = getPathNum(['balances', node])
         Promise.all([pts,pnb]).then(r=>{
             var a2 = r[1],
                 ts = r[0]
                 newBal = a2 - amount
                 if(newBal < 0){newBal = 0}
                 const forfiet = a2 - newBal
-                var ops = [{ type: 'put', path: ['bal', node], data: newBal }]
+                var ops = [{ type: 'put', path: ['balances', node], data: newBal }]
                 //ops.push({ type: 'put', path: ['stats', 'tokenSupply'], data: ts - forfiet })
                 //dig into powered token? would this be a method to power down quickly?
                 store.batch(ops, [resolve, reject, forfiet])
