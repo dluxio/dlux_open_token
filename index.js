@@ -2654,6 +2654,7 @@ function startApp() {
                     waitup(promises, pc, [resolve, reject])
 
                     function waitup(promisesf, pca, p) {
+                        console.log('waitup hang?')
                         Promise.all(promisesf)
                             .then(r => {
                                 p[0](pca)
