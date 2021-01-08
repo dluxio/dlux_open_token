@@ -3017,7 +3017,7 @@ function enforce(agent, txid, pointer, block_num) { //checks status of required 
                                 case 'denyA':
                                     getPathObj(['escrow', '.' + c.to, `${c.from}/${c.escrow_id}:denyT`])
                                         .then(toOp => {
-                                            chronAssign(block_num + 200, { op: 'denyT', agent: c.to, txid: `${ c.from }/${c.escrow_id}:denyT`, acc: c.from, id: c.escrow_id })
+                                            chronAssign(block_num + 200, { op: 'denyT', agent: c.to, txid: `${ c.from }/${c.escrow_id}:denyT`, acc: pointer.acc, id: pointer.id })
                                             penalty(c.agent, c.col)
                                                 .then(col => {
                                                     c.recovered = col
