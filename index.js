@@ -3020,6 +3020,7 @@ function enforce(agent, txid, pointer, block_num) { //checks status of required 
                                             chronAssign(block_num + 200, { op: 'denyT', agent: c.to, txid: `${ c.from }/${c.escrow_id}:denyT`, acc: pointer.acc, id: pointer.id })
                                             penalty(c.agent, c.col)
                                                 .then(col => {
+                                                    console.log(col)
                                                     c.recovered = col
                                                     add('rn', col)
                                                     ops.push({ type: 'put', path: ['escrow', c.to, `${c.from}/${c.escrow_id}:denyT`], data: toOp })
@@ -3038,21 +3039,22 @@ function enforce(agent, txid, pointer, block_num) { //checks status of required 
                                     penalty(c.to, c.col)
                                         .then(col => {
                                             const returnable = col + c.recovered
+                                            console.log(returnable, col, c.recovered)
                                             ops.push({ type: 'del', path: ['contracts', c.for, c.escrow_id] }) //some more logic here to clean memory... or check if this was denies for colateral reasons
                                             ops.push({ type: 'del', path: ['escrow', c.to, `${c.from}/${c.escrow_id}:denyT`] })
                                             ops.push({ type: 'del', path: ['escrow', c.escrow_id, c.from] })
                                             if (col > c.col / 4) {
                                                 add(c.from, parseInt(c.col / 4))
-                                                add('rn', col - parseInt(c.col / 4))
+                                                add('rn', parseInt(col - parseInt(c.col / 4)))
                                             } else if (c.recovered > parseInt(c.col / 4)) {
                                                 add(c.from, parseInt(c.col / 4))
-                                                add('rn', col - parseInt(c.col / 4))
+                                                add('rn', parseInt(col - parseInt(c.col / 4)))
                                             } else if (returnable <= parseInt(c.col / 4)) {
                                                 add(c.from, returnable)
-                                                add('rn', -c.recovered)
+                                                add('rn', parseInt(-c.recovered))
                                             } else {
                                                 add(c.from, parseInt(c.col / 4))
-                                                add('rn', col - c.recovered)
+                                                add('rn', parseInt(col - c.recovered))
                                             }
                                             store.batch(ops, [resolve, reject])
                                             ops = []
