@@ -2556,7 +2556,7 @@ function startApp() {
                                 store.batch([{ type: 'del', path: ['chrono', delKey] }], [function() { console.log('success') }, function() { console.log('failure') }])
                                 break;
                             case 'denyT':
-                                promises.push(enforce(b.agent, b.txid, { id: b.id, acc: b.acc }, num))
+                                promises.push(enforce(b.to, b.txid, { id: b.id, acc: b.acc }, num))
                                 store.batch([{ type: 'del', path: ['chrono', delKey] }], [function() { console.log('success') }, function() { console.log('failure') }])
                                 break;
                             case 'power_down': //needs work and testing
@@ -3020,7 +3020,8 @@ function enforce(agent, txid, pointer, block_num) { //checks status of required 
                                             chronAssign(block_num + 200, { op: 'denyT', agent: c.to, txid: `${ c.from }/${c.escrow_id}:denyT`, acc: c.from, id: c.escrow_id })
                                             penalty(c.agent, c.col)
                                                 .then(col => {
-                                                    c.recovered = col //token supply gets weird here... should the confiscated tokens go toward content rewards or somewhere easier to math?
+                                                    c.recovered = col
+                                                    add('rn', col)
                                                     ops.push({ type: 'put', path: ['escrow', c.to, `${c.from}/${c.escrow_id}:denyT`], data: toOp })
                                                     ops.push({ type: 'del', path: ['escrow', c.agent, `${c.from}/${c.escrow_id}:denyA`] })
                                                     ops.push({ type: 'del', path: ['escrow', '.' + c.to, `${c.from}/${c.escrow_id}:denyT`] })
@@ -3040,10 +3041,18 @@ function enforce(agent, txid, pointer, block_num) { //checks status of required 
                                             ops.push({ type: 'del', path: ['contracts', c.for, c.escrow_id] }) //some more logic here to clean memory... or check if this was denies for colateral reasons
                                             ops.push({ type: 'del', path: ['escrow', c.to, `${c.from}/${c.escrow_id}:denyT`] })
                                             ops.push({ type: 'del', path: ['escrow', c.escrow_id, c.from] })
-                                            if (returnable > c.col / 4) {
-                                                add(c.from, parseInt(c.coll / 4))
-                                            } else {
+                                            if (col > c.col / 4) {
+                                                add(c.from, parseInt(c.col / 4))
+                                                add('rn', col - parseInt(c.col / 4))
+                                            } else if (c.recovered > parseInt(c.col / 4)) {
+                                                add(c.from, parseInt(c.col / 4))
+                                                add('rn', col - parseInt(c.col / 4))
+                                            } else if (returnable <= parseInt(c.col / 4)) {
                                                 add(c.from, returnable)
+                                                add('rn', -c.recovered)
+                                            } else {
+                                                add(c.from, parseInt(c.col / 4))
+                                                add('rn', col - c.recovered)
                                             }
                                             store.batch(ops, [resolve, reject])
                                             ops = []
