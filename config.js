@@ -23,7 +23,7 @@ var ipfshost = ENV.ipfshost || 'ipfs.infura.io' //IPFS upload/download provider 
 const bidRate = ENV.BIDRATE || 2500 //
 
 //HIVE CONFIGS
-var clientURL = ENV.APIURL || 'https://api.deathwing.me'
+var clientURL = ENV.APIURL || 'https://api.hive.blog'
 const clients = [
     'https://api.hive.blog',
     'https://anyx.io',

@@ -43,7 +43,7 @@ const op = ChainTypes.operations
 const walletOperationsBitmask = makeBitMaskFilter([
     op.custom_json
 ])
-startWith('QmYta3EP9GQKFKMNjci1RfRtSgjHVszq7EuCegLH7cteaq') //for testing and replaying
+startWith('QmdLmj4p2N7W67h7dLgWJp2tEFN9yD44Q5BftqVcSNbdcA') //for testing and replaying
     //dynStart(config.leader)
 
 // Cycle through good public IPFS gateways
