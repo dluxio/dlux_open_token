@@ -3692,9 +3692,9 @@ function penalty(node, amount) {
                 if(newBal < 0){newBal = 0}
                 const forfiet = a2 - newBal
                 var ops = [{ type: 'put', path: ['bal', node], data: newBal }]
-                ops.push({ type: 'put', path: ['stats', 'tokenSupply'], data: ts - forfiet })
+                //ops.push({ type: 'put', path: ['stats', 'tokenSupply'], data: ts - forfiet })
                 //dig into powered token? would this be a method to power down quickly?
-                store.batch(ops, [resolve(forfiet), reject])
+                store.batch(ops, [resolve, reject, forfiet])
         }).catch(e=>{
             console.log(e)
         })
