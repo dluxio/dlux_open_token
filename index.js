@@ -1698,6 +1698,7 @@ function startApp() {
                             store.batch(dataOps, pc)
                             credit(json.who)
                         } else if (!json.approve && c.note == 'denied transaction' && json.who == json.to) {
+                            console.log('so this happened...')
                             dataOps.push({ type: 'del', path: ['contracts', a.for, a.contract] }) //some more logic here to clean memory... or check if this was denies for colateral reasons
                             dataOps.push({ type: 'del', path: ['escrow', json.to, `${json.from}/${json.escrow_id}:denyT`] })
                             dataOps.push({ type: 'del', path: ['escrow', c.escrow_id, c.from] })
@@ -2998,13 +2999,12 @@ function enforce(agent, txid, pointer, block_num) { //checks status of required 
         Pop = getPathObj(['escrow', agent, txid])
         Ppointer = getPathObj(['escrow', pointer.id, pointer.acc])
         PtokenSupply = getPathNum(['stats', 'tokenSupply'])
-        PtokenSupply = getPathNum(['balances', 'tokenSupply'])
         Promise.all([Pop, Ppointer, PtokenSupply])
             .then(r => {
                 a = r[0]
                 p = r[1]
                 s = r[2]
-                console.log('enforce:', { a })
+                console.log('enforce:', { a }, 'pointer:', { p })
                 if (Object.keys(a).length) {
                     let op = txid.split(":")[1],
                         id = txid.split(":")[0],
