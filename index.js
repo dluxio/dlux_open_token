@@ -1698,7 +1698,7 @@ function startApp() {
                             store.batch(dataOps, pc)
                             credit(json.who)
                         } else if (!json.approve && c.note == 'denied transaction' && json.who == json.to) {
-                            console.log('so this happened...')
+                            console.log('To Denied Escrow First, odd but OK...')
                             dataOps.push({ type: 'del', path: ['contracts', a.for, a.contract] }) //some more logic here to clean memory... or check if this was denies for colateral reasons
                             dataOps.push({ type: 'del', path: ['escrow', json.to, `${json.from}/${json.escrow_id}:denyT`] })
                             dataOps.push({ type: 'del', path: ['escrow', json.agent, `${json.from}/${json.escrow_id}:denyA`] })
@@ -3044,7 +3044,7 @@ function enforce(agent, txid, pointer, block_num) { //checks status of required 
                                             ops.push({ type: 'del', path: ['contracts', c.for, c.escrow_id] }) //some more logic here to clean memory... or check if this was denies for colateral reasons
                                             ops.push({ type: 'del', path: ['escrow', c.to, `${c.from}/${c.escrow_id}:denyT`] })
                                             ops.push({ type: 'del', path: ['escrow', c.escrow_id, c.from] })
-                                            if (col > c.col / 4) {
+                                            if (col > parseInt(c.col / 4)) {
                                                 add(c.from, parseInt(c.col / 4))
                                                 add('rn', parseInt(col - parseInt(c.col / 4)))
                                             } else if (c.recovered > parseInt(c.col / 4)) {
