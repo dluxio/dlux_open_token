@@ -1283,7 +1283,7 @@ function startApp() {
                                     path: ['escrow', json.escrow_id.toString(), json.from],
                                     data: {
                                         for: json.from,
-                                        contract: json.escrow_id.toString
+                                        contract: json.escrow_id.toString()
                                     }
                                 })
                                 var coll = 0
@@ -1479,7 +1479,7 @@ function startApp() {
                         path: ['escrow', json.escrow_id.toString(), json.from],
                         data: {
                             for: json.from,
-                            contract: json.escrow_id.toString
+                            contract: json.escrow_id.toString()
                         }
                     })
                     var coll = 0
@@ -1542,7 +1542,7 @@ function startApp() {
                     path: ['escrow', json.escrow_id.toString(), json.from],
                     data: {
                         for: json.from,
-                        contract: json.escrow_id.toString
+                        contract: json.escrow_id.toString()
                     }
                 })
                 var coll = 0
