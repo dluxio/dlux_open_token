@@ -1446,42 +1446,124 @@ function startApp() {
                     ops.push({ type: 'put', path: ['feed', `${json.block_num}:${json.transaction_id}`], data: `@${json.from}| requested a trade outside of price curbs.` })
                     ops.push({
                         type: 'put',
-                        path: ['escrow', json.agent, `${json.from}/${json.escrow_id}:deny`],
-                        //need and enforcement point to check for trues
+                        path: ['escrow', json.agent, `${ json.from }/${json.escrow_id}:deny`], //.prevents pickup
                         data: [
                             "escrow_approve",
                             {
                                 "from": json.from,
                                 "to": json.to,
                                 "agent": json.agent,
-                                "who": json.agent,
+                                "who": json.to,
                                 "escrow_id": json.escrow_id,
-                                "approve": false //reject non coded
+                                "approve": false
                             }
                         ]
                     })
+                    ops.push({
+                        type: 'put',
+                        path: ['escrow', '.' + json.to, `${ json.from }/${json.escrow_id}:deny`], //.prevents pickup
+                        data: [
+                            "escrow_approve",
+                            {
+                                "from": json.from,
+                                "to": json.to,
+                                "agent": json.agent,
+                                "who": json.to,
+                                "escrow_id": json.escrow_id,
+                                "approve": false
+                            }
+                        ]
+                    })
+                    ops.push({
+                        type: 'put',
+                        path: ['escrow', json.escrow_id.toString(), json.from],
+                        data: {
+                            for: json.from,
+                            contract: json.escrow_id.toString
+                        }
+                    })
+                    var coll = 0
+                    if (parseFloat(json.hbd_amount) > 0) {
+                        coll = parseInt(4 * parseFloat(hbdVWMA.rate) * parseFloat(json.hbd_amount) * 1000)
+                    } else {
+                        coll = parseInt(4 * parseFloat(hiveVWMA.rate) * parseFloat(json.hive_amount) * 1000)
+                    }
+                    ops.push({
+                        type: 'put',
+                        path: ['contracts', json.from, json.escrow_id.toString()],
+                        data: {
+                            note: 'denied transaction',
+                            from: json.from,
+                            to: json.to,
+                            agent: json.agent,
+                            escrow_id: json.escrow_id.toString(),
+                            col: coll
+                        }
+                    })
+                    chronAssign(json.block_num + 200, { op: 'denyA', agent: json.agent, txid: `${ json.from }/${json.escrow_id}:deny`, acc: json.from, id: json.escrow_id.toString() })
                     store.batch(ops, pc)
                 }
             } else if (isDAgent && isAgent) {
                 var ops = []
                 console.log(toBal > (dextxamount * 2), agentBal > (dextxamount * 2), typeof dextxamount === 'number', dextxamount > 0, isAgent, isDAgent, btime, 'buy checks')
                 ops.push({ type: 'put', path: ['feed', `${json.block_num}:${json.transaction_id}`], data: `@${json.from}| improperly attempted to use the escrow network. Attempting escrow deny.` })
-
                 ops.push({
                     type: 'put',
-                    path: ['escrow', json.agent, `${json.from}/${json.escrow_id}:deny`],
+                    path: ['escrow', json.agent, `${ json.from }/${json.escrow_id}:deny`], //.prevents pickup
                     data: [
                         "escrow_approve",
                         {
                             "from": json.from,
                             "to": json.to,
                             "agent": json.agent,
-                            "who": json.agent,
+                            "who": json.to,
                             "escrow_id": json.escrow_id,
-                            "approve": false //reject non coded
+                            "approve": false
                         }
                     ]
                 })
+                ops.push({
+                    type: 'put',
+                    path: ['escrow', '.' + json.to, `${ json.from }/${json.escrow_id}:deny`], //.prevents pickup
+                    data: [
+                        "escrow_approve",
+                        {
+                            "from": json.from,
+                            "to": json.to,
+                            "agent": json.agent,
+                            "who": json.to,
+                            "escrow_id": json.escrow_id,
+                            "approve": false
+                        }
+                    ]
+                })
+                ops.push({
+                    type: 'put',
+                    path: ['escrow', json.escrow_id.toString(), json.from],
+                    data: {
+                        for: json.from,
+                        contract: json.escrow_id.toString
+                    }
+                })
+                var coll = 0
+                if (parseFloat(json.hbd_amount) > 0) {
+                    coll = parseInt(4 * parseFloat(hbdVWMA.rate) * parseFloat(json.hbd_amount) * 1000)
+                } else {
+                    coll = parseInt(4 * parseFloat(hiveVWMA.rate) * parseFloat(json.hive_amount) * 1000)
+                }
+                ops.push({
+                    type: 'put',
+                    path: ['contracts', json.from, json.escrow_id.toString()],
+                    data: {
+                        note: 'denied transaction',
+                        from: json.from,
+                        to: json.to,
+                        agent: json.agent,
+                        escrow_id: json.escrow_id.toString(),
+                        col: coll
+                    }
+                })
+                chronAssign(json.block_num + 200, { op: 'denyA', agent: json.agent, txid: `${ json.from }/${json.escrow_id}:deny`, acc: json.from, id: json.escrow_id.toString() })
 
                 store.batch(ops, pc)
             } else {
