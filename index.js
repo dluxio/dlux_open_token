@@ -3018,7 +3018,7 @@ function enforce(agent, txid, pointer, block_num) { //checks status of required 
                                     getPathObj(['escrow', '.' + c.to, `${c.from}/${c.escrow_id}:denyT`])
                                         .then(toOp => {
                                             chronAssign(block_num + 200, { op: 'denyT', agent: c.to, txid: `${ c.from }/${c.escrow_id}:denyT`, acc: c.from, id: c.escrow_id })
-                                            penalty(c.agent, c.coll)
+                                            penalty(c.agent, c.col)
                                                 .then(col => {
                                                     c.recovered = col //token supply gets weird here... should the confiscated tokens go toward content rewards or somewhere easier to math?
                                                     ops.push({ type: 'put', path: ['escrow', c.to, `${c.from}/${c.escrow_id}:denyT`], data: toOp })
@@ -3034,13 +3034,13 @@ function enforce(agent, txid, pointer, block_num) { //checks status of required 
                                         .catch(e => { console.log(e) })
                                     break;
                                 case 'denyT':
-                                    penalty(c.agent, c.coll)
+                                    penalty(c.agent, c.col)
                                         .then(col => {
                                             const returnable = col + c.recovered
                                             ops.push({ type: 'del', path: ['contracts', c.for, c.escrow_id] }) //some more logic here to clean memory... or check if this was denies for colateral reasons
                                             ops.push({ type: 'del', path: ['escrow', c.to, `${c.from}/${c.escrow_id}:denyT`] })
                                             ops.push({ type: 'del', path: ['escrow', c.escrow_id, c.from] })
-                                            if (returnable > c.coll / 4) {
+                                            if (returnable > c.col / 4) {
                                                 add(c.from, parseInt(c.coll / 4))
                                             } else {
                                                 add(c.from, returnable)
