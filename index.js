@@ -2545,19 +2545,19 @@ function startApp() {
                         switch (b.op) {
                             case 'expire':
                                 promises.push(release(b.from, b.txid, num))
-                                store.batch([{ type: 'del', path: ['chrono', delKey] }], [function() { console.log('success') }, function() { console.log('failure') }])
+                                store.batch([{ type: 'del', path: ['chrono', delKey] }], [function() {}, function() { console.log('failure') }])
                                 break;
                             case 'check':
                                 promises.push(enforce(b.agent, b.txid, { id: b.id, acc: b.acc }, num))
-                                store.batch([{ type: 'del', path: ['chrono', delKey] }], [function() { console.log('success') }, function() { console.log('failure') }])
+                                store.batch([{ type: 'del', path: ['chrono', delKey] }], [function() {}, function() { console.log('failure') }])
                                 break;
                             case 'denyA':
                                 promises.push(enforce(b.agent, b.txid, { id: b.id, acc: b.acc }, num))
-                                store.batch([{ type: 'del', path: ['chrono', delKey] }], [function() { console.log('success') }, function() { console.log('failure') }])
+                                store.batch([{ type: 'del', path: ['chrono', delKey] }], [function() { console.log({ b }) }, function() { console.log('failure') }])
                                 break;
                             case 'denyT':
-                                promises.push(enforce(b.to, b.txid, { id: b.id, acc: b.acc }, num))
-                                store.batch([{ type: 'del', path: ['chrono', delKey] }], [function() { console.log('success') }, function() { console.log('failure') }])
+                                promises.push(enforce(b.agent, b.txid, { id: b.id, acc: b.acc }, num))
+                                store.batch([{ type: 'del', path: ['chrono', delKey] }], [function() {}, function() { console.log('failure') }])
                                 break;
                             case 'power_down': //needs work and testing
                                 let lbp = getPathNum(['balances', from]),
