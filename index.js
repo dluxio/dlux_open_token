@@ -1249,7 +1249,7 @@ function startApp() {
                                 var out = [{ type: 'put', path: ['feed', `${json.block_num}:${json.transaction_id}`], data: `@${json.from}'s trade has failed collateral requirements, Try different agents` }, ]
                                 out.push({
                                         type: 'put',
-                                        path: ['escrow', json.agent, `${ json.from }/${json.escrow_id}:deny`],
+                                        path: ['escrow', json.agent, `${ json.from }/${json.escrow_id}:denyA`],
                                         data: [
                                             "escrow_approve",
                                             {
@@ -1265,7 +1265,7 @@ function startApp() {
                                     //only one false can be broadcast, but both trues... keep a record to check against for memory management and enforcement
                                 out.push({
                                     type: 'put',
-                                    path: ['escrow', '.' + json.to, `${ json.from }/${json.escrow_id}:deny`], //.prevents pickup
+                                    path: ['escrow', '.' + json.to, `${ json.from }/${json.escrow_id}:denyT`], //.prevents pickup
                                     data: [
                                         "escrow_approve",
                                         {
@@ -1304,7 +1304,7 @@ function startApp() {
                                         col: coll
                                     }
                                 })
-                                chronAssign(json.block_num + 200, { op: 'denyA', agent: json.agent, txid: `${ json.from }/${json.escrow_id}:deny`, acc: json.from, id: json.escrow_id.toString() })
+                                chronAssign(json.block_num + 200, { op: 'denyA', agent: json.agent, txid: `${ json.from }/${json.escrow_id}:denyA`, acc: json.from, id: json.escrow_id.toString() })
                                 store.batch(out, pc)
                             }
                         })
@@ -1446,7 +1446,7 @@ function startApp() {
                     ops.push({ type: 'put', path: ['feed', `${json.block_num}:${json.transaction_id}`], data: `@${json.from}| requested a trade outside of price curbs.` })
                     ops.push({
                         type: 'put',
-                        path: ['escrow', json.agent, `${ json.from }/${json.escrow_id}:deny`], //.prevents pickup
+                        path: ['escrow', json.agent, `${ json.from }/${json.escrow_id}:denyA`], //.prevents pickup
                         data: [
                             "escrow_approve",
                             {
@@ -1461,7 +1461,7 @@ function startApp() {
                     })
                     ops.push({
                         type: 'put',
-                        path: ['escrow', '.' + json.to, `${ json.from }/${json.escrow_id}:deny`], //.prevents pickup
+                        path: ['escrow', '.' + json.to, `${ json.from }/${json.escrow_id}:denyT`], //.prevents pickup
                         data: [
                             "escrow_approve",
                             {
@@ -1500,7 +1500,7 @@ function startApp() {
                             col: coll
                         }
                     })
-                    chronAssign(json.block_num + 200, { op: 'denyA', agent: json.agent, txid: `${ json.from }/${json.escrow_id}:deny`, acc: json.from, id: json.escrow_id.toString() })
+                    chronAssign(json.block_num + 200, { op: 'denyA', agent: json.agent, txid: `${ json.from }/${json.escrow_id}:denyA`, acc: json.from, id: json.escrow_id.toString() })
                     store.batch(ops, pc)
                 }
             } else if (isDAgent && isAgent) {
@@ -1509,7 +1509,7 @@ function startApp() {
                 ops.push({ type: 'put', path: ['feed', `${json.block_num}:${json.transaction_id}`], data: `@${json.from}| improperly attempted to use the escrow network. Attempting escrow deny.` })
                 ops.push({
                     type: 'put',
-                    path: ['escrow', json.agent, `${ json.from }/${json.escrow_id}:deny`], //.prevents pickup
+                    path: ['escrow', json.agent, `${ json.from }/${json.escrow_id}:denyA`], //.prevents pickup
                     data: [
                         "escrow_approve",
                         {
@@ -1524,7 +1524,7 @@ function startApp() {
                 })
                 ops.push({
                     type: 'put',
-                    path: ['escrow', '.' + json.to, `${ json.from }/${json.escrow_id}:deny`], //.prevents pickup
+                    path: ['escrow', '.' + json.to, `${ json.from }/${json.escrow_id}:denyT`], //.prevents pickup
                     data: [
                         "escrow_approve",
                         {
@@ -1563,7 +1563,7 @@ function startApp() {
                         col: coll
                     }
                 })
-                chronAssign(json.block_num + 200, { op: 'denyA', agent: json.agent, txid: `${ json.from }/${json.escrow_id}:deny`, acc: json.from, id: json.escrow_id.toString() })
+                chronAssign(json.block_num + 200, { op: 'denyA', agent: json.agent, txid: `${ json.from }/${json.escrow_id}:denyA`, acc: json.from, id: json.escrow_id.toString() })
 
                 store.batch(ops, pc)
             } else {
@@ -1692,14 +1692,14 @@ function startApp() {
                             credit(json.who)
                         } else if (!json.approve && c.note == 'denied transaction' && json.who == json.agent) {
                             dataOps.push({ type: 'del', path: ['contracts', a.for, a.contract] }) //some more logic here to clean memory... or check if this was denies for colateral reasons
-                            dataOps.push({ type: 'del', path: ['escrow', json.who, `${json.from}/${json.escrow_id}:deny`] })
-                            dataOps.push({ type: 'del', path: ['escrow', '.' + json.to, `${json.from}/${json.escrow_id}:deny`] })
+                            dataOps.push({ type: 'del', path: ['escrow', json.agent, `${json.from}/${json.escrow_id}:denyA`] })
+                            dataOps.push({ type: 'del', path: ['escrow', '.' + json.to, `${json.from}/${json.escrow_id}:denyT`] })
                             dataOps.push({ type: 'del', path: ['escrow', c.escrow_id, c.from] })
                             store.batch(dataOps, pc)
                             credit(json.who)
                         } else if (!json.approve && c.note == 'denied transaction' && json.who == json.to) {
                             dataOps.push({ type: 'del', path: ['contracts', a.for, a.contract] }) //some more logic here to clean memory... or check if this was denies for colateral reasons
-                            dataOps.push({ type: 'del', path: ['escrow', json.who, `${json.from}/${json.escrow_id}:deny`] })
+                            dataOps.push({ type: 'del', path: ['escrow', json.to, `${json.from}/${json.escrow_id}:denyT`] })
                             dataOps.push({ type: 'del', path: ['escrow', c.escrow_id, c.from] })
                             store.batch(dataOps, pc)
                             credit(json.who)
@@ -3015,15 +3015,15 @@ function enforce(agent, txid, pointer, block_num) { //checks status of required 
                             let co = c.co
                             switch (op) {
                                 case 'denyA':
-                                    getPathObj(['escrow', '.' + c.to, `${c.from}/${c.escrow_id}:deny`])
+                                    getPathObj(['escrow', '.' + c.to, `${c.from}/${c.escrow_id}:denyT`])
                                         .then(toOp => {
                                             chronAssign(json.block_num + 200, { op: 'denyT', agent: c.to, txid: `${ c.from }/${c.escrow_id}:denyT`, acc: c.from, id: c.escrow_id })
                                             penalty(c.agent, c.coll)
                                                 .then(col => {
                                                     c.recovered = col //token supply gets weird here... should the confiscated tokens go toward content rewards or somewhere easier to math?
-                                                    ops.push({ type: 'put', path: ['escrow', c.to, `${c.from}/${c.escrow_id}:deny`], data: toOp })
-                                                    ops.push({ type: 'del', path: ['escrow', c.agent, `${c.from}/${c.escrow_id}:deny`] })
-                                                    ops.push({ type: 'del', path: ['escrow', '.' + c.to, `${c.from}/${c.escrow_id}:deny`] })
+                                                    ops.push({ type: 'put', path: ['escrow', c.to, `${c.from}/${c.escrow_id}:denyT`], data: toOp })
+                                                    ops.push({ type: 'del', path: ['escrow', c.agent, `${c.from}/${c.escrow_id}:denyA`] })
+                                                    ops.push({ type: 'del', path: ['escrow', '.' + c.to, `${c.from}/${c.escrow_id}:denyT`] })
                                                     ops.push({ type: 'put', path: ['contracts', p.for, p.contract], data: c })
                                                     store.batch(ops, [resolve, reject])
                                                     ops = []
@@ -3038,7 +3038,7 @@ function enforce(agent, txid, pointer, block_num) { //checks status of required 
                                         .then(col => {
                                             const returnable = col + c.recovered
                                             ops.push({ type: 'del', path: ['contracts', c.for, c.escrow_id] }) //some more logic here to clean memory... or check if this was denies for colateral reasons
-                                            ops.push({ type: 'del', path: ['escrow', c.to, `${c.from}/${c.escrow_id}:deny`] })
+                                            ops.push({ type: 'del', path: ['escrow', c.to, `${c.from}/${c.escrow_id}:denyT`] })
                                             ops.push({ type: 'del', path: ['escrow', c.escrow_id, c.from] })
                                             if (returnable > c.coll / 4) {
                                                 add(c.from, parseInt(c.coll / 4))
