@@ -3017,7 +3017,7 @@ function enforce(agent, txid, pointer, block_num) { //checks status of required 
                                 case 'denyA':
                                     getPathObj(['escrow', '.' + c.to, `${c.from}/${c.escrow_id}:denyT`])
                                         .then(toOp => {
-                                            chronAssign(json.block_num + 200, { op: 'denyT', agent: c.to, txid: `${ c.from }/${c.escrow_id}:denyT`, acc: c.from, id: c.escrow_id })
+                                            chronAssign(block_num + 200, { op: 'denyT', agent: c.to, txid: `${ c.from }/${c.escrow_id}:denyT`, acc: c.from, id: c.escrow_id })
                                             penalty(c.agent, c.coll)
                                                 .then(col => {
                                                     c.recovered = col //token supply gets weird here... should the confiscated tokens go toward content rewards or somewhere easier to math?
