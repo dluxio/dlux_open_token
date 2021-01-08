@@ -1100,8 +1100,8 @@ function startApp() {
                 agentBal = v[7],
                 toCol = v[8],
                 agentCol = v[9]
-            isAgent = (toNode.lastGood > json.block_num - 200)
-            isDAgent = (agentNode.lastGood > json.block_num - 200)
+            isAgent = (toNode.lastGood > json.block_num - 100)
+            isDAgent = (agentNode.lastGood > json.block_num - 100)
 
             buy = contract.amount
             console.log(buy, isAgent, isDAgent)
@@ -3034,7 +3034,7 @@ function enforce(agent, txid, pointer, block_num) { //checks status of required 
                                         .catch(e => { console.log(e) })
                                     break;
                                 case 'denyT':
-                                    penalty(c.agent, c.col)
+                                    penalty(c.to, c.col)
                                         .then(col => {
                                             const returnable = col + c.recovered
                                             ops.push({ type: 'del', path: ['contracts', c.for, c.escrow_id] }) //some more logic here to clean memory... or check if this was denies for colateral reasons
