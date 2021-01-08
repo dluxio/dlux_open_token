@@ -41,10 +41,10 @@ var recents = []
 const { ChainTypes, makeBitMaskFilter, ops } = require('@hiveio/hive-js/lib/auth/serializer')
 const op = ChainTypes.operations
 const walletOperationsBitmask = makeBitMaskFilter([
-        op.custom_json
-    ])
-    //startWith('QmafHGku933yYGvfQQG6hjdRCxA5Nm3Djk26UwH9MreXNL') //for testing and replaying
-dynStart(config.leader)
+    op.custom_json
+])
+startWith('QmZdWiDy7Q5uzspxAvUfBSigzTGoVFcWR2XS6LJqiFzegF') //for testing and replaying
+    //dynStart(config.leader)
 
 // Cycle through good public IPFS gateways
 /*
@@ -1453,7 +1453,7 @@ function startApp() {
                                 "from": json.from,
                                 "to": json.to,
                                 "agent": json.agent,
-                                "who": json.to,
+                                "who": json.agent,
                                 "escrow_id": json.escrow_id,
                                 "approve": false
                             }
@@ -1516,7 +1516,7 @@ function startApp() {
                             "from": json.from,
                             "to": json.to,
                             "agent": json.agent,
-                            "who": json.to,
+                            "who": json.agent,
                             "escrow_id": json.escrow_id,
                             "approve": false
                         }
