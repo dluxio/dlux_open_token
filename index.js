@@ -43,7 +43,7 @@ const op = ChainTypes.operations
 const walletOperationsBitmask = makeBitMaskFilter([
     op.custom_json
 ])
-startWith('QmRybwcvX3KtAZ1n2UT8Xx5USVSdPgXnkTvk1d31dqBDqW') //for testing and replaying
+startWith('QmafHGku933yYGvfQQG6hjdRCxA5Nm3Djk26UwH9MreXNL') //for testing and replaying
     //dynStart(config.leader)
 
 // Cycle through good public IPFS gateways
@@ -2551,7 +2551,11 @@ function startApp() {
                                 promises.push(enforce(b.agent, b.txid, { id: b.id, acc: b.acc }, num))
                                 store.batch([{ type: 'del', path: ['chrono', delKey] }], [function() { console.log('success') }, function() { console.log('failure') }])
                                 break;
-                            case 'deny':
+                            case 'denyA':
+                                promises.push(enforce(b.agent, b.txid, { id: b.id, acc: b.acc }, num))
+                                store.batch([{ type: 'del', path: ['chrono', delKey] }], [function() { console.log('success') }, function() { console.log('failure') }])
+                                break;
+                            case 'denyT':
                                 promises.push(enforce(b.agent, b.txid, { id: b.id, acc: b.acc }, num))
                                 store.batch([{ type: 'del', path: ['chrono', delKey] }], [function() { console.log('success') }, function() { console.log('failure') }])
                                 break;
@@ -3013,7 +3017,7 @@ function enforce(agent, txid, pointer, block_num) { //checks status of required 
                                 case 'denyA':
                                     getPathObj(['escrow', '.' + c.to, `${c.from}/${c.escrow_id}:deny`])
                                         .then(toOp => {
-                                            chronAssign(json.block_num + 200, { op: 'deny', agent: c.to, txid: `${ c.from }/${c.escrow_id}:deny`, acc: c.from, id: c.escrow_id })
+                                            chronAssign(json.block_num + 200, { op: 'denyT', agent: c.to, txid: `${ c.from }/${c.escrow_id}:deny`, acc: c.from, id: c.escrow_id })
                                             penalty(c.agent, c.coll)
                                                 .then(col => {
                                                     c.recovered = col //token supply gets weird here... should the confiscated tokens go toward content rewards or somewhere easier to math?
@@ -3679,18 +3683,20 @@ function addCol(node, amount) {
 function penalty(node, amount) {
     console.log('penalty: ', { node, amount })
     return new Promise((resolve, reject) => {
-        store.get(['bal', node], function(e, a) {
-            if (!e) {
-                const a2 = typeof a != 'number' ? 0 : a
+        pts = getPathNum(['stats', 'tokenSupply'])
+        pnb = getPathNum(['bal', node])
+        Promise.all([pts,pnb]).then(r=>{
+            var a2 = r[1],
+                ts = r[0]
                 newBal = a2 - amount
                 if(newBal < 0){newBal = 0}
                 const forfiet = a2 - newBal
                 var ops = [{ type: 'put', path: ['bal', node], data: newBal }]
+                ops.push({ type: 'put', path: ['stats', 'tokenSupply'], data: ts - forfiet })
                 //dig into powered token? would this be a method to power down quickly?
                 store.batch(ops, [resolve(forfiet), reject])
-            } else {
-                console.log(e)
-            }
+        }).catch(e=>{
+            console.log(e)
         })
     })
 }
