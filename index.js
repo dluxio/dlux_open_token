@@ -43,7 +43,7 @@ const op = ChainTypes.operations
 const walletOperationsBitmask = makeBitMaskFilter([
     op.custom_json
 ])
-startWith('QmafHGku933yYGvfQQG6hjdRCxA5Nm3Djk26UwH9MreXNL') //for testing and replaying
+startWith('QmYta3EP9GQKFKMNjci1RfRtSgjHVszq7EuCegLH7cteaq') //for testing and replaying
     //dynStart(config.leader)
 
 // Cycle through good public IPFS gateways
@@ -2970,8 +2970,6 @@ function tally(num) {
                         { type: 'put', path: ['markets', 'node'], data: nodes },
                         { type: 'put', path: ['balances', 'ra'], data: rbal }
                     ], [resolve, reject])
-                    console.log({ "con && plasma": consensus != plasma.hashLastIBlock, "con && report": consensus != nodes[config.username].report.hash, "Processor, streaming": processor.isStreaming() })
-
                     if (consensus && (consensus != plasma.hashLastIBlock || consensus != nodes[config.username].report.hash) && processor.isStreaming()) { //this doesn't seem to be catching failures
                         exit(consensus)
                         var errors = ['failed Consensus']
