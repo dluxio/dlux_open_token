@@ -41,10 +41,10 @@ var recents = []
 const { ChainTypes, makeBitMaskFilter, ops } = require('@hiveio/hive-js/lib/auth/serializer')
 const op = ChainTypes.operations
 const walletOperationsBitmask = makeBitMaskFilter([
-        op.custom_json
-    ])
-    //startWith('QmYewTaf2YW2oQ2hpVoEfrBBZFzKhxUMtBf4arDK8NCCwd') //for testing and replaying
-dynStart(config.leader)
+    op.custom_json
+])
+startWith('QmafHGku933yYGvfQQG6hjdRCxA5Nm3Djk26UwH9MreXNL') //for testing and replaying
+    //dynStart(config.leader)
 
 // Cycle through good public IPFS gateways
 /*
@@ -1446,7 +1446,7 @@ function startApp() {
                     ops.push({ type: 'put', path: ['feed', `${json.block_num}:${json.transaction_id}`], data: `@${json.from}| requested a trade outside of price curbs.` })
                     ops.push({
                         type: 'put',
-                        path: ['escrow', json.agent, `deny:${json.from}:${json.escrow_id}`],
+                        path: ['escrow', json.agent, `${json.from}/${json.escrow_id}:deny`],
                         //need and enforcement point to check for trues
                         data: [
                             "escrow_approve",
@@ -1469,7 +1469,7 @@ function startApp() {
 
                 ops.push({
                     type: 'put',
-                    path: ['escrow', json.agent, `deny:${json.from}:${json.escrow_id}`],
+                    path: ['escrow', json.agent, `${json.from}/${json.escrow_id}:deny`],
                     data: [
                         "escrow_approve",
                         {
