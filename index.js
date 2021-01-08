@@ -1701,6 +1701,7 @@ function startApp() {
                             console.log('so this happened...')
                             dataOps.push({ type: 'del', path: ['contracts', a.for, a.contract] }) //some more logic here to clean memory... or check if this was denies for colateral reasons
                             dataOps.push({ type: 'del', path: ['escrow', json.to, `${json.from}/${json.escrow_id}:denyT`] })
+                            dataOps.push({ type: 'del', path: ['escrow', json.agent, `${json.from}/${json.escrow_id}:denyA`] })
                             dataOps.push({ type: 'del', path: ['escrow', c.escrow_id, c.from] })
                             store.batch(dataOps, pc)
                             credit(json.who)
@@ -1840,7 +1841,7 @@ function startApp() {
                                 escrows: 0,
                                 lastGood: 0,
                                 report: {},
-                                escrow: z
+                                escrow
                             }
                         }], pc)
                     } else {
