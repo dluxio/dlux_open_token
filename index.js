@@ -81,7 +81,10 @@ api.get('/', (req, res, next) => {
     store.get(['stats'], function(err, obj) {
         stats = obj,
             res.send(JSON.stringify({
-                stats
+                stats,
+                node: config.username,
+                VERSION,
+                realtime: current
             }, null, 3))
     });
 });
@@ -305,7 +308,10 @@ api.get('/@:un', (req, res, next) => {
                 poweredUp: v[1],
                 powerBeared: v[2],
                 heldCollateral: v[4],
-                contracts: v[3]
+                contracts: v[3],
+                node: config.username,
+                VERSION,
+                realtime: current
             }, null, 3))
         })
         .catch(function(err) {
@@ -319,7 +325,10 @@ api.get('/stats', (req, res, next) => {
     store.get(['stats'], function(err, obj) {
         stats = obj,
             res.send(JSON.stringify({
-                stats
+                stats,
+                node: config.username,
+                VERSION,
+                realtime: current
             }, null, 3))
     });
 });
@@ -331,7 +340,10 @@ api.get('/state', (req, res, next) => {
     store.get([], function(err, obj) {
         state = obj,
             res.send(JSON.stringify({
-                state
+                state,
+                node: config.username,
+                VERSION,
+                realtime: current
             }, null, 3))
     });
 });
@@ -552,6 +564,7 @@ function startWith(hash) {
                         if (!e) {
                             if (hash) {
                                 var cleanState = data[1]
+                                cleanState.stats.icoRound = 0
                                 store.put([], cleanState, function(err) {
                                     if (err) {
                                         console.log(err)
@@ -3283,37 +3296,38 @@ function dao(num) {
                             stats.dluxPerDel = parseInt(k / j)
                             post = post + `*****\n ## ICO Status\n`
                             if (bals.ri < 100000000 && stats.tokenSupply < 100000000000) {
-                                if (bals.ri == 0) {
-                                    stats.tokenSupply += 100000000
-                                    bals.ri = 100000000
-                                    var ago = num - stats.outOnBlock,
-                                        dil = ' seconds'
-                                    if (ago !== num) {
-                                        bals.rl = parseInt(ago / 30240 * 50000000)
-                                        bals.ri = 100000000 - parseInt(ago / 30240 * 50000000)
-                                        stats.icoPrice = stats.icoPrice * (1 + (ago / 30240) / 2)
-                                    }
-                                    if (ago > 20) {
-                                        dil = ' minutes';
-                                        ago = parseFloat(ago / 20)
-                                            .toFixed(1)
+                                stats.icoRound++
+                                    if (bals.ri == 0) {
+                                        stats.tokenSupply += 100000000
+                                        bals.ri = 100000000
+                                        var ago = num - stats.outOnBlock,
+                                            dil = ' seconds'
+                                        if (ago !== num) {
+                                            bals.rl = parseInt(ago / 30240 * 50000000)
+                                            bals.ri = 100000000 - parseInt(ago / 30240 * 50000000)
+                                            stats.icoPrice = stats.icoPrice * (1 + (ago / 30240) / 2)
+                                        }
+                                        if (ago > 20) {
+                                            dil = ' minutes';
+                                            ago = parseFloat(ago / 20)
+                                                .toFixed(1)
+                                        } else {
+                                            ago = ago * 3
+                                        }
+                                        if (ago > 60) {
+                                            dil = ' hours';
+                                            ago = parseFloat(ago / 60)
+                                                .toFixed(1)
+                                        }
+                                        post = post + `### We sold out ${ago}${dil}\nThere are now ${parseFloat(bals.ri/1000).toFixed(3)} ${config.TOKEN} for sale from @${config.mainICO} for ${parseFloat(stats.icoPrice/1000).toFixed(3)} HIVE each.\n`
                                     } else {
-                                        ago = ago * 3
+                                        var left = bals.ri
+                                        stats.tokenSupply += 100000000 - left
+                                        bals.ri = 100000000
+                                        stats.icoPrice = stats.icoPrice - (left / 1000000000)
+                                        if (stats.icoPrice < 220) stats.icoPrice = 220
+                                        post = post + `### We Sold out ${100000000 - left} today.\nThere are now ${parseFloat(bals.ri/1000).toFixed(3)} ${config.TOKEN} for sale from @${config.mainICO} for ${parseFloat(stats.icoPrice/1000).toFixed(3)} HIVE each.\n`
                                     }
-                                    if (ago > 60) {
-                                        dil = ' hours';
-                                        ago = parseFloat(ago / 60)
-                                            .toFixed(1)
-                                    }
-                                    post = post + `### We sold out ${ago}${dil}\nThere are now ${parseFloat(bals.ri/1000).toFixed(3)} ${config.TOKEN} for sale from @${config.mainICO} for ${parseFloat(stats.icoPrice/1000).toFixed(3)} HIVE each.\n`
-                                } else {
-                                    var left = bals.ri
-                                    stats.tokenSupply += 100000000 - left
-                                    bals.ri = 100000000
-                                    stats.icoPrice = stats.icoPrice - (left / 1000000000)
-                                    if (stats.icoPrice < 220) stats.icoPrice = 220
-                                    post = post + `### We Sold out ${100000000 - left} today.\nThere are now ${parseFloat(bals.ri/1000).toFixed(3)} ${config.TOKEN} for sale from @${config.mainICO} for ${parseFloat(stats.icoPrice/1000).toFixed(3)} HIVE each.\n`
-                                }
                             } else {
                                 post = post + `### We have ${parseFloat(parseInt(bals.ri - 100000000)/1000).toFixed(3)} ${config.TOKEN} left for sale at ${parseFloat(stats.icoPrice/1000).toFixed(3)} HIVE in our Pre-ICO. Send your HIVE to @${config.mainICO} to own a piece of the community.\n`
                             }
