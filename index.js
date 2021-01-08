@@ -1693,7 +1693,7 @@ function startApp() {
                         } else if (!json.approve && c.note == 'denied transaction' && json.who == json.agent) {
                             dataOps.push({ type: 'del', path: ['contracts', a.for, a.contract] }) //some more logic here to clean memory... or check if this was denies for colateral reasons
                             dataOps.push({ type: 'del', path: ['escrow', json.who, `${json.from}/${json.escrow_id}:deny`] })
-                            dataOps.push({ type: 'del', path: ['escrow', '.' + json.who, `${json.from}/${json.escrow_id}:deny`] })
+                            dataOps.push({ type: 'del', path: ['escrow', '.' + json.to, `${json.from}/${json.escrow_id}:deny`] })
                             dataOps.push({ type: 'del', path: ['escrow', c.escrow_id, c.from] })
                             store.batch(dataOps, pc)
                             credit(json.who)
