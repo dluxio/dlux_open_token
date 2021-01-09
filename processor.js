@@ -70,7 +70,7 @@ module.exports = function(client, steem, currentBlockNumber = 1, blockComputeSpe
 
     function beginBlockStreaming() {
         isStreaming = true;
-        //onStreamingStart();
+        onStreamingStart();
         if (mode === 'latest') {
             stream = client.blockchain.getBlockStream({ mode: steem.BlockchainMode.Latest });
         } else {

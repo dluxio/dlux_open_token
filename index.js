@@ -62,7 +62,7 @@ const walletOperationsBitmask = makeBitMaskFilter([
 ])
 
 //Start Program Options   
-startWith('QmQQzFvfzA9W7ANm8schEeBhB6hktgciN2mhLoibsKvQzL') //for testing and replaying
+startWith('QmVLPu2xcEukC8KJyQ6Aj4By69usNHA84TMyPxY6xvhvXu') //for testing and replaying
     //dynStart(config.leader)
 
 // API defs
