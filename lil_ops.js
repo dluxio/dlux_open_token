@@ -4,6 +4,7 @@ const { getPathObj } = require('./getPathObj')
 const crypto = require('crypto');
 const bs58 = require('bs58');
 const hashFunction = Buffer.from('12', 'hex');
+const stringify = require('json-stable-stringify');
 
 const forceCancel = (rate, type, block_num) => new Promise((resolve, reject) => {
     const price = parseFloat(rate)
