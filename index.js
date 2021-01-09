@@ -48,7 +48,6 @@ const { ChainTypes, makeBitMaskFilter, ops } = require('@hiveio/hive-js/lib/auth
 const { getPathNum } = require("./getPathNum");
 const { getPathObj } = require("./getPathObj");
 const { enforce } = require("./enforce");
-const { release } = require("./release");
 const { tally } = require("./tally");
 const { report } = require("./report");
 const { ipfsSaveState } = require("./ipfsSaveState");
@@ -56,7 +55,7 @@ const { waitup } = require("./waitup");
 const { dao } = require("./dao");
 const { deleteObjs } = require("./deleteObjs");
 const { reject } = require('async');
-const { add, addCol, deletePointer, credit, nodeUpdate, hashThis, penalty, chronAssign, forceCancel } = require('./lil_ops')
+const { add, addCol, deletePointer, release, credit, nodeUpdate, hashThis, penalty, chronAssign, forceCancel } = require('./lil_ops')
 const op = ChainTypes.operations
 const walletOperationsBitmask = makeBitMaskFilter([
     op.custom_json

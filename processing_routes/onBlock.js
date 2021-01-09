@@ -6,6 +6,7 @@ const { dao } = require('./../dao');
 const { tally } = require('./../tally');
 const { ipfsSaveState } = require('./../ipfsSaveState');
 const { waitup } = require('./../waitup');
+const { release } = require('./../lil_ops')
 
 exports.onBlock = (num, pc, isStreaming) => new Promise((resolve, reject) => {
     current = num;

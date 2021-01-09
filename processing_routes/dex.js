@@ -1,8 +1,7 @@
 const { store } = require('./../index')
-const { release } = require('./../release')
 const { getPathNum } = require('./../getPathNum')
 const { getPathObj } = require('./../getPathObj')
-const { add, addCol, deletePointer, credit, nodeUpdate, penalty, chronAssign, forceCancel, hashThis, isEmpty } = require('./../lil_ops')
+const { add, addCol, release, deletePointer, credit, nodeUpdate, penalty, chronAssign, forceCancel, hashThis, isEmpty } = require('./../lil_ops')
 
 exports.dex_buy = (json, from, active, pc) => {
     let Pbal = getPathNum(['balances', from]),
