@@ -176,9 +176,6 @@ function startApp() {
     processor.on('queueForDaily', HR.q4d)
     processor.on('nomention', HR.nomention)
     processor.onOperation('comment_options', HR.comment_options);
-
-    //since comment options can be changed the HIVE state needs to be asked
-    //and consensused about post information... comment options for bennificiaries is not suffiecient alone
     processor.on('cjv', HR.cjv);
     processor.on('sig', HR.sig); //dlux is for putting executable programs into IPFS... this is for additional accounts to sign the code as non-malicious
     processor.on('cert', HR.cert); // json.cert is an open ended hope to interact with executable posts... unexplored
@@ -403,8 +400,8 @@ function startApp() {
                 })
             })
         });
-    processor.onStreamingStart(function() {
-        console.log("At real time.");
+    processor.onStreamingStart(function() { //auto-join
+        console.log("At real time.")
         store.get(['markets', 'node', config.username], function(e, a) {
             if (!a.domain && config.NODEDOMAIN) {
                 var op = ["custom_json", {
@@ -414,14 +411,14 @@ function startApp() {
                     json: JSON.stringify({
                         domain: config.NODEDOMAIN,
                         bidRate: config.bidRate,
-                        escrow: true
+                        escrow
                     })
-                }];
+                }]
                 NodeOps.unshift([
                     [0, 0], op
-                ]);
+                ])
             }
-        });
+        })
     });
     processor.start();
 }
