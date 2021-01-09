@@ -41,10 +41,10 @@ var recents = []
 const { ChainTypes, makeBitMaskFilter, ops } = require('@hiveio/hive-js/lib/auth/serializer')
 const op = ChainTypes.operations
 const walletOperationsBitmask = makeBitMaskFilter([
-    op.custom_json
-])
-startWith('Qmd2dAjMZSFDejQmXu56D85QumXNJoT9ePAk7Wbw3Mo5CM') //for testing and replaying
-    //dynStart(config.leader)
+        op.custom_json
+    ])
+    //startWith('QmR61NRdqLvAixbdNM3a1VbHFqJnkm4JUbg5hkeqUpq8Ty') //for testing and replaying
+dynStart(config.leader)
 
 // Cycle through good public IPFS gateways
 /*
@@ -564,6 +564,9 @@ function startWith(hash) {
                         if (!e) {
                             if (hash) {
                                 var cleanState = data[1]
+                                cleanState.balances.rn = 3
+                                cleanState.balances['dlux-io'] += 18000
+                                delete cleanState.escrow
                                 store.put([], cleanState, function(err) {
                                     if (err) {
                                         console.log(err)
@@ -577,7 +580,7 @@ function startWith(hash) {
                                                 }
                                                 for (user in cleanState.contracts) {
                                                     for (contract in cleanState.contracts[user]) {
-                                                        supply += cleanState.contracts[user][contract].amount
+                                                        if (cleanState.contracts[user][contract].amount) supply += cleanState.contracts[user][contract].amount
                                                     }
                                                 }
                                                 for (user in cleanState.col) {
@@ -1694,11 +1697,12 @@ function startApp() {
                             dataOps.push({ type: 'del', path: ['contracts', a.for, a.contract] }) //some more logic here to clean memory... or check if this was denies for colateral reasons
                             dataOps.push({ type: 'del', path: ['escrow', json.agent, `${json.from}/${json.escrow_id}:denyA`] })
                             dataOps.push({ type: 'del', path: ['escrow', '.' + json.to, `${json.from}/${json.escrow_id}:denyT`] })
+                            dataOps.push({ type: 'del', path: ['escrow', json.to, `${json.from}/${json.escrow_id}:denyT`] }) //try to prevent some errors from cascading to more burns
                             dataOps.push({ type: 'del', path: ['escrow', c.escrow_id, c.from] })
                             store.batch(dataOps, pc)
                             credit(json.who)
                         } else if (!json.approve && c.note == 'denied transaction' && json.who == json.to) {
-                            console.log('To Denied Escrow First, odd but OK...')
+                            console.log('Out of order deny, odd but OK...')
                             dataOps.push({ type: 'del', path: ['contracts', a.for, a.contract] }) //some more logic here to clean memory... or check if this was denies for colateral reasons
                             dataOps.push({ type: 'del', path: ['escrow', json.to, `${json.from}/${json.escrow_id}:denyT`] })
                             dataOps.push({ type: 'del', path: ['escrow', json.agent, `${json.from}/${json.escrow_id}:denyA`] })
@@ -2555,7 +2559,7 @@ function startApp() {
                                 break;
                             case 'denyA':
                                 promises.push(enforce(b.agent, b.txid, { id: b.id, acc: b.acc }, num))
-                                store.batch([{ type: 'del', path: ['chrono', delKey] }], [function() { console.log({ b }) }, function() { console.log('failure') }])
+                                store.batch([{ type: 'del', path: ['chrono', delKey] }], [function() {}, function() { console.log('failure') }])
                                 break;
                             case 'denyT':
                                 promises.push(enforce(b.agent, b.txid, { id: b.id, acc: b.acc }, num))
@@ -3012,160 +3016,165 @@ function enforce(agent, txid, pointer, block_num) { //checks status of required 
                         ops = []
                     getPathObj(['contracts', p.for, p.contract])
                         .then(c => {
-                            console.log({ c })
+                            var i = 0
+                            for (item in c) {
+                                i++
+                            }
                             let co = c.co
-                            switch (op) {
-                                case 'denyA':
-                                    getPathObj(['escrow', '.' + c.to, `${c.from}/${c.escrow_id}:denyT`])
-                                        .then(toOp => {
-                                            chronAssign(block_num + 200, { op: 'denyT', agent: c.to, txid: `${ c.from }/${c.escrow_id}:denyT`, acc: pointer.acc, id: pointer.id })
-                                            penalty(c.agent, c.col)
-                                                .then(col => {
-                                                    console.log(col)
-                                                    c.recovered = col
-                                                    add('rn', col)
-                                                    ops.push({ type: 'put', path: ['escrow', c.to, `${c.from}/${c.escrow_id}:denyT`], data: toOp })
-                                                    ops.push({ type: 'del', path: ['escrow', c.agent, `${c.from}/${c.escrow_id}:denyA`] })
-                                                    ops.push({ type: 'del', path: ['escrow', '.' + c.to, `${c.from}/${c.escrow_id}:denyT`] })
-                                                    ops.push({ type: 'put', path: ['contracts', p.for, p.contract], data: c })
-                                                    store.batch(ops, [resolve, reject])
-                                                    ops = []
-                                                })
-                                                .catch(e => { console.log(e) })
-                                            ops = []
-                                        })
-                                        .catch(e => { console.log(e) })
-                                    break;
-                                case 'denyT':
-                                    penalty(c.to, c.col)
-                                        .then(col => {
-                                            const returnable = col + c.recovered
-                                            console.log(returnable, col, c.recovered)
-                                            ops.push({ type: 'del', path: ['contracts', c.for, c.escrow_id] }) //some more logic here to clean memory... or check if this was denies for colateral reasons
-                                            ops.push({ type: 'del', path: ['escrow', c.to, `${c.from}/${c.escrow_id}:denyT`] })
-                                            ops.push({ type: 'del', path: ['escrow', c.escrow_id, c.from] })
-                                            if (col > parseInt(c.col / 4)) {
-                                                add(c.from, parseInt(c.col / 4))
-                                                add('rn', parseInt(col - parseInt(c.col / 4)))
-                                            } else if (c.recovered > parseInt(c.col / 4)) {
-                                                add(c.from, parseInt(c.col / 4))
-                                                add('rn', parseInt(col - parseInt(c.col / 4)))
-                                            } else if (returnable <= parseInt(c.col / 4)) {
-                                                add(c.from, returnable)
-                                                add('rn', parseInt(-c.recovered))
-                                            } else {
-                                                add(c.from, parseInt(c.col / 4))
-                                                add('rn', parseInt(col - c.recovered))
-                                            }
-                                            store.batch(ops, [resolve, reject])
-                                            ops = []
-                                        })
-                                        .catch(e => { console.log(e) })
-                                    ops = []
-                                    break;
-                                case 'dispute':
-                                    ops.push({ type: 'put', path: ['feed', `${block_num}:${txid}`], data: `@${c.tagent} failed to make a timely transaction and has forfieted collateral` })
-                                    ops.push({ type: 'del', path: ['escrow', agent, txid] })
-                                    ops.push({ type: 'del', path: ['chrono', c.expire_path] })
-                                    ops.push({ type: 'del', path: ['contracts', co, id] })
-                                    ops.push({ type: 'put', path: ['stats', 'tokenSupply'], data: s - parseInt(c.escrow / 4) })
-                                    add(c.agent, parseInt(c.escrow / 2)) //good node gets back
-                                    add(c.eo, parseInt(c.escrow / 4)) //originator gets covered
-                                    addCol(c.agent, -parseInt(c.escrow / 2)) //trackers get emptied
-                                    addCol(c.tagent, -parseInt(c.escrow / 2))
-                                    deletePointer(pointer.id, pointer.acc) //housekeeping
-                                    nodeUpdate(c.tagent, 'strike', parseInt(c.escrow / 4)) //strike recorded
-                                    break;
-                                case 'buyApproveT':
-                                    ops.push({ type: 'put', path: ['feed', `${block_num}:${txid}`], data: `@${c.tagent} failed to make a timely transaction` })
-                                    ops.push({ type: 'del', path: ['escrow', agent, txid] })
-                                    ops.push({ type: 'del', path: ['chrono', c.expire_path] })
-                                    ops.push({ type: 'del', path: ['contracts', co, id] })
-                                    ops.push({ type: 'put', path: ['stats', 'tokenSupply'], data: s - parseInt(c.escrow / 4) })
-                                    add(c.agent, parseInt(c.escrow / 2))
-                                    addCol(c.agent, -parseInt(c.escrow / 2))
-                                    addCol(c.tagent, -parseInt(c.escrow / 2))
-                                    add(c.eo, parseInt(c.escrow / 4))
-                                    deletePointer(pointer.id, pointer.acc)
-                                    nodeUpdate(c.tagent, 'strike', parseInt(c.escrow / 4))
-                                    break;
-                                case 'buyApproveA':
-                                    ops.push({ type: 'put', path: ['feed', `${block_num}:${txid}`], data: `@${c.agent} failed to make a timely transaction` })
-                                    ops.push({ type: 'del', path: ['escrow', agent, txid] })
-                                    ops.push({ type: 'del', path: ['chrono', c.expire_path] })
-                                    ops.push({ type: 'del', path: ['contracts', co, id] })
-                                    ops.push({ type: 'put', path: ['stats', 'tokenSupply'], data: s - parseInt(c.escrow / 4) })
-                                    add(c.tagent, parseInt(c.escrow / 2))
-                                    addCol(c.agent, -parseInt(c.escrow / 2))
-                                    addCol(c.tagent, -parseInt(c.escrow / 2))
-                                    add(c.eo, parseInt(c.escrow / 4))
-                                    deletePointer(pointer.id, pointer.acc)
-                                    nodeUpdate(c.agent, 'strike', parseInt(c.escrow / 4))
-                                    break;
-                                case 'listApproveT':
-                                    ops.push({ type: 'put', path: ['feed', `${block_num}:${txid}`], data: `@${c.tagent} failed to make a timely transaction` })
-                                    ops.push({ type: 'del', path: ['escrow', agent, txid] })
-                                    ops.push({ type: 'del', path: ['chrono', c.expire_path] })
-                                    ops.push({ type: 'del', path: ['contracts', co, id] })
-                                    ops.push({ type: 'put', path: ['stats', 'tokenSupply'], data: s - parseInt(c.escrow / 4) })
-                                    add(c.agent, parseInt(c.escrow / 2))
-                                    add(c.eo, parseInt(c.escrow / 4))
-                                    addCol(c.agent, -parseInt(c.escrow / 2))
-                                    addCol(c.tagent, -parseInt(c.escrow / 2))
-                                    deletePointer(pointer.id, pointer.acc)
-                                    nodeUpdate(c.tagent, 'strike', parseInt(c.escrow / 4))
-                                    break;
-                                case 'listApproveA':
-                                    ops.push({ type: 'put', path: ['feed', `${block_num}:${txid}`], data: `@${c.agent} failed to make a timely transaction` })
-                                    ops.push({ type: 'del', path: ['escrow', agent, txid] })
-                                    ops.push({ type: 'del', path: ['chrono', c.expire_path] })
-                                    ops.push({ type: 'del', path: ['contracts', co, id] })
-                                    ops.push({ type: 'put', path: ['stats', 'tokenSupply'], data: s - parseInt(c.escrow / 4) })
-                                    add(c.tagent, parseInt(c.escrow / 2))
-                                    add(c.eo, parseInt(c.escrow / 4))
-                                    addCol(c.agent, -parseInt(c.escrow / 2))
-                                    addCol(c.tagent, -parseInt(c.escrow / 2))
-                                    deletePointer(pointer.id, pointer.acc)
-                                    nodeUpdate(c.agent, 'strike', parseInt(c.escrow / 4))
-                                    break;
-                                case 'release':
-                                    ops.push({ type: 'put', path: ['feed', `${block_num}:${txid}`], data: `@${c.agent} failed to make a timely transaction and has forfieted collateral` })
-                                    ops.push({ type: 'del', path: ['escrow', agent, txid] })
-                                    ops.push({ type: 'del', path: ['chrono', c.expire_path] })
-                                    ops.push({ type: 'del', path: ['contracts', co, id] })
-                                    ops.push({ type: 'put', path: ['stats', 'tokenSupply'], data: s - parseInt(c.escrow / 4) })
-                                    add(c.tagent, parseInt(c.escrow / 2))
-                                    add(c.eo, parseInt(c.escrow / 4))
-                                    deletePointer(pointer.id, pointer.acc)
-                                    nodeUpdate(c.agent, 'strike', parseInt(c.escrow / 4))
-                                    break;
-                                case 'transfer':
-                                    ops.push({ type: 'put', path: ['feed', `${block_num}:${txid}`], data: `@${c.tagent} failed to make a timely transaction and has forfieted collateral` })
-                                    ops.push({ type: 'del', path: ['escrow', agent, txid] })
-                                    ops.push({ type: 'del', path: ['chrono', c.expire_path] })
-                                    ops.push({ type: 'del', path: ['contracts', co, id] })
-                                    ops.push({ type: 'put', path: ['stats', 'tokenSupply'], data: s - parseInt(c.escrow / 2) })
-                                    add(c.eo, parseInt(c.escrow / 2))
-                                    addCol(c.tagent, -parseInt(c.escrow))
-                                    deletePointer(pointer.id, pointer.acc)
-                                    nodeUpdate(c.tagent, 'strike', parseInt(c.escrow / 4))
-                                    break;
-                                case 'cancel':
-                                    ops.push({ type: 'put', path: ['feed', `${block_num}:${txid}`], data: `@${c.tagent} failed to make a timely transaction and has forfieted collateral` })
-                                    ops.push({ type: 'del', path: ['escrow', agent, txid] })
-                                    ops.push({ type: 'del', path: ['chrono', c.expire_path] })
-                                    ops.push({ type: 'del', path: ['contracts', co, id] })
-                                    ops.push({ type: 'put', path: ['stats', 'tokenSupply'], data: s - parseInt(c.escrow / 4) })
-                                    add(c.agent, parseInt(c.escrow / 2))
-                                    add(c.eo, parseInt(c.escrow / 4))
-                                    addCol(c.agent, -parseInt(c.escrow / 2))
-                                    addCol(c.tagent, -parseInt(c.escrow / 2))
-                                    deletePointer(pointer.id, pointer.acc)
-                                    nodeUpdate(c.tagent, 'strike', parseInt(c.escrow / 4))
-                                    break;
-                                default:
-                                    console.log(`Unknown Op: ${op}`)
-                                    resolve()
+                            if (i) {
+                                switch (op) {
+                                    case 'denyA':
+                                        getPathObj(['escrow', '.' + c.to, `${c.from}/${c.escrow_id}:denyT`])
+                                            .then(toOp => {
+                                                chronAssign(block_num + 200, { op: 'denyT', agent: c.to, txid: `${ c.from }/${c.escrow_id}:denyT`, acc: pointer.acc, id: pointer.id })
+                                                penalty(c.agent, c.col)
+                                                    .then(col => {
+                                                        console.log(col)
+                                                        c.recovered = col
+                                                        add('rn', col)
+                                                        ops.push({ type: 'put', path: ['escrow', c.to, `${c.from}/${c.escrow_id}:denyT`], data: toOp })
+                                                        ops.push({ type: 'del', path: ['escrow', c.agent, `${c.from}/${c.escrow_id}:denyA`] })
+                                                        ops.push({ type: 'del', path: ['escrow', '.' + c.to, `${c.from}/${c.escrow_id}:denyT`] })
+                                                        ops.push({ type: 'put', path: ['contracts', p.for, p.contract], data: c })
+                                                        store.batch(ops, [resolve, reject])
+                                                        ops = []
+                                                    })
+                                                    .catch(e => { console.log(e) })
+                                                ops = []
+                                            })
+                                            .catch(e => { console.log(e) })
+                                        break;
+                                    case 'denyT':
+                                        penalty(c.to, c.col)
+                                            .then(col => {
+                                                const returnable = col + c.recovered
+                                                console.log(returnable, col, c.recovered)
+                                                ops.push({ type: 'del', path: ['contracts', c.for, c.escrow_id] }) //some more logic here to clean memory... or check if this was denies for colateral reasons
+                                                ops.push({ type: 'del', path: ['escrow', c.to, `${c.from}/${c.escrow_id}:denyT`] })
+                                                ops.push({ type: 'del', path: ['escrow', c.escrow_id, c.from] })
+                                                if (col > parseInt(c.col / 4)) {
+                                                    add(c.from, parseInt(c.col / 4))
+                                                    add('rn', parseInt(col - parseInt(c.col / 4)))
+                                                } else if (c.recovered > parseInt(c.col / 4)) {
+                                                    add(c.from, parseInt(c.col / 4))
+                                                    add('rn', parseInt(col - parseInt(c.col / 4)))
+                                                } else if (returnable <= parseInt(c.col / 4)) {
+                                                    add(c.from, returnable)
+                                                    add('rn', parseInt(-c.recovered))
+                                                } else {
+                                                    add(c.from, parseInt(c.col / 4))
+                                                    add('rn', parseInt(col - c.recovered))
+                                                }
+                                                store.batch(ops, [resolve, reject])
+                                                ops = []
+                                            })
+                                            .catch(e => { console.log(e) })
+                                        ops = []
+                                        break;
+                                    case 'dispute':
+                                        ops.push({ type: 'put', path: ['feed', `${block_num}:${txid}`], data: `@${c.tagent} failed to make a timely transaction and has forfieted collateral` })
+                                        ops.push({ type: 'del', path: ['escrow', agent, txid] })
+                                        ops.push({ type: 'del', path: ['chrono', c.expire_path] })
+                                        ops.push({ type: 'del', path: ['contracts', co, id] })
+                                        ops.push({ type: 'put', path: ['stats', 'tokenSupply'], data: s - parseInt(c.escrow / 4) })
+                                        add(c.agent, parseInt(c.escrow / 2)) //good node gets back
+                                        add(c.eo, parseInt(c.escrow / 4)) //originator gets covered
+                                        addCol(c.agent, -parseInt(c.escrow / 2)) //trackers get emptied
+                                        addCol(c.tagent, -parseInt(c.escrow / 2))
+                                        deletePointer(pointer.id, pointer.acc) //housekeeping
+                                        nodeUpdate(c.tagent, 'strike', parseInt(c.escrow / 4)) //strike recorded
+                                        break;
+                                    case 'buyApproveT':
+                                        ops.push({ type: 'put', path: ['feed', `${block_num}:${txid}`], data: `@${c.tagent} failed to make a timely transaction` })
+                                        ops.push({ type: 'del', path: ['escrow', agent, txid] })
+                                        ops.push({ type: 'del', path: ['chrono', c.expire_path] })
+                                        ops.push({ type: 'del', path: ['contracts', co, id] })
+                                        ops.push({ type: 'put', path: ['stats', 'tokenSupply'], data: s - parseInt(c.escrow / 4) })
+                                        add(c.agent, parseInt(c.escrow / 2))
+                                        addCol(c.agent, -parseInt(c.escrow / 2))
+                                        addCol(c.tagent, -parseInt(c.escrow / 2))
+                                        add(c.eo, parseInt(c.escrow / 4))
+                                        deletePointer(pointer.id, pointer.acc)
+                                        nodeUpdate(c.tagent, 'strike', parseInt(c.escrow / 4))
+                                        break;
+                                    case 'buyApproveA':
+                                        ops.push({ type: 'put', path: ['feed', `${block_num}:${txid}`], data: `@${c.agent} failed to make a timely transaction` })
+                                        ops.push({ type: 'del', path: ['escrow', agent, txid] })
+                                        ops.push({ type: 'del', path: ['chrono', c.expire_path] })
+                                        ops.push({ type: 'del', path: ['contracts', co, id] })
+                                        ops.push({ type: 'put', path: ['stats', 'tokenSupply'], data: s - parseInt(c.escrow / 4) })
+                                        add(c.tagent, parseInt(c.escrow / 2))
+                                        addCol(c.agent, -parseInt(c.escrow / 2))
+                                        addCol(c.tagent, -parseInt(c.escrow / 2))
+                                        add(c.eo, parseInt(c.escrow / 4))
+                                        deletePointer(pointer.id, pointer.acc)
+                                        nodeUpdate(c.agent, 'strike', parseInt(c.escrow / 4))
+                                        break;
+                                    case 'listApproveT':
+                                        ops.push({ type: 'put', path: ['feed', `${block_num}:${txid}`], data: `@${c.tagent} failed to make a timely transaction` })
+                                        ops.push({ type: 'del', path: ['escrow', agent, txid] })
+                                        ops.push({ type: 'del', path: ['chrono', c.expire_path] })
+                                        ops.push({ type: 'del', path: ['contracts', co, id] })
+                                        ops.push({ type: 'put', path: ['stats', 'tokenSupply'], data: s - parseInt(c.escrow / 4) })
+                                        add(c.agent, parseInt(c.escrow / 2))
+                                        add(c.eo, parseInt(c.escrow / 4))
+                                        addCol(c.agent, -parseInt(c.escrow / 2))
+                                        addCol(c.tagent, -parseInt(c.escrow / 2))
+                                        deletePointer(pointer.id, pointer.acc)
+                                        nodeUpdate(c.tagent, 'strike', parseInt(c.escrow / 4))
+                                        break;
+                                    case 'listApproveA':
+                                        ops.push({ type: 'put', path: ['feed', `${block_num}:${txid}`], data: `@${c.agent} failed to make a timely transaction` })
+                                        ops.push({ type: 'del', path: ['escrow', agent, txid] })
+                                        ops.push({ type: 'del', path: ['chrono', c.expire_path] })
+                                        ops.push({ type: 'del', path: ['contracts', co, id] })
+                                        ops.push({ type: 'put', path: ['stats', 'tokenSupply'], data: s - parseInt(c.escrow / 4) })
+                                        add(c.tagent, parseInt(c.escrow / 2))
+                                        add(c.eo, parseInt(c.escrow / 4))
+                                        addCol(c.agent, -parseInt(c.escrow / 2))
+                                        addCol(c.tagent, -parseInt(c.escrow / 2))
+                                        deletePointer(pointer.id, pointer.acc)
+                                        nodeUpdate(c.agent, 'strike', parseInt(c.escrow / 4))
+                                        break;
+                                    case 'release':
+                                        ops.push({ type: 'put', path: ['feed', `${block_num}:${txid}`], data: `@${c.agent} failed to make a timely transaction and has forfieted collateral` })
+                                        ops.push({ type: 'del', path: ['escrow', agent, txid] })
+                                        ops.push({ type: 'del', path: ['chrono', c.expire_path] })
+                                        ops.push({ type: 'del', path: ['contracts', co, id] })
+                                        ops.push({ type: 'put', path: ['stats', 'tokenSupply'], data: s - parseInt(c.escrow / 4) })
+                                        add(c.tagent, parseInt(c.escrow / 2))
+                                        add(c.eo, parseInt(c.escrow / 4))
+                                        deletePointer(pointer.id, pointer.acc)
+                                        nodeUpdate(c.agent, 'strike', parseInt(c.escrow / 4))
+                                        break;
+                                    case 'transfer':
+                                        ops.push({ type: 'put', path: ['feed', `${block_num}:${txid}`], data: `@${c.tagent} failed to make a timely transaction and has forfieted collateral` })
+                                        ops.push({ type: 'del', path: ['escrow', agent, txid] })
+                                        ops.push({ type: 'del', path: ['chrono', c.expire_path] })
+                                        ops.push({ type: 'del', path: ['contracts', co, id] })
+                                        ops.push({ type: 'put', path: ['stats', 'tokenSupply'], data: s - parseInt(c.escrow / 2) })
+                                        add(c.eo, parseInt(c.escrow / 2))
+                                        addCol(c.tagent, -parseInt(c.escrow))
+                                        deletePointer(pointer.id, pointer.acc)
+                                        nodeUpdate(c.tagent, 'strike', parseInt(c.escrow / 4))
+                                        break;
+                                    case 'cancel':
+                                        ops.push({ type: 'put', path: ['feed', `${block_num}:${txid}`], data: `@${c.tagent} failed to make a timely transaction and has forfieted collateral` })
+                                        ops.push({ type: 'del', path: ['escrow', agent, txid] })
+                                        ops.push({ type: 'del', path: ['chrono', c.expire_path] })
+                                        ops.push({ type: 'del', path: ['contracts', co, id] })
+                                        ops.push({ type: 'put', path: ['stats', 'tokenSupply'], data: s - parseInt(c.escrow / 4) })
+                                        add(c.agent, parseInt(c.escrow / 2))
+                                        add(c.eo, parseInt(c.escrow / 4))
+                                        addCol(c.agent, -parseInt(c.escrow / 2))
+                                        addCol(c.tagent, -parseInt(c.escrow / 2))
+                                        deletePointer(pointer.id, pointer.acc)
+                                        nodeUpdate(c.tagent, 'strike', parseInt(c.escrow / 4))
+                                        break;
+                                    default:
+                                        console.log(`Unknown Op: ${op}`)
+                                        resolve()
+                                }
                             }
                             console.log('enforce:', ops)
                             store.batch(ops, [resolve, reject])
@@ -3669,7 +3678,7 @@ function add(node, amount) {
         store.get(['balances', node], function(e, a) {
             if (!e) {
                 const a2 = typeof a != 'number' ? amount : a + amount
-                store.batch([{ type: 'put', path: ['balances', node], data: a2 }], [resolve, reject])
+                store.batch([{ type: 'put', path: ['balances', node], data: a2 }], [resolve, reject, 1])
             } else {
                 console.log(e)
             }
@@ -3684,7 +3693,7 @@ function addCol(node, amount) {
             if (!e) {
                 const a2 = typeof a != 'number' ? amount : a + amount
                 console.log({ node, a })
-                store.batch([{ type: 'put', path: ['col', node], data: a2 }], [resolve, reject])
+                store.batch([{ type: 'put', path: ['col', node], data: a2 }], [resolve, reject,1])
             } else {
                 console.log(e)
             }
