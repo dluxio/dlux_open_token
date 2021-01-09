@@ -13,7 +13,7 @@ function enforce(agent, txid, pointer, block_num) {
                 var enforced_op = r[0],
                     point_to_contract = r[1],
                     token_supply = r[2];
-                console.log('enforce:', { enforce_op }, 'pointer:', { point_to_contract });
+                console.log('enforce:', { enforced_op }, 'pointer:', { point_to_contract });
                 if (Object.keys(enforced_op).length) {
                     let op = txid.split(":")[1],
                         id = txid.split(":")[0],
