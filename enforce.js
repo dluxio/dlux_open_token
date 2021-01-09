@@ -1,6 +1,7 @@
 const { getPathNum } = require("./getPathNum");
 const { getPathObj } = require("./getPathObj");
-const { chronAssign, penalty, add, nodeUpdate, deletePointer, addCol, waitfor, store } = require("./index");
+const { store } = require("./index");
+const { chronAssign, penalty, add, nodeUpdate, deletePointer, addCol } = require('./lil_ops')
 
 function enforce(agent, txid, pointer, block_num) {
     console.log('Enforce params:', agent, txid, pointer);
@@ -218,3 +219,19 @@ function enforce(agent, txid, pointer, block_num) {
     });
 }
 exports.enforce = enforce;
+
+function waitfor(promises_array) {
+    return new Promise((resolve, reject) => {
+        Promise.all(promises_array)
+            .then(r => {
+                for (i = 0; i < r.length; i++) {
+                    console.log(r[i])
+                    if (r[i].consensus) {
+                        plasma.consensus = r[1].consensus
+                    }
+                }
+                resolve(1)
+            })
+            .catch(e => { reject(e) })
+    })
+}
