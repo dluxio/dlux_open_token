@@ -62,7 +62,7 @@ const walletOperationsBitmask = makeBitMaskFilter([
 ])
 
 //Start Program Options   
-startWith('QmZiAXu9xcn2vdhr482VnhLWtH7sbLmGts6ewLGD7yxaSY') //for testing and replaying
+startWith('QmdNha3sRhYXtGryv34jbM12zV246qVdGHtFkgau9dGrqe') //for testing and replaying
     //dynStart(config.leader)
 
 // API defs
@@ -303,6 +303,11 @@ function startApp() {
                     }
                     if (num % 100 === 50 && isStreaming) {
                         report(num, plasma)
+                            .then(nodeOp => {
+
+                                NodeOps.unshift(nodeOp)
+                            })
+                            .catch(e => { console.log(e) })
                     }
                     if ((num - 20000) % 30240 === 0) { //time for daily magic
                         promises.push(dao(num))
@@ -314,6 +319,12 @@ function startApp() {
                         store.get([], function(err, obj) {
                             const blockState = Buffer.from(stringify([num, obj]))
                             ipfsSaveState(num, blockState)
+                                .then(pla => {
+                                    plasma.hashLastIBlock = pla.hashLastIBlock
+                                    plasma.hashBlock = pla.hashBlock
+                                })
+                                .catch(e => { console.log(e) })
+
                         })
                     }
                     if (promises.length) {
