@@ -7,6 +7,7 @@ const args = require('minimist')(process.argv.slice(2));
 const express = require('express');
 const cors = require('cors');
 const config = require('./config');
+exports.config = config;
 const stringify = require('json-stable-stringify');
 const ipfs = new IPFS({
     host: config.ipfshost,
@@ -20,16 +21,20 @@ var Pathwise = require('./pathwise');
 var level = require('level');
 const statestart = require('./state')
 var store = new Pathwise(level('./db', { createIfEmpty: true }));
+exports.store = store;
+const API = require('./routes/api');
 const crypto = require('crypto');
 const bs58 = require('bs58');
 const hashFunction = Buffer.from('12', 'hex');
 const VERSION = 'v0.9.0a'
+exports.VERSION = VERSION
 const api = express()
 var http = require('http').Server(api);
 var escrow = false
     //const wif = hiveClient.auth.toWif(config.username, config.active, 'active')
 var startingBlock = config.starting_block
 var current
+exports.current = current
 const streamMode = args.mode || 'irreversible'; //latest is probably good enough
 console.log("Streaming using mode", streamMode);
 var client = new hive.Client(config.clientURL);
@@ -38,442 +43,38 @@ var live_dex = {}, //for feedback, unused currently
     pa = []
 var recents = []
     //HIVE API CODE
-const { ChainTypes, makeBitMaskFilter, ops } = require('@hiveio/hive-js/lib/auth/serializer')
+const { ChainTypes, makeBitMaskFilter, ops } = require('@hiveio/hive-js/lib/auth/serializer');
+const { getPathNum } = require("./getPathNum");
+const { getPathObj } = require("./getPathObj");
 const op = ChainTypes.operations
 const walletOperationsBitmask = makeBitMaskFilter([
-        op.custom_json
-    ])
-    //startWith('QmR61NRdqLvAixbdNM3a1VbHFqJnkm4JUbg5hkeqUpq8Ty') //for testing and replaying
+    op.custom_json
+])
+
+//Start Program Options   
+//startWith('QmR61NRdqLvAixbdNM3a1VbHFqJnkm4JUbg5hkeqUpq8Ty') //for testing and replaying
 dynStart(config.leader)
 
-// Cycle through good public IPFS gateways
-/*
-var cycle = 0
-function cycleipfs(num) {
-    //ipfs = new IPFS({ host: state.gateways[num], port: 5001, protocol: 'https' });
-}
-*/
-/*
-if (config.active && config.NODEDOMAIN) {
-    escrow = true
-    dhive = new hive.Client(config.clientURL) //no reason to also use dhive?
-}
-*/
-
-//heroku force https
-var https_redirect = function(req, res, next) {
-    if (process.env.NODE_ENV === 'production') {
-        if (req.headers['x-forwarded-proto'] != 'https') {
-            return res.redirect('https://' + req.headers.host + req.url);
-        } else {
-            return next();
-        }
-    } else {
-        return next();
-    }
-};
-
-api.use(https_redirect);
+// API defs
+api.use(API.https_redirect);
 api.use(cors())
-api.get('/', (req, res, next) => {
-    var stats = {}
-    res.setHeader('Content-Type', 'application/json')
-    store.get(['stats'], function(err, obj) {
-        stats = obj,
-            res.send(JSON.stringify({
-                stats,
-                node: config.username,
-                VERSION,
-                realtime: current
-            }, null, 3))
-    });
-});
-
+api.get('/', API.root);
+api.get('/stats', API.root);
+api.get('/state', API.state); //Do not recommend having a state dump in a production API
+api.get('/dex', API.dex);
+api.get('/report/:un', API.report); // probably not needed
+api.get('/markets', API.markets); //for finding node runner and tasks information
+api.get('/posts/:author/:permlink', API.PostAuthorPermlink);
+api.get('/posts', API.posts); //votable posts
+api.get('/feed', API.feed); //all side-chain transaction in current day
+api.get('/runners', API.runners); //list of accounts that determine consensus... will also be the multi-sig accounts
+api.get('/pending', API.pending); // The transaction signer now can sign multiple actions per block and this is nearly always empty, still good for troubleshooting
 // Some HIVE APi is wrapped here to support a stateless frontend built on the cheap with dreamweaver
 // None of these functions are required for token functionality and should likely be removed from the community version
-//
-//
-api.get('/api/:api_type/:api_call', (req, res, next) => {
-    let method = `${req.params.api_type}.${req.params.api_call}` || 'condenser_api.get_discussions_by_blog'
-    let params = {}
-    let array = false
-    for (param in req.query) {
-        if (param == "0") {
-            array = true
-            break;
-        }
-        params[param] = req.query[param]
-    }
-    if (array) {
-        params = []
-        for (param in req.query) {
-            params.push(req.query[param])
-        }
-        params = [params]
-    }
-    switch (req.params.api_call) {
-        case 'get_content':
-            params = [params.author, params.permlink]
-            break;
-        case 'get_content_replies':
-            params = [params.author, params.permlink]
-            break;
-        default:
-    }
-    res.setHeader('Content-Type', 'application/json')
-    let body = {
-        jsonrpc: "2.0",
-        method,
-        params,
-        id: 1
-    }
-    fetch(config.clientURL, {
-            body: JSON.stringify(body),
-            headers: {
-                "Content-Type": "application/x-www-form-urlencoded"
-            },
-            method: "POST"
-        })
-        .then(j => j.json())
-        .then(r => {
-            res.send(JSON.stringify(r, null, 3))
-        })
-});
-
-api.get('/getwrap', (req, res, next) => {
-    let method = req.query.method || 'condenser_api.get_discussions_by_blog'
-    method.replace('%27', '')
-    let iparams = JSON.parse(decodeURIcomponent((req.query.params.replace("%27", '')).replace('%2522', '%22')))
-    switch (method) {
-        case 'tags_api.get_discussions_by_blog':
-        default:
-            iparams = {
-                tag: iparams[0]
-            }
-    }
-    let params = iparams || { "tag": "robotolux" }
-    res.setHeader('Content-Type', 'application/json')
-    let body = {
-        jsonrpc: "2.0",
-        method,
-        params,
-        id: 1
-    }
-    fetch(config.clientURL, {
-            body: JSON.stringify(body),
-            headers: {
-                "Content-Type": "application/x-www-form-urlencoded"
-            },
-            method: "POST"
-        })
-        .then(j => j.json())
-        .then(r => {
-            res.send(JSON.stringify(r, null, 3))
-        })
-});
-
-api.get('/getauthorpic/:un', (req, res, next) => {
-    let un = req.params.un || ''
-    let body = {
-        jsonrpc: "2.0",
-        method: 'condenser_api.get_accounts',
-        params: [
-            [un]
-        ],
-        id: 1
-    }
-    fetch(config.clientURL, {
-            body: JSON.stringify(body),
-            headers: {
-                "Content-Type": "application/x-www-form-urlencoded"
-            },
-            method: "POST"
-        })
-        .then(j => j.json())
-        .then(r => {
-            let image, i = 0
-            try {
-                image = JSON.parse(r.result[0].json_metadata).profile.profile_image
-            } catch (e) {
-                try {
-                    i = 1
-                    image = JSON.parse(r.result[0].posting_json_metadata).profile.profile_image
-                } catch (e) {
-                    i = 2
-                    image = 'https://a.ipfs.dlux.io/images/user-icon.svg'
-                }
-            }
-            if (image) {
-                fetch(image)
-                    .then(response => {
-                        response.body.pipe(res)
-                    })
-                    .catch(e => {
-                        if (i == 0) {
-                            try {
-                                i = 1
-                                image = JSON.parse(r.result[0].posting_json_metadata).profile.profile_image
-                            } catch (e) {
-                                i = 2
-                                image = 'https://a.ipfs.dlux.io/images/user-icon.svg'
-                            }
-                        } else {
-                            i = 2
-                            image = 'https://a.ipfs.dlux.io/images/user-icon.svg'
-                        }
-                        fetch(image)
-                            .then(response => {
-                                response.body.pipe(res)
-                            })
-                            .catch(e => {
-                                if (i == 1) {
-                                    image = 'https://a.ipfs.dlux.io/images/user-icon.svg'
-                                    fetch(image)
-                                        .then(response => {
-                                            response.body.pipe(res)
-                                        })
-                                        .catch(e => {
-                                            res.status(404)
-                                            res.send(e)
-
-                                        })
-                                } else {
-                                    res.status(404)
-                                    res.send(e)
-                                }
-                            })
-                    })
-            } else {
-                res.status(404)
-                res.send('Image not found')
-            }
-        })
-});
-
-api.get('/getblog/:un', (req, res, next) => {
-    let un = req.params.un
-    let start = req.query.s || 0
-    res.setHeader('Content-Type', 'application/json')
-    fetch(config.clientURL, {
-            body: `{\"jsonrpc\":\"2.0\", \"method\":\"follow_api.get_blog_entries\", \"params\":{\"account\":\"${un}\",\"start_entry_id\":${start},\"limit\":10}, \"id\":1}`,
-            headers: {
-                "Content-Type": "application/x-www-form-urlencoded"
-            },
-            method: "POST"
-        })
-        .then(j => j.json())
-        .then(r => {
-            var out = { items: [] }
-            for (i in r.result) {
-                r.result[i].media = { m: "https://a.ipfs.dlux.io/images/400X200.gif" }
-            }
-            out.id = r.id
-            out.jsonrpc = r.jsonrpc
-            out.items = r.result
-            res.send(JSON.stringify(out, null, 3))
-        })
-});
-
-//these calls have not been implemented
-/*
-api.get('/pendex/:un', (req, res, next) => { //pending dex transactions and feedback un=username returns pending transaction IDs
-    let un = req.params.un
-    res.setHeader('Content-Type', 'application/json')
-    let ret = Object.keys(live_dex[un])
-    res.send(JSON.stringify(ret, null, 3))
-});
-
-api.get('/pendex/:un/:id', (req, res, next) => { //pending dex transactions and feedback, un= username, id= transaction ID, returns detail JSON
-    let un = req.params.un
-    let id = req.params.id
-    res.setHeader('Content-Type', 'application/json')
-    let ret = live_dex[un][id]
-    res.send(JSON.stringify(ret, null, 3))
-});
-*/
-
-api.get('/@:un', (req, res, next) => {
-    let un = req.params.un,
-        bal = getPathNum(['balances', un]),
-        pb = getPathNum(['pow', un]),
-        lp = getPathNum(['pow', 'n', un]),
-        contracts = getPathObj(['contracts', un]),
-        incol = getPathNum(['col', un]) //collateral
-    res.setHeader('Content-Type', 'application/json');
-    Promise.all([bal, pb, lp, contracts, incol])
-        .then(function(v) {
-            console.log(bal, pb, lp, contracts)
-            res.send(JSON.stringify({
-                balance: v[0],
-                poweredUp: v[1],
-                powerBeared: v[2],
-                heldCollateral: v[4],
-                contracts: v[3],
-                node: config.username,
-                VERSION,
-                realtime: current
-            }, null, 3))
-        })
-        .catch(function(err) {
-            console.log(err)
-        })
-});
-
-api.get('/stats', (req, res, next) => {
-    var stats = {}
-    res.setHeader('Content-Type', 'application/json')
-    store.get(['stats'], function(err, obj) {
-        stats = obj,
-            res.send(JSON.stringify({
-                stats,
-                node: config.username,
-                VERSION,
-                realtime: current
-            }, null, 3))
-    });
-});
-
-//Do not recommend having a state dump in a production API
-api.get('/state', (req, res, next) => {
-    var state = {}
-    res.setHeader('Content-Type', 'application/json')
-    store.get([], function(err, obj) {
-        state = obj,
-            res.send(JSON.stringify({
-                state,
-                node: config.username,
-                VERSION,
-                realtime: current
-            }, null, 3))
-    });
-});
-
-// The transaction signer now can sign multiple actions per block and this is nearly always empty, still good for troubleshooting
-api.get('/pending', (req, res, next) => {
-    res.setHeader('Content-Type', 'application/json');
-    res.send(JSON.stringify(NodeOps, null, 3))
-});
-
-//list of accounts that determine consensus... will also be the multi-sig accounts
-api.get('/runners', (req, res, next) => {
-    res.setHeader('Content-Type', 'application/json')
-    store.get(['runners'], function(err, obj) {
-        var runners = obj
-        res.send(JSON.stringify({
-            runners,
-            node: config.username,
-            VERSION,
-            realtime: current
-        }, null, 3))
-    });
-});
-
-//all side-chain transaction in current day
-api.get('/feed', (req, res, next) => {
-    res.setHeader('Content-Type', 'application/json')
-    store.get(['feed'], function(err, obj) {
-        var feed = obj
-        res.send(JSON.stringify({
-            feed,
-            node: config.username,
-            VERSION,
-            realtime: current
-        }, null, 3))
-    });
-});
-
-//posts made in community
-api.get('/posts', (req, res, next) => {
-    res.setHeader('Content-Type', 'application/json')
-    store.get(['posts'], function(err, obj) {
-        var feed = obj
-        res.send(JSON.stringify({
-            feed,
-            node: config.username,
-            VERSION,
-            realtime: current
-        }, null, 3))
-    });
-});
-
-
-api.get('/posts/:author/:permlink', (req, res, next) => {
-    try {
-        let author = req.params.author,
-            permlink = req.params.permlink
-        res.setHeader('Content-Type', 'application/json')
-        archp = getPathObj(['posts', `s/${author}/${permlink}`]) //one of these will be empty
-        nowp = getPathObj(['posts', `${author}/${permlink}`]) //now are still eligible for votes
-        Promise.all([archp, nowp])
-            .then(a => {
-                var arch = a[0],
-                    now = a[1]
-                res.send(JSON.stringify({
-                    now,
-                    arch,
-                    node: config.username,
-                    VERSION,
-                    realtime: current
-                }, null, 3))
-            })
-            .catch(e => { console.log(e) })
-    } catch (e) { res.send('Something went wrong') }
-});
-
-//for finding node runner and tasks information
-api.get('/markets', (req, res, next) => {
-    let markets = getPathObj(['markets']),
-        stats = getPathObj(['stats'])
-    res.setHeader('Content-Type', 'application/json');
-    Promise.all([markets, stats])
-        .then(function(v) {
-            res.send(JSON.stringify({
-                markets: v[0],
-                stats: v[1],
-                node: config.username,
-                VERSION,
-                realtime: current
-            }, null, 3))
-        })
-        .catch(function(err) {
-            console.log(err)
-        })
-});
-
-//API for current DEX order book and queue
-api.get('/dex', (req, res, next) => {
-    var dex = getPathObj(['dex'])
-    var queue = getPathObj(['queue'])
-    res.setHeader('Content-Type', 'application/json');
-    Promise.all([dex, queue])
-        .then(function(v) {
-            res.send(JSON.stringify({
-                markets: v[0],
-                queue: v[1],
-                node: config.username,
-                VERSION,
-                realtime: current
-            }, null, 3))
-        })
-        .catch(function(err) {
-            console.log(err)
-        })
-});
-
-// probably not needed
-api.get('/report/:un', (req, res, next) => {
-    let un = req.params.un
-    res.setHeader('Content-Type', 'application/json')
-    store.get(['markets', 'node', un, 'report'], function(err, obj) {
-        var report = obj
-        res.send(JSON.stringify({
-            [un]: report,
-            node: config.username,
-            VERSION,
-            realtime: current
-        }, null, 3))
-    });
-});
+api.get('/api/:api_type/:api_call', API.hive_api);
+api.get('/getwrap', API.getwrap);
+api.get('/getauthorpic/:un', API.getpic);
+api.get('/getblog/:un', API.getblog);
 
 http.listen(config.port, function() {
     console.log(`${config.TOKEN} token API listening on port ${config.port}`);
@@ -487,11 +88,12 @@ var plasma = {
         //pagencz: []
     },
     jwt
+
+//Operations to sign    
 var NodeOps = []
+
 var rtradesToken = '' //for centralized IPFS pinning
-
-
-//grabs an API token for IPFS pinning of TOKEN posts
+    //grabs an API token for IPFS pinning of TOKEN posts
 if (config.rta && config.rtp) {
     rtrades.handleLogin(config.rta, config.rtp)
 }
@@ -3765,34 +3367,6 @@ function ipfsSaveState(blocknum, buffer) {
         }
     })
 };
-
-function getPathObj(path) {
-    return new Promise(function(resolve, reject) { //put back
-        store.get(path, function(err, obj) {
-            if (err) {
-                reject(err)
-            } else {
-                resolve(obj)
-            }
-        });
-    });
-}
-
-function getPathNum(path) {
-    return new Promise(function(resolve, reject) {
-        store.get(path, function(err, obj) {
-            if (err) {
-                reject(err)
-            } else {
-                if (typeof obj != 'number') {
-                    resolve(0)
-                } else {
-                    resolve(obj)
-                }
-            }
-        });
-    });
-}
 
 function isEmpty(obj) { for (var key in obj) { if (obj.hasOwnProperty(key)) return false; } return true; }
 
