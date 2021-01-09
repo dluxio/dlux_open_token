@@ -2,7 +2,7 @@ const hive = require('@hiveio/dhive');
 const decodeURIcomponent = require('decode-uri-component');
 const fetch = require('node-fetch');
 const hiveState = require('./processor');
-const IPFS = require('ipfs-api');
+const IPFS = require('ipfs-api'); //ipfs-http-client doesn't work
 const args = require('minimist')(process.argv.slice(2));
 const express = require('express');
 const cors = require('cors');
@@ -564,9 +564,6 @@ function startWith(hash) {
                         if (!e) {
                             if (hash) {
                                 var cleanState = data[1]
-                                cleanState.balances.rn = 3
-                                cleanState.balances['dlux-io'] += 18000
-                                delete cleanState.escrow
                                 store.put([], cleanState, function(err) {
                                     if (err) {
                                         console.log(err)
@@ -2662,15 +2659,6 @@ function startApp() {
                 }
                 if (promises.length) {
                     waitup(promises, pc, [resolve, reject])
-
-                    function waitup(promisesf, pca, p) {
-                        console.log('waitup hang?')
-                        Promise.all(promisesf)
-                            .then(r => {
-                                p[0](pca)
-                            })
-                            .catch(e => { p[1](e) })
-                    }
                 } else {
                     resolve(pc)
                 }
@@ -2768,7 +2756,7 @@ function startApp() {
     processor.start();
 }
 
-
+/*
 function check() { //is this needed at all? -not until doing oracle checks i think
     plasma.markets = {
         nodes: {},
@@ -2836,6 +2824,7 @@ function check() { //is this needed at all? -not until doing oracle checks i thi
         })
     })
 }
+*/
 
 //determine consensus... needs some work with memory management
 function tally(num) {
@@ -2854,17 +2843,17 @@ function tally(num) {
                         nodes = v[1],
                         stats = v[2],
                         rbal = v[3],
-                        queue = []
-                    var tally = {
-                        agreements: {
-                            runners: {},
-                            tally: {},
-                            votes: 0
-                        },
-                        election: {},
-                        winner: {},
-                        results: []
-                    }
+                        queue = [],
+                        tally = {
+                            agreements: {
+                                runners: {},
+                                tally: {},
+                                votes: 0
+                            },
+                            election: {},
+                            winner: {},
+                            results: []
+                        }
                     for (var node in runners) {
                         tally.agreements.runners[node] = nodes[node]
                         var getHash
@@ -2894,9 +2883,7 @@ function tally(num) {
                         var forblock = 0
                         try {
                             forblock = nodes[node].report.block
-                        } catch (e) {
-                            console.log(e)
-                        }
+                        } catch (e) {}
                         if (tally.agreements.tally[node].votes / tally.agreements.votes >= 2 / 3) {
                             consensus = tally.agreements.runners[node].report.hash
                             if (firstCatch) {
@@ -2999,27 +2986,28 @@ function tally(num) {
 }
 
 function enforce(agent, txid, pointer, block_num) { //checks status of required ops, performs collateral ops, strike recording and memory management
-    console.log(agent, txid, pointer)
+    console.log('Enforce params:', agent, txid, pointer)
     return new Promise((resolve, reject) => {
         Pop = getPathObj(['escrow', agent, txid])
         Ppointer = getPathObj(['escrow', pointer.id, pointer.acc])
         PtokenSupply = getPathNum(['stats', 'tokenSupply'])
         Promise.all([Pop, Ppointer, PtokenSupply])
             .then(r => {
-                a = r[0]
-                p = r[1]
-                s = r[2]
-                console.log('enforce:', { a }, 'pointer:', { p })
-                if (Object.keys(a).length) {
+                var enforced_op = r[0],
+                    point_to_contract = r[1],
+                    token_supply = r[2]
+                console.log('enforce:', { enforce_op }, 'pointer:', { point_to_contract })
+                if (Object.keys(enforced_op).length) {
                     let op = txid.split(":")[1],
                         id = txid.split(":")[0],
                         ops = []
-                    getPathObj(['contracts', p.for, p.contract])
+                    getPathObj(['contracts', point_to_contract.for, point_to_contract.contract])
                         .then(c => {
                             var i = 0
                             for (item in c) {
                                 i++
                             }
+                            var lil_ops = []
                             let co = c.co
                             if (i) {
                                 switch (op) {
@@ -3029,47 +3017,49 @@ function enforce(agent, txid, pointer, block_num) { //checks status of required 
                                                 chronAssign(block_num + 200, { op: 'denyT', agent: c.to, txid: `${ c.from }/${c.escrow_id}:denyT`, acc: pointer.acc, id: pointer.id })
                                                 penalty(c.agent, c.col)
                                                     .then(col => {
-                                                        console.log(col)
                                                         c.recovered = col
-                                                        add('rn', col)
+                                                        lil_ops = [
+                                                            add('rn', col),
+                                                            nodeUpdate(c.agent, 'strike', col)
+                                                        ]
                                                         ops.push({ type: 'put', path: ['escrow', c.to, `${c.from}/${c.escrow_id}:denyT`], data: toOp })
                                                         ops.push({ type: 'del', path: ['escrow', c.agent, `${c.from}/${c.escrow_id}:denyA`] })
                                                         ops.push({ type: 'del', path: ['escrow', '.' + c.to, `${c.from}/${c.escrow_id}:denyT`] })
-                                                        ops.push({ type: 'put', path: ['contracts', p.for, p.contract], data: c })
-                                                        store.batch(ops, [resolve, reject])
-                                                        ops = []
+                                                        ops.push({ type: 'put', path: ['contracts', pointed_contract.for, pointed_contract.contract], data: c })
+                                                        ops.push({ type: 'put', path: ['feed', `${block_num}:${txid}`], data: `@${c.agent} failed to make a timely transaction and has forfieted ${parseFloat(col/1000).toFixed(3)} DLUX` })
                                                     })
-                                                    .catch(e => { console.log(e) })
+                                                    .catch(e => { reject(e) })
                                                 ops = []
                                             })
-                                            .catch(e => { console.log(e) })
+                                            .catch(e => { reject(e) })
                                         break;
                                     case 'denyT':
                                         penalty(c.to, c.col)
                                             .then(col => {
                                                 const returnable = col + c.recovered
                                                 console.log(returnable, col, c.recovered)
-                                                ops.push({ type: 'del', path: ['contracts', c.for, c.escrow_id] }) //some more logic here to clean memory... or check if this was denies for colateral reasons
+                                                ops.push({ type: 'put', path: ['feed', `${block_num}:${txid}`], data: `@${c.to} failed to make a timely transaction and has forfieted ${parseFloat(col/1000).toFixed(3)} DLUX` })
+                                                ops.push({ type: 'del', path: ['contracts', pointed_contract.for, pointed_contract.contract] }) //some more logic here to clean memory... or check if this was denies for colateral reasons
                                                 ops.push({ type: 'del', path: ['escrow', c.to, `${c.from}/${c.escrow_id}:denyT`] })
-                                                ops.push({ type: 'del', path: ['escrow', c.escrow_id, c.from] })
+                                                lil_ops = [
+                                                    deletePointer(pointer.id, pointer.acc),
+                                                    nodeUpdate(c.to, 'strike', col)
+                                                ]
                                                 if (col > parseInt(c.col / 4)) {
-                                                    add(c.from, parseInt(c.col / 4))
-                                                    add('rn', parseInt(col - parseInt(c.col / 4)))
+                                                    lil_ops.push(add(c.from, parseInt(c.col / 4)))
+                                                    lil_ops.push(add('rn', parseInt(col - parseInt(c.col / 4))))
                                                 } else if (c.recovered > parseInt(c.col / 4)) {
-                                                    add(c.from, parseInt(c.col / 4))
-                                                    add('rn', parseInt(col - parseInt(c.col / 4)))
+                                                    lil_ops.push(add(c.from, parseInt(c.col / 4)))
+                                                    lil_ops.push(add('rn', parseInt(col - parseInt(c.col / 4))))
                                                 } else if (returnable <= parseInt(c.col / 4)) {
-                                                    add(c.from, returnable)
-                                                    add('rn', parseInt(-c.recovered))
+                                                    lil_ops.push(add(c.from, returnable))
+                                                    lil_ops.push(add('rn', parseInt(-c.recovered)))
                                                 } else {
-                                                    add(c.from, parseInt(c.col / 4))
-                                                    add('rn', parseInt(col - c.recovered))
+                                                    lil_ops.push(add(c.from, parseInt(c.col / 4)))
+                                                    lil_ops.push(add('rn', parseInt(col - c.recovered)))
                                                 }
-                                                store.batch(ops, [resolve, reject])
-                                                ops = []
                                             })
-                                            .catch(e => { console.log(e) })
-                                        ops = []
+                                            .catch(e => { reject(e) })
                                         break;
                                     case 'dispute':
                                         ops.push({ type: 'put', path: ['feed', `${block_num}:${txid}`], data: `@${c.tagent} failed to make a timely transaction and has forfieted collateral` })
@@ -3077,12 +3067,14 @@ function enforce(agent, txid, pointer, block_num) { //checks status of required 
                                         ops.push({ type: 'del', path: ['chrono', c.expire_path] })
                                         ops.push({ type: 'del', path: ['contracts', co, id] })
                                         ops.push({ type: 'put', path: ['stats', 'tokenSupply'], data: s - parseInt(c.escrow / 4) })
-                                        add(c.agent, parseInt(c.escrow / 2)) //good node gets back
-                                        add(c.eo, parseInt(c.escrow / 4)) //originator gets covered
-                                        addCol(c.agent, -parseInt(c.escrow / 2)) //trackers get emptied
-                                        addCol(c.tagent, -parseInt(c.escrow / 2))
-                                        deletePointer(pointer.id, pointer.acc) //housekeeping
-                                        nodeUpdate(c.tagent, 'strike', parseInt(c.escrow / 4)) //strike recorded
+                                        lil_ops = [
+                                                add(c.agent, parseInt(c.escrow / 2)), //good node gets back
+                                                add(c.eo, parseInt(c.escrow / 4)), //originator gets covered
+                                                addCol(c.agent, -parseInt(c.escrow / 2)), //trackers get emptied
+                                                addCol(c.tagent, -parseInt(c.escrow / 2)),
+                                                deletePointer(pointer.id, pointer.acc), //housekeeping
+                                                nodeUpdate(c.tagent, 'strike', parseInt(c.escrow / 4))
+                                            ] //strike recorded
                                         break;
                                     case 'buyApproveT':
                                         ops.push({ type: 'put', path: ['feed', `${block_num}:${txid}`], data: `@${c.tagent} failed to make a timely transaction` })
@@ -3090,12 +3082,14 @@ function enforce(agent, txid, pointer, block_num) { //checks status of required 
                                         ops.push({ type: 'del', path: ['chrono', c.expire_path] })
                                         ops.push({ type: 'del', path: ['contracts', co, id] })
                                         ops.push({ type: 'put', path: ['stats', 'tokenSupply'], data: s - parseInt(c.escrow / 4) })
-                                        add(c.agent, parseInt(c.escrow / 2))
-                                        addCol(c.agent, -parseInt(c.escrow / 2))
-                                        addCol(c.tagent, -parseInt(c.escrow / 2))
-                                        add(c.eo, parseInt(c.escrow / 4))
-                                        deletePointer(pointer.id, pointer.acc)
-                                        nodeUpdate(c.tagent, 'strike', parseInt(c.escrow / 4))
+                                        lil_ops = [
+                                            add(c.agent, parseInt(c.escrow / 2)),
+                                            addCol(c.agent, -parseInt(c.escrow / 2)),
+                                            addCol(c.tagent, -parseInt(c.escrow / 2)),
+                                            add(c.eo, parseInt(c.escrow / 4)),
+                                            deletePointer(pointer.id, pointer.acc),
+                                            nodeUpdate(c.tagent, 'strike', parseInt(c.escrow / 4))
+                                        ]
                                         break;
                                     case 'buyApproveA':
                                         ops.push({ type: 'put', path: ['feed', `${block_num}:${txid}`], data: `@${c.agent} failed to make a timely transaction` })
@@ -3103,12 +3097,14 @@ function enforce(agent, txid, pointer, block_num) { //checks status of required 
                                         ops.push({ type: 'del', path: ['chrono', c.expire_path] })
                                         ops.push({ type: 'del', path: ['contracts', co, id] })
                                         ops.push({ type: 'put', path: ['stats', 'tokenSupply'], data: s - parseInt(c.escrow / 4) })
-                                        add(c.tagent, parseInt(c.escrow / 2))
-                                        addCol(c.agent, -parseInt(c.escrow / 2))
-                                        addCol(c.tagent, -parseInt(c.escrow / 2))
-                                        add(c.eo, parseInt(c.escrow / 4))
-                                        deletePointer(pointer.id, pointer.acc)
-                                        nodeUpdate(c.agent, 'strike', parseInt(c.escrow / 4))
+                                        lil_ops = [
+                                            add(c.tagent, parseInt(c.escrow / 2)),
+                                            addCol(c.agent, -parseInt(c.escrow / 2)),
+                                            addCol(c.tagent, -parseInt(c.escrow / 2)),
+                                            add(c.eo, parseInt(c.escrow / 4)),
+                                            deletePointer(pointer.id, pointer.acc),
+                                            nodeUpdate(c.agent, 'strike', parseInt(c.escrow / 4))
+                                        ]
                                         break;
                                     case 'listApproveT':
                                         ops.push({ type: 'put', path: ['feed', `${block_num}:${txid}`], data: `@${c.tagent} failed to make a timely transaction` })
@@ -3116,12 +3112,14 @@ function enforce(agent, txid, pointer, block_num) { //checks status of required 
                                         ops.push({ type: 'del', path: ['chrono', c.expire_path] })
                                         ops.push({ type: 'del', path: ['contracts', co, id] })
                                         ops.push({ type: 'put', path: ['stats', 'tokenSupply'], data: s - parseInt(c.escrow / 4) })
-                                        add(c.agent, parseInt(c.escrow / 2))
-                                        add(c.eo, parseInt(c.escrow / 4))
-                                        addCol(c.agent, -parseInt(c.escrow / 2))
-                                        addCol(c.tagent, -parseInt(c.escrow / 2))
-                                        deletePointer(pointer.id, pointer.acc)
-                                        nodeUpdate(c.tagent, 'strike', parseInt(c.escrow / 4))
+                                        lil_ops = [
+                                            add(c.agent, parseInt(c.escrow / 2)),
+                                            add(c.eo, parseInt(c.escrow / 4)),
+                                            addCol(c.agent, -parseInt(c.escrow / 2)),
+                                            addCol(c.tagent, -parseInt(c.escrow / 2)),
+                                            deletePointer(pointer.id, pointer.acc),
+                                            nodeUpdate(c.tagent, 'strike', parseInt(c.escrow / 4))
+                                        ]
                                         break;
                                     case 'listApproveA':
                                         ops.push({ type: 'put', path: ['feed', `${block_num}:${txid}`], data: `@${c.agent} failed to make a timely transaction` })
@@ -3129,12 +3127,14 @@ function enforce(agent, txid, pointer, block_num) { //checks status of required 
                                         ops.push({ type: 'del', path: ['chrono', c.expire_path] })
                                         ops.push({ type: 'del', path: ['contracts', co, id] })
                                         ops.push({ type: 'put', path: ['stats', 'tokenSupply'], data: s - parseInt(c.escrow / 4) })
-                                        add(c.tagent, parseInt(c.escrow / 2))
-                                        add(c.eo, parseInt(c.escrow / 4))
-                                        addCol(c.agent, -parseInt(c.escrow / 2))
-                                        addCol(c.tagent, -parseInt(c.escrow / 2))
-                                        deletePointer(pointer.id, pointer.acc)
-                                        nodeUpdate(c.agent, 'strike', parseInt(c.escrow / 4))
+                                        lil_ops = [
+                                            add(c.tagent, parseInt(c.escrow / 2)),
+                                            add(c.eo, parseInt(c.escrow / 4)),
+                                            addCol(c.agent, -parseInt(c.escrow / 2)),
+                                            addCol(c.tagent, -parseInt(c.escrow / 2)),
+                                            deletePointer(pointer.id, pointer.acc),
+                                            nodeUpdate(c.agent, 'strike', parseInt(c.escrow / 4))
+                                        ]
                                         break;
                                     case 'release':
                                         ops.push({ type: 'put', path: ['feed', `${block_num}:${txid}`], data: `@${c.agent} failed to make a timely transaction and has forfieted collateral` })
@@ -3142,10 +3142,12 @@ function enforce(agent, txid, pointer, block_num) { //checks status of required 
                                         ops.push({ type: 'del', path: ['chrono', c.expire_path] })
                                         ops.push({ type: 'del', path: ['contracts', co, id] })
                                         ops.push({ type: 'put', path: ['stats', 'tokenSupply'], data: s - parseInt(c.escrow / 4) })
-                                        add(c.tagent, parseInt(c.escrow / 2))
-                                        add(c.eo, parseInt(c.escrow / 4))
-                                        deletePointer(pointer.id, pointer.acc)
-                                        nodeUpdate(c.agent, 'strike', parseInt(c.escrow / 4))
+                                        lil_ops = [
+                                            add(c.tagent, parseInt(c.escrow / 2)),
+                                            add(c.eo, parseInt(c.escrow / 4)),
+                                            deletePointer(pointer.id, pointer.acc),
+                                            nodeUpdate(c.agent, 'strike', parseInt(c.escrow / 4))
+                                        ]
                                         break;
                                     case 'transfer':
                                         ops.push({ type: 'put', path: ['feed', `${block_num}:${txid}`], data: `@${c.tagent} failed to make a timely transaction and has forfieted collateral` })
@@ -3153,10 +3155,12 @@ function enforce(agent, txid, pointer, block_num) { //checks status of required 
                                         ops.push({ type: 'del', path: ['chrono', c.expire_path] })
                                         ops.push({ type: 'del', path: ['contracts', co, id] })
                                         ops.push({ type: 'put', path: ['stats', 'tokenSupply'], data: s - parseInt(c.escrow / 2) })
-                                        add(c.eo, parseInt(c.escrow / 2))
-                                        addCol(c.tagent, -parseInt(c.escrow))
-                                        deletePointer(pointer.id, pointer.acc)
-                                        nodeUpdate(c.tagent, 'strike', parseInt(c.escrow / 4))
+                                        lil_ops = [
+                                            add(c.eo, parseInt(c.escrow / 2)),
+                                            addCol(c.tagent, -parseInt(c.escrow)),
+                                            deletePointer(pointer.id, pointer.acc),
+                                            nodeUpdate(c.tagent, 'strike', parseInt(c.escrow / 4))
+                                        ]
                                         break;
                                     case 'cancel':
                                         ops.push({ type: 'put', path: ['feed', `${block_num}:${txid}`], data: `@${c.tagent} failed to make a timely transaction and has forfieted collateral` })
@@ -3164,32 +3168,35 @@ function enforce(agent, txid, pointer, block_num) { //checks status of required 
                                         ops.push({ type: 'del', path: ['chrono', c.expire_path] })
                                         ops.push({ type: 'del', path: ['contracts', co, id] })
                                         ops.push({ type: 'put', path: ['stats', 'tokenSupply'], data: s - parseInt(c.escrow / 4) })
-                                        add(c.agent, parseInt(c.escrow / 2))
-                                        add(c.eo, parseInt(c.escrow / 4))
-                                        addCol(c.agent, -parseInt(c.escrow / 2))
-                                        addCol(c.tagent, -parseInt(c.escrow / 2))
-                                        deletePointer(pointer.id, pointer.acc)
-                                        nodeUpdate(c.tagent, 'strike', parseInt(c.escrow / 4))
+                                        lil_ops = [
+                                            add(c.agent, parseInt(c.escrow / 2)),
+                                            add(c.eo, parseInt(c.escrow / 4)),
+                                            addCol(c.agent, -parseInt(c.escrow / 2)),
+                                            addCol(c.tagent, -parseInt(c.escrow / 2)),
+                                            deletePointer(pointer.id, pointer.acc),
+                                            nodeUpdate(c.tagent, 'strike', parseInt(c.escrow / 4))
+                                        ]
                                         break;
                                     default:
                                         console.log(`Unknown Op: ${op}`)
                                         resolve()
                                 }
                             }
-                            console.log('enforce:', ops)
-                            store.batch(ops, [resolve, reject])
+                            waitfor(lil_ops)
+                                .then(empty => {
+                                    store.batch(ops, [resolve, reject])
+                                })
+                                .catch(e => { reject(e) })
                         })
                         .catch(e => {
-                            console.log(e);
-                            reject()
+                            reject(e)
                         })
                 } else {
                     resolve()
                 }
             })
             .catch(e => {
-                console.log(e);
-                reject()
+                reject(e)
             })
     })
 }
@@ -3197,7 +3204,6 @@ function enforce(agent, txid, pointer, block_num) { //checks status of required 
 //how to trigger cancels and expirations
 function release(from, txid, bn) {
     return new Promise((resolve, reject) => {
-        var found = ''
         store.get(['contracts', from, txid], function(er, a) {
             if (er) { console.log(er) } else {
                 var ops = []
@@ -3205,22 +3211,25 @@ function release(from, txid, bn) {
                     case 'ss':
                         store.get(['dex', 'hive', 'sellOrders', `${a.rate}:${a.txid}`], function(e, r) {
                             if (e) { console.log(e) } else if (isEmpty(r)) { console.log('Nothing here' + a.txid) } else {
-                                add(r.from, r.amount)
-                                ops.push({ type: 'del', path: ['contracts', from, txid] })
-                                ops.push({ type: 'del', path: ['chrono', a.expire_path] })
-                                ops.push({ type: 'del', path: ['dex', 'hive', 'sellOrders', `${a.rate}:${a.txid}`] })
-                                store.batch(ops, [resolve, reject])
+                                add(r.from, r.amount).then(empty => {
+                                    ops.push({ type: 'del', path: ['contracts', from, txid] })
+                                    ops.push({ type: 'del', path: ['chrono', a.expire_path] })
+                                    ops.push({ type: 'del', path: ['dex', 'hive', 'sellOrders', `${a.rate}:${a.txid}`] })
+                                    store.batch(ops, [resolve, reject])
+                                }).catch(e => { reject(e) })
                             }
                         });
                         break;
                     case 'ds':
                         store.get(['dex', 'hbd', 'sellOrders', `${a.rate}:${a.txid}`], function(e, r) {
                             if (e) { console.log(e) } else if (isEmpty(r)) { console.log('Nothing here' + a.txid) } else {
-                                add(r.from, r.amount)
-                                ops.push({ type: 'del', path: ['contracts', from, txid] })
-                                ops.push({ type: 'del', path: ['chrono', a.expire_path] })
-                                ops.push({ type: 'del', path: ['dex', 'hbd', 'sellOrders', `${a.rate}:${a.txid}`] })
-                                store.batch(ops, [resolve, reject])
+                                add(r.from, r.amount).then(empty => {
+                                    ops.push({ type: 'del', path: ['contracts', from, txid] })
+                                    ops.push({ type: 'del', path: ['chrono', a.expire_path] })
+                                    ops.push({ type: 'del', path: ['dex', 'hbd', 'sellOrders', `${a.rate}:${a.txid}`] })
+                                    store.batch(ops, [resolve, reject])
+                                }).catch(e => { reject(e) })
+
                             }
                         });
                         break;
@@ -3229,10 +3238,12 @@ function release(from, txid, bn) {
                             if (e) { console.log(e) } else if (isEmpty(r)) { console.log('Nothing here' + a.txid) } else {
                                 a.cancel = true
                                 chronAssign(bn + 200, { op: 'check', agent: r.reject[0], txid: r.txid + ':cancel', acc: from, id: txid })
-                                ops.push({ type: 'put', path: ['escrow', r.reject[0], r.txid + ':cancel'], data: r.reject[1] })
-                                ops.push({ type: 'put', path: ['contracts', from, r.txid], data: a })
-                                ops.push({ type: 'del', path: ['dex', 'hive', 'buyOrders', `${a.rate}:${a.txid}`] })
-                                store.batch(ops, [resolve, reject])
+                                    .then(empty => {
+                                        ops.push({ type: 'put', path: ['escrow', r.reject[0], r.txid + ':cancel'], data: r.reject[1] })
+                                        ops.push({ type: 'put', path: ['contracts', from, r.txid], data: a })
+                                        ops.push({ type: 'del', path: ['dex', 'hive', 'buyOrders', `${a.rate}:${a.txid}`] })
+                                        store.batch(ops, [resolve, reject])
+                                    }).catch(e => { reject(e) })
                             }
                         });
                         break;
@@ -3241,10 +3252,12 @@ function release(from, txid, bn) {
                             if (e) { console.log(e) } else if (isEmpty(r)) { console.log('Nothing here' + a.txid) } else {
                                 a.cancel = true
                                 chronAssign(bn + 200, { op: 'check', agent: r.reject[0], txid: r.txid + ':cancel', acc: from, id: txid })
-                                ops.push({ type: 'put', path: ['contracts', from, r.txid], data: a })
-                                ops.push({ type: 'put', path: ['escrow', r.reject[0], r.txid + ':cancel'], data: r.reject[1] })
-                                ops.push({ type: 'del', path: ['dex', 'hbd', 'buyOrders', `${a.rate}:${a.txid}`] })
-                                store.batch(ops, [resolve, reject])
+                                    .then(empty => {
+                                        ops.push({ type: 'put', path: ['contracts', from, r.txid], data: a })
+                                        ops.push({ type: 'put', path: ['escrow', r.reject[0], r.txid + ':cancel'], data: r.reject[1] })
+                                        ops.push({ type: 'del', path: ['dex', 'hbd', 'buyOrders', `${a.rate}:${a.txid}`] })
+                                        store.batch(ops, [resolve, reject])
+                                    }).catch(e => { reject(e) })
                             }
                         });
                         break;
@@ -3643,7 +3656,7 @@ function report() {
             stash: plasma.privHash
         })
     }]
-    NodeOps.unshift([
+    NodeOps.unshift([ //run it first
         [0, 0], op
     ])
 }
@@ -3664,10 +3677,9 @@ function credit(node) {
     return new Promise((resolve, reject) => {
         getPathNum(['markets', 'node', node, 'wins'])
             .then(a => {
-                store.batch([{ type: 'put', path: ['markets', 'node', node, 'wins'], data: a++ }], [resolve, reject])
+                store.batch([{ type: 'put', path: ['markets', 'node', node, 'wins'], data: a++ }], [resolve, reject, 1])
             })
             .catch(e => {
-                console.log(e);
                 reject(e)
             })
     })
@@ -3705,68 +3717,40 @@ function penalty(node, amount) {
     console.log('penalty: ', { node, amount })
     return new Promise((resolve, reject) => {
         pts = getPathNum(['stats', 'tokenSupply'])
-        pnb = getPathNum(['balances', node])
-        Promise.all([pts,pnb]).then(r=>{
-            var a2 = r[1],
-                ts = r[0]
+        Promise.all([pts]).then(r=>{
+            var a2 = r[1]
                 newBal = a2 - amount
                 if(newBal < 0){newBal = 0}
                 const forfiet = a2 - newBal
                 var ops = [{ type: 'put', path: ['balances', node], data: newBal }]
-                //ops.push({ type: 'put', path: ['stats', 'tokenSupply'], data: ts - forfiet })
-                //dig into powered token? would this be a method to power down quickly?
-                store.batch(ops, [resolve, reject, forfiet])
+                nodeUpdate(node, 'strike', amount)
+                .then(empty=>{
+                    store.batch(ops, [resolve, reject, forfiet])
+                })
+                .catch(e=>{reject(e)})
         }).catch(e=>{
-            console.log(e)
+            reject(e)
         })
     })
 }
 
-function chronAssign(block, op) { //just hash the op dummy... or is order important?
+function chronAssign(block, op) {
     return new Promise((resolve, reject) => {
-        store.someChildren(['chrono'], {
-            gte: "" + parseInt(parseInt(block)),
-            lte: "" + parseInt((block) + 1)
-        }, function(e, a) {
-            if (e) {
-                reject(e)
-                console.log(e)
-            } else {
-                console.log('chron assign:', block, ' over:', a)
-                var keys = Object.keys(a)
-                var t //needs serialization work with del chrono
-                if (keys.length && keys.length < 10) {
-                    t = keys.length
-                } else if (keys.length && keys.length < 36) {
-                    t = String.fromCharCode(keys.length + 55)
-                } else if (keys.length && keys.length < 62) {
-                    t = String.fromCharCode(keys.length + 61)
-                } else if (keys.length >= 62) {
-                    chronAssign(block + 1, op)
-                }
-                if (!t) {
-                    t = `${block}:0`
-                } else {
-                    var temp = t
-                    t = `${block}:${temp}`
-                }
+                const t = block + ':' + hashThis(stringify(op))
                 store.batch([{ type: 'put', path: ['chrono', t], data: op }], [resolve, reject, t])
-            }
-        })
-
     })
 }
 
-function ipfsSaveState(blocknum, hashable) {
-    ipfs.add(hashable, (err, IpFsHash) => {
+function ipfsSaveState(blocknum, buffer) {
+    ipfs.add(buffer, (err, ipfs_return) => {
         if (!err) {
             var hash = ''
             try {
-                hash = IpFsHash[0].hash
-            } catch (e) {}
+                hash = ipfs_return[0].hash
+            } catch (e) {console.log(e)}
             plasma.hashLastIBlock = hash
             plasma.hashBlock = blocknum
-            console.log(current + `:Saved:  ${hash}`)
+            console.log(current + `:Saved: ${hash}`)
         } else {
             console.log({
                 //cycle
@@ -3824,39 +3808,50 @@ function sortSellArray(array, key) { //seek insert instead
     });
 }
 
-function allowedPrice(VWP, rate) {
-    VWPN = parseFloat(VWP)
-    if (parseFloat(rate) > (VWPN * 0.8) && parseFloat(rate) < (VWPN * 1.2)) {
+function allowedPrice(volume_weighted_price, rate) {
+    volume_weighted_price_number = parseFloat(volume_weighted_price)
+    rate_number = parseFloat(rate)
+    if (rate_number > (volume_weighted_price_number * 0.8) && rate_number < (volume_weighted_price_number * 1.2)) {
         return true
     } else {
         return false
     }
 }
 
-function forceCancel(rate, type, bn) {
-    price = parseFloat(rate)
+function forceCancel(rate, type, block_num) {
+    return new Promise((resolve, reject)=>{
+    const price = parseFloat(rate)
     getPathObj(['dex', type, 'sellOrders'])
         .then(s => {
             for (o in s) {
                 if (parseFloat(o.split(":")[0]) < (price * .6)) {
-                    release(o.from, o.split(":")[1], bn)
+                    release(o.from, o.split(":")[1], block_num)
+                    .then(r=>{resolve(r)})
+                    .catch(e=>{reject(e)})
                 } else if (parseFloat(o.split(":")[0]) > (price * 1.4)) {
-                    release(o.from, o.split(":")[1], bn)
+                    release(o.from, o.split(":")[1], block_num)
+                    .then(r=>{resolve(r)})
+                    .catch(e=>{reject(e)})
                 }
             }
         })
-        .catch(e => console.log(e))
+        .catch(e=>{reject(e)})
     getPathObj(['dex', type, 'buyOrders'])
         .then(s => {
             for (o in s) {
                 if (parseFloat(o.split(":")[0]) < (price * .6)) {
-                    release(o.from, o.split(":")[1], bn)
+                    release(o.from, o.split(":")[1], block_num)
+                    .then(r=>{resolve(r)})
+                    .catch(e=>{reject(e)})
                 } else if (parseFloat(o.split(":")[0]) > (price * 1.4)) {
-                    release(o.from, o.split(":")[1], bn)
+                    release(o.from, o.split(":")[1], block_num)
+                    .then(r=>{resolve(r)})
+                    .catch(e=>{reject(e)})
                 }
             }
         })
-        .catch(e => console.log(e))
+        .catch(e=>{reject(e)})
+    })
 }
 
 function deleteObjs(paths) {
@@ -3871,7 +3866,8 @@ function deleteObjs(paths) {
 
 function deletePointer(escrowID, user) { //escrow IDs are unique to user, this checks for a collision before deleting the whole pointer
     return new Promise((resolve, reject) => {
-        store.get(['escrow', escrowID.toString()], function(e, a) {
+        const escrow_id = typeof escrowID == 'string' ? escrowID : escrowID.toString()
+        store.get(['escrow', escrow_id], function(e, a) {
             if (!e) {
                 var found = false
                 const users = Object.keys(a)
@@ -3882,9 +3878,9 @@ function deletePointer(escrowID, user) { //escrow IDs are unique to user, this c
                     }
                 }
                 if (found && users.length == 1) {
-                    store.batch([{ type: 'del', path: ['escrow', escrowID.toString()] }], [resolve, reject, users.length])
+                    store.batch([{ type: 'del', path: ['escrow', escrow_id] }], [resolve, reject, users.length])
                 } else if (found) {
-                    store.batch([{ type: 'del', path: ['escrow', escrowID.toString(), user] }], [resolve, reject, users.length])
+                    store.batch([{ type: 'del', path: ['escrow', escrow_id, user] }], [resolve, reject, users.length])
                 }
             }
         })
@@ -3918,6 +3914,23 @@ function nodeUpdate(node, op, val) { //for keeping node stats
     })
 }
 
+function waitup(promises_array, promise_chain_array, resolve_reject) {
+                        Promise.all(promises_array)
+                            .then(r => {
+                                resolve_reject[0](promise_chain_array)
+                            })
+                            .catch(e => { resolve_reject[1](e) })
+                    }
+
+function waitfor(promises_array){
+    return new Promise((resolve, reject)=>{
+        Promise.all(promises_array)
+        .then(r=>{
+            resolve(1)
+        })
+        .catch(e=>{reject(e)})
+    })
+}
 
 function hashThis(data) {
     const digest = crypto.createHash('sha256').update(data).digest()
