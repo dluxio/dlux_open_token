@@ -62,7 +62,7 @@ const walletOperationsBitmask = makeBitMaskFilter([
 ])
 
 //Start Program Options   
-startWith('QmdNha3sRhYXtGryv34jbM12zV246qVdGHtFkgau9dGrqe') //for testing and replaying
+startWith('QmS97Dv46AY7JsazEu4wYeV6UPri3oWQnn225NwdysDbYT') //for testing and replaying
     //dynStart(config.leader)
 
 // API defs
@@ -403,7 +403,7 @@ function startApp() {
                 })
             })
         });
-    processor.onStreamingStart(() => {
+    processor.onStreamingStart(function() {
         console.log("At real time.");
         store.get(['markets', 'node', config.username], function(e, a) {
             if (!a.domain && config.NODEDOMAIN) {
@@ -417,7 +417,7 @@ function startApp() {
                         escrow: true
                     })
                 }];
-                unshift([
+                NodeOps.unshift([
                     [0, 0], op
                 ]);
             }
