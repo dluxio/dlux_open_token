@@ -1,5 +1,5 @@
 const { store } = require("./index");
-const { add, chronAssign, isEmpty } = require('./lil_ops')
+const { add, chronAssign } = require('./lil_ops')
 
 //how to trigger cancels and expirations
 exports.release = (from, txid, bn) => new Promise((resolve, reject) => {
@@ -70,3 +70,10 @@ exports.release = (from, txid, bn) => new Promise((resolve, reject) => {
         }
     });
 })
+
+function isEmpty(obj) {
+    for (var key in obj) {
+        if (obj.hasOwnProperty(key)) return false;
+    }
+    return true
+}
