@@ -5,7 +5,7 @@ const crypto = require('crypto');
 const bs58 = require('bs58');
 const hashFunction = Buffer.from('12', 'hex');
 
-exports.forceCancel = (rate, type, block_num) => new Promise((resolve, reject) => {
+const forceCancel = (rate, type, block_num) => new Promise((resolve, reject) => {
     const price = parseFloat(rate)
     getPathObj(['dex', type, 'sellOrders'])
         .then(s => {
@@ -38,8 +38,9 @@ exports.forceCancel = (rate, type, block_num) => new Promise((resolve, reject) =
         })
         .catch(e => { reject(e) })
 })
+exports.forceCancel = forceCancel
 
-exports.add = (node, amount) => new Promise((resolve, reject) => {
+const add = (node, amount) => new Promise((resolve, reject) => {
     store.get(['balances', node], function(e, a) {
         if (!e) {
             const a2 = typeof a != 'number' ? amount : a + amount
@@ -49,7 +50,9 @@ exports.add = (node, amount) => new Promise((resolve, reject) => {
         }
     })
 })
-exports.addCol = (node, amount) => {
+exports.add = add
+
+const addCol = (node, amount) => {
     console.log('addCol: ', { node, amount })
     return new Promise((resolve, reject) => {
         store.get(['col', node], function(e, a) {
@@ -63,7 +66,9 @@ exports.addCol = (node, amount) => {
         })
     })
 }
-exports.deletePointer = (escrowID, user) => new Promise((resolve, reject) => {
+exports.addCol = addCol
+
+const deletePointer = (escrowID, user) => new Promise((resolve, reject) => {
     const escrow_id = typeof escrowID == 'string' ? escrowID : escrowID.toString()
     store.get(['escrow', escrow_id], function(e, a) {
         if (!e) {
@@ -83,7 +88,9 @@ exports.deletePointer = (escrowID, user) => new Promise((resolve, reject) => {
         }
     })
 })
-exports.credit = (node) => new Promise((resolve, reject) => {
+exports.deletePointer = deletePointer
+
+const credit = (node) => new Promise((resolve, reject) => {
     getPathNum(['markets', 'node', node, 'wins'])
         .then(a => {
             store.batch([{ type: 'put', path: ['markets', 'node', node, 'wins'], data: a++ }], [resolve, reject, 1])
@@ -92,7 +99,10 @@ exports.credit = (node) => new Promise((resolve, reject) => {
             reject(e)
         })
 })
-exports.nodeUpdate = (node, op, val) => new Promise((resolve, reject) => {
+exports.credit = credit
+
+
+const nodeUpdate = (node, op, val) => new Promise((resolve, reject) => {
     store.get(['markets', 'node', node], function(e, a) {
         if (!e) {
             if (!a.strikes)
@@ -119,8 +129,9 @@ exports.nodeUpdate = (node, op, val) => new Promise((resolve, reject) => {
         }
     })
 })
+exports.nodeUpdate = nodeUpdate
 
-exports.penalty = (node, amount) => {
+const penalty = (node, amount) => {
     console.log('penalty: ', { node, amount })
     return new Promise((resolve, reject) => {
         pts = getPathNum(['stats', 'tokenSupply'])
@@ -140,13 +151,15 @@ exports.penalty = (node, amount) => {
         })
     })
 }
+exports.penalty = penalty
 
-exports.chronAssign = (block, op) => new Promise((resolve, reject) => {
+const chronAssign = (block, op) => new Promise((resolve, reject) => {
     const t = block + ':' + hashThis(stringify(op))
     store.batch([{ type: 'put', path: ['chrono', t], data: op }], [resolve, reject, t])
 })
+exports.chronAssign = chronAssign
 
-exports.release = (from, txid, bn) => new Promise((resolve, reject) => {
+const release = (from, txid, bn) => new Promise((resolve, reject) => {
     store.get(['contracts', from, txid], function(er, a) {
         if (er) { console.log(er); } else {
             var ops = [];
@@ -215,6 +228,8 @@ exports.release = (from, txid, bn) => new Promise((resolve, reject) => {
     });
 })
 
+exports.release = release
+
 function hashThis(data) {
     const digest = crypto.createHash('sha256').update(data).digest()
     const digestSize = Buffer.from(digest.byteLength.toString(16), 'hex')
@@ -222,7 +237,6 @@ function hashThis(data) {
     const multihash = bs58.encode(combined)
     return multihash.toString()
 }
-
 exports.hashThis = hashThis
 
 function isEmpty(obj) {
