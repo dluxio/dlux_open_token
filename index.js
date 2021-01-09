@@ -2169,7 +2169,7 @@ function startApp() {
                                 let lbp = getPathNum(['balances', b.by]),
                                     tpowp = getPathNum(['pow', 't']),
                                     powp = getPathNum(['pow', b.by])
-                                promises.push(powerDownOp([lbp, tpowp, powp], from, delkey, num, chrops[i].split(':')[1], b))
+                                promises.push(powerDownOp([lbp, tpowp, powp], b.by, delkey, num, chrops[i].split(':')[1], b))
 
                                 function powerDownOp(promies, from, delkey, num, id, b) {
                                     return new Promise((resolve, reject) => {
