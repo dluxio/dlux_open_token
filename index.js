@@ -62,8 +62,8 @@ const walletOperationsBitmask = makeBitMaskFilter([
 ])
 
 //Start Program Options   
-startWith('Qmb8DnNDUG7wu4yoE1no9dQgYBS7ob1p1qUWFUBh1AZRwV') //for testing and replaying
-    //dynStart(config.leader)
+//startWith('Qmb8DnNDUG7wu4yoE1no9dQgYBS7ob1p1qUWFUBh1AZRwV') //for testing and replaying
+dynStart(config.leader)
 
 // API defs
 api.use(API.https_redirect);
