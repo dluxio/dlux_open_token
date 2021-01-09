@@ -2166,9 +2166,9 @@ function startApp() {
                                 store.batch([{ type: 'del', path: ['chrono', delKey] }], [function() {}, function() { console.log('failure') }])
                                 break;
                             case 'power_down': //needs work and testing
-                                let lbp = getPathNum(['balances', from]),
+                                let lbp = getPathNum(['balances', b.by]),
                                     tpowp = getPathNum(['pow', 't']),
-                                    powp = getPathNum(['pow', from])
+                                    powp = getPathNum(['pow', b.by])
                                 promises.push(powerDownOp([lbp, tpowp, powp], from, delkey, num, chrops[i].split(':')[1], b))
 
                                 function powerDownOp(promies, from, delkey, num, id, b) {
