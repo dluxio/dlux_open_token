@@ -48,7 +48,11 @@ exports.release = (from, txid, bn) => new Promise((resolve, reject) => {
                     break;
                 case 'db':
                     store.get(['dex', 'hbd', 'buyOrders', `${a.rate}:${a.txid}`], function(e, r) {
-                        if (e) { console.log(e); } else if (isEmpty(r)) { console.log('Nothing here' + a.txid); } else {
+                        if (e) {
+                            console.log(e);
+                        } else if (isEmpty(r)) {
+                            console.log('Nothing here' + a.txid);
+                        } else {
                             a.cancel = true;
                             chronAssign(bn + 200, { op: 'check', agent: r.reject[0], txid: r.txid + ':cancel', acc: from, id: txid })
                                 .then(empty => {

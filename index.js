@@ -63,7 +63,7 @@ const walletOperationsBitmask = makeBitMaskFilter([
 ])
 
 //Start Program Options   
-startWith('QmcEwJ84ALfBSyGqVR1uptwEG2hR7gpRJvvbfvjXzrucpG') //for testing and replaying
+startWith('QmWbXbUgXGEmwGZSJryAwmC7Lykp3Xb8LvB9fLiN9wgxTu') //for testing and replaying
     //dynStart(config.leader)
 
 // API defs
@@ -420,7 +420,12 @@ exports.chronAssign = chronAssign;
 
 ;
 
-function isEmpty(obj) { for (var key in obj) { if (obj.hasOwnProperty(key)) return false; } return true; }
+function isEmpty(obj) {
+    for (var key in obj) {
+        if (obj.hasOwnProperty(key)) return false;
+    }
+    return true
+}
 exports.isEmpty = isEmpty;
 
 function sortBuyArray(array, key) { //seek insert instead

@@ -1,6 +1,6 @@
 const { store } = require('./../index')
 
-exports.nomention = function(json, from, active, pc) {
+exports.nomention = (json, from, active, pc) => {
     if (typeof json.nomention == 'boolean') {
         store.get(['delegations', from], function(e, a) {
             var ops = []

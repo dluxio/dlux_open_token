@@ -80,8 +80,7 @@ exports.node_delete = function(json, from, active, pc) {
                 ])
                 .then(empty => {
                     var q = v[0],
-                        n = v[1],
-                        r = v[2]
+                        n = v[1]
                     if (typeof n.bidRate == 'number') {
                         for (var i = 0; i < q.length; i++) {
                             if (q[i] == from) {

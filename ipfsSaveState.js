@@ -1,6 +1,6 @@
 const { ipfs } = require("./index");
 
-function ipfsSaveState(blocknum, buffer) {
+exports.ipfsSaveState = (blocknum, buffer) => {
     ipfs.add(buffer, (err, ipfs_return) => {
         if (!err) {
             var hash = '';
@@ -11,7 +11,7 @@ function ipfsSaveState(blocknum, buffer) {
             return {
                 hashLastIBlock: hash,
                 hashBlock: blocknum
-            }
+            };
         } else {
             console.log({
                 //cycle
@@ -26,4 +26,3 @@ function ipfsSaveState(blocknum, buffer) {
         }
     });
 }
-exports.ipfsSaveState = ipfsSaveState;
