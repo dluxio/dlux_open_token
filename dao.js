@@ -1,7 +1,8 @@
 const config = require('./config');
 const { getPathNum } = require("./getPathNum");
 const { getPathObj } = require("./getPathObj");
-const { store, isEmpty, current, sortBuyArray } = require("./index");
+const { store, current, sortBuyArray } = require("./index");
+const { isEmpty } = require('./lil_ops')
 
 //the daily post, the inflation point for tokennomics
 function dao(num) {

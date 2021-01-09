@@ -1,6 +1,7 @@
-const { store, isEmpty, config } = require('./../index')
+const { store, config } = require('./../index')
 const { getPathObj } = require('./../getPathObj')
 const { deleteObjs } = require('./../deleteObjs')
+const { isEmpty } = require('./../lil_ops')
 
 exports.node_add = function(json, from, active, pc) {
     if (json.domain && typeof json.domain === 'string') {

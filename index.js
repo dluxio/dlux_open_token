@@ -418,16 +418,6 @@ exports.penalty = penalty;
 
 exports.chronAssign = chronAssign;
 
-;
-
-function isEmpty(obj) {
-    for (var key in obj) {
-        if (obj.hasOwnProperty(key)) return false;
-    }
-    return true
-}
-exports.isEmpty = isEmpty;
-
 function sortBuyArray(array, key) { //seek insert instead
     return array.sort(function(a, b) {
         return b[key] - a[key];

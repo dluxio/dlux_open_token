@@ -1,5 +1,5 @@
-const { store, isEmpty } = require("./index");
-const { add, chronAssign } = require('./lil_ops')
+const { store } = require("./index");
+const { add, chronAssign, isEmpty } = require('./lil_ops')
 
 //how to trigger cancels and expirations
 exports.release = (from, txid, bn) => new Promise((resolve, reject) => {
