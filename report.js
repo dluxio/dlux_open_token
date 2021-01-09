@@ -1,8 +1,8 @@
 const config = require('./config');
-const { plasma, VERSION, escrow, NodeOps } = require("./index");
+const { VERSION, escrow, unshift } = require("./index");
 
 //tell the hive your state, this is asynchronous with IPFS return... 
-function report() {
+function report(plasma) {
     var op = ["custom_json", {
         required_auths: [config.username],
         required_posting_auths: [],
@@ -15,7 +15,7 @@ function report() {
             stash: plasma.privHash
         })
     }];
-    NodeOps.unshift([
+    unshift([
         [0, 0], op
     ]);
 }
