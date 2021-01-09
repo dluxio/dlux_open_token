@@ -2177,7 +2177,8 @@ function startApp() {
                                             .then(bals => {
                                                 let lbal = bals[0],
                                                     tpow = bals[1],
-                                                    pbal = bals[2]
+                                                    pbal = bals[2],
+                                                    ops = []
                                                 ops.push({ type: 'put', path: ['balances', from], data: lbal + b.amount })
                                                 ops.push({ type: 'put', path: ['pow', from], data: pbal - b.amount })
                                                 ops.push({ type: 'put', path: ['pow', 't'], data: tpow - b.amount })
