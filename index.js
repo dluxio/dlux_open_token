@@ -62,8 +62,8 @@ const walletOperationsBitmask = makeBitMaskFilter([
 ])
 
 //Start Program Options   
-startWith('QmTLRY1Yb6aPkfsL8L6mMVnbGvEm3QJJf3q1WopDazmrkk') //for testing and replaying
-    //dynStart(config.leader)
+//startWith('QmTLRY1Yb6aPkfsL8L6mMVnbGvEm3QJJf3q1WopDazmrkk') //for testing and replaying
+dynStart(config.leader)
 
 // API defs
 api.use(API.https_redirect);
@@ -228,10 +228,10 @@ function startApp() {
                                     store.batch([{ type: 'del', path: ['chrono', delKey] }], [function() {}, function() { console.log('failure') }])
                                     break;
                                 case 'power_down': //needs work and testing
-                                    let lbp = getPathNum(['balances', from]),
+                                    let lbp = getPathNum(['balances', b.by]),
                                         tpowp = getPathNum(['pow', 't']),
-                                        powp = getPathNum(['pow', from])
-                                    promises.push(powerDownOp([lbp, tpowp, powp], from, delkey, num, chrops[i].split(':')[1], b))
+                                        powp = getPathNum(['pow', b.by])
+                                    promises.push(powerDownOp([lbp, tpowp, powp], b.by, delKey, num, chrops[i].split(':')[1], b))
 
                                     function powerDownOp(promies, from, delkey, num, id, b) {
                                         return new Promise((resolve, reject) => {
@@ -239,7 +239,8 @@ function startApp() {
                                                 .then(bals => {
                                                     let lbal = bals[0],
                                                         tpow = bals[1],
-                                                        pbal = bals[2]
+                                                        pbal = bals[2],
+                                                        ops = []
                                                     ops.push({ type: 'put', path: ['balances', from], data: lbal + b.amount })
                                                     ops.push({ type: 'put', path: ['pow', from], data: pbal - b.amount })
                                                     ops.push({ type: 'put', path: ['pow', 't'], data: tpow - b.amount })
@@ -253,7 +254,7 @@ function startApp() {
                                     }
                                     break;
                                 case 'post_reward': //needs work and/or testing
-                                    promises.push(postRewardOP(b, num, chrops[i].split(':')[1], delkey))
+                                    promises.push(postRewardOP(b, num, chrops[i].split(':')[1], delKey))
 
                                     function postRewardOP(b, num, id, delkey) {
                                         return new Promise((resolve, reject) => {
@@ -275,7 +276,7 @@ function startApp() {
                                                         post: a
                                                     }
                                                 })
-                                                ops.push({ type: 'del', path: ['chrono', delKey] })
+                                                ops.push({ type: 'del', path: ['chrono', delkey] })
                                                 ops.push({ type: 'put', path: ['feed', `${num}:vop_${id}`], data: `@${b.author}| Post:${b.permlink} voting expired.` })
                                                 ops.push({ type: 'del', path: ['posts', `${b.author}/${b.permlink}`] })
                                                 console.log(ops)

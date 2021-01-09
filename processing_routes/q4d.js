@@ -1,6 +1,6 @@
 const { store, config } = require('./../index')
 
-exports.q4d = function(json, from, active, pc) {
+exports.q4d = (json, from, active, pc) => {
     if (from = config.leader && json.text && json.title) {
         store.batch([{
             type: 'put',

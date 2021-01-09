@@ -64,8 +64,8 @@ exports.power_down = (json, from, active, pc) => {
 
                         for (i in downs) {
                             ops.push({ type: 'del', path: ['chrono', downs[i]] });
+                            ops.push({ type: 'put', path: ['powd', from, downs[i]], data: newdowns });
                         }
-                        ops.push({ type: 'put', path: ['powd', from], data: newdowns });
                         ops.push({ type: 'put', path: ['feed', `${json.block_num}:${json.transaction_id}`], data: `@${from}| Powered down ${parseFloat(amount / 1000).toFixed(3)} ${config.TOKEN}` });
                         store.batch(ops, pc);
                     });
