@@ -1,4 +1,4 @@
-const { store, config, VERSION, current, NodeOps } = require("./../index");
+const { store, config, VERSION, current, NodeOps, unshift } = require("./../index");
 
 exports.onStreamingStart = () => {
     console.log("At real time.");
@@ -14,7 +14,7 @@ exports.onStreamingStart = () => {
                     escrow: true
                 })
             }];
-            NodeOps.unshift([
+            unshift([
                 [0, 0], op
             ]);
         }
