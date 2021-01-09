@@ -2169,7 +2169,7 @@ function startApp() {
                                 let lbp = getPathNum(['balances', b.by]),
                                     tpowp = getPathNum(['pow', 't']),
                                     powp = getPathNum(['pow', b.by])
-                                promises.push(powerDownOp([lbp, tpowp, powp], b.by, delkey, num, chrops[i].split(':')[1], b))
+                                promises.push(powerDownOp([lbp, tpowp, powp], b.by, delKey, num, chrops[i].split(':')[1], b))
 
                                 function powerDownOp(promies, from, delkey, num, id, b) {
                                     return new Promise((resolve, reject) => {
@@ -2191,7 +2191,7 @@ function startApp() {
                                 }
                                 break;
                             case 'post_reward': //needs work and/or testing
-                                promises.push(postRewardOP(b, num, chrops[i].split(':')[1], delkey))
+                                promises.push(postRewardOP(b, num, chrops[i].split(':')[1], delKey))
 
                                 function postRewardOP(b, num, id, delkey) {
                                     return new Promise((resolve, reject) => {
@@ -2213,7 +2213,7 @@ function startApp() {
                                                     post: a
                                                 }
                                             })
-                                            ops.push({ type: 'del', path: ['chrono', delKey] })
+                                            ops.push({ type: 'del', path: ['chrono', delkey] })
                                             ops.push({ type: 'put', path: ['feed', `${num}:vop_${id}`], data: `@${b.author}| Post:${b.permlink} voting expired.` })
                                             ops.push({ type: 'del', path: ['posts', `${b.author}/${b.permlink}`] })
                                             console.log(ops)
