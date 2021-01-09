@@ -62,7 +62,7 @@ const walletOperationsBitmask = makeBitMaskFilter([
 ])
 
 //Start Program Options   
-startWith('QmVLPu2xcEukC8KJyQ6Aj4By69usNHA84TMyPxY6xvhvXu') //for testing and replaying
+startWith('QmZiAXu9xcn2vdhr482VnhLWtH7sbLmGts6ewLGD7yxaSY') //for testing and replaying
     //dynStart(config.leader)
 
 // API defs
@@ -302,7 +302,7 @@ function startApp() {
                         //check(num) //not promised, read only
                     }
                     if (num % 100 === 50 && isStreaming) {
-                        report(num)
+                        report(num, plasma)
                     }
                     if ((num - 20000) % 30240 === 0) { //time for daily magic
                         promises.push(dao(num))
