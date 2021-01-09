@@ -59,6 +59,7 @@ dynStart(config.leader)
 api.use(API.https_redirect);
 api.use(cors())
 api.get('/', API.root);
+api.get('/@:un', API.user);
 api.get('/stats', API.root);
 api.get('/state', API.state); //Do not recommend having a state dump in a production API
 api.get('/dex', API.dex);
