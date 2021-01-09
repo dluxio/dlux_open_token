@@ -62,7 +62,7 @@ const walletOperationsBitmask = makeBitMaskFilter([
 ])
 
 //Start Program Options   
-startWith('QmXfLyvSzGVmmNwxktXpqP9hnRBq1E9GPvScW7ddn1MMrk') //for testing and replaying
+startWith('Qmb8DnNDUG7wu4yoE1no9dQgYBS7ob1p1qUWFUBh1AZRwV') //for testing and replaying
     //dynStart(config.leader)
 
 // API defs
@@ -299,7 +299,7 @@ function startApp() {
                         //check(num) //not promised, read only
                     }
                     if (num % 100 === 50 && isStreaming) {
-                        report(num, plasma)
+                        report(plasma)
                             .then(nodeOp => {
 
                                 NodeOps.unshift(nodeOp)
@@ -317,6 +317,7 @@ function startApp() {
                             const blockState = Buffer.from(stringify([num, obj]))
                             ipfsSaveState(num, blockState)
                                 .then(pla => {
+                                    console.log(pla)
                                     plasma.hashLastIBlock = pla.hashLastIBlock
                                     plasma.hashBlock = pla.hashBlock
                                 })
