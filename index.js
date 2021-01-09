@@ -73,6 +73,7 @@ api.get('/', API.root);
 api.get('/stats', API.root);
 api.get('/state', API.state); //Do not recommend having a state dump in a production API
 api.get('/dex', API.dex);
+api.get('/@:un', API.user);
 api.get('/report/:un', API.report); // probably not needed
 api.get('/markets', API.markets); //for finding node runner and tasks information
 api.get('/posts/:author/:permlink', API.PostAuthorPermlink);
