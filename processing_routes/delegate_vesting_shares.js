@@ -1,6 +1,6 @@
-const { store } = require('./../index')
+const { store, config } = require('./../index')
 
-exports.delegate_vesting_shares = function(json, pc) { //grab posts to reward
+exports.delegate_vesting_shares = (json, pc) => {
     var ops = []
     const vests = parseInt(parseFloat(json.vesting_shares) * 1000000)
     if (json.delegatee == config.delegation && vests) {

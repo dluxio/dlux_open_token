@@ -2,7 +2,8 @@ const { store, config, client, unshift } = require('./../index')
 const { deleteObjs } = require('./../deleteObjs')
 const { chronAssign } = require('./../lil_ops')
 const { rtrades } = require('./../rtrades')
-exports.comment = function(json, pc) { //grab posts to reward
+
+exports.comment = (json, pc) => {
     if (json.author == config.leader) {
         store.get(['escrow', json.author], function(e, a) {
             if (!e) {
@@ -22,18 +23,19 @@ exports.comment = function(json, pc) { //grab posts to reward
     }
 }
 
-exports.comment_options = function(json, pc) { //grab posts to reward
+exports.comment_options = (json, pc) => {
     try {
         var filter = json.extensions[0][1].beneficiaries
     } catch (e) {
         pc[0](pc[2])
-        return;
+        return
     }
     var ops = []
     for (var i = 0; i < filter.length; i++) {
         if (filter[i].account == config.ben && filter[i].weight >= config.delegationWeight) {
             store.get(['queue'], function(e, a) {
-                if (e) console.log(e)
+                if (e)
+                    console.log(e)
                 deleteObjs([
                         ['queue']
                     ]).then(empty => {
@@ -86,7 +88,8 @@ exports.comment_options = function(json, pc) { //grab posts to reward
                                     var trimmed = JSON.parse(result.json_metadata),
                                         final = { a: [] }
                                     for (j in trimmed.assets) {
-                                        if (trimmed.assets[j].hash.length == 46) final.a.push(trimmed.assets[j].hash) //a for assets
+                                        if (trimmed.assets[j].hash.length == 46)
+                                            final.a.push(trimmed.assets[j].hash) //a for assets
                                     }
                                     if (trimmed.app.length < 33) { //p for process
                                         final.p = trimmed.app
@@ -113,11 +116,11 @@ exports.comment_options = function(json, pc) { //grab posts to reward
                                             var op = ["custom_json", {
                                                 required_auths: [config.username],
                                                 required_posting_auths: [],
-                                                id: `${config.prefix}cjv`, //custom json verification
+                                                id: `${config.prefix}cjv`,
                                                 json: JSON.stringify({
                                                     a: json.author,
                                                     p: json.permlink,
-                                                    c: final, //customJson trimmed
+                                                    c: final,
                                                     b: value //amount of bytes posted
                                                 })
                                             }]
@@ -129,7 +132,7 @@ exports.comment_options = function(json, pc) { //grab posts to reward
                                         var op = ["custom_json", {
                                             required_auths: [config.username],
                                             required_posting_auths: [],
-                                            id: `${config.prefix}cjv`, //custom json verification
+                                            id: `${config.prefix}cjv`,
                                             json: JSON.stringify({
                                                 a: json.author,
                                                 p: json.permlink,
@@ -140,7 +143,7 @@ exports.comment_options = function(json, pc) { //grab posts to reward
                                             [0, 0], op
                                         ])
                                     }
-                                }).catch(e => { console.log(e) });
+                                }).catch(e => { console.log(e) })
                         }
                     })
                     .catch(e => { console.log(e) })

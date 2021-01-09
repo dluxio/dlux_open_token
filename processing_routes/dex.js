@@ -2,11 +2,11 @@ const { store } = require('./../index')
 const { release } = require('./../release')
 const { getPathNum } = require('./../getPathNum')
 const { getPathObj } = require('./../getPathObj')
-const { add, addCol, deletePointer, credit, nodeUpdate, penalty, chronAssign, forceCancel } = require('./../lil_ops')
+const { add, addCol, deletePointer, credit, nodeUpdate, penalty, chronAssign, forceCancel, hashThis } = require('./../lil_ops')
 
-exports.dex_buy = function(json, from, active, pc) {
+exports.dex_buy = (json, from, active, pc) => {
     let Pbal = getPathNum(['balances', from]),
-        Pfound = getPathObj(['contracts', json.for, json.contract.split(':')[1]]), //using txids with prices auto sorts lists and cuts computer cycles
+        Pfound = getPathObj(['contracts', json.for, json.contract.split(':')[1]]),
         PhiveVWMA = getPathObj(['stats', 'HiveVWMA']),
         PhbdVWMA = getPathObj(['stats', 'HbdVWMA'])
     Promise.all([Pbal, Pfound, PhiveVWMA, PhbdVWMA])
@@ -17,8 +17,10 @@ exports.dex_buy = function(json, from, active, pc) {
                 hbdVWMA = v[3],
                 type = 'hive',
                 agent
-            if (found.hbd) type = 'hbd'
-            if (found.auths) agent = found.auths[0][1][1].to
+            if (found.hbd)
+                type = 'hbd'
+            if (found.auths)
+                agent = found.auths[0][1][1].to
             console.log({ bal, found, agent, from })
             if (found.amount && active && bal >= found.amount) {
                 var PbalTo = getPathNum(['balances', agent]),
@@ -69,7 +71,7 @@ exports.dex_buy = function(json, from, active, pc) {
                                 lil_ops.push(forceCancel(hiveVWMA.rate, 'hive'))
                             }
                             if (found.hive) {
-                                ops.push({ type: 'put', path: ['feed', `${json.block_num}:${json.transaction_id}`], data: `@${from}| purchased ${parseFloat(found.hive/1000).toFixed(3)} HIVE with ${parseFloat(found.amount/1000).toFixed(3)} ${config.TOKEN} via DEX` })
+                                ops.push({ type: 'put', path: ['feed', `${json.block_num}:${json.transaction_id}`], data: `@${from}| purchased ${parseFloat(found.hive / 1000).toFixed(3)} HIVE with ${parseFloat(found.amount / 1000).toFixed(3)} ${config.TOKEN} via DEX` })
                                 found.auths[2] = [agent, [
                                     "transfer",
                                     {
@@ -80,14 +82,14 @@ exports.dex_buy = function(json, from, active, pc) {
                                     }
                                 ]]
                             } else {
-                                ops.push({ type: 'put', path: ['feed', `${json.block_num}:${json.transaction_id}`], data: `@${from}| purchased ${parseFloat(found.hbd/1000).toFixed(3)} HBD via DEX` })
+                                ops.push({ type: 'put', path: ['feed', `${json.block_num}:${json.transaction_id}`], data: `@${from}| purchased ${parseFloat(found.hbd / 1000).toFixed(3)} HBD via DEX` })
                                 found.auths[2] = [agent, [
                                     "transfer",
                                     {
                                         "from": agent,
                                         "to": from,
                                         "amount": (found.hbd / 1000).toFixed(3) + ' HBD',
-                                        "memo": `${json.contract.split(':')[1]} by ${found.from} fulfilled with ${parseFloat(found.amount/1000).toFixed(3)} ${config.TOKEN}`
+                                        "memo": `${json.contract.split(':')[1]} by ${found.from} fulfilled with ${parseFloat(found.amount / 1000).toFixed(3)} ${config.TOKEN}`
                                     }
                                 ]]
                             }
@@ -119,7 +121,7 @@ exports.dex_buy = function(json, from, active, pc) {
         })
 }
 
-exports.dex_hive_sell = function(json, from, active, pc) { //no feedback required, trade will appear after 60 seconds
+exports.dex_hive_sell = (json, from, active, pc) => {
     let buyAmount = parseInt(json.hive),
         PfromBal = getPathNum(['balances', from]),
         PhiveVWMA = getPathObj(['stats', 'HiveVWMA'])
@@ -156,12 +158,12 @@ exports.dex_hive_sell = function(json, from, active, pc) { //no feedback require
                         { type: 'put', path: ['dex', 'hive', 'sellOrders', `${contract.rate}:${contract.txid}`], data: contract },
                         { type: 'put', path: ['balances', from], data: b - contract.amount },
                         { type: 'put', path: ['contracts', from, contract.txid], data: contract },
-                        { type: 'put', path: ['feed', `${json.block_num}:${json.transaction_id}`], data: `@${from}| has placed order ${txid} to sell ${parseFloat(json[config.jsonTokenName]/1000).toFixed(3)} for ${parseFloat(json.hive/1000).toFixed(3)} HIVE` }
+                        { type: 'put', path: ['feed', `${json.block_num}:${json.transaction_id}`], data: `@${from}| has placed order ${txid} to sell ${parseFloat(json[config.jsonTokenName] / 1000).toFixed(3)} for ${parseFloat(json.hive / 1000).toFixed(3)} HIVE` }
                     ], pc)
                 })
                 .catch((e) => console.log(e))
         } else {
-            store.batch([{ type: 'put', path: ['feed', `${json.block_num}:${json.transaction_id}`], data: `@${from}| tried to place an order to sell ${parseFloat(json[config.jsonTokenName]/1000).toFixed(3)} for ${parseFloat(json.hive/1000).toFixed(3)} HIVE` }], pc)
+            store.batch([{ type: 'put', path: ['feed', `${json.block_num}:${json.transaction_id}`], data: `@${from}| tried to place an order to sell ${parseFloat(json[config.jsonTokenName] / 1000).toFixed(3)} for ${parseFloat(json.hive / 1000).toFixed(3)} HIVE` }], pc)
         }
     }).catch(e => {
         console.log(e)
@@ -169,7 +171,7 @@ exports.dex_hive_sell = function(json, from, active, pc) { //no feedback require
     })
 }
 
-exports.dex_hbd_sell = function(json, from, active, pc) {
+exports.dex_hbd_sell = (json, from, active, pc) => {
     let buyAmount = parseInt(json.hbd),
         PfromBal = getPathNum(['balances', from]),
         PhbdHis = getPathObj(['dex', 'HbdVWMA'])
@@ -206,12 +208,12 @@ exports.dex_hbd_sell = function(json, from, active, pc) {
                             { type: 'put', path: ['dex', 'hbd', 'sellOrders', `${contract.rate}:${contract.txid}`], data: contract },
                             { type: 'put', path: ['balances', from], data: b - contract.amount },
                             { type: 'put', path: ['contracts', from, contract.txid], data: contract },
-                            { type: 'put', path: ['feed', `${json.block_num}:${json.transaction_id}`], data: `@${from}| has placed order ${txid} to sell ${parseFloat(json[config.jsonTokenName]/1000).toFixed(3)} for ${parseFloat(json.hbd/1000).toFixed(3)} HBD` }
+                            { type: 'put', path: ['feed', `${json.block_num}:${json.transaction_id}`], data: `@${from}| has placed order ${txid} to sell ${parseFloat(json[config.jsonTokenName] / 1000).toFixed(3)} for ${parseFloat(json.hbd / 1000).toFixed(3)} HBD` }
                         ], pc)
                     })
                     .catch((e) => console.log(e))
             } else {
-                store.batch([{ type: 'put', path: ['feed', `${json.block_num}:${json.transaction_id}`], data: `@${from}| tried to place an order to sell ${parseFloat(json[config.jsonTokenName]/1000).toFixed(3)} for ${parseFloat(json.hbd/1000).toFixed(3)} HBD` }], pc)
+                store.batch([{ type: 'put', path: ['feed', `${json.block_num}:${json.transaction_id}`], data: `@${from}| tried to place an order to sell ${parseFloat(json[config.jsonTokenName] / 1000).toFixed(3)} for ${parseFloat(json.hbd / 1000).toFixed(3)} HBD` }], pc)
             }
         })
         .catch(e => {
@@ -220,9 +222,9 @@ exports.dex_hbd_sell = function(json, from, active, pc) {
         })
 }
 
-exports.escrow_approve = function(json, pc) {
+exports.escrow_approve = (json, pc) => {
     //need to build checks for approving denies, and cleanup as well.
-    store.get(['escrow', json.escrow_id.toString(), json.from], function(e, a) { // since escrow ids are unique to sender, store a list of pointers to the owner of the contract
+    store.get(['escrow', json.escrow_id.toString(), json.from], function(e, a) {
         console.log(a, Object.keys(a).length)
         if (!e && Object.keys(a).length) {
             store.get(['contracts', a.for, a.contract], function(e, b) {
@@ -383,12 +385,12 @@ exports.escrow_approve = function(json, pc) {
                         pc[0](pc[2])
                     }
                 }
-            });
+            })
         }
     })
 }
 
-exports.escrow_dispute = function(json, pc) { //this probably needs some work
+exports.escrow_dispute = (json, pc) => {
     getPathObj(['escrow', json.escrow_id.toString(), json.from])
         .then(a => {
             console.log(a)
@@ -419,7 +421,7 @@ exports.escrow_dispute = function(json, pc) { //this probably needs some work
         .catch(e => { console.log(e) })
 }
 
-exports.escrow_release = function(json, pc) {
+exports.escrow_release = (json, pc) => {
     getPathObj(['escrow', json.escrow_id.toString(), json.from])
         .then(a => {
             getPathObj(['contracts', a.for, a.contract])
@@ -427,8 +429,8 @@ exports.escrow_release = function(json, pc) {
                     if (Object.keys(c).length && c.auths[2]) {
                         c.escrow = parseInt(c.escrow / 2)
                         let lil_ops = [
-                            add(json.agent, parseInt(c.escrow / 2)), //settle collateral
-                            addCol(json.agent, -parseInt(c.escrow / 2)), //settle collateral
+                            add(json.agent, parseInt(c.escrow / 2)),
+                            addCol(json.agent, -parseInt(c.escrow / 2)),
                             chronAssign(json.block_num + 200, { op: 'check', agent: c.auths[2][0], txid: c.txid + ':transfer', acc: c.from, id: c.escrow_id.toString() }),
                             credit(json.who)
                         ]
@@ -470,7 +472,7 @@ exports.escrow_release = function(json, pc) {
         .catch(e => { console.log(e) })
 }
 
-exports.transfer = function(json, pc) {
+exports.transfer = (json, pc) => {
     store.get(['escrow', json.from, json.memo.split(' ')[0] + ':transfer'], function(e, a) {
         var ops = []
         if (!e && !isEmpty(a)) {
@@ -503,7 +505,8 @@ exports.transfer = function(json, pc) {
                         }
                         eo = c.buyer,
                             g = c.escrow
-                        if (c.type === 'sb' || c.type === 'db') eo = c.from
+                        if (c.type === 'sb' || c.type === 'db')
+                            eo = c.from
                         let lil_ops = [
                             add(json.from, parseInt(c.escrow)),
                             addCol(json.from, -parseInt(c.escrow)),
@@ -541,16 +544,16 @@ exports.transfer = function(json, pc) {
             Pbal = getPathNum(['balances', json.from]),
             Pinv = getPathNum(['balances', 'ri'])
         Promise.all([Pstats, Pbal, Pinv]).then(function(v) {
-            var stats = v[0], //stats 
-                b = v[1], //balance of purchaser
-                i = v[2], //inventory
+            var stats = v[0],
+                b = v[1],
+                i = v[2],
                 ops = []
             if (!stats.outOnBlock) {
                 purchase = parseInt(amount / stats.icoPrice * 1000)
                 if (purchase < i) {
                     i -= purchase
                     b += purchase
-                    store.batch([{ type: 'put', path: ['feed', `${json.block_num}:${json.transaction_id}`], data: `@${json.from}| bought ${parseFloat(purchase/1000).toFixed(3)} ${config.TOKEN} with ${parseFloat(amount/1000).toFixed(3)} HIVE` },
+                    store.batch([{ type: 'put', path: ['feed', `${json.block_num}:${json.transaction_id}`], data: `@${json.from}| bought ${parseFloat(purchase / 1000).toFixed(3)} ${config.TOKEN} with ${parseFloat(amount / 1000).toFixed(3)} HIVE` },
                         { type: 'put', path: ['balances', json.from], data: b },
                         { type: 'put', path: ['balances', 'ri'], data: i }
                     ], pc)
@@ -564,22 +567,22 @@ exports.transfer = function(json, pc) {
                         { type: 'put', path: ['balances', json.from], data: b },
                         { type: 'put', path: ['balances', 'ri'], data: 0 },
                         { type: 'put', path: ['stats'], data: stats },
-                        { type: 'put', path: ['feed', `${json.block_num}:${json.transaction_id}`], data: `@${json.from}| bought ALL ${parseFloat(parseInt(purchase - left)).toFixed(3)} ${config.TOKEN} with ${parseFloat(parseInt(amount)/1000).toFixed(3)} HIVE. And bid in the over-auction` }
+                        { type: 'put', path: ['feed', `${json.block_num}:${json.transaction_id}`], data: `@${json.from}| bought ALL ${parseFloat(parseInt(purchase - left)).toFixed(3)} ${config.TOKEN} with ${parseFloat(parseInt(amount) / 1000).toFixed(3)} HIVE. And bid in the over-auction` }
                     ], pc)
                 }
             } else {
                 store.batch([
                     { type: 'put', path: ['ico', `${json.block_num}`, json.from], data: parseInt(amount) },
-                    { type: 'put', path: ['feed', `${json.block_num}:${json.transaction_id}`], data: `@${json.from}| bought ALL ${parseFloat(parseInt(purchase - left)).toFixed(3)} ${config.TOKEN} with ${parseFloat(parseInt(amount)/1000).toFixed(3)} HIVE. And bid in the over-auction` }
+                    { type: 'put', path: ['feed', `${json.block_num}:${json.transaction_id}`], data: `@${json.from}| bought ALL ${parseFloat(parseInt(purchase - left)).toFixed(3)} ${config.TOKEN} with ${parseFloat(parseInt(amount) / 1000).toFixed(3)} HIVE. And bid in the over-auction` }
                 ], pc)
             }
-        });
+        })
     } else {
         pc[0](pc[2])
     }
 }
 
-exports.dex_clear = function(json, from, active, pc) {
+exports.dex_clear = (json, from, active, pc) => {
     if (active) {
         var q = []
         if (typeof json.txid == 'string') {
@@ -597,29 +600,29 @@ exports.dex_clear = function(json, from, active, pc) {
                                 if (e) { console.log(e) } else if (isEmpty(a)) { console.log('Nothing here' + b.txid) } else {
                                     release(from, b.txid, json.block_num)
                                 }
-                            });
-                            break;
+                            })
+                            break
                         case 'ds':
                             store.get(['dex', 'hbd', 'sellOrders', `${b.rate}:${b.txid}`], function(e, a) {
                                 if (e) { console.log(e) } else if (isEmpty(a)) { console.log('Nothing here' + b.txid) } else {
                                     release(from, b.txid, json.block_num)
                                 }
-                            });
-                            break;
+                            })
+                            break
                         case 'sb':
                             store.get(['dex', 'hive', 'buyOrders', `${b.rate}:${b.txid}`], function(e, a) {
                                 if (e) { console.log(e) } else if (isEmpty(a)) { console.log('Nothing here' + b.txid) } else {
                                     release(from, b.txid, json.block_num)
                                 }
-                            });
-                            break;
+                            })
+                            break
                         case 'db':
                             store.get(['dex', 'hbd', 'buyOrders', `${b.rate}:${b.txid}`], function(e, a) {
                                 if (e) { console.log(e) } else if (isEmpty(a)) { console.log('Nothing here' + b.txid) } else {
                                     release(from, b.txid, json.block_num)
                                 }
-                            });
-                            break;
+                            })
+                            break
                         default:
 
                     }
@@ -631,7 +634,7 @@ exports.dex_clear = function(json, from, active, pc) {
     }
 }
 
-exports.escrow_transfer = function(json, pc) {
+exports.escrow_transfer = (json, pc) => {
     var ops, dextx, seller, contract, isAgent, isDAgent, dextxamount, meta, done = 0,
         type = 'hive',
         hours
@@ -650,7 +653,8 @@ exports.escrow_transfer = function(json, pc) {
         seller = JSON.parse(json.json_meta).for
     } catch (e) {}
     const now = Date.parse(json.timestamp) //this needs to be based on the time in the signed block... or replays will fail
-        //const until = now.setHours(now.getHours())
+
+    //const until = now.setHours(now.getHours())
     const check = Date.parse(json.ratification_deadline)
     const eexp = Date.parse(json.escrow_expiration)
     const timer = eexp - now
@@ -717,31 +721,32 @@ exports.escrow_transfer = function(json, pc) {
                             contract.approveAgent = false
                             contract.approve_to = false
                             var hisE = {
-                                rate: contract.rate,
-                                block: json.block_num,
-                                amount: contract.amount
-                            }
-                            var samount
+                                    rate: contract.rate,
+                                    block: json.block_num,
+                                    amount: contract.amount
+                                },
+                                samount,
+                                lil_ops = []
                             hiveTimeWeight = 1 - ((json.block_num - hiveVWMA.block) * 0.000033)
                             hbdTimeWeight = 1 - ((json.block_num - hbdVWMA.block) * 0.000033)
                             if (hiveTimeWeight < 0) { hiveTimeWeight = 0 }
                             if (hbdTimeWeight < 0) { hbdTimeWeight = 0 }
                             if (type = 'hive') {
-                                samount = `${parseFloat(contract.hive/1000).toFixed(3)} HIVE`
+                                samount = `${parseFloat(contract.hive / 1000).toFixed(3)} HIVE`
                                 hiveVWMA = {
                                     rate: parseFloat(((contract.rate * contract.amount) + (parseFloat(hiveVWMA.rate) * hiveVWMA.vol * hiveTimeWeight)) / (contract.amount + (hiveVWMA.vol * hiveTimeWeight))).toFixed(6),
                                     block: json.block_num,
                                     vol: parseInt(contract.amount + (hiveVWMA.vol * hiveTimeWeight))
                                 }
-                                forceCancel(hiveVWMA.rate, 'hive')
+                                lil_ops.push(forceCancel(hiveVWMA.rate, 'hive'))
                             } else {
-                                samount = `${parseFloat(contract.hbd/1000).toFixed(3)} HBD`
+                                samount = `${parseFloat(contract.hbd / 1000).toFixed(3)} HBD`
                                 hbdVWMA = {
                                     rate: parseFloat(((contract.rate * contract.amount) + (parseFloat(hbdVWMA.rate) * hbdVWMA.vol * hbdTimeWeight)) / (contract.amount + (hbdVWMA.vol * hbdTimeWeight))).toFixed(6),
                                     block: json.block_num,
                                     vol: parseInt(contract.amount + (hbdVWMA.vol * hbdTimeWeight))
                                 }
-                                forceCancel(hbdVWMA.rate, 'hbd')
+                                lil_ops.push(forceCancel(hbdVWMA.rate, 'hbd'))
                             }
                             contract.pending = [
                                 [json.to, [
@@ -797,17 +802,14 @@ exports.escrow_transfer = function(json, pc) {
                                         "from": json.to,
                                         "to": contract.co,
                                         "amount": samount,
-                                        "memo": `${contract.txid} by ${contract.from} purchased with ${parseFloat(contract.amount/1000).toFixed(3)} ${config.TOKEN}`
+                                        "memo": `${contract.txid} by ${contract.from} purchased with ${parseFloat(contract.amount / 1000).toFixed(3)} ${config.TOKEN}`
                                     }
                                 ]]
                             ]
-                            chronAssign(json.block_num + 200, { op: 'check', agent: contract.pending[1][0], txid: contract.txid + ':buyApproveA', acc: json.from, id: json.escrow_id.toString() })
-                                .then(empty => {
-                                    chronAssign(json.block_num + 200, { op: 'check', agent: contract.pending[0][0], txid: contract.txid + ':buyApproveT', acc: json.from, id: json.escrow_id.toString() })
-                                })
-
+                            lil_ops.push(chronAssign(json.block_num + 200, { op: 'check', agent: contract.pending[1][0], txid: contract.txid + ':buyApproveA', acc: json.from, id: json.escrow_id.toString() }))
+                            lil_ops.push(chronAssign(json.block_num + 200, { op: 'check', agent: contract.pending[0][0], txid: contract.txid + ':buyApproveT', acc: json.from, id: json.escrow_id.toString() }))
                             ops = [
-                                { type: 'put', path: ['feed', `${json.block_num}:${json.transaction_id}`], data: `@${json.from}| has bought ${meta}: ${parseFloat(contract.amount/1000).toFixed(3)} for ${samount}` },
+                                { type: 'put', path: ['feed', `${json.block_num}:${json.transaction_id}`], data: `@${json.from}| has bought ${meta}: ${parseFloat(contract.amount / 1000).toFixed(3)} for ${samount}` },
                                 { type: 'put', path: ['contracts', seller, meta.split(':')[1]], data: contract },
                                 { type: 'put', path: ['escrow', contract.pending[0][0], contract.txid + ':buyApproveT'], data: contract.pending[0][1] },
                                 { type: 'put', path: ['escrow', contract.pending[1][0], contract.txid + ':buyApproveA'], data: contract.pending[1][1] },
@@ -824,14 +826,18 @@ exports.escrow_transfer = function(json, pc) {
                                 { type: 'del', path: ['dex', type, 'sellOrders', `${contract.rate}:${contract.txid}`] }
                             ]
                             console.log({ to: json.to, agent: contract.agent, agentCol, toCol })
-                            store.batch(ops, pc)
+                            Promise.all(lil_ops)
+                                .then(empty => {
+                                    store.batch(ops, pc)
+                                })
+                                .catch(e => { console.log(e) })
                         }
                         if (!done) {
                             console.log(3)
                             var out = [{ type: 'put', path: ['feed', `${json.block_num}:${json.transaction_id}`], data: `@${json.from}'s trade has failed collateral requirements, Try different agents` }, ]
                             out.push({
                                     type: 'put',
-                                    path: ['escrow', json.agent, `${ json.from }/${json.escrow_id}:denyA`],
+                                    path: ['escrow', json.agent, `${json.from}/${json.escrow_id}:denyA`],
                                     data: [
                                         "escrow_approve",
                                         {
@@ -847,7 +853,7 @@ exports.escrow_transfer = function(json, pc) {
                                 //only one false can be broadcast, but both trues... keep a record to check against for memory management and enforcement
                             out.push({
                                 type: 'put',
-                                path: ['escrow', '.' + json.to, `${ json.from }/${json.escrow_id}:denyT`], //.prevents pickup
+                                path: ['escrow', '.' + json.to, `${json.from}/${json.escrow_id}:denyT`],
                                 data: [
                                     "escrow_approve",
                                     {
@@ -886,8 +892,12 @@ exports.escrow_transfer = function(json, pc) {
                                     col: coll
                                 }
                             })
-                            chronAssign(json.block_num + 200, { op: 'denyA', agent: json.agent, txid: `${ json.from }/${json.escrow_id}:denyA`, acc: json.from, id: json.escrow_id.toString() })
-                            store.batch(out, pc)
+                            lil_ops.push(chronAssign(json.block_num + 200, { op: 'denyA', agent: json.agent, txid: `${json.from}/${json.escrow_id}:denyA`, acc: json.from, id: json.escrow_id.toString() }))
+                            Promise.all(lil_ops)
+                                .then(empty => {
+                                    store.batch(out, pc)
+                                })
+                                .catch(e => { console.log(e) })
                         }
                     })
                     .catch(e => console.log(e))
@@ -904,10 +914,6 @@ exports.escrow_transfer = function(json, pc) {
                 allowed = allowedPrice(hiveVWMA.rate, rate)
             }
             if (allowed) {
-                chronAssign(json.block_num + 200, { op: 'check', agent: json.agent, txid: txid + ':listApproveA', acc: json.from, id: json.escrow_id.toString() })
-                    .then(empty => {
-                        chronAssign(json.block_num + 200, { op: 'check', agent: json.to, txid: txid + ':listApproveT', acc: json.from, id: json.escrow_id.toString() })
-                    })
                 ops = [{
                             type: 'put',
                             path: ['escrow', json.agent, txid + ':listApproveA'],
@@ -1006,14 +1012,19 @@ exports.escrow_transfer = function(json, pc) {
                     contract.type = 'db'
                 }
                 let exp_block = json.block_num + (1200 * hours)
-                chronAssign(exp_block, {
+                let lil_ops = [
+                    chronAssign(json.block_num + 200, { op: 'check', agent: json.agent, txid: txid + ':listApproveA', acc: json.from, id: json.escrow_id.toString() }),
+                    chronAssign(json.block_num + 200, { op: 'check', agent: json.to, txid: txid + ':listApproveT', acc: json.from, id: json.escrow_id.toString() }),
+                    chronAssign(exp_block, {
                         block: exp_block,
                         op: 'expire',
                         from: json.from,
                         txid
                     })
-                    .then(expire_path => {
-                        contract.expire_path = expire_path
+                ]
+                Promise.all(lil_ops)
+                    .then(expire_paths => {
+                        contract.expire_path = expire_path[2]
                         ops.push({ type: 'put', path: ['balances', json.to], data: toBal - (dextxamount * 2) })
                         ops.push({ type: 'put', path: ['balances', json.agent], data: agentBal - (dextxamount * 2) })
                         ops.push({ type: 'put', path: ['col', json.to], data: toCol + (dextxamount * 2) })
@@ -1028,7 +1039,7 @@ exports.escrow_transfer = function(json, pc) {
                 ops.push({ type: 'put', path: ['feed', `${json.block_num}:${json.transaction_id}`], data: `@${json.from}| requested a trade outside of price curbs.` })
                 ops.push({
                     type: 'put',
-                    path: ['escrow', json.agent, `${ json.from }/${json.escrow_id}:denyA`], //.prevents pickup
+                    path: ['escrow', json.agent, `${json.from}/${json.escrow_id}:denyA`],
                     data: [
                         "escrow_approve",
                         {
@@ -1043,7 +1054,7 @@ exports.escrow_transfer = function(json, pc) {
                 })
                 ops.push({
                     type: 'put',
-                    path: ['escrow', '.' + json.to, `${ json.from }/${json.escrow_id}:denyT`], //.prevents pickup
+                    path: ['escrow', '.' + json.to, `${json.from}/${json.escrow_id}:denyT`],
                     data: [
                         "escrow_approve",
                         {
@@ -1082,8 +1093,11 @@ exports.escrow_transfer = function(json, pc) {
                         col: coll
                     }
                 })
-                chronAssign(json.block_num + 200, { op: 'denyA', agent: json.agent, txid: `${ json.from }/${json.escrow_id}:denyA`, acc: json.from, id: json.escrow_id.toString() })
-                store.batch(ops, pc)
+                chronAssign(json.block_num + 200, { op: 'denyA', agent: json.agent, txid: `${json.from}/${json.escrow_id}:denyA`, acc: json.from, id: json.escrow_id.toString() })
+                    .then(empty => {
+                        store.batch(ops, pc)
+                    })
+                    .catch(e => { console.log(e) })
             }
         } else if (isDAgent && isAgent) {
             var ops = []
@@ -1091,7 +1105,7 @@ exports.escrow_transfer = function(json, pc) {
             ops.push({ type: 'put', path: ['feed', `${json.block_num}:${json.transaction_id}`], data: `@${json.from}| improperly attempted to use the escrow network. Attempting escrow deny.` })
             ops.push({
                 type: 'put',
-                path: ['escrow', json.agent, `${ json.from }/${json.escrow_id}:denyA`], //.prevents pickup
+                path: ['escrow', json.agent, `${json.from}/${json.escrow_id}:denyA`],
                 data: [
                     "escrow_approve",
                     {
@@ -1106,7 +1120,7 @@ exports.escrow_transfer = function(json, pc) {
             })
             ops.push({
                 type: 'put',
-                path: ['escrow', '.' + json.to, `${ json.from }/${json.escrow_id}:denyT`], //.prevents pickup
+                path: ['escrow', '.' + json.to, `${json.from}/${json.escrow_id}:denyT`],
                 data: [
                     "escrow_approve",
                     {
@@ -1145,9 +1159,11 @@ exports.escrow_transfer = function(json, pc) {
                     col: coll
                 }
             })
-            chronAssign(json.block_num + 200, { op: 'denyA', agent: json.agent, txid: `${ json.from }/${json.escrow_id}:denyA`, acc: json.from, id: json.escrow_id.toString() })
-
-            store.batch(ops, pc)
+            chronAssign(json.block_num + 200, { op: 'denyA', agent: json.agent, txid: `${json.from}/${json.escrow_id}:denyA`, acc: json.from, id: json.escrow_id.toString() })
+                .then(empty => {
+                    store.batch(ops, pc)
+                })
+                .catch(e => { console.log(e) })
         } else {
             pc[0](pc[2])
         }
