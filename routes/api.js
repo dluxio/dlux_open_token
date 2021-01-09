@@ -2,10 +2,12 @@ const { store, config, VERSION, current } = require("./../index");
 const fetch = require('node-fetch');
 const { getPathNum } = require("./../getPathNum");
 const { getPathObj } = require("./../getPathObj");
+const decodeURIcomponent = require('decode-uri-component');
+//const { reject } = require('async');
 
-exports.root = function(req, res, next) {
-    var stats = {}
-    res.setHeader('Content-Type', 'application/json')
+exports.root = (req, res, next) => {
+    var stats = {};
+    res.setHeader('Content-Type', 'application/json');
     store.get(['stats'], function(err, obj) {
         stats = obj,
             res.send(JSON.stringify({
@@ -13,8 +15,8 @@ exports.root = function(req, res, next) {
                 node: config.username,
                 VERSION,
                 realtime: current
-            }, null, 3))
-    })
+            }, null, 3));
+    });
 }
 
 exports.dex = (req, res, next) => {
@@ -179,7 +181,7 @@ exports.pending = (req, res, next) => {
 
 //heroku force https
 
-exports.https_redirect = function(req, res, next) {
+exports.https_redirect = (req, res, next) => {
     if (process.env.NODE_ENV === 'production') {
         if (req.headers['x-forwarded-proto'] != 'https') {
             return res.redirect('https://' + req.headers.host + req.url);
@@ -193,40 +195,40 @@ exports.https_redirect = function(req, res, next) {
 
 //hive API helper functions
 
-exports.hive_api = function(req, res, next) {
-    let method = `${req.params.api_type}.${req.params.api_call}` || 'condenser_api.get_discussions_by_blog'
-    let params = {}
-    let array = false
+exports.hive_api = (req, res, next) => {
+    let method = `${req.params.api_type}.${req.params.api_call}` || 'condenser_api.get_discussions_by_blog';
+    let params = {};
+    let array = false;
     for (param in req.query) {
         if (param == "0") {
-            array = true
+            array = true;
             break;
         }
-        params[param] = req.query[param]
+        params[param] = req.query[param];
     }
     if (array) {
-        params = []
+        params = [];
         for (param in req.query) {
-            params.push(req.query[param])
+            params.push(req.query[param]);
         }
-        params = [params]
+        params = [params];
     }
     switch (req.params.api_call) {
         case 'get_content':
-            params = [params.author, params.permlink]
+            params = [params.author, params.permlink];
             break;
         case 'get_content_replies':
-            params = [params.author, params.permlink]
+            params = [params.author, params.permlink];
             break;
         default:
     }
-    res.setHeader('Content-Type', 'application/json')
+    res.setHeader('Content-Type', 'application/json');
     let body = {
         jsonrpc: "2.0",
         method,
         params,
         id: 1
-    }
+    };
     fetch(config.clientURL, {
             body: JSON.stringify(body),
             headers: {
@@ -236,29 +238,29 @@ exports.hive_api = function(req, res, next) {
         })
         .then(j => j.json())
         .then(r => {
-            res.send(JSON.stringify(r, null, 3))
-        })
+            res.send(JSON.stringify(r, null, 3));
+        });
 }
 
-exports.getwrap = function(req, res, next) {
-    let method = req.query.method || 'condenser_api.get_discussions_by_blog'
-    method.replace('%27', '')
-    let iparams = JSON.parse(decodeURIcomponent((req.query.params.replace("%27", '')).replace('%2522', '%22')))
+exports.getwrap = (req, res, next) => {
+    let method = req.query.method || 'condenser_api.get_discussions_by_blog';
+    method.replace('%27', '');
+    let iparams = JSON.parse(decodeURIcomponent((req.query.params.replace("%27", '')).replace('%2522', '%22')));
     switch (method) {
         case 'tags_api.get_discussions_by_blog':
         default:
             iparams = {
                 tag: iparams[0]
-            }
+            };
     }
-    let params = iparams || { "tag": "robotolux" }
-    res.setHeader('Content-Type', 'application/json')
+    let params = iparams || { "tag": "robotolux" };
+    res.setHeader('Content-Type', 'application/json');
     let body = {
         jsonrpc: "2.0",
         method,
         params,
         id: 1
-    }
+    };
     fetch(config.clientURL, {
             body: JSON.stringify(body),
             headers: {
@@ -268,12 +270,12 @@ exports.getwrap = function(req, res, next) {
         })
         .then(j => j.json())
         .then(r => {
-            res.send(JSON.stringify(r, null, 3))
-        })
+            res.send(JSON.stringify(r, null, 3));
+        });
 }
 
-exports.getpic = function(req, res, next) {
-    let un = req.params.un || ''
+exports.getpic = (req, res, next) => {
+    let un = req.params.un || '';
     let body = {
         jsonrpc: "2.0",
         method: 'condenser_api.get_accounts',
@@ -281,7 +283,7 @@ exports.getpic = function(req, res, next) {
             [un]
         ],
         id: 1
-    }
+    };
     fetch(config.clientURL, {
             body: JSON.stringify(body),
             headers: {
@@ -291,69 +293,69 @@ exports.getpic = function(req, res, next) {
         })
         .then(j => j.json())
         .then(r => {
-            let image, i = 0
+            let image, i = 0;
             try {
-                image = JSON.parse(r.result[0].json_metadata).profile.profile_image
+                image = JSON.parse(r.result[0].json_metadata).profile.profile_image;
             } catch (e) {
                 try {
-                    i = 1
-                    image = JSON.parse(r.result[0].posting_json_metadata).profile.profile_image
+                    i = 1;
+                    image = JSON.parse(r.result[0].posting_json_metadata).profile.profile_image;
                 } catch (e) {
-                    i = 2
-                    image = 'https://a.ipfs.dlux.io/images/user-icon.svg'
+                    i = 2;
+                    image = 'https://a.ipfs.dlux.io/images/user-icon.svg';
                 }
             }
             if (image) {
                 fetch(image)
                     .then(response => {
-                        response.body.pipe(res)
+                        response.body.pipe(res);
                     })
                     .catch(e => {
                         if (i == 0) {
                             try {
-                                i = 1
-                                image = JSON.parse(r.result[0].posting_json_metadata).profile.profile_image
+                                i = 1;
+                                image = JSON.parse(r.result[0].posting_json_metadata).profile.profile_image;
                             } catch (e) {
-                                i = 2
-                                image = 'https://a.ipfs.dlux.io/images/user-icon.svg'
+                                i = 2;
+                                image = 'https://a.ipfs.dlux.io/images/user-icon.svg';
                             }
                         } else {
-                            i = 2
-                            image = 'https://a.ipfs.dlux.io/images/user-icon.svg'
+                            i = 2;
+                            image = 'https://a.ipfs.dlux.io/images/user-icon.svg';
                         }
                         fetch(image)
                             .then(response => {
-                                response.body.pipe(res)
+                                response.body.pipe(res);
                             })
                             .catch(e => {
                                 if (i == 1) {
-                                    image = 'https://a.ipfs.dlux.io/images/user-icon.svg'
+                                    image = 'https://a.ipfs.dlux.io/images/user-icon.svg';
                                     fetch(image)
                                         .then(response => {
-                                            response.body.pipe(res)
+                                            response.body.pipe(res);
                                         })
                                         .catch(e => {
-                                            res.status(404)
-                                            res.send(e)
+                                            res.status(404);
+                                            res.send(e);
 
-                                        })
+                                        });
                                 } else {
-                                    res.status(404)
-                                    res.send(e)
+                                    res.status(404);
+                                    res.send(e);
                                 }
-                            })
-                    })
+                            });
+                    });
             } else {
-                res.status(404)
-                res.send('Image not found')
+                res.status(404);
+                res.send('Image not found');
             }
-        })
+        });
 }
 
-exports.getblog = function(req, res, next) {
-    let un = req.params.un
-    let start = req.query.s || 0
-    res.setHeader('Content-Type', 'application/json')
+exports.getblog = (req, res, next) => {
+    let un = req.params.un;
+    let start = req.query.s || 0;
+    res.setHeader('Content-Type', 'application/json');
     fetch(config.clientURL, {
             body: `{\"jsonrpc\":\"2.0\", \"method\":\"follow_api.get_blog_entries\", \"params\":{\"account\":\"${un}\",\"start_entry_id\":${start},\"limit\":10}, \"id\":1}`,
             headers: {
@@ -363,13 +365,13 @@ exports.getblog = function(req, res, next) {
         })
         .then(j => j.json())
         .then(r => {
-            var out = { items: [] }
+            var out = { items: [] };
             for (i in r.result) {
-                r.result[i].media = { m: "https://a.ipfs.dlux.io/images/400X200.gif" }
+                r.result[i].media = { m: "https://a.ipfs.dlux.io/images/400X200.gif" };
             }
-            out.id = r.id
-            out.jsonrpc = r.jsonrpc
-            out.items = r.result
-            res.send(JSON.stringify(out, null, 3))
-        })
+            out.id = r.id;
+            out.jsonrpc = r.jsonrpc;
+            out.items = r.result;
+            res.send(JSON.stringify(out, null, 3));
+        });
 }
