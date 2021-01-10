@@ -93,7 +93,7 @@ exports.tally = (num, plasma, isStreaming) => new Promise((resolve, reject) => {
                             }
                         }
                         if (winner.node) {
-                            still_running[winner.node] = new_queue[node]
+                            still_running[winner.node] = new_queue[winner.node]
                         }
                     }
                     let MultiSigCollateral = 0
