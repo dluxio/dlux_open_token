@@ -46,8 +46,6 @@ exports.tally = (num, plasma, isStreaming) => new Promise((resolve, reject) => {
                         tally.agreements.tally[hash] = 0
                     } //recent and signing
                 }
-                console.log(tally.agreements)
-                console.log(runners)
                 for (runner in runners) {
                     console.log(runner)
                     tally.agreements.votes++
@@ -55,18 +53,16 @@ exports.tally = (num, plasma, isStreaming) => new Promise((resolve, reject) => {
                             tally.agreements.tally[tally.agreements.hashes[runner]]++
                         }
                 }
-                console.log(runners)
                 for (hash in tally.agreements.hashes) {
-                    if (tally.agreements.tally[hash] > (tally.agreements.votes / 2)) {
-                        consensus = hash
+                    if (tally.agreements.tally[tally.agreements.hashes[hash]] > (tally.agreements.votes / 2)) {
+                        consensus = tally.agreements.hashes[hash]
                         break;
                     }
                 }
-                console.log(tally.agreements.hashes)
                 let still_running = {}
                 let election = {}
                 let new_queue = {}
-                console.log(consensus)
+                console.log('Consensus: ' + consensus)
                 if (consensus) {
                     stats.hashLastIBlock = consensus;
                     for (node in tally.agreements.hashes) {
@@ -101,7 +97,6 @@ exports.tally = (num, plasma, isStreaming) => new Promise((resolve, reject) => {
                             still_running[winner.node] = new_queue[node]
                         }
                     }
-                    console.log('Consensus: ' + consensus)
                     let MultiSigCollateral = 0
                     for (node in still_running) {
                         MultiSigCollateral += still_running[node].t
@@ -147,10 +142,10 @@ exports.tally = (num, plasma, isStreaming) => new Promise((resolve, reject) => {
                 store.batch(ops, [resolve, reject, newPlasma]);
                 if (consensus && (consensus != plasma.hashLastIBlock || consensus != nodes[config.username].report.hash) && isStreaming) { //this doesn't seem to be catching failures
                     exit(consensus);
-                    var errors = ['failed Consensus'];
+                    //var errors = ['failed Consensus'];
                     //const blockState = Buffer.from(JSON.stringify([num, state]))
-                    plasma.hashBlock = '';
-                    plasma.hashLastIBlock = '';
+                    //plasma.hashBlock = '';
+                    //plasma.hashLastIBlock = '';
                     console.log(num + `:Abandoning ${plasma.hashLastIBlock} because ${errors[0]}`);
                 }
             })
