@@ -192,8 +192,7 @@ function startApp() {
     processor.onOperation('comment', HR.comment);
     //do things in cycles based on block time
     processor.onBlock(
-        function(num, pc, isStreaming) {
-            console.log(num, { isStreaming })
+        function(num, pc) {
             return new Promise((resolve, reject) => {
                 //store.batch([{ type: 'put', path: ['stats', 'realtime'], data: num }], )
                 chronoProcess = true
@@ -296,16 +295,16 @@ function startApp() {
 
                         })
                     }
-                    if (num % 100 === 0 && isStreaming) {
+                    if (num % 100 === 0 && processor.isStreaming()) {
                         client.database.getDynamicGlobalProperties()
                             .then(function(result) {
                                 console.log('At block', num, 'with', result.head_block_number - num, `left until real-time. DAO @ ${(num - 20000) % 30240}`)
                             });
                     }
-                    if (num % 100 === 5 && isStreaming) {
+                    if (num % 100 === 5 && processor.isStreaming()) {
                         //check(num) //not promised, read only
                     }
-                    if (num % 100 === 50 && isStreaming) {
+                    if (num % 100 === 50 && processor.isStreaming()) {
                         report(plasma)
                             .then(nodeOp => {
                                 console.log(nodeOp)
@@ -317,7 +316,7 @@ function startApp() {
                         promises.push(dao(num))
                     }
                     if (num % 100 === 0) {
-                        promises.push(tally(num, plasma, isStreaming));
+                        promises.push(tally(num, plasma, processor.isStreaming()));
                     }
                     if (num % 100 === 1) {
                         store.get([], function(err, obj) {
@@ -343,7 +342,7 @@ function startApp() {
                     }
                 }
                 */
-                    if (config.active && isStreaming) {
+                    if (config.active && processor.isStreaming()) {
                         store.get(['escrow', config.username], function(e, a) {
                             if (!e) {
                                 for (b in a) {
