@@ -29,9 +29,10 @@ exports.node_add = function(json, from, active, pc) {
             daoRate = 2000
         }
         store.get(['markets', 'node', from], function(e, a) {
+            let ops = []
             if (!e) {
                 if (isEmpty(a)) {
-                    store.batch([{
+                    ops = [{
                         type: 'put',
                         path: ['markets', 'node', from],
                         data: {
@@ -51,7 +52,7 @@ exports.node_add = function(json, from, active, pc) {
                             report: {},
                             escrow
                         }
-                    }], pc)
+                    }]
                 } else {
                     var b = a;
                     b.domain = json.domain
@@ -59,15 +60,19 @@ exports.node_add = function(json, from, active, pc) {
                     b.escrow = escrow
                     b.marketingRate = daoRate
                     b.mirror = mirror
-                    store.batch([{ type: 'put', path: ['markets', 'node', from], data: b }], pc)
+                    ops = [{ type: 'put', path: ['markets', 'node', from], data: b }]
                 }
+                ops.push({ type: 'put', path: ['feed', `${json.block_num}:${json.transaction_id}`], data: `@${from}| has bid the hive-state node ${json.domain} at ${json.bidRate}` })
             } else {
                 console.log(e)
             }
+            pc[2] = ops
+            store.batch(ops, pc)
         })
-        store.batch([{ type: 'put', path: ['feed', `${json.block_num}:${json.transaction_id}`], data: `@${from}| has bid the hive-state node ${json.domain} at ${json.bidRate}` }], pc)
     } else {
-        store.batch([{ type: 'put', path: ['feed', `${json.block_num}:${json.transaction_id}`], data: `@${from}| sent and invalid hive-state node operation` }], pc)
+        ops = [{ type: 'put', path: ['feed', `${json.block_num}:${json.transaction_id}`], data: `@${from}| sent and invalid node add operation` }]
+        pc[2] = ops
+        store.batch(ops, pc)
     }
 }
 
