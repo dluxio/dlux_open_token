@@ -75,7 +75,7 @@ exports.tally = (num, plasma, isStreaming) => new Promise((resolve, reject) => {
                         }
                     }
                     for (node in new_queue) {
-                        if (new_queue[node].p >= runners[node].p) {
+                        if (runners.hasOwnProperty(node)) {
                             still_running[node] = new_queue[node]
                         } else {
                             election[node] = new_queue[node]
