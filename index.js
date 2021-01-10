@@ -79,8 +79,8 @@ var recents = []
     //HIVE API CODE
 
 //Start Program Options   
-//startWith('QmNTpdPPiiDMJiGNay7jgavKUypxrMDzncZaw1tuAgzBtK') //for testing and replaying
-dynStart(config.leader)
+startWith('QmX6cknGC2ub3g6aTRKeiKZirWBSgp6Hy9bgTxAa7f3R78') //for testing and replaying
+//dynStart(config.leader)
 
 // API defs
 api.use(API.https_redirect);
@@ -278,7 +278,7 @@ function startApp() {
                     if ((num - 20000) % 30240 === 0) { //time for daily magic
                         promises.push(dao(num))
                     }
-                    if (num % 100 === 1) {
+                    if (num % 100 === 0) {
                         promises.push(tally(num, plasma, processor.isStreaming()));
                     }
                     if (num % 100 === 1) {
