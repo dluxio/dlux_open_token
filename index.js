@@ -1,8 +1,11 @@
 const config = require('./config');
+const VERSION = 'v0.9.0a'
+exports.VERSION = VERSION
+
 const hive = require('@hiveio/dhive');
 var client = new hive.Client(config.clientURL);
 exports.client = client
-const hiveState = require('./processor');
+
 const args = require('minimist')(process.argv.slice(2));
 const express = require('express');
 const stringify = require('json-stable-stringify');
@@ -13,12 +16,14 @@ const ipfs = new IPFS({
     protocol: 'https'
 });
 exports.ipfs = ipfs;
+
 const rtrades = require('./rtrades');
 var Pathwise = require('./pathwise');
 var level = require('level');
 const statestart = require('./state')
 var store = new Pathwise(level('./db', { createIfEmpty: true }));
 exports.store = store;
+
 const cors = require('cors');
 const { ChainTypes, makeBitMaskFilter, ops } = require('@hiveio/hive-js/lib/auth/serializer');
 const op = ChainTypes.operations
@@ -28,6 +33,7 @@ const walletOperationsBitmask = makeBitMaskFilter([
 const hiveClient = require('@hiveio/hive-js');
 hiveClient.api.setOptions({ url: config.clientURL });
 exports.hiveClient = hiveClient
+
 var NodeOps = [];
 exports.NodeOps = function() {
     return NodeOps
@@ -41,6 +47,7 @@ exports.unshiftOp = function(op) {
 exports.pushOp = function(op) {
     NodeOps.push(op)
 }
+
 const API = require('./routes/api');
 const { getPathNum } = require("./getPathNum");
 const HR = require('./processing_routes/index')
@@ -54,7 +61,7 @@ const { dao } = require("./dao");
 const { deleteObjs } = require("./deleteObjs");
 const { reject } = require('async');
 const { add, addCol, deletePointer, release, credit, nodeUpdate, hashThis, penalty, chronAssign, forceCancel } = require('./lil_ops')
-const VERSION = 'v0.9.0a'
+const hiveState = require('./processor');
 const api = express()
 var http = require('http').Server(api);
 var escrow = false;
@@ -72,8 +79,8 @@ var recents = []
     //HIVE API CODE
 
 //Start Program Options   
-//startWith('QmWx7EdQKJa8xSdnw9sv6VnSQ4z7x446A14XeJ8W2jd96Q') //for testing and replaying
-dynStart(config.leader)
+startWith('QmWx7EdQKJa8xSdnw9sv6VnSQ4z7x446A14XeJ8W2jd96Q') //for testing and replaying
+    //dynStart(config.leader)
 
 // API defs
 api.use(API.https_redirect);
@@ -590,5 +597,3 @@ function startWith(hash) {
         })
     }
 }
-
-exports.VERSION = VERSION

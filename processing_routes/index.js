@@ -12,7 +12,7 @@ const { node_add, node_delete } = require('./nodes')
 const { dex_buy, dex_clear, dex_hbd_sell, dex_hive_sell, escrow_approve, escrow_dispute, escrow_release, escrow_transfer, transfer } = require('./dex')
 const { comment, comment_options } = require('./comment')
 
-exports = {
+module.exports = {
     cert,
     cjv,
     comment,

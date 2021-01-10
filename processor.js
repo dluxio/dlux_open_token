@@ -97,7 +97,6 @@ module.exports = function(client, steem, currentBlockNumber = 1, blockComputeSpe
 
     function transactional(ops, i, pc, num, block) {
         if (ops.length) {
-            console.log({ i })
             doOp(ops[i], [ops, i, pc, num, block])
                 .then(v => {
                     if (ops.length > i + 1) {
@@ -105,7 +104,6 @@ module.exports = function(client, steem, currentBlockNumber = 1, blockComputeSpe
                     } else {
                         onNewBlock(num, v)
                             .then(r => {
-                                //console.log(num)
                                 pc[0]()
                             })
                             .catch(e => { console.log(e) })
@@ -118,7 +116,6 @@ module.exports = function(client, steem, currentBlockNumber = 1, blockComputeSpe
         } else {
             onNewBlock(num, pc)
                 .then(r => {
-                    //console.log(num)
                     r[0]()
                 })
                 .catch(e => { pc[1](e) })
@@ -143,11 +140,9 @@ module.exports = function(client, steem, currentBlockNumber = 1, blockComputeSpe
             var transactions = block.transactions;
             let ops = []
             for (var i = 0; i < transactions.length; i++) {
-                console.log(ops)
                 for (var j = 0; j < transactions[i].operations.length; j++) {
                     var op = transactions[i].operations[j];
                     if (op[0] === 'custom_json') {
-                        console.log(op[0])
                         if (typeof onCustomJsonOperation[op[1].id] === 'function') {
                             var ip = JSON.parse(op[1].json),
                                 from = op[1].required_posting_auths[0],
@@ -162,7 +157,6 @@ module.exports = function(client, steem, currentBlockNumber = 1, blockComputeSpe
                             ops.push([op[1].id, ip, from, active]) //onCustomJsonOperation[op[1].id](ip, from, active);
                         }
                     } else if (onOperation[op[0]] !== undefined) {
-                        console.log(op[0])
                         op[1].transaction_id = transactions[i].transaction_id
                         op[1].block_num = transactions[i].block_num
                         op[1].timestamp = block.timestamp

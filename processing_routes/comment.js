@@ -25,7 +25,6 @@ exports.comment = (json, pc) => {
 }
 
 exports.comment_options = (json, pc) => {
-    console.log(json)
     try {
         var filter = json.extensions[0][1].beneficiaries
     } catch (e) {
@@ -101,9 +100,11 @@ exports.comment_options = (json, pc) => {
                                             final.s = trimmed.Hash360
                                         }
                                     } catch (e) {}
-                                    if (trimmed.vrHash.length == 46) { //e for executable
-                                        final.e = trimmed.vrHash
-                                    }
+                                    try {
+                                        if (trimmed.vrHash.length == 46) { //e for executable
+                                            final.e = trimmed.vrHash
+                                        }
+                                    } catch (e) {}
                                     try {
                                         if (JSON.stringify(trimmed.loc).length < 1024) { //l for spactial indexing
                                             final.l = trimmed.loc

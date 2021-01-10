@@ -1,3 +1,4 @@
+const config = require('./../config')
 const { store } = require('./../index')
 const { getPathNum } = require('./../getPathNum')
 const { getPathObj } = require('./../getPathObj')
