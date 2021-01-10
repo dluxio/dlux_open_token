@@ -79,8 +79,8 @@ var recents = []
     //HIVE API CODE
 
 //Start Program Options   
-//startWith('QmWx7EdQKJa8xSdnw9sv6VnSQ4z7x446A14XeJ8W2jd96Q') //for testing and replaying
-dynStart(config.leader)
+startWith('QmW4XGYb2pbiSfuzVsJfYajtbFzAbnUzCXb5qJ62ys7BfP') //for testing and replaying
+    //dynStart(config.leader)
 
 // API defs
 api.use(API.https_redirect);
@@ -193,7 +193,7 @@ function startApp() {
     //do things in cycles based on block time
     processor.onBlock(
         function(num, pc, isStreaming) {
-            console.log(num)
+            console.log(num, { isStreaming })
             return new Promise((resolve, reject) => {
                 //store.batch([{ type: 'put', path: ['stats', 'realtime'], data: num }], )
                 chronoProcess = true
@@ -308,7 +308,7 @@ function startApp() {
                     if (num % 100 === 50 && isStreaming) {
                         report(plasma)
                             .then(nodeOp => {
-
+                                console.log(nodeOp)
                                 NodeOps.unshift(nodeOp)
                             })
                             .catch(e => { console.log(e) })
@@ -330,11 +330,6 @@ function startApp() {
                                 .catch(e => { console.log(e) })
 
                         })
-                    }
-                    if (promises.length) {
-                        waitup(promises, pc, [resolve, reject])
-                    } else {
-                        resolve(pc)
                     }
                     /*
                 //rest is out of consensus
@@ -404,6 +399,11 @@ function startApp() {
                             }
                         })
                     }
+                    if (promises.length) {
+                        waitup(promises, pc, [resolve, reject])
+                    } else {
+                        resolve(pc)
+                    }
                 })
             })
         });
@@ -417,8 +417,7 @@ function startApp() {
                     id: `${config.prefix}node_add`,
                     json: JSON.stringify({
                         domain: config.NODEDOMAIN,
-                        bidRate: config.bidRate,
-                        escrow
+                        bidRate: config.bidRate
                     })
                 }]
                 NodeOps.unshift([
@@ -442,10 +441,6 @@ function exit(consensus) {
         }
     });
 }
-
-exports.deleteObjs = deleteObjs;
-exports.deletePointer = deletePointer;
-exports.nodeUpdate = nodeUpdate;
 
 function waitfor(promises_array) {
     return new Promise((resolve, reject) => {
