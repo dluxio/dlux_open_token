@@ -47,7 +47,6 @@ exports.tally = (num, plasma, isStreaming) => new Promise((resolve, reject) => {
                     } //recent and signing
                 }
                 for (runner in runners) {
-                    console.log(runner)
                     tally.agreements.votes++
                         if (tally.agreements.hashes[runner]) {
                             tally.agreements.tally[tally.agreements.hashes[runner]]++
@@ -59,6 +58,7 @@ exports.tally = (num, plasma, isStreaming) => new Promise((resolve, reject) => {
                         break;
                     }
                 }
+                console.log(tally)
                 let still_running = {}
                 let election = {}
                 let new_queue = {}
