@@ -76,7 +76,7 @@ exports.tally = (num, plasma, isStreaming) => new Promise((resolve, reject) => {
                         }
                     }
                     for (node in runners) {
-                        if (new_queue[node] >= 0) {
+                        if (new_queue[node].t >= 0) {
                             still_running[node] = new_queue[node]
                         } else {
                             election[node] = new_queue[node]
@@ -139,6 +139,7 @@ exports.tally = (num, plasma, isStreaming) => new Promise((resolve, reject) => {
                     { type: 'put', path: ['markets', 'node'], data: nodes },
                     { type: 'put', path: ['balances', 'ra'], data: rbal.ra }
                 ]
+                console.log(ops)
                 store.batch(ops, [resolve, reject, newPlasma]);
                 if (consensus && (consensus != plasma.hashLastIBlock || consensus != nodes[config.username].report.hash) && isStreaming) { //this doesn't seem to be catching failures
                     exit(consensus);
