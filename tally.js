@@ -100,10 +100,9 @@ exports.tally = (num, plasma, isStreaming) => new Promise((resolve, reject) => {
                     for (node in still_running) {
                         MultiSigCollateral += still_running[node].t
                     }
-                    stats.MultiSigCollateral = MultiSigCollateral
+                    stats.multiSigCollateral = MultiSigCollateral
                     stats.lastBlock = stats.hashLastIBlock;
-                    if (consensus)
-                        stats.hashLastIBlock = consensus;
+                    stats.hashLastIBlock = consensus;
                     for (var node in nodes) {
                         var getHash;
                         if (nodes[node].report.block_num > num - 50) {
@@ -138,6 +137,7 @@ exports.tally = (num, plasma, isStreaming) => new Promise((resolve, reject) => {
                     { type: 'put', path: ['balances', 'ra'], data: rbal.ra }
                 ]
                 if (Object.keys(new_queue)) ops.push({ type: 'put', path: ['queue'], data: new_queue })
+                console.log(ops)
                 store.batch(ops, [resolve, reject, newPlasma]);
                 if (consensus && (consensus != plasma.hashLastIBlock || consensus != nodes[config.username].report.hash) && isStreaming) { //this doesn't seem to be catching failures
                     exit(consensus);
