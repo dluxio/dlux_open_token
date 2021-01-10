@@ -1,7 +1,8 @@
-const { store, config, VERSION, current } = require("./../index");
+let config = require('./../config')
+const { store } = require("./../index");
 const fetch = require('node-fetch');
-const { getPathNum } = require("./../getPathNum");
-const { getPathObj } = require("./../getPathObj");
+let { getPathNum } = require("./../getPathNum");
+let { getPathObj } = require("./../getPathObj");
 const decodeURIcomponent = require('decode-uri-component');
 //const { reject } = require('async');
 
@@ -14,7 +15,7 @@ exports.root = (req, res, next) => {
                 stats,
                 node: config.username,
                 VERSION,
-                realtime: current
+                realtime: stats.realtime
             }, null, 3));
     });
 }
@@ -29,8 +30,7 @@ exports.dex = (req, res, next) => {
                 markets: v[0],
                 queue: v[1],
                 node: config.username,
-                VERSION,
-                realtime: current
+                VERSION
             }, null, 3))
         })
         .catch(function(err) {
@@ -48,8 +48,7 @@ exports.markets = (req, res, next) => {
                 markets: v[0],
                 stats: v[1],
                 node: config.username,
-                VERSION,
-                realtime: current
+                VERSION
             }, null, 3))
         })
         .catch(function(err) {
@@ -64,8 +63,7 @@ exports.runners = (req, res, next) => {
         res.send(JSON.stringify({
             runners,
             node: config.username,
-            VERSION,
-            realtime: current
+            VERSION
         }, null, 3))
     });
 }
@@ -77,8 +75,7 @@ exports.feed = (req, res, next) => {
         res.send(JSON.stringify({
             feed,
             node: config.username,
-            VERSION,
-            realtime: current
+            VERSION
         }, null, 3))
     });
 }
@@ -90,8 +87,7 @@ exports.posts = (req, res, next) => {
         res.send(JSON.stringify({
             feed,
             node: config.username,
-            VERSION,
-            realtime: current
+            VERSION
         }, null, 3))
     });
 }
@@ -111,8 +107,7 @@ exports.PostAuthorPermlink = (req, res, next) => {
                     now,
                     arch,
                     node: config.username,
-                    VERSION,
-                    realtime: current
+                    VERSION
                 }, null, 3))
             })
             .catch(e => { console.log(e) })
@@ -127,8 +122,7 @@ exports.report = (req, res, next) => {
         res.send(JSON.stringify({
             [un]: report,
             node: config.username,
-            VERSION,
-            realtime: current
+            VERSION
         }, null, 3))
     });
 }
@@ -151,8 +145,7 @@ exports.user = (req, res, next) => {
                 heldCollateral: v[4],
                 contracts: v[3],
                 node: config.username,
-                VERSION,
-                realtime: current
+                VERSION
             }, null, 3))
         })
         .catch(function(err) {
@@ -168,8 +161,7 @@ exports.state = (req, res, next) => {
             res.send(JSON.stringify({
                 state,
                 node: config.username,
-                VERSION,
-                realtime: current
+                VERSION
             }, null, 3))
     });
 }

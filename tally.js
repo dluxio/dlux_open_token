@@ -2,7 +2,7 @@ const config = require('./config');
 const { getPathNum } = require("./getPathNum");
 const { getPathObj } = require("./getPathObj");
 const { deleteObjs } = require('./deleteObjs')
-const { store, processor, exit, VERSION, current } = require("./index");
+const { store, exit } = require("./index");
 
 //determine consensus... needs some work with memory management
 exports.tally = (num, plasma, isStreaming) => new Promise((resolve, reject) => {
@@ -152,9 +152,6 @@ exports.tally = (num, plasma, isStreaming) => new Promise((resolve, reject) => {
                 if (consensus && (consensus != plasma.hashLastIBlock || consensus != nodes[config.username].report.hash) && isStreaming) { //this doesn't seem to be catching failures
                     exit(consensus);
                     var errors = ['failed Consensus'];
-                    if (VERSION != nodes[node].report.version) {
-                        console.log(num + `:Abandoning ${plasma.hashLastIBlock} because ${errors[0]}`);
-                    }
                     //const blockState = Buffer.from(JSON.stringify([num, state]))
                     plasma.hashBlock = '';
                     plasma.hashLastIBlock = '';

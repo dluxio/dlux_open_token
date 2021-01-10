@@ -1,8 +1,9 @@
 const config = require('./config');
 const { getPathNum } = require("./getPathNum");
 const { getPathObj } = require("./getPathObj");
-const { store, current, sortBuyArray } = require("./index");
+const { store } = require("./index");
 const { isEmpty } = require('./lil_ops')
+const { sortBuyArray } = require('./helpers')
 
 //the daily post, the inflation point for tokennomics
 function dao(num) {
@@ -123,7 +124,7 @@ function dao(num) {
                                 bals.rn -= i;
                                 const _at = _atfun(node);
                                 post = post + `* ${_at}${node} awarded ${parseFloat(i / 1000).toFixed(3)} ${config.TOKEN} for ${mnode[node].wins} credited transaction(s)\n`;
-                                console.log(current + `:@${node} awarded ${i} ${config.TOKEN} for ${mnode[node].wins} credited transaction(s)`);
+                                console.log(num + `:@${node} awarded ${i} ${config.TOKEN} for ${mnode[node].wins} credited transaction(s)`);
                                 mnode[node].wins = 0;
                             }
                             bals.rd += parseInt(t * stats.delegationRate / 10000); // 10% to delegators
@@ -131,7 +132,7 @@ function dao(num) {
                             bals.ra -= parseInt(t * stats.delegationRate / 10000);
                             b = bals.rd;
                             j = 0;
-                            console.log(current + `:${b} ${config.TOKEN} to distribute to delegators`);
+                            console.log(num + `:${b} ${config.TOKEN} to distribute to delegators`);
                             for (i in deles) { //count vests
                                 j += deles[i];
                             }
@@ -144,7 +145,7 @@ function dao(num) {
                                 bals.rd -= k;
                                 const _at = _atfun(i);
                                 post = post + `* ${parseFloat(parseInt(k) / 1000).toFixed(3)} ${config.TOKEN} for ${_at}${i}'s ${parseFloat(deles[i] / 1000000).toFixed(1)} Mvests.\n`;
-                                console.log(current + `:${k} ${config.TOKEN} awarded to ${i} for ${deles[i]} VESTS`);
+                                console.log(num + `:${k} ${config.TOKEN} awarded to ${i} for ${deles[i]} VESTS`);
                             }
                             stats.dluxPerDel = parseInt(k / j);
                             post = post + `*****\n ## ICO Status\n`;
@@ -202,11 +203,11 @@ function dao(num) {
                                         bals[node] += parseInt(ico[i][node] / y * bals.rl);
                                         dailyICODistrobution -= parseInt(ico[i][node] / y * bals.rl);
                                         post = post + `* @${node} awarded  ${parseFloat(parseInt(ico[i][node] / y * bals.rl) / 1000).toFixed(3)} ${config.TOKEN} for ICO auction\n`;
-                                        console.log(current + `:${node} awarded  ${parseInt(ico[i][node] / y * bals.rl)} ${config.TOKEN} for ICO auction`);
+                                        console.log(num + `:${node} awarded  ${parseInt(ico[i][node] / y * bals.rl)} ${config.TOKEN} for ICO auction`);
                                         if (i == ico.length - 1) {
                                             bals[node] += dailyICODistrobution;
                                             post = post + `* @${node} awarded  ${parseFloat(parseInt(dailyICODistrobution) / 1000).toFixed(3)} ${config.TOKEN} for ICO auction\n`;
-                                            console.log(current + `:${node} given  ${dailyICODistrobution} remainder`);
+                                            console.log(num + `:${node} given  ${dailyICODistrobution} remainder`);
                                         }
                                     }
                                 }

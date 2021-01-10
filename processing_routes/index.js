@@ -1,5 +1,4 @@
 const { onStreamingStart } = require('./onStreamingStart')
-const { onBlock } = require('./onBlock')
 const { send } = require('./send')
 const { power_up, power_down } = require('./power')
 const { delegate_vesting_shares } = require('./delegate_vesting_shares')
@@ -31,7 +30,6 @@ exports = {
     node_delete,
     nomention,
     onStreamingStart,
-    onBlock,
     power_down,
     power_up,
     q4d,

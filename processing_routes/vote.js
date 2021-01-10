@@ -1,4 +1,5 @@
-const { store, config, NodeOps } = require("./../index");
+const config = require('./../config')
+const { store } = require("./../index");
 const { getPathNum } = require('./../getPathNum')
 const { getPathObj } = require('./../getPathObj')
 
@@ -16,11 +17,13 @@ exports.vote = (json, pc) => {
                         try {
                             if (json.voter == config.username) {
                                 delete plasma.pending[b];
+                                /*
                                 for (var i = 0; i < NodeOps.length; i++) {
                                     if (NodeOps[i][1][1].author == json.author && NodeOps[i][1][1].permlink == json.permlink && NodeOps[i][1][0] == 'vote') {
                                         NodeOps.splice(i, 1);
                                     }
                                 }
+                                */
                             }
                         } catch (e) { console.log(e); }
                         break;

@@ -1,4 +1,5 @@
-const { store, config, VERSION, current, NodeOps, unshift } = require("./../index");
+const config = require('./../config')
+const { store } = require("./../index");
 
 exports.onStreamingStart = () => {
     console.log("At real time.");

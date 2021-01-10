@@ -1,4 +1,5 @@
-const { store, config } = require("../index");
+const config = require('./../config')
+const { store } = require("../index");
 const { getPathNum } = require("../getPathNum");
 const { getPathObj } = require('../getPathObj')
 const { chronAssign } = require('../lil_ops')

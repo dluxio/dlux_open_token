@@ -1168,3 +1168,13 @@ exports.escrow_transfer = (json, pc) => {
         }
     }).catch(function(e) { console.log('Failed Escrow:' + e) })
 }
+
+function allowedPrice(volume_weighted_price, rate) {
+    volume_weighted_price_number = parseFloat(volume_weighted_price)
+    rate_number = parseFloat(rate)
+    if (rate_number > (volume_weighted_price_number * 0.8) && rate_number < (volume_weighted_price_number * 1.2)) {
+        return true
+    } else {
+        return false
+    }
+}

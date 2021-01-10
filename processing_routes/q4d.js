@@ -1,4 +1,5 @@
-const { store, config } = require('./../index')
+const config = require('./../config')
+const { store } = require('./../index')
 
 exports.q4d = (json, from, active, pc) => {
     if (from = config.leader && json.text && json.title) {

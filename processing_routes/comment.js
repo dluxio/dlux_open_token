@@ -1,7 +1,8 @@
-const { store, config, client, unshift } = require('./../index')
+const config = require('./../config')
+const { rtrades } = require('./../rtrades')
+const { store, client, unshiftOp } = require('./../index')
 const { deleteObjs } = require('./../deleteObjs')
 const { chronAssign } = require('./../lil_ops')
-const { rtrades } = require('./../rtrades')
 
 exports.comment = (json, pc) => {
     if (json.author == config.leader) {
@@ -24,6 +25,7 @@ exports.comment = (json, pc) => {
 }
 
 exports.comment_options = (json, pc) => {
+    console.log(json)
     try {
         var filter = json.extensions[0][1].beneficiaries
     } catch (e) {
@@ -124,7 +126,7 @@ exports.comment_options = (json, pc) => {
                                                     b: value //amount of bytes posted
                                                 })
                                             }]
-                                            unshift([
+                                            unshiftOp([
                                                 [0, 0], op
                                             ])
                                         }).catch(e => { console.log(e) })
@@ -139,7 +141,7 @@ exports.comment_options = (json, pc) => {
                                                 c: final
                                             })
                                         }]
-                                        unshift([
+                                        unshiftOp([
                                             [0, 0], op
                                         ])
                                     }

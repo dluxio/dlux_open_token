@@ -1,4 +1,5 @@
-const { store, config } = require("./../index");
+const config = require('./../config')
+const { store } = require("./../index");
 const { getPathObj } = require("./../getPathObj");
 
 exports.sig = (json, from, active, pc) => {

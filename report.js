@@ -1,5 +1,4 @@
 const config = require('./config');
-const { VERSION } = require("./index");
 
 //tell the hive your state, this is asynchronous with IPFS return... 
 function report(plasma) {
@@ -11,7 +10,6 @@ function report(plasma) {
             json: JSON.stringify({
                 hash: plasma.hashLastIBlock,
                 block: plasma.hashBlock,
-                version: VERSION,
                 stash: plasma.privHash
             })
         }];

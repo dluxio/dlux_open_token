@@ -1,53 +1,51 @@
+const config = require('./config');
 const hive = require('@hiveio/dhive');
+var client = new hive.Client(config.clientURL);
+exports.client = client
 const hiveState = require('./processor');
-const IPFS = require('ipfs-api'); //ipfs-http-client doesn't work
 const args = require('minimist')(process.argv.slice(2));
 const express = require('express');
-const cors = require('cors');
-const config = require('./config');
-exports.config = config;
 const stringify = require('json-stable-stringify');
+const IPFS = require('ipfs-api'); //ipfs-http-client doesn't work
 const ipfs = new IPFS({
     host: config.ipfshost,
     port: 5001,
     protocol: 'https'
 });
 exports.ipfs = ipfs;
-const hiveClient = require('@hiveio/hive-js');
-hiveClient.api.setOptions({ url: config.clientURL });
-exports.hiveClient = hiveClient
 const rtrades = require('./rtrades');
 var Pathwise = require('./pathwise');
 var level = require('level');
 const statestart = require('./state')
 var store = new Pathwise(level('./db', { createIfEmpty: true }));
 exports.store = store;
-const API = require('./routes/api');
-const VERSION = 'v0.9.0a'
-exports.VERSION = VERSION
-const api = express()
-var http = require('http').Server(api);
-var escrow = false;
-exports.escrow = escrow;
-//const wif = hiveClient.auth.toWif(config.username, config.active, 'active')
-var startingBlock = config.starting_block
-var current
-exports.current = current
-const streamMode = args.mode || 'irreversible'; //latest is probably good enough
-console.log("Streaming using mode", streamMode);
-var client = new hive.Client(config.clientURL);
-exports.client = client
-var processor;
-const HR = require('./processing_routes/index')
-exports.processor = processor;
-var live_dex = {}, //for feedback, unused currently
-    pa = []
-var recents = []
-    //HIVE API CODE
+const cors = require('cors');
 const { ChainTypes, makeBitMaskFilter, ops } = require('@hiveio/hive-js/lib/auth/serializer');
+const op = ChainTypes.operations
+const walletOperationsBitmask = makeBitMaskFilter([
+    op.custom_json
+])
+const hiveClient = require('@hiveio/hive-js');
+hiveClient.api.setOptions({ url: config.clientURL });
+exports.hiveClient = hiveClient
+var NodeOps = [];
+exports.NodeOps = function() {
+    return NodeOps
+}
+exports.newOps = function(array) {
+    NodeOps = array
+}
+exports.unshiftOp = function(op) {
+    NodeOps.unshift(op)
+}
+exports.pushOp = function(op) {
+    NodeOps.push(op)
+}
+const API = require('./routes/api');
 const { getPathNum } = require("./getPathNum");
-const { getPathObj } = require("./getPathObj");
+const HR = require('./processing_routes/index')
 const { enforce } = require("./enforce");
+exports.exit = exit;
 const { tally } = require("./tally");
 const { report } = require("./report");
 const { ipfsSaveState } = require("./ipfsSaveState");
@@ -56,13 +54,25 @@ const { dao } = require("./dao");
 const { deleteObjs } = require("./deleteObjs");
 const { reject } = require('async');
 const { add, addCol, deletePointer, release, credit, nodeUpdate, hashThis, penalty, chronAssign, forceCancel } = require('./lil_ops')
-const op = ChainTypes.operations
-const walletOperationsBitmask = makeBitMaskFilter([
-    op.custom_json
-])
+const VERSION = 'v0.9.0a'
+const api = express()
+var http = require('http').Server(api);
+var escrow = false;
+exports.escrow = escrow;
+//const wif = hiveClient.auth.toWif(config.username, config.active, 'active')
+var startingBlock = config.starting_block
+    //var current
+    //exports.current = current
+const streamMode = args.mode || 'irreversible'; //latest is probably good enough
+console.log("Streaming using mode", streamMode);
+var processor;
+var live_dex = {}, //for feedback, unused currently
+    pa = []
+var recents = []
+    //HIVE API CODE
 
 //Start Program Options   
-//startWith('Qmb8DnNDUG7wu4yoE1no9dQgYBS7ob1p1qUWFUBh1AZRwV') //for testing and replaying
+//startWith('QmWx7EdQKJa8xSdnw9sv6VnSQ4z7x446A14XeJ8W2jd96Q') //for testing and replaying
 dynStart(config.leader)
 
 // API defs
@@ -101,16 +111,6 @@ var plasma = {
     },
     jwt;
 exports.jwt = jwt;
-
-//Operations to sign    
-var NodeOps = [];
-exports.NodeOps = NodeOps;
-
-function unshift(op) {
-    NodeOps.unshift(op)
-}
-
-exports.unshift = unshift
 
 var rtradesToken = '' //for centralized IPFS pinning
     //grabs an API token for IPFS pinning of TOKEN posts
@@ -188,7 +188,7 @@ function startApp() {
         function(num, pc, isStreaming) {
             console.log(num)
             return new Promise((resolve, reject) => {
-                current = num
+                //store.batch([{ type: 'put', path: ['stats', 'realtime'], data: num }], )
                 chronoProcess = true
                 store.someChildren(['chrono'], {
                     gte: "" + num,
@@ -317,7 +317,6 @@ function startApp() {
                             const blockState = Buffer.from(stringify([num, obj]))
                             ipfsSaveState(num, blockState)
                                 .then(pla => {
-                                    console.log(pla)
                                     plasma.hashLastIBlock = pla.hashLastIBlock
                                     plasma.hashBlock = pla.hashBlock
                                 })
@@ -422,6 +421,8 @@ function startApp() {
         })
     });
     processor.start();
+
+    exports.processor = processor;
 }
 
 function exit(consensus) {
@@ -434,42 +435,7 @@ function exit(consensus) {
         }
     });
 }
-exports.exit = exit;
 
-exports.credit = credit;
-
-exports.add = add;
-
-exports.addCol = addCol;
-
-exports.penalty = penalty;
-
-exports.chronAssign = chronAssign;
-
-function sortBuyArray(array, key) { //seek insert instead
-    return array.sort(function(a, b) {
-        return b[key] - a[key];
-    });
-}
-exports.sortBuyArray = sortBuyArray;
-
-function sortSellArray(array, key) { //seek insert instead
-    return array.sort(function(a, b) {
-        return a[key] - b[key];
-    });
-}
-
-function allowedPrice(volume_weighted_price, rate) {
-    volume_weighted_price_number = parseFloat(volume_weighted_price)
-    rate_number = parseFloat(rate)
-    if (rate_number > (volume_weighted_price_number * 0.8) && rate_number < (volume_weighted_price_number * 1.2)) {
-        return true
-    } else {
-        return false
-    }
-}
-
-exports.forceCancel = this.forceCancel
 exports.deleteObjs = deleteObjs;
 exports.deletePointer = deletePointer;
 exports.nodeUpdate = nodeUpdate;
@@ -624,3 +590,5 @@ function startWith(hash) {
         })
     }
 }
+
+exports.VERSION = VERSION

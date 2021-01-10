@@ -1,4 +1,5 @@
-const { store, config } = require("./../index");
+const config = require('./../config')
+const { store } = require("./../index");
 const { getPathNum } = require("./../getPathNum");
 
 exports.send = (json, from, active, pc) => {
