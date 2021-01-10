@@ -95,10 +95,8 @@ exports.node_delete = function(json, from, active, pc) {
                                 break;
                             }
                         }
-                        if (found >= 0) {
-                            q.splice(found, 1)
-                            ops.push({ type: 'put', path: ['queue'], data: q })
-                        }
+                        delete q[from]
+                        ops.push({ type: 'put', path: ['queue'], data: q })
                         delete b.domain
                         delete b.bidRate
                         delete b.escrow

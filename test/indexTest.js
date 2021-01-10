@@ -61,6 +61,26 @@ describe('State', function() {
             })
     })
 
+    it('Add test node D:', () => {
+        let json = {
+            domain: 'localhost',
+            bidRate: 1,
+            marketingRate: 1,
+            escrow: true,
+            block_num: 1,
+            transaction_id: 1
+        }
+        return new Promise((resolve, reject) => {
+                app.node_add(json, 'node-opd', true, [resolve, reject])
+            })
+            .then(ops => {
+                assert.equal(ops[0].path[2], 'node-opd')
+                assert.equal(ops[0].data.domain, 'localhost')
+                assert.equal(ops[0].data.bidRate, 1)
+                assert.equal(ops[0].data.marketingRate, 1)
+            })
+    })
+
     it('Testing send:', () => {
         let json = {
             to: 'test-to',
@@ -174,5 +194,105 @@ describe('State', function() {
                 assert.equal(ops[0].data, '@test-from| Invalid send operation')
             })
     })
+
+    /*
+    dlux_report
+    json: {"hash":"QmYaMrk7MhXzCMEZNH2tcvURzx1taEStJ4fM5KoCXN77Mz","block":50322301}
+    */
+
+    it('Build consensus Leader:', () => {
+        let json = {
+            hash: 'hash',
+            block: 1,
+            block_num: 70,
+            transaction_id: '5L'
+        }
+        return new Promise((resolve, reject) => {
+                app.report(json, 'leader', true, [resolve, reject])
+            })
+            .then(ops => {
+                assert.equal(ops[0].data.self, 'leader')
+                assert.equal(ops[0].data.report.hash, 'hash')
+            })
+    })
+
+    it('Build consensus A:', () => {
+        let json = {
+            hash: 'hash',
+            block: 1,
+            block_num: 70,
+            transaction_id: '5L'
+        }
+        return new Promise((resolve, reject) => {
+                app.report(json, 'node-opa', true, [resolve, reject])
+            })
+            .then(ops => {
+                assert.equal(ops[0].data.self, 'node-opa')
+                assert.equal(ops[0].data.report.hash, 'hash')
+            })
+    })
+
+    it('Build consensus B:', () => {
+        let json = {
+            hash: 'hash',
+            block: 1,
+            block_num: 70,
+            transaction_id: '5L'
+        }
+        return new Promise((resolve, reject) => {
+                app.report(json, 'node-opb', true, [resolve, reject])
+            })
+            .then(ops => {
+                assert.equal(ops[0].data.self, 'node-opb')
+                assert.equal(ops[0].data.report.hash, 'hash')
+            })
+    })
+
+    it('Alt consensus D:', () => {
+        let json = {
+            hash: 'hash-dif',
+            block: 1,
+            block_num: 70,
+            transaction_id: '5L'
+        }
+        return new Promise((resolve, reject) => {
+                app.report(json, 'node-opd', true, [resolve, reject])
+            })
+            .then(ops => {
+                assert.equal(ops[0].data.self, 'node-opd')
+                assert.equal(ops[0].data.report.hash, 'hash-dif')
+            })
+    })
+
+    it('Disallow Randos:', () => {
+            let json = {
+                hash: 'hash',
+                block: 1,
+                block_num: 70,
+                transaction_id: '5L'
+            }
+            return new Promise((resolve, reject) => {
+                    app.report(json, 'test-to', true, [resolve, reject])
+                })
+                .then(ops => {
+                    assert.notOk(ops)
+                })
+        })
+        /*
+            it('Establish:', () => {
+                let json = {
+                    hash: 'hash',
+                    block: 1,
+                    block_num: 70,
+                    transaction_id: '5L'
+                }
+                return new Promise((resolve, reject) => {
+                        app.report(json, 'test-to', true, [resolve, reject])
+                    })
+                    .then(ops => {
+                        assert.notOk(ops)
+                    })
+            })
+        */
 
 })

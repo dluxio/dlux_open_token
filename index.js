@@ -142,44 +142,7 @@ function startApp() {
     processor.onOperation('escrow_release', HR.escrow_release);
     processor.on('node_add', HR.node_add); //node add and update
     processor.on('node_delete', HR.node_delete);
-    processor.on('report', function(json, from, active, pc) {
-        store.get(['markets', 'node', from], function(e, a) {
-            if (!e) {
-                var b = a
-                if (from == b.self) {
-                    b.report = json
-                    delete b.report.timestamp
-                    var ops = [
-                        { type: 'put', path: ['markets', 'node', from], data: b },
-                        { type: 'put', path: ['feed', `${json.block_num}:${json.transaction_id}`], data: `@${from}| Report processed` }
-                    ]
-                    store.batch(ops, pc)
-                } else {
-                    if (from === config.username) {
-                        var op = { required_auth: json.required_auths, required_posting_auths: json.required_posting_auths, id: json.id, custom_json: json.custom_json }
-                        var checker = ['custom_json', op]
-                        if (plasma.pending[hashThis(JSON.stringify(checker))]) {
-                            delete plasma.pending[hashThis(JSON.stringify(checker))]
-                            for (i = 0; i < NodeOps.length; i++) {
-                                if (NodeOps[i][1][0] == 'custom_json') { NodeOps.splice(i, 1); break; }
-                            }
-                        }
-                        NodeOps.push([
-                            [0, 0], op
-                        ]);
-                        console.log(json.transaction_id + '|' + json.block_num + `:This node posted a spurious report and in now attempting to register`)
-                    } else if (from === config.username) {
-                        console.log(json.transaction_id + '|' + json.block_num + `:This node has posted a spurious report\nPlease configure your DOAMAIN and BIDRATE env variables`)
-                    } else {
-                        console.log(json.transaction_id + '|' + json.block_num + `:@${from} has posted a spurious report`)
-                    }
-                }
-            } else {
-                pc[0](pc[2])
-                console.log(e)
-            }
-        })
-    });
+    processor.on('report', HR.report);
     processor.on('queueForDaily', HR.q4d)
     processor.on('nomention', HR.nomention)
     processor.onOperation('comment_options', HR.comment_options);
@@ -193,9 +156,9 @@ function startApp() {
     //do things in cycles based on block time
     processor.onBlock(
         function(num, pc) {
+            console.log(num)
             return new Promise((resolve, reject) => {
                 //store.batch([{ type: 'put', path: ['stats', 'realtime'], data: num }], )
-                chronoProcess = true
                 store.someChildren(['chrono'], {
                     gte: "" + num,
                     lte: "" + (num + 1)
@@ -315,7 +278,7 @@ function startApp() {
                     if ((num - 20000) % 30240 === 0) { //time for daily magic
                         promises.push(dao(num))
                     }
-                    if (num % 100 === 0) {
+                    if (num % 100 === 1) {
                         promises.push(tally(num, plasma, processor.isStreaming()));
                     }
                     if (num % 100 === 1) {
@@ -406,25 +369,7 @@ function startApp() {
                 })
             })
         });
-    processor.onStreamingStart(function() { //auto-join
-        console.log("At real time.")
-        store.get(['markets', 'node', config.username], function(e, a) {
-            if (!a.domain && config.NODEDOMAIN) {
-                var op = ["custom_json", {
-                    required_auths: [config.username],
-                    required_posting_auths: [],
-                    id: `${config.prefix}node_add`,
-                    json: JSON.stringify({
-                        domain: config.NODEDOMAIN,
-                        bidRate: config.bidRate
-                    })
-                }]
-                NodeOps.unshift([
-                    [0, 0], op
-                ])
-            }
-        })
-    });
+    processor.onStreamingStart(HR.onStreamingStart);
     processor.start();
 
     exports.processor = processor;

@@ -11,6 +11,7 @@ const { q4d } = require('./q4d')
 const { node_add, node_delete } = require('./nodes')
 const { dex_buy, dex_clear, dex_hbd_sell, dex_hive_sell, escrow_approve, escrow_dispute, escrow_release, escrow_transfer, transfer } = require('./dex')
 const { comment, comment_options } = require('./comment')
+const { report } = require('./report')
 
 module.exports = {
     cert,
@@ -33,6 +34,7 @@ module.exports = {
     power_down,
     power_up,
     q4d,
+    report,
     send,
     sig,
     transfer,
