@@ -24,7 +24,7 @@ exports.tally = (num, plasma, isStreaming) => new Promise((resolve, reject) => {
                     rbal = v[3],
                     rcol = v[4],
                     rpow = v[5],
-                    queue = [],
+                    queue = {},
                     tally = {
                         agreements: {
                             hashes: {},
@@ -53,7 +53,7 @@ exports.tally = (num, plasma, isStreaming) => new Promise((resolve, reject) => {
                         }
                 }
                 for (hash in tally.agreements.hashes) {
-                    if (tally.agreements.tally[tally.agreements.hashes[hash]] > (tally.agreements.votes / 2)) {
+                    if (tally.agreements.tally[tally.agreements.hashes[hash]] > (tally.agreements.votes / 3)) {
                         consensus = tally.agreements.hashes[hash]
                         break;
                     }
@@ -75,7 +75,7 @@ exports.tally = (num, plasma, isStreaming) => new Promise((resolve, reject) => {
                             }
                         }
                     }
-                    for (node in runners) {
+                    for (node in new_queue) {
                         if (new_queue[node].t >= 0) {
                             still_running[node] = new_queue[node]
                         } else {
