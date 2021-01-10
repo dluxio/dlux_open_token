@@ -58,7 +58,6 @@ exports.tally = (num, plasma, isStreaming) => new Promise((resolve, reject) => {
                         break;
                     }
                 }
-                console.log(tally)
                 let still_running = {}
                 let election = {}
                 let new_queue = {}
@@ -76,7 +75,7 @@ exports.tally = (num, plasma, isStreaming) => new Promise((resolve, reject) => {
                         }
                     }
                     for (node in new_queue) {
-                        if (new_queue[node].t >= 0) {
+                        if (new_queue[node].p >= runners[node].p) {
                             still_running[node] = new_queue[node]
                         } else {
                             election[node] = new_queue[node]
@@ -134,12 +133,11 @@ exports.tally = (num, plasma, isStreaming) => new Promise((resolve, reject) => {
                 rbal.ra += mint;
                 let ops = [
                     { type: 'put', path: ['stats'], data: stats },
-                    { type: 'put', path: ['queue'], data: new_queue },
                     { type: 'put', path: ['runners'], data: still_running },
                     { type: 'put', path: ['markets', 'node'], data: nodes },
                     { type: 'put', path: ['balances', 'ra'], data: rbal.ra }
                 ]
-                console.log(ops)
+                if (Object.keys(new_queue)) ops.push({ type: 'put', path: ['queue'], data: new_queue })
                 store.batch(ops, [resolve, reject, newPlasma]);
                 if (consensus && (consensus != plasma.hashLastIBlock || consensus != nodes[config.username].report.hash) && isStreaming) { //this doesn't seem to be catching failures
                     exit(consensus);
