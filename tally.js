@@ -9,8 +9,10 @@ exports.tally = (num, plasma, isStreaming) => new Promise((resolve, reject) => {
     var Prunners = getPathObj(['runners']),
         Pnode = getPathObj(['markets', 'node']),
         Pstats = getPathObj(['stats']),
-        Prb = getPathNum(['balances', 'ra']);
-    Promise.all([Prunners, Pnode, Pstats, Prb]).then(function(v) {
+        Prb = getPathObj(['balances']),
+        Prcol = getPathObj(['col']),
+        Prpow = getPathObj(['pow'])
+    Promise.all([Prunners, Pnode, Pstats, Prb, Prcol, Prpow]).then(function(v) {
         deleteObjs([
                 ['runners'],
                 ['queue']
@@ -20,135 +22,129 @@ exports.tally = (num, plasma, isStreaming) => new Promise((resolve, reject) => {
                     nodes = v[1],
                     stats = v[2],
                     rbal = v[3],
+                    rcol = v[4],
+                    rpow = v[5],
                     queue = [],
                     tally = {
                         agreements: {
+                            hashes: {},
                             runners: {},
                             tally: {},
                             votes: 0
-                        },
-                        election: {},
-                        winner: {},
-                        results: []
-                    };
-                for (var node in runners) {
-                    tally.agreements.runners[node] = nodes[node];
-                    var getHash;
-                    try { getHash = nodes[node].report.hash; } catch (e) {}
-                    tally.agreements.tally[node] = {
-                        self: node,
-                        hash: getHash,
-                        votes: 0
-                    }; //build a dataset to count
+                        }
+                    },
+                    consensus = undefined
+                for (node in nodes) {
+                    var hash = '',
+                        when = 0,
+                        online = 0
+                    try { hash = nodes[node].report.hash } catch {}
+                    try { when = nodes[node].report.block_num } catch {}
+                    try { online = hash && nodes[node].escrow } catch {}
+                    if (when > (num - 50) && hash && online) {
+                        tally.agreements.hashes[node] = hash
+                        tally.agreements.tally[hash] = 0
+                    } //recent and signing
                 }
-                for (var node in tally.agreements.runners) {
-                    var agreements;
-                    try { agreements = tally.agreements.runners[node].report.agreements; } catch (e) {}
-                    for (var subnode in agreements) {
-                        if (tally.agreements.tally[subnode]) {
-                            if (tally.agreements.tally[subnode].hash == tally.agreements.tally[node].hash && nodes[node].report.block === num - 99) {
-                                tally.agreements.tally[subnode].votes++;
+                console.log(tally.agreements)
+                console.log(runners)
+                for (runner in runners) {
+                    console.log(runner)
+                    tally.agreements.votes++
+                        if (tally.agreements.hashes[runner]) {
+                            tally.agreements.tally[tally.agreements.hashes[runner]]++
+                        }
+                }
+                console.log(runners)
+                for (hash in tally.agreements.hashes) {
+                    if (tally.agreements.tally[hash] > (tally.agreements.votes / 2)) {
+                        consensus = hash
+                        break;
+                    }
+                }
+                console.log(tally.agreements.hashes)
+                let still_running = {}
+                let election = {}
+                let new_queue = {}
+                console.log(consensus)
+                if (consensus) {
+                    stats.hashLastIBlock = consensus;
+                    for (node in tally.agreements.hashes) {
+                        if (tally.agreements.hashes[node] == consensus) {
+                            new_queue[node] = {
+                                t: (rbal[node] || 0) + (rcol[node] || 0) + (rpow[node] || 0),
+                                l: rbal[node] || 0,
+                                c: rcol[node] || 0,
+                                p: rpow[node] || 0
                             }
                         }
                     }
-                    tally.agreements.votes++;
-                }
-                var l = 0;
-                var consensus, firstCatch, first = [];
-                for (var node in runners) {
-                    l++;
-                    var forblock = 0;
-                    try {
-                        forblock = nodes[node].report.block;
-                    } catch (e) {}
-                    if (tally.agreements.tally[node].votes / tally.agreements.votes >= 2 / 3) {
-                        consensus = tally.agreements.runners[node].report.hash;
-                        if (firstCatch) {
-                            firstCatch();
-                            firstCatch = null;
-                        }
-                    } else if (l > 1) {
-                        if (first.length && tally.agreements.runners[node].report.hash == tally.agreements.runners[first[0]].report.hash) {
-                            first.push(node);
-                            console.log(node + ' also scheduled for removal');
+                    for (node in runners) {
+                        if (new_queue[node] >= 0) {
+                            still_running[node] = new_queue[node]
                         } else {
-                            remove(node);
-                            console.log('uh-oh:' + node + ' scored ' + tally.agreements.tally[node].votes + '/' + tally.agreements.votes);
+                            election[node] = new_queue[node]
                         }
-                    } else if (l == 1) {
-                        if (nodes[node].report.block === num - 99)
-                            consensus = nodes[node].report.hash;
-                        console.log('old-consensus catch scheduled for removal upon consensus: ' + node);
-                        first = [node];
-                        firstCatch = () => { for (i in first) { remove(first[i]); } };
                     }
-
-                    function remove(node) { delete runners[node]; }
-                }
-                console.log('Consensus: ' + consensus);
-                let newPlasma = {
-                    consensus
-                };
-                stats.lastBlock = stats.hashLastIBlock;
-                if (consensus)
-                    stats.hashLastIBlock = consensus;
-                for (var node in nodes) {
-                    nodes[node].attempts++;
-                    var getHash;
-                    try { getHash = nodes[node].report.hash; } catch (e) {}
-                    if (getHash == stats.hashLastIBlock) {
-                        nodes[node].yays++;
-                        nodes[node].lastGood = num;
+                    if (Object.keys(still_running).length < 25) {
+                        let winner = {
+                            node: '',
+                            t: 0
+                        }
+                        for (node in election) {
+                            if (election[node].t > winner.t) {
+                                winner.node = node
+                                winner.t = election[node].t
+                            }
+                        }
+                        if (winner.node) {
+                            still_running[winner.node] = new_queue[node]
+                        }
                     }
-                }
-                if (l < 20) {
+                    console.log('Consensus: ' + consensus)
+                    let MultiSigCollateral = 0
+                    for (node in still_running) {
+                        MultiSigCollateral += still_running[node].t
+                    }
+                    stats.MultiSigCollateral = MultiSigCollateral
+                    stats.lastBlock = stats.hashLastIBlock;
+                    if (consensus)
+                        stats.hashLastIBlock = consensus;
                     for (var node in nodes) {
-                        tally.election[node] = nodes[node];
-                    }
-                    tally.results = [];
-                    for (var node in runners) {
-                        queue.push(node);
-                        delete tally.election[node];
-                    }
-                    for (var node in tally.election) {
                         var getHash;
+                        if (nodes[node].report.block_num > num - 50) {
+                            nodes[node].attempts++;
+                        }
                         try { getHash = nodes[node].report.hash; } catch (e) {}
-                        if (getHash !== stats.hashLastIBlock && stats.hashLastIBlock) {
-                            delete tally.election[node];
+                        if (getHash == stats.hashLastIBlock) {
+                            nodes[node].yays++;
+                            nodes[node].lastGood = num;
                         }
                     }
-                    var t = 0;
-                    for (var node in tally.election) {
-                        t++;
-                        tally.results.push([node, parseInt(((tally.election[node].yays / tally.election[node].attempts) * tally.election[node].attempts))]);
+                    for (var node in still_running) {
+                        nodes[node].wins++;
                     }
-                    if (t) {
-                        tally.results.sort(function(a, b) {
-                            return a[1] - b[1];
-                        });
-                        for (p = 0; p < tally.results.length; p++) {
-                            queue.push(tally.results[p][0]);
-                        }
-                        tally.winner = tally.results.pop();
-                        runners[tally.winner[0]] = {
-                            self: nodes[tally.winner[0]].self,
-                            domain: nodes[tally.winner[0]].domain
-                        };
-                    }
+                } else {
+                    new_queue = queue
+                    still_running = runners
                 }
-                for (var node in runners) {
-                    nodes[node].wins++;
-                }
+                let newPlasma = {
+                    consensus: consensus || 0,
+                    new_queue,
+                    still_running,
+                    stats
+                };
                 const mint = parseInt(stats.tokenSupply / stats.interestRate);
                 stats.tokenSupply += mint;
-                rbal += mint;
-                store.batch([
+                rbal.ra += mint;
+                let ops = [
                     { type: 'put', path: ['stats'], data: stats },
-                    { type: 'put', path: ['queue'], data: queue },
-                    { type: 'put', path: ['runners'], data: runners },
+                    { type: 'put', path: ['queue'], data: new_queue },
+                    { type: 'put', path: ['runners'], data: still_running },
                     { type: 'put', path: ['markets', 'node'], data: nodes },
-                    { type: 'put', path: ['balances', 'ra'], data: rbal }
-                ], [resolve, reject, newPlasma]);
+                    { type: 'put', path: ['balances', 'ra'], data: rbal.ra }
+                ]
+                store.batch(ops, [resolve, reject, newPlasma]);
                 if (consensus && (consensus != plasma.hashLastIBlock || consensus != nodes[config.username].report.hash) && isStreaming) { //this doesn't seem to be catching failures
                     exit(consensus);
                     var errors = ['failed Consensus'];

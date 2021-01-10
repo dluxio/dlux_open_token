@@ -18,7 +18,7 @@ exports.send = (json, from, active, pc) => {
             } else {
                 ops.push({ type: 'put', path: ['feed', `${json.block_num}:${json.transaction_id}`], data: `@${from}| Invalid send operation` });
             }
-            pc[2] = ops
+            if (process.env.npm_lifecycle_event == 'test') pc[2] = ops
             store.batch(ops, pc);
         })
         .catch(e => { console.log(e); });

@@ -104,7 +104,7 @@ module.exports = function(client, steem, currentBlockNumber = 1, blockComputeSpe
                     } else {
                         onNewBlock(num, v)
                             .then(r => {
-                                pc[0]()
+                                pc[0](pc[2])
                             })
                             .catch(e => { console.log(e) })
                     }
@@ -114,7 +114,7 @@ module.exports = function(client, steem, currentBlockNumber = 1, blockComputeSpe
                     pc[1](e)
                 })
         } else {
-            onNewBlock(num, pc, isStreaming)
+            onNewBlock(num, pc)
                 .then(r => {
                     r[0]()
                 })

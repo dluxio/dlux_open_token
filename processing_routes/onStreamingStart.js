@@ -1,5 +1,5 @@
 const config = require('./../config')
-const { store } = require("./../index");
+const { store, unshiftOp } = require("./../index");
 
 exports.onStreamingStart = () => {
     console.log("At real time.");
@@ -15,9 +15,10 @@ exports.onStreamingStart = () => {
                     escrow: true
                 })
             }];
-            unshift([
+            unshiftOp([
                 [0, 0], op
             ]);
+            return op
         }
     });
 }

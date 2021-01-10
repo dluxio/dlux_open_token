@@ -31,7 +31,7 @@ module.exports = {
                 "domain": "localhost",
                 "escrow": true,
                 "escrows": 0,
-                "lastGood": 49994100, //genesisblock
+                "lastGood": 1, //genesisblock
                 "marketingRate": 0,
                 "self": "leader",
                 "wins": 0,
