@@ -11,8 +11,9 @@ exports.tally = (num, plasma, isStreaming) => new Promise((resolve, reject) => {
         Pstats = getPathObj(['stats']),
         Prb = getPathObj(['balances']),
         Prcol = getPathObj(['col']),
-        Prpow = getPathObj(['pow'])
-    Promise.all([Prunners, Pnode, Pstats, Prb, Prcol, Prpow]).then(function(v) {
+        Prpow = getPathObj(['pow']),
+        Prqueue = getPathObj(['queue'])
+    Promise.all([Prunners, Pnode, Pstats, Prb, Prcol, Prpow, Prqueue]).then(function(v) {
         deleteObjs([
                 ['runners'],
                 ['queue']
@@ -118,7 +119,7 @@ exports.tally = (num, plasma, isStreaming) => new Promise((resolve, reject) => {
                         nodes[node].wins++;
                     }
                 } else {
-                    new_queue = queue
+                    new_queue = v[6]
                     still_running = runners
                 }
                 let newPlasma = {
