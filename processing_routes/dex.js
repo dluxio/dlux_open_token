@@ -128,12 +128,13 @@ exports.dex_hive_sell = (json, from, active, pc) => {
     Promise.all([PfromBal, PhiveVWMA]).then(a => {
         let b = a[0],
             hiveVWMA = a[1],
-            rate = parseFloat((buyAmount) / (json[config.jsonTokenName])).toFixed(6)
+            ops = []
+        rate = parseFloat((buyAmount) / parseInt(json[config.jsonTokenName])).toFixed(6)
         let hours = parseInt(json.hours) || 1
         if (hours > 120) { hours = 120 }
         const expBlock = json.block_num + (hours * 1200)
         if (json[config.jsonTokenName] <= b && typeof buyAmount == 'number' && allowedPrice(hiveVWMA.rate, rate) && active) {
-            var txid = config.TOKEN + hashThis(from + json.block_num)
+            var txid = config.TOKEN + hashThis(from + json.transaction_id)
             const contract = {
                 txid,
                 type: 'ss',
@@ -154,16 +155,20 @@ exports.dex_hive_sell = (json, from, active, pc) => {
             Promise.all([path])
                 .then((r) => {
                     contract.expire_path = r[0]
-                    store.batch([
+                    ops = [
                         { type: 'put', path: ['dex', 'hive', 'sellOrders', `${contract.rate}:${contract.txid}`], data: contract },
                         { type: 'put', path: ['balances', from], data: b - contract.amount },
                         { type: 'put', path: ['contracts', from, contract.txid], data: contract },
                         { type: 'put', path: ['feed', `${json.block_num}:${json.transaction_id}`], data: `@${from}| has placed order ${txid} to sell ${parseFloat(json[config.jsonTokenName] / 1000).toFixed(3)} for ${parseFloat(json.hive / 1000).toFixed(3)} HIVE` }
-                    ], pc)
+                    ]
+                    if (process.env.npm_lifecycle_event == 'test') pc[2] = ops
+                    store.batch(ops, pc)
                 })
                 .catch((e) => console.log(e))
         } else {
-            store.batch([{ type: 'put', path: ['feed', `${json.block_num}:${json.transaction_id}`], data: `@${from}| tried to place an order to sell ${parseFloat(json[config.jsonTokenName] / 1000).toFixed(3)} for ${parseFloat(json.hive / 1000).toFixed(3)} HIVE` }], pc)
+            ops = [{ type: 'put', path: ['feed', `${json.block_num}:${json.transaction_id}`], data: `@${from}| tried to place an order to sell ${parseFloat(json[config.jsonTokenName] / 1000).toFixed(3)} for ${parseFloat(json.hive / 1000).toFixed(3)} HIVE` }]
+            if (process.env.npm_lifecycle_event == 'test') pc[2] = ops
+            store.batch(ops, pc)
         }
     }).catch(e => {
         console.log(e)
@@ -174,7 +179,7 @@ exports.dex_hive_sell = (json, from, active, pc) => {
 exports.dex_hbd_sell = (json, from, active, pc) => {
     let buyAmount = parseInt(json.hbd),
         PfromBal = getPathNum(['balances', from]),
-        PhbdHis = getPathObj(['dex', 'HbdVWMA'])
+        PhbdHis = getPathObj(['stats', 'HbdVWMA'])
     Promise.all([PfromBal, PhbdHis]).then(a => {
             let b = a[0],
                 hbdVWMA = a[1],
@@ -183,7 +188,7 @@ exports.dex_hbd_sell = (json, from, active, pc) => {
             if (hours > 120) { hours = 120 }
             const expBlock = json.block_num + (hours * 1200)
             if (json[config.jsonTokenName] <= b && typeof buyAmount == 'number' && allowedPrice(hbdVWMA.rate, rate) && active) {
-                var txid = config.TOKEN + hashThis(from + json.block_num)
+                var txid = config.TOKEN + hashThis(from + json.transaction_id)
                 const contract = {
                     txid,
                     type: 'ds',
@@ -204,16 +209,20 @@ exports.dex_hbd_sell = (json, from, active, pc) => {
                 Promise.all([path])
                     .then((r) => {
                         contract.expire_path = r[0]
-                        store.batch([
+                        let ops = [
                             { type: 'put', path: ['dex', 'hbd', 'sellOrders', `${contract.rate}:${contract.txid}`], data: contract },
                             { type: 'put', path: ['balances', from], data: b - contract.amount },
                             { type: 'put', path: ['contracts', from, contract.txid], data: contract },
                             { type: 'put', path: ['feed', `${json.block_num}:${json.transaction_id}`], data: `@${from}| has placed order ${txid} to sell ${parseFloat(json[config.jsonTokenName] / 1000).toFixed(3)} for ${parseFloat(json.hbd / 1000).toFixed(3)} HBD` }
-                        ], pc)
+                        ]
+                        if (process.env.npm_lifecycle_event == 'test') pc[2] = ops
+                        store.batch(ops, pc)
                     })
                     .catch((e) => console.log(e))
             } else {
-                store.batch([{ type: 'put', path: ['feed', `${json.block_num}:${json.transaction_id}`], data: `@${from}| tried to place an order to sell ${parseFloat(json[config.jsonTokenName] / 1000).toFixed(3)} for ${parseFloat(json.hbd / 1000).toFixed(3)} HBD` }], pc)
+                let ops = [{ type: 'put', path: ['feed', `${json.block_num}:${json.transaction_id}`], data: `@${from}| tried to place an order to sell ${parseFloat(json[config.jsonTokenName] / 1000).toFixed(3)} for ${parseFloat(json.hbd / 1000).toFixed(3)} HBD` }]
+                if (process.env.npm_lifecycle_event == 'test') pc[2] = ops
+                store.batch(ops, pc)
             }
         })
         .catch(e => {
@@ -904,7 +913,7 @@ exports.escrow_transfer = (json, pc) => {
             }
         } else if (toBal > (dextxamount * 2) && agentBal > (dextxamount * 2) && typeof dextxamount === 'number' && dextxamount > 0 && isAgent && isDAgent && btime) {
             console.log(4)
-            var txid = config.TOKEN + hashThis(`${json.from}${json.block_num}`),
+            var txid = config.TOKEN + hashThis(`${json.from}${json.transaction_id}`),
                 rate = parseFloat(parseInt(parseFloat(json.hive_amount) * 1000) / dextx[config.jsonTokenName]).toFixed(6),
                 allowed = false
             if (!parseFloat(rate)) {

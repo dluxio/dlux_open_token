@@ -39,9 +39,9 @@ exports.tally = (num, plasma, isStreaming) => new Promise((resolve, reject) => {
                     var hash = '',
                         when = 0,
                         online = 0
-                    try { hash = nodes[node].report.hash } catch {}
-                    try { when = nodes[node].report.block_num } catch {}
-                    try { online = hash && nodes[node].escrow } catch {}
+                    try { hash = nodes[node].report.hash } catch (e) { console.log(node) }
+                    try { when = nodes[node].report.block_num } catch { console.log(node) }
+                    try { online = hash && nodes[node].escrow } catch { console.log(node) }
                     if (when > (num - 50) && hash && online) {
                         tally.agreements.hashes[node] = hash
                         tally.agreements.tally[hash] = 0
@@ -138,9 +138,8 @@ exports.tally = (num, plasma, isStreaming) => new Promise((resolve, reject) => {
                     { type: 'put', path: ['balances', 'ra'], data: rbal.ra }
                 ]
                 if (Object.keys(new_queue).length) ops.push({ type: 'put', path: ['queue'], data: new_queue })
-                console.log(ops)
                 store.batch(ops, [resolve, reject, newPlasma]);
-                if (consensus && (consensus != plasma.hashLastIBlock || consensus != nodes[config.username].report.hash) && isStreaming) { //this doesn't seem to be catching failures
+                if (consensus && (consensus != plasma.hashLastIBlock || consensus != nodes[config.username].report.hash) && isStreaming) {
                     exit(consensus);
                     //var errors = ['failed Consensus'];
                     //const blockState = Buffer.from(JSON.stringify([num, state]))

@@ -54,12 +54,12 @@ module.exports = {
     },
     "stats": {
         "HbdVWMA": {
-            "block": 49747169,
-            "rate": "0.12500", //set this at ICO price
+            "block": 1,
+            "rate": "0.100000", //set this at ICO price
             "vol": 1000
         },
         "HiveVWMA": {
-            "block": 49936405,
+            "block": 1,
             "rate": "0.100000", //set this at ICO price
             "vol": 1470
         },

@@ -178,9 +178,9 @@ function dao(num) {
                                     var left = bals.ri;
                                     stats.tokenSupply += 100000000 - left;
                                     bals.ri = 100000000;
-                                    stats.icoPrice = stats.icoPrice - (left / 1000000000);
-                                    if (stats.icoPrice < 220)
-                                        stats.icoPrice = 220;
+                                    stats.icoPrice = stats.icoPrice - (left / 1000000000); //10% max decrease
+                                    if (stats.icoPrice < 1000)
+                                        stats.icoPrice = 1000;
                                     post = post + `### We Sold out ${100000000 - left} today.\nThere are now ${parseFloat(bals.ri / 1000).toFixed(3)} ${config.TOKEN} for sale from @${config.mainICO} for ${parseFloat(stats.icoPrice / 1000).toFixed(3)} HIVE each.\n`;
                                 }
                             } else {
