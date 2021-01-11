@@ -66,12 +66,12 @@ exports.node_add = function(json, from, active, pc) {
             } else {
                 console.log(e)
             }
-            pc[2] = ops
+            if (process.env.npm_lifecycle_event == 'test') pc[2] = ops
             store.batch(ops, pc)
         })
     } else {
         ops = [{ type: 'put', path: ['feed', `${json.block_num}:${json.transaction_id}`], data: `@${from}| sent and invalid node add operation` }]
-        pc[2] = ops
+        if (process.env.npm_lifecycle_event == 'test') pc[2] = ops
         store.batch(ops, pc)
     }
 }

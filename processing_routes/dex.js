@@ -495,6 +495,7 @@ exports.escrow_release = (json, pc) => {
 }
 
 exports.transfer = (json, pc) => {
+    console.log('here ?')
     store.get(['escrow', json.from, json.memo.split(' ')[0] + ':transfer'], function(e, a) {
         var ops = []
         if (!e && !isEmpty(a)) {

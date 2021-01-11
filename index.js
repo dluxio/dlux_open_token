@@ -145,6 +145,7 @@ function startApp() {
     //do things in cycles based on block time
     processor.onBlock(
         function(num, pc) {
+            console.log(num)
             return new Promise((resolve, reject) => {
                 //store.batch([{ type: 'put', path: ['stats', 'realtime'], data: num }], )
                 store.someChildren(['chrono'], {
