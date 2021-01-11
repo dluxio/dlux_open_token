@@ -139,13 +139,15 @@ exports.tally = (num, plasma, isStreaming) => new Promise((resolve, reject) => {
                 ]
                 if (Object.keys(new_queue).length) ops.push({ type: 'put', path: ['queue'], data: new_queue })
                 store.batch(ops, [resolve, reject, newPlasma]);
-                if (consensus && (consensus != plasma.hashLastIBlock || consensus != nodes[config.username].report.hash) && isStreaming) {
-                    exit(consensus);
-                    //var errors = ['failed Consensus'];
-                    //const blockState = Buffer.from(JSON.stringify([num, state]))
-                    //plasma.hashBlock = '';
-                    //plasma.hashLastIBlock = '';
-                    console.log(num + `:Abandoning ${plasma.hashLastIBlock} because ${errors[0]}`);
+                if (process.env.npm_lifecycle_event != 'test') {
+                    if (consensus && (consensus != plasma.hashLastIBlock || consensus != nodes[config.username].report.hash) && isStreaming) {
+                        exit(consensus);
+                        //var errors = ['failed Consensus'];
+                        //const blockState = Buffer.from(JSON.stringify([num, state]))
+                        //plasma.hashBlock = '';
+                        //plasma.hashLastIBlock = '';
+                        console.log(num + `:Abandoning ${plasma.hashLastIBlock} because ${errors[0]}`);
+                    }
                 }
             })
             .catch(e => { console.log(e); });

@@ -21,7 +21,6 @@ exports.dex_buy = (json, from, active, pc) => {
                 type = 'hbd'
             if (found.auths)
                 agent = found.auths[0][1][1].to
-            console.log({ bal, found, agent, from })
             if (found.amount && active && bal >= found.amount) {
                 var PbalTo = getPathNum(['balances', agent]),
                     PbalFor = getPathNum(['balances', found.from]),
@@ -96,7 +95,7 @@ exports.dex_buy = (json, from, active, pc) => {
                             lil_ops.push(chronAssign(json.block_num + 200, { op: 'check', agent: found.auths[0][0], txid: found.txid + ':dispute', acc: found.from, id: found.escrow_id.toString() }))
                             Promise.all(lil_ops)
                                 .then(empty => {
-                                    store.batch([
+                                    ops = [
                                         ops[0],
                                         { type: 'put', path: ['contracts', json.for, json.contract.split(':')[1]], data: found },
                                         { type: 'put', path: ['escrow', found.auths[0][0], found.txid + ':dispute'], data: found.auths[0][1] },
@@ -108,12 +107,14 @@ exports.dex_buy = (json, from, active, pc) => {
                                         { type: 'put', path: ['dex', type, 'tick'], data: json.contract.split(':')[0] },
                                         { type: 'put', path: ['dex', type, 'his', `${hisE.block}:${json.contract.split(':')[1]}`], data: hisE },
                                         { type: 'del', path: ['dex', type, 'buyOrders', `${json.contract}`] }
-                                    ], pc)
+                                    ]
+                                    if (process.env.npm_lifecycle_event == 'test') pc[2] = ops
+                                    store.batch(ops, pc)
                                 })
                                 .catch(e => { console.log(e) })
                         } else {
                             ops.push({ type: 'put', path: ['feed', `${json.block_num}:${json.transaction_id}`], data: `@${from}| has insuficient liquidity to purchase ${found.txid}` })
-                            console.log(ops)
+                            if (process.env.npm_lifecycle_event == 'test') pc[2] = ops
                             store.batch(ops, pc)
                         }
                     })
@@ -269,6 +270,7 @@ exports.escrow_approve = (json, pc) => {
                                     lil_ops.push(credit(json.who))
                                     Promise.all(lil_ops)
                                         .then(empty => {
+                                            if (process.env.npm_lifecycle_event == 'test') pc[2] = ops
                                             store.batch(dataOps, pc)
                                         })
                                         .catch(e => { console.log(e) })
@@ -300,6 +302,7 @@ exports.escrow_approve = (json, pc) => {
                                     lil_ops.push(credit(json.who))
                                     Promise.all(lil_ops)
                                         .then(empty => {
+                                            if (process.env.npm_lifecycle_event == 'test') pc[2] = dataOps
                                             store.batch(dataOps, pc)
                                         })
                                         .catch(e => { console.log(e) })
@@ -333,6 +336,7 @@ exports.escrow_approve = (json, pc) => {
                         lil_ops.push(credit(json.who))
                         Promise.all(lil_ops)
                             .then(empty => {
+                                if (process.env.npm_lifecycle_event == 'test') pc[2] = dataOps
                                 store.batch(dataOps, pc)
                             })
                             .catch(e => { console.log(e) })
@@ -363,6 +367,7 @@ exports.escrow_approve = (json, pc) => {
                         lil_ops.push(credit(json.who))
                         Promise.all(lil_ops)
                             .then(empty => {
+                                if (process.env.npm_lifecycle_event == 'test') pc[2] = dataOps
                                 store.batch(dataOps, pc)
                             })
                             .catch(e => { console.log(e) })
@@ -375,6 +380,7 @@ exports.escrow_approve = (json, pc) => {
                         lil_ops.push(credit(json.who))
                         Promise.all(lil_ops)
                             .then(empty => {
+                                if (process.env.npm_lifecycle_event == 'test') pc[2] = dataOps
                                 store.batch(dataOps, pc)
                             })
                             .catch(e => { console.log(e) })
@@ -387,6 +393,7 @@ exports.escrow_approve = (json, pc) => {
                         lil_ops.push(credit(json.who))
                         Promise.all(lil_ops)
                             .then(empty => {
+                                if (process.env.npm_lifecycle_event == 'test') pc[2] = dataOps
                                 store.batch(dataOps, pc)
                             })
                             .catch(e => { console.log(e) })
@@ -415,12 +422,14 @@ exports.escrow_dispute = (json, pc) => {
                         ]
                         Promise.all(lil_ops)
                             .then(empty => {
-                                store.batch([
+                                ops = [
                                     { type: 'put', path: ['escrow', c.auths[1][0], c.txid + ':release'], data: c.auths[1][1] },
                                     { type: 'put', path: ['contracts', a.for, a.contract], data: c },
                                     { type: 'put', path: ['feed', `${json.block_num}:${json.transaction_id}`], data: `@${json.who}| authorized ${json.agent} for ${c.txid}` },
                                     { type: 'del', path: ['escrow', json.who, c.txid + `:dispute`] }
-                                ], pc)
+                                ]
+                                if (process.env.npm_lifecycle_event == 'test') pc[2] = ops
+                                store.batch(ops, pc)
                             })
                             .catch(e => { console.log(e) })
                     }
@@ -445,12 +454,14 @@ exports.escrow_release = (json, pc) => {
                         ]
                         Promise.all(lil_ops)
                             .then(empty => {
-                                store.batch([
+                                ops = [
                                     { type: 'put', path: ['escrow', c.auths[2][0], c.txid + ':transfer'], data: c.auths[2][1] },
                                     { type: 'put', path: ['contracts', a.for, a.contract], data: c },
                                     { type: 'put', path: ['feed', `${json.block_num}:${json.transaction_id}`], data: `@${json.who}| released funds for @${json.to} for ${c.txid}` },
                                     { type: 'del', path: ['escrow', json.who, c.txid + `:release`] }
-                                ], pc)
+                                ]
+                                if (process.env.npm_lifecycle_event == 'test') pc[2] = ops
+                                store.batch(ops, pc)
                             })
                             .catch(e => { console.log(e) })
                     } else if (c.cancel && json.receiver == c.from) {
@@ -464,12 +475,14 @@ exports.escrow_release = (json, pc) => {
                         ]
                         Promise.all(lil_ops)
                             .then(empty => {
-                                store.batch([
+                                let ops = [
                                     { type: 'del', path: ['contracts', a.for, a.contract], data: c },
                                     { type: 'put', path: ['feed', `${json.block_num}:${json.transaction_id}`], data: `@${json.from}| canceled ${c.txid}` },
                                     { type: 'del', path: ['chrono', c.expire_path] },
                                     { type: 'del', path: ['escrow', json.who, c.txid + `:cancel`] }
-                                ], pc)
+                                ]
+                                if (process.env.npm_lifecycle_event == 'test') pc[2] = ops
+                                store.batch(ops, pc)
                             })
                             .catch(e => { console.log(e) })
                     } else {
@@ -534,8 +547,8 @@ exports.transfer = (json, pc) => {
                                 }
                             }
                         }
-                        console.log(ops)
                         Promise.all(lil_ops).then(empty => {
+                                if (process.env.npm_lifecycle_event == 'test') pc[2] = ops
                                 store.batch(ops, pc)
                             })
                             .catch(e => { reject(e) })
@@ -562,28 +575,34 @@ exports.transfer = (json, pc) => {
                 if (purchase < i) {
                     i -= purchase
                     b += purchase
-                    store.batch([{ type: 'put', path: ['feed', `${json.block_num}:${json.transaction_id}`], data: `@${json.from}| bought ${parseFloat(purchase / 1000).toFixed(3)} ${config.TOKEN} with ${parseFloat(amount / 1000).toFixed(3)} HIVE` },
+                    ops = [{ type: 'put', path: ['feed', `${json.block_num}:${json.transaction_id}`], data: `@${json.from}| bought ${parseFloat(purchase / 1000).toFixed(3)} ${config.TOKEN} with ${parseFloat(amount / 1000).toFixed(3)} HIVE` },
                         { type: 'put', path: ['balances', json.from], data: b },
                         { type: 'put', path: ['balances', 'ri'], data: i }
-                    ], pc)
+                    ]
+                    if (process.env.npm_lifecycle_event == 'test') pc[2] = ops
+                    store.batch(ops, pc)
 
                 } else {
                     b += i
                     const left = purchase - i
                     stats.outOnBlock = json.block_num
-                    store.batch([
+                    ops = [
                         { type: 'put', path: ['ico', `${json.block_num}`, json.from], data: parseInt(amount * left / purchase) },
                         { type: 'put', path: ['balances', json.from], data: b },
                         { type: 'put', path: ['balances', 'ri'], data: 0 },
                         { type: 'put', path: ['stats'], data: stats },
                         { type: 'put', path: ['feed', `${json.block_num}:${json.transaction_id}`], data: `@${json.from}| bought ALL ${parseFloat(parseInt(purchase - left)).toFixed(3)} ${config.TOKEN} with ${parseFloat(parseInt(amount) / 1000).toFixed(3)} HIVE. And bid in the over-auction` }
-                    ], pc)
+                    ]
+                    if (process.env.npm_lifecycle_event == 'test') pc[2] = ops
+                    store.batch(ops, pc)
                 }
             } else {
-                store.batch([
+                ops = [
                     { type: 'put', path: ['ico', `${json.block_num}`, json.from], data: parseInt(amount) },
                     { type: 'put', path: ['feed', `${json.block_num}:${json.transaction_id}`], data: `@${json.from}| bought ALL ${parseFloat(parseInt(purchase - left)).toFixed(3)} ${config.TOKEN} with ${parseFloat(parseInt(amount) / 1000).toFixed(3)} HIVE. And bid in the over-auction` }
-                ], pc)
+                ]
+                if (process.env.npm_lifecycle_event == 'test') pc[2] = ops
+                store.batch(ops, pc)
             }
         })
     } else {
@@ -662,17 +681,14 @@ exports.escrow_transfer = (json, pc) => {
         seller = JSON.parse(json.json_meta).for
     } catch (e) {}
     const now = Date.parse(json.timestamp) //this needs to be based on the time in the signed block... or replays will fail
-
-    //const until = now.setHours(now.getHours())
+        //const until = now.setHours(now.getHours())
     const check = Date.parse(json.ratification_deadline)
     const eexp = Date.parse(json.escrow_expiration)
     const timer = eexp - now
-    console.log(eexp, now)
     let etime = false
     let btime = false
     if (timer > 518400000) { etime = true } //6 days 
     if (timer > 20000000) { btime = true } //6 hours
-    console.log(timer, etime, btime)
     let PfromBal = getPathNum(['balances', json.from]),
         PtoBal = getPathNum(['balances', json.to]),
         PagentBal = getPathNum(['balances', json.agent]),
@@ -684,7 +700,6 @@ exports.escrow_transfer = (json, pc) => {
         Phivevwma = getPathObj(['stats', 'HiveVWMA']),
         Phbdvwma = getPathObj(['stats', 'HbdVWMA'])
     Promise.all([PfromBal, PtoBal, PtoNode, PagentNode, Pcontract, Phbdvwma, Phivevwma, PagentBal, PtoCol, PagentCol]).then(function(v) {
-        console.log(v)
         var fromBal = v[0],
             toBal = v[1],
             toNode = v[2],
@@ -697,24 +712,20 @@ exports.escrow_transfer = (json, pc) => {
             agentCol = v[9]
         isAgent = (toNode.lastGood > json.block_num - 100)
         isDAgent = (agentNode.lastGood > json.block_num - 100)
-
         buy = contract.amount
-        console.log(buy, isAgent, isDAgent)
+            //console.log(typeof buy === 'number', parseInt(json.hive_amount) / 1000 == buy, contract.type == 'ss', parseInt(json.hbd_amount) * 1000 == buy, contract.type == 'ds', isAgent, isDAgent, btime)
         if (typeof buy === 'number' && isAgent && isDAgent && btime) { //{txid, from: from, buying: buyAmount, amount: json[config.jsonTokenName], [json[config.jsonTokenName]]:buyAmount, rate:parseFloat((json[config.jsonTokenName])/(buyAmount)).toFixed(6), block:current, partial: json.partial || true
-            console.log(contract.hive, parseInt(parseFloat(json.hive_amount) * 1000), contract.hbd, contract.hbd, parseInt(parseFloat(json.hbd_amount) * 1000), check)
             if (contract.hive == parseInt(parseFloat(json.hive_amount) * 1000) && contract.hbd == parseInt(parseFloat(json.hbd_amount) * 1000) && btime) {
-                console.log(1)
                 if (contract.hbd) { type = 'hbd' }
                 getPathObj(['dex', type, 'sellOrders'])
                     .then(Book => {
-                        let highest = 0
+                        let lowest = 999999999
                         for (i in Book) {
-                            if (parseFloat(i.split(":")[0]) > highest) {
-                                highest = parseFloat(i.split(":")[0])
+                            if (parseFloat(i.split(":")[0]) < lowest) {
+                                lowest = parseFloat(i.split(":")[0])
                             }
                         }
-                        if (parseFloat(contract.rate) <= parseFloat(highest * 1.01) && toBal >= (contract.amount * 2) && agentBal >= (contract.amount * 2)) {
-                            done = 1
+                        if (parseFloat(contract.rate) <= parseFloat(lowest * 1.01) && toBal >= (contract.amount * 2) && agentBal >= (contract.amount * 2)) {
                             toBal -= (contract.amount * 2) // collateral withdraw of dlux
                             agentBal -= (contract.amount * 2) //collateral withdrawl of dlux
                             toCol += (contract.amount * 2) // collateral withdraw of dlux
@@ -834,85 +845,26 @@ exports.escrow_transfer = (json, pc) => {
                                 { type: 'put', path: ['dex', type, 'his', `${hisE.block}:${json.transaction_id}`], data: hisE },
                                 { type: 'del', path: ['dex', type, 'sellOrders', `${contract.rate}:${contract.txid}`] }
                             ]
-                            console.log({ to: json.to, agent: contract.agent, agentCol, toCol })
                             Promise.all(lil_ops)
                                 .then(empty => {
+                                    if (process.env.npm_lifecycle_event == 'test') pc[2] = ops
                                     store.batch(ops, pc)
                                 })
                                 .catch(e => { console.log(e) })
-                        }
-                        if (!done) {
-                            console.log(3)
-                            var out = [{ type: 'put', path: ['feed', `${json.block_num}:${json.transaction_id}`], data: `@${json.from}'s trade has failed collateral requirements, Try different agents` }, ]
-                            out.push({
-                                    type: 'put',
-                                    path: ['escrow', json.agent, `${json.from}/${json.escrow_id}:denyA`],
-                                    data: [
-                                        "escrow_approve",
-                                        {
-                                            "from": json.from,
-                                            "to": json.to,
-                                            "agent": json.agent,
-                                            "who": json.agent,
-                                            "escrow_id": json.escrow_id,
-                                            "approve": false
-                                        }
-                                    ]
-                                })
-                                //only one false can be broadcast, but both trues... keep a record to check against for memory management and enforcement
-                            out.push({
-                                type: 'put',
-                                path: ['escrow', '.' + json.to, `${json.from}/${json.escrow_id}:denyT`],
-                                data: [
-                                    "escrow_approve",
-                                    {
-                                        "from": json.from,
-                                        "to": json.to,
-                                        "agent": json.agent,
-                                        "who": json.to,
-                                        "escrow_id": json.escrow_id,
-                                        "approve": false
-                                    }
-                                ]
-                            })
-                            out.push({
-                                type: 'put',
-                                path: ['escrow', json.escrow_id.toString(), json.from],
-                                data: {
-                                    for: json.from,
-                                    contract: json.escrow_id.toString()
-                                }
-                            })
-                            var coll = 0
-                            if (parseFloat(json.hbd_amount) > 0) {
-                                coll = parseInt(4 * parseFloat(hbdVWMA.rate) * parseFloat(json.hbd_amount) * 1000)
-                            } else {
-                                coll = parseInt(4 * parseFloat(hiveVWMA.rate) * parseFloat(json.hive_amount) * 1000)
-                            }
-                            out.push({
-                                type: 'put',
-                                path: ['contracts', json.from, json.escrow_id.toString()],
-                                data: {
-                                    note: 'denied transaction',
-                                    from: json.from,
-                                    to: json.to,
-                                    agent: json.agent,
-                                    escrow_id: json.escrow_id.toString(),
-                                    col: coll
-                                }
-                            })
-                            lil_ops.push(chronAssign(json.block_num + 200, { op: 'denyA', agent: json.agent, txid: `${json.from}/${json.escrow_id}:denyA`, acc: json.from, id: json.escrow_id.toString() }))
-                            Promise.all(lil_ops)
-                                .then(empty => {
-                                    store.batch(out, pc)
-                                })
-                                .catch(e => { console.log(e) })
+                        } else {
+                            console.log(parseFloat(contract.rate) <= parseFloat(lowest * 1.01), toBal >= (contract.amount * 2), agentBal >= (contract.amount * 2))
+                            var ops = deny(json, hiveVWMA, hbdVWMA)
+                            if (process.env.npm_lifecycle_event == 'test') pc[2] = ops
+                            store.batch(ops, pc)
                         }
                     })
                     .catch(e => console.log(e))
+            } else {
+                var ops = deny(json, hiveVWMA, hbdVWMA)
+                if (process.env.npm_lifecycle_event == 'test') pc[2] = ops
+                store.batch(ops, pc)
             }
         } else if (toBal > (dextxamount * 2) && agentBal > (dextxamount * 2) && typeof dextxamount === 'number' && dextxamount > 0 && isAgent && isDAgent && btime) {
-            console.log(4)
             var txid = config.TOKEN + hashThis(`${json.from}${json.transaction_id}`),
                 rate = parseFloat(parseInt(parseFloat(json.hive_amount) * 1000) / dextx[config.jsonTokenName]).toFixed(6),
                 allowed = false
@@ -1033,13 +985,15 @@ exports.escrow_transfer = (json, pc) => {
                 ]
                 Promise.all(lil_ops)
                     .then(expire_paths => {
-                        contract.expire_path = expire_path[2]
+                        contract.expire_path = expire_paths[2]
                         ops.push({ type: 'put', path: ['balances', json.to], data: toBal - (dextxamount * 2) })
                         ops.push({ type: 'put', path: ['balances', json.agent], data: agentBal - (dextxamount * 2) })
                         ops.push({ type: 'put', path: ['col', json.to], data: toCol + (dextxamount * 2) })
                         ops.push({ type: 'put', path: ['col', json.agent], data: agentCol + (dextxamount * 2) })
-                        console.log(contract.type, { col: toCol + (dextxamount * 2), to: json.to, agent: json.agent })
                         ops.push({ type: 'put', path: ['contracts', json.from, txid], data: contract })
+                        if (process.env.npm_lifecycle_event == 'test') {
+                            pc[2] = ops
+                        }
                         store.batch(ops, pc)
                     })
             } else {
@@ -1104,76 +1058,17 @@ exports.escrow_transfer = (json, pc) => {
                 })
                 chronAssign(json.block_num + 200, { op: 'denyA', agent: json.agent, txid: `${json.from}/${json.escrow_id}:denyA`, acc: json.from, id: json.escrow_id.toString() })
                     .then(empty => {
+                        if (process.env.npm_lifecycle_event == 'test') pc[2] = ops
                         store.batch(ops, pc)
                     })
                     .catch(e => { console.log(e) })
             }
         } else if (isDAgent && isAgent) {
-            var ops = []
-            console.log(toBal > (dextxamount * 2), agentBal > (dextxamount * 2), typeof dextxamount === 'number', dextxamount > 0, isAgent, isDAgent, btime, 'buy checks')
-            ops.push({ type: 'put', path: ['feed', `${json.block_num}:${json.transaction_id}`], data: `@${json.from}| improperly attempted to use the escrow network. Attempting escrow deny.` })
-            ops.push({
-                type: 'put',
-                path: ['escrow', json.agent, `${json.from}/${json.escrow_id}:denyA`],
-                data: [
-                    "escrow_approve",
-                    {
-                        "from": json.from,
-                        "to": json.to,
-                        "agent": json.agent,
-                        "who": json.agent,
-                        "escrow_id": json.escrow_id,
-                        "approve": false
-                    }
-                ]
-            })
-            ops.push({
-                type: 'put',
-                path: ['escrow', '.' + json.to, `${json.from}/${json.escrow_id}:denyT`],
-                data: [
-                    "escrow_approve",
-                    {
-                        "from": json.from,
-                        "to": json.to,
-                        "agent": json.agent,
-                        "who": json.to,
-                        "escrow_id": json.escrow_id,
-                        "approve": false
-                    }
-                ]
-            })
-            ops.push({
-                type: 'put',
-                path: ['escrow', json.escrow_id.toString(), json.from],
-                data: {
-                    for: json.from,
-                    contract: json.escrow_id.toString()
-                }
-            })
-            var coll = 0
-            if (parseFloat(json.hbd_amount) > 0) {
-                coll = parseInt(4 * parseFloat(hbdVWMA.rate) * parseFloat(json.hbd_amount) * 1000)
-            } else {
-                coll = parseInt(4 * parseFloat(hiveVWMA.rate) * parseFloat(json.hive_amount) * 1000)
-            }
-            ops.push({
-                type: 'put',
-                path: ['contracts', json.from, json.escrow_id.toString()],
-                data: {
-                    note: 'denied transaction',
-                    from: json.from,
-                    to: json.to,
-                    agent: json.agent,
-                    escrow_id: json.escrow_id.toString(),
-                    col: coll
-                }
-            })
-            chronAssign(json.block_num + 200, { op: 'denyA', agent: json.agent, txid: `${json.from}/${json.escrow_id}:denyA`, acc: json.from, id: json.escrow_id.toString() })
-                .then(empty => {
-                    store.batch(ops, pc)
-                })
-                .catch(e => { console.log(e) })
+            var ops = deny(json, hiveVWMA, hbdVWMA)
+            if (process.env.npm_lifecycle_event == 'test') pc[2] = ops
+            store.batch(ops, pc)
         } else {
+            if (process.env.npm_lifecycle_event == 'test') pc[2] = 'fail_thru'
             pc[0](pc[2])
         }
     }).catch(function(e) { console.log('Failed Escrow:' + e) })
@@ -1187,4 +1082,68 @@ function allowedPrice(volume_weighted_price, rate) {
     } else {
         return false
     }
+}
+
+function deny(json, hiveVWMA, hbdVWMA) {
+    var ops = []
+        //console.log(toBal > (dextxamount * 2), agentBal > (dextxamount * 2), typeof dextxamount === 'number', dextxamount > 0, isAgent, isDAgent, btime, 'buy checks')
+    ops.push({ type: 'put', path: ['feed', `${json.block_num}:${json.transaction_id}`], data: `@${json.from}| improperly attempted to use the escrow network. Attempting escrow deny.` })
+    ops.push({
+        type: 'put',
+        path: ['escrow', json.agent, `${json.from}/${json.escrow_id}:denyA`],
+        data: [
+            "escrow_approve",
+            {
+                "from": json.from,
+                "to": json.to,
+                "agent": json.agent,
+                "who": json.agent,
+                "escrow_id": json.escrow_id,
+                "approve": false
+            }
+        ]
+    })
+    ops.push({
+        type: 'put',
+        path: ['escrow', '.' + json.to, `${json.from}/${json.escrow_id}:denyT`],
+        data: [
+            "escrow_approve",
+            {
+                "from": json.from,
+                "to": json.to,
+                "agent": json.agent,
+                "who": json.to,
+                "escrow_id": json.escrow_id,
+                "approve": false
+            }
+        ]
+    })
+    ops.push({
+        type: 'put',
+        path: ['escrow', json.escrow_id.toString(), json.from],
+        data: {
+            for: json.from,
+            contract: json.escrow_id.toString()
+        }
+    })
+    var coll = 0
+    if (parseFloat(json.hbd_amount) > 0) {
+        coll = parseInt(4 * parseFloat(hbdVWMA.rate) * parseFloat(json.hbd_amount) * 1000)
+    } else {
+        coll = parseInt(4 * parseFloat(hiveVWMA.rate) * parseFloat(json.hive_amount) * 1000)
+    }
+    ops.push({
+        type: 'put',
+        path: ['contracts', json.from, json.escrow_id.toString()],
+        data: {
+            note: 'denied transaction',
+            from: json.from,
+            to: json.to,
+            agent: json.agent,
+            escrow_id: json.escrow_id.toString(),
+            col: coll
+        }
+    })
+    chronAssign(json.block_num + 200, { op: 'denyA', agent: json.agent, txid: `${json.from}/${json.escrow_id}:denyA`, acc: json.from, id: json.escrow_id.toString() })
+    return ops
 }

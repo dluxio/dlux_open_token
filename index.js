@@ -27,26 +27,16 @@ exports.store = store;
 const cors = require('cors');
 const { ChainTypes, makeBitMaskFilter, ops } = require('@hiveio/hive-js/lib/auth/serializer');
 const op = ChainTypes.operations
-const walletOperationsBitmask = makeBitMaskFilter([
-    op.custom_json
-])
+const walletOperationsBitmask = makeBitMaskFilter([op.custom_json])
 const hiveClient = require('@hiveio/hive-js');
 hiveClient.api.setOptions({ url: config.clientURL });
 exports.hiveClient = hiveClient
 
 var NodeOps = [];
-exports.NodeOps = function() {
-    return NodeOps
-}
-exports.newOps = function(array) {
-    NodeOps = array
-}
-exports.unshiftOp = function(op) {
-    NodeOps.unshift(op)
-}
-exports.pushOp = function(op) {
-    NodeOps.push(op)
-}
+exports.NodeOps = function() { return NodeOps }
+exports.newOps = function(array) { NodeOps = array }
+exports.unshiftOp = function(op) { NodeOps.unshift(op) }
+exports.pushOp = function(op) { NodeOps.push(op) }
 
 const API = require('./routes/api');
 const { getPathNum } = require("./getPathNum");
@@ -58,9 +48,7 @@ const { report } = require("./report");
 const { ipfsSaveState } = require("./ipfsSaveState");
 const { waitup } = require("./waitup");
 const { dao } = require("./dao");
-const { deleteObjs } = require("./deleteObjs");
-const { reject } = require('async');
-const { add, addCol, deletePointer, release, credit, nodeUpdate, hashThis, penalty, chronAssign, forceCancel } = require('./lil_ops')
+const { release } = require('./lil_ops')
 const hiveState = require('./processor');
 const api = express()
 var http = require('http').Server(api);
@@ -96,6 +84,7 @@ api.get('/posts/:author/:permlink', API.PostAuthorPermlink);
 api.get('/posts', API.posts); //votable posts
 api.get('/feed', API.feed); //all side-chain transaction in current day
 api.get('/runners', API.runners); //list of accounts that determine consensus... will also be the multi-sig accounts
+api.get('/runners', API.queue);
 api.get('/pending', API.pending); // The transaction signer now can sign multiple actions per block and this is nearly always empty, still good for troubleshooting
 // Some HIVE APi is wrapped here to support a stateless frontend built on the cheap with dreamweaver
 // None of these functions are required for token functionality and should likely be removed from the community version
@@ -156,7 +145,6 @@ function startApp() {
     //do things in cycles based on block time
     processor.onBlock(
         function(num, pc) {
-            console.log(num)
             return new Promise((resolve, reject) => {
                 //store.batch([{ type: 'put', path: ['stats', 'realtime'], data: num }], )
                 store.someChildren(['chrono'], {
@@ -293,18 +281,7 @@ function startApp() {
 
                         })
                     }
-                    /*
-                //rest is out of consensus
-                for (var p = 0; p < pa.length; p++) { //automate some tasks... nearly positive this doesn't work
-                    var r = eval(pa[p][1])
-                    if (r) {
-                        NodeOps.push([
-                            [0, 0],
-                            [pa[p][2], pa[p][3]]
-                        ])
-                    }
-                }
-                */
+                    // Transaction Signer
                     if (config.active && processor.isStreaming()) {
                         store.get(['escrow', config.username], function(e, a) {
                             if (!e) {
@@ -371,7 +348,6 @@ function startApp() {
         });
     processor.onStreamingStart(HR.onStreamingStart);
     processor.start();
-
     exports.processor = processor;
 }
 

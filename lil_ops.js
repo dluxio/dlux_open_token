@@ -8,34 +8,30 @@ const stringify = require('json-stable-stringify');
 
 const forceCancel = (rate, type, block_num) => new Promise((resolve, reject) => {
     const price = parseFloat(rate)
-    getPathObj(['dex', type, 'sellOrders'])
+    let Ps = getPathObj(['dex', type, 'sellOrders'])
+    let Pb = getPathObj(['dex', type, 'buyOrders'])
+    Promise.all([Ps, Pb])
         .then(s => {
-            for (o in s) {
+            let gone = 0
+            for (o in s[0]) {
                 if (parseFloat(o.split(":")[0]) < (price * .6)) {
+                    gone++
                     release(o.from, o.split(":")[1], block_num)
-                        .then(r => { resolve(r) })
-                        .catch(e => { reject(e) })
                 } else if (parseFloat(o.split(":")[0]) > (price * 1.4)) {
+                    gone++
                     release(o.from, o.split(":")[1], block_num)
-                        .then(r => { resolve(r) })
-                        .catch(e => { reject(e) })
                 }
             }
-        })
-        .catch(e => { reject(e) })
-    getPathObj(['dex', type, 'buyOrders'])
-        .then(s => {
-            for (o in s) {
+            for (o in s[1]) {
                 if (parseFloat(o.split(":")[0]) < (price * .6)) {
+                    gone++
                     release(o.from, o.split(":")[1], block_num)
-                        .then(r => { resolve(r) })
-                        .catch(e => { reject(e) })
                 } else if (parseFloat(o.split(":")[0]) > (price * 1.4)) {
+                    gone++
                     release(o.from, o.split(":")[1], block_num)
-                        .then(r => { resolve(r) })
-                        .catch(e => { reject(e) })
                 }
             }
+            resolve(gone)
         })
         .catch(e => { reject(e) })
 })

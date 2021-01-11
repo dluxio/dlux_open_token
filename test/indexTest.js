@@ -17,6 +17,7 @@ function init() {
 }
 
 describe('State', function() {
+    this.timeout(10000);
     it('DB init:', function() {
         return init()
             .then(res => assert.equal(res, true))
@@ -299,8 +300,8 @@ describe('State', function() {
 
     it('Testing dlux hive sell listing:', () => {
         let json = {
-            hive: 1000,
-            dlux: 10000,
+            hive: 10,
+            dlux: 100,
             hours: 1,
             block_num: 101,
             transaction_id: 101
@@ -309,7 +310,7 @@ describe('State', function() {
                 app.dex_hive_sell(json, 'leader', true, [resolve, reject])
             })
             .then(ops => {
-                assert.equal(ops[3].data, '@leader| has placed order DLUXQmUQxeGyAobwtxXYexTmpYxNr2rT2AeAF5mRHs1gftgWnn to sell 10.000 for 1.000 HIVE')
+                assert.equal(ops[3].data, '@leader| has placed order DLUXQmUQxeGyAobwtxXYexTmpYxNr2rT2AeAF5mRHs1gftgWnn to sell 0.100 for 0.010 HIVE')
             })
     })
 
@@ -598,6 +599,168 @@ describe('State', function() {
             })
             .then(ops => {
                 assert.equal(ops[0].data, '@leader| tried to place an order to sell 10.000 for 1.201 HBD')
+            })
+    })
+
+    it('Testing dlux hive buy listing out of network agent:', () => {
+        let json = {
+            from: 'minnow',
+            to: 'node-opa',
+            agent: 'rando',
+            hive_amount: '0.100 HIVE',
+            hbd_amount: '0.000 HBD',
+            fee: '0.000 HIVE',
+            escrow_id: 654321,
+            ratification_deadline: '2021-01-15T20:00:00',
+            escrow_expiration: '2021-01-22T12:00:00',
+            json_meta: JSON.stringify({
+                dextx: {
+                    dlux: 1000,
+                },
+                hours: 1
+            }),
+            block_num: 102,
+            transaction_id: 111,
+            timestamp: '2021-01-15T12:00:00'
+        }
+        return new Promise((resolve, reject) => {
+                app.escrow_transfer(json, [resolve, reject])
+            })
+            .then(ops => {
+                assert.equal(ops, 'fail_thru')
+            })
+    })
+
+    it('Testing dlux hive buy listing out of network to:', () => {
+        let json = {
+            from: 'minnow',
+            to: 'rando',
+            agent: 'node-opb',
+            hive_amount: '0.100 HIVE',
+            hbd_amount: '0.000 HBD',
+            fee: '0.000 HIVE',
+            escrow_id: 654321,
+            ratification_deadline: '2021-01-15T20:00:00',
+            escrow_expiration: '2021-01-22T12:00:00',
+            json_meta: JSON.stringify({
+                dextx: {
+                    dlux: 1000,
+                },
+                hours: 1
+            }),
+            block_num: 102,
+            transaction_id: 111,
+            timestamp: '2021-01-15T12:00:00'
+        }
+        return new Promise((resolve, reject) => {
+                app.escrow_transfer(json, [resolve, reject])
+            })
+            .then(ops => {
+                assert.equal(ops, 'fail_thru')
+            })
+    })
+
+    it('Testing dlux hive buy listing:', () => {
+        let json = {
+            from: 'minnow',
+            to: 'node-opa',
+            agent: 'node-opb',
+            hive_amount: '0.100 HIVE',
+            hbd_amount: '0.000 HBD',
+            fee: '0.000 HIVE',
+            escrow_id: 654321,
+            ratification_deadline: '2021-01-15T20:00:00',
+            escrow_expiration: '2021-01-22T12:00:00',
+            json_meta: JSON.stringify({
+                dextx: {
+                    dlux: 1000,
+                },
+                hours: 1
+            }),
+            block_num: 102,
+            transaction_id: 111,
+            timestamp: '2021-01-15T12:00:00'
+        }
+        return new Promise((resolve, reject) => {
+                app.escrow_transfer(json, [resolve, reject])
+            })
+            .then(ops => {
+                assert.equal(ops[0].path[1], 'node-opb')
+                assert.equal(ops[0].path[2], 'DLUXQma1TSmexWi1TtRqKpYhVUpvos9GQ95uHchcJMdq6isCLk:listApproveA')
+                assert.equal(ops[1].path[1], 'node-opa')
+                assert.equal(ops[1].path[2], 'DLUXQma1TSmexWi1TtRqKpYhVUpvos9GQ95uHchcJMdq6isCLk:listApproveT')
+                assert.equal(ops[3].data, 88000)
+                assert.equal(ops[4].data, 7000)
+                assert.equal(ops[5].data, 2000)
+                assert.equal(ops[6].data, 2000)
+            })
+    })
+
+    it('Testing dlux hbd buy listing:', () => {
+        let json = {
+            from: 'minnow',
+            to: 'node-opa',
+            agent: 'node-opb',
+            hive_amount: '0.000 HIVE',
+            hbd_amount: '0.100 HBD',
+            fee: '0.000 HIVE',
+            escrow_id: 65432,
+            ratification_deadline: '2021-01-15T20:00:00',
+            escrow_expiration: '2021-01-22T12:00:00',
+            json_meta: JSON.stringify({
+                dextx: {
+                    dlux: 1000,
+                },
+                hours: 1
+            }),
+            block_num: 102,
+            transaction_id: 112,
+            timestamp: '2021-01-15T12:00:00'
+        }
+        return new Promise((resolve, reject) => {
+                app.escrow_transfer(json, [resolve, reject])
+            })
+            .then(ops => {
+                assert.equal(ops[0].path[1], 'node-opb')
+                assert.equal(ops[0].path[2], 'DLUXQmNigd1h1FH6RuPKwi45k31pc1xz6w4mngZH7ZECwkTVrm:listApproveA')
+                assert.equal(ops[1].path[1], 'node-opa')
+                assert.equal(ops[1].path[2], 'DLUXQmNigd1h1FH6RuPKwi45k31pc1xz6w4mngZH7ZECwkTVrm:listApproveT')
+                assert.equal(ops[3].data, 86000)
+                assert.equal(ops[4].data, 5000)
+                assert.equal(ops[5].data, 4000)
+                assert.equal(ops[6].data, 4000)
+            })
+    })
+
+    it('Testing dlux hive buy:', () => {
+        let json = {
+            from: 'whale',
+            to: 'node-opa',
+            agent: 'node-opb',
+            hive_amount: '0.010 HIVE',
+            hbd_amount: '0.000 HBD',
+            fee: '0.000 HIVE',
+            escrow_id: 654321,
+            ratification_deadline: '2021-01-15T20:00:00',
+            escrow_expiration: '2021-01-22T12:00:00',
+            json_meta: JSON.stringify({
+                contract: '0.1000000:DLUXQmUQxeGyAobwtxXYexTmpYxNr2rT2AeAF5mRHs1gftgWnn',
+                for: 'leader',
+                hours: 1
+            }),
+            block_num: 102,
+            transaction_id: 111,
+            timestamp: '2021-01-15T12:00:00'
+        }
+        return new Promise((resolve, reject) => {
+                app.escrow_transfer(json, [resolve, reject])
+            })
+            .then(ops => {
+                assert.equal(ops[5].data, 100)
+                assert.equal(ops[6].data, 85800)
+                assert.equal(ops[7].data, 4800)
+                assert.equal(ops[8].data, 4200)
+                assert.equal(ops[9].data, 4200)
             })
     })
 

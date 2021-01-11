@@ -68,6 +68,18 @@ exports.runners = (req, res, next) => {
     });
 }
 
+exports.queue = (req, res, next) => {
+    res.setHeader('Content-Type', 'application/json')
+    store.get(['queue'], function(err, obj) {
+        var queue = obj
+        res.send(JSON.stringify({
+            queue,
+            node: config.username,
+            VERSION
+        }, null, 3))
+    });
+}
+
 exports.feed = (req, res, next) => {
     res.setHeader('Content-Type', 'application/json')
     store.get(['feed'], function(err, obj) {
