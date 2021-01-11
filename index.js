@@ -281,7 +281,18 @@ function startApp() {
 
                         })
                     }
-                    // Transaction Signer
+                    /*
+                //rest is out of consensus
+                for (var p = 0; p < pa.length; p++) { //automate some tasks... nearly positive this doesn't work
+                    var r = eval(pa[p][1])
+                    if (r) {
+                        NodeOps.push([
+                            [0, 0],
+                            [pa[p][2], pa[p][3]]
+                        ])
+                    }
+                }
+                */
                     if (config.active && processor.isStreaming()) {
                         store.get(['escrow', config.username], function(e, a) {
                             if (!e) {
