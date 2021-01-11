@@ -136,7 +136,7 @@ exports.tally = (num, plasma, isStreaming) => new Promise((resolve, reject) => {
                     { type: 'put', path: ['markets', 'node'], data: nodes },
                     { type: 'put', path: ['balances', 'ra'], data: rbal.ra }
                 ]
-                if (Object.keys(new_queue)) ops.push({ type: 'put', path: ['queue'], data: new_queue })
+                if (Object.keys(new_queue).length) ops.push({ type: 'put', path: ['queue'], data: new_queue })
                 console.log(ops)
                 store.batch(ops, [resolve, reject, newPlasma]);
                 if (consensus && (consensus != plasma.hashLastIBlock || consensus != nodes[config.username].report.hash) && isStreaming) { //this doesn't seem to be catching failures
