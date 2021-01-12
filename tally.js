@@ -39,9 +39,9 @@ exports.tally = (num, plasma, isStreaming) => new Promise((resolve, reject) => {
                     var hash = '',
                         when = 0,
                         online = 0
-                    try { hash = nodes[node].report.hash } catch (e) { console.log(node) }
-                    try { when = nodes[node].report.block_num } catch { console.log(node) }
-                    try { online = hash && nodes[node].escrow } catch { console.log(node) }
+                    try { hash = nodes[node].report.hash } catch (e) { console.log({ node }) }
+                    try { when = nodes[node].report.block_num } catch { console.log({ node }) }
+                    try { online = hash && nodes[node].escrow } catch { console.log({ node }) }
                     if (when > (num - 50) && hash && online) {
                         tally.agreements.hashes[node] = hash
                         tally.agreements.tally[hash] = 0

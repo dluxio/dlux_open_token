@@ -1,5 +1,5 @@
 const config = require('./../config')
-const { store } = require('./../index')
+const { store, GetNodeOps, newOps, unshiftOp, pushOp, spliceOp } = require('./../index')
 const { getPathNum } = require('./../getPathNum')
 const { getPathObj } = require('./../getPathObj')
 const { add, addCol, release, deletePointer, credit, nodeUpdate, penalty, chronAssign, forceCancel, hashThis, isEmpty } = require('./../lil_ops')
@@ -257,9 +257,10 @@ exports.escrow_approve = (json, pc) => {
                                     }
                                     dataOps.push({ type: 'del', path: ['escrow', json.who, c.txid + ':buyApproveA'] })
                                     if (json.who == config.username) {
+                                        let NodeOps = GetNodeOps
                                         for (var i = 0; i < NodeOps.length; i++) {
                                             if (NodeOps[i][1][1].from == json.from && NodeOps[i][1][1].escrow_id == json.escrow_id && NodeOps[i][1][0] == 'escrow_approve') {
-                                                NodeOps.splice(i, 1)
+                                                spliceOp(i)
                                             }
                                         }
                                         delete plasma.pending[c.txid + ':buyApproveA']

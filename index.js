@@ -33,10 +33,11 @@ hiveClient.api.setOptions({ url: config.clientURL });
 exports.hiveClient = hiveClient
 
 var NodeOps = [];
-exports.NodeOps = function() { return NodeOps }
+exports.GetNodeOps = function() { return NodeOps }
 exports.newOps = function(array) { NodeOps = array }
 exports.unshiftOp = function(op) { NodeOps.unshift(op) }
 exports.pushOp = function(op) { NodeOps.push(op) }
+exports.spliceOp = function(i) { NodeOps.splice(i, 1) }
 
 const API = require('./routes/api');
 const { getPathNum } = require("./getPathNum");
