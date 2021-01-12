@@ -84,7 +84,7 @@ api.get('/posts/:author/:permlink', API.PostAuthorPermlink);
 api.get('/posts', API.posts); //votable posts
 api.get('/feed', API.feed); //all side-chain transaction in current day
 api.get('/runners', API.runners); //list of accounts that determine consensus... will also be the multi-sig accounts
-api.get('/runners', API.queue);
+api.get('/queue', API.queue);
 api.get('/pending', API.pending); // The transaction signer now can sign multiple actions per block and this is nearly always empty, still good for troubleshooting
 // Some HIVE APi is wrapped here to support a stateless frontend built on the cheap with dreamweaver
 // None of these functions are required for token functionality and should likely be removed from the community version
