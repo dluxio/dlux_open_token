@@ -263,7 +263,7 @@ exports.escrow_approve = (json, pc) => {
                                                 spliceOp(i)
                                             }
                                         }
-                                        delete plasma.pending[c.txid + ':buyApproveA']
+                                        //delete plasma.pending[c.txid + ':buyApproveA']
                                     }
                                     console.log(a.contract)
                                     dataOps.push({ type: 'put', path: ['feed', `${json.block_num}:${json.transaction_id}`], data: `@${json.who}| approved escrow for ${json.from}` })
@@ -296,7 +296,7 @@ exports.escrow_approve = (json, pc) => {
                                                 spliceOp(i)
                                             }
                                         }
-                                        delete plasma.pending[c.txid + ':buyApproveT']
+                                        //delete plasma.pending[c.txid + ':buyApproveT']
                                     }
                                     console.log(a.contract, c)
                                     dataOps.push({ type: 'put', path: ['feed', `${json.block_num}:${json.transaction_id}`], data: `@${json.who}| approved escrow for ${json.from}` })
@@ -321,7 +321,7 @@ exports.escrow_approve = (json, pc) => {
                                     spliceOp(i)
                                 }
                             }
-                            delete plasma.pending[c.txid + ':listApproveT']
+                            //delete plasma.pending[c.txid + ':listApproveT']
                         }
                         c.approve_to = true
                         if (c.approveAgent) {
@@ -353,7 +353,7 @@ exports.escrow_approve = (json, pc) => {
                                     spliceOp(i)
                                 }
                             }
-                            delete plasma.pending[c.txid + ':listApproveA']
+                            //delete plasma.pending[c.txid + ':listApproveA']
                         }
                         c.approveAgent = true
                         if (c.approve_to) {
