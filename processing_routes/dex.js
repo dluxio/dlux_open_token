@@ -257,7 +257,7 @@ exports.escrow_approve = (json, pc) => {
                                     }
                                     dataOps.push({ type: 'del', path: ['escrow', json.who, c.txid + ':buyApproveA'] })
                                     if (json.who == config.username) {
-                                        let NodeOps = GetNodeOps
+                                        let NodeOps = GetNodeOps()
                                         for (var i = 0; i < NodeOps.length; i++) {
                                             if (NodeOps[i][1][1].from == json.from && NodeOps[i][1][1].escrow_id == json.escrow_id && NodeOps[i][1][0] == 'escrow_approve') {
                                                 spliceOp(i)
@@ -290,9 +290,10 @@ exports.escrow_approve = (json, pc) => {
                                     }
                                     dataOps.push({ type: 'del', path: ['escrow', json.who, c.txid + ':buyApproveT'] })
                                     if (json.who == config.username) {
+                                        let NodeOps = GetNodeOps()
                                         for (var i = 0; i < NodeOps.length; i++) {
                                             if (NodeOps[i][1][1].from == json.from && NodeOps[i][1][1].escrow_id == json.escrow_id && NodeOps[i][1][0] == 'escrow_approve') {
-                                                NodeOps.splice(i, 1)
+                                                spliceOp(i)
                                             }
                                         }
                                         delete plasma.pending[c.txid + ':buyApproveT']
@@ -314,9 +315,10 @@ exports.escrow_approve = (json, pc) => {
                         dataOps.push({ type: 'put', path: ['feed', `${json.block_num}:${json.transaction_id}`], data: `@${json.who}| approved escrow for ${json.from}` })
                         dataOps.push({ type: 'del', path: ['escrow', json.who, c.txid + ':listApproveT'] })
                         if (json.who == config.username) {
+                            let NodeOps = GetNodeOps()
                             for (var i = 0; i < NodeOps.length; i++) {
                                 if (NodeOps[i][1][1].from == json.from && NodeOps[i][1][1].escrow_id == json.escrow_id && NodeOps[i][1][0] == 'escrow_approve') {
-                                    NodeOps.splice(i, 1)
+                                    spliceOp(i)
                                 }
                             }
                             delete plasma.pending[c.txid + ':listApproveT']
@@ -345,9 +347,10 @@ exports.escrow_approve = (json, pc) => {
                         dataOps.push({ type: 'put', path: ['feed', `${json.block_num}:${json.transaction_id}`], data: `@${json.who}| approved escrow for ${json.from}` })
                         dataOps.push({ type: 'del', path: ['escrow', json.who, c.txid + ':listApproveA'] })
                         if (json.who == config.username) {
+                            let NodeOps = GetNodeOps()
                             for (var i = 0; i < NodeOps.length; i++) {
                                 if (NodeOps[i][1][1].from == json.from && NodeOps[i][1][1].escrow_id == json.escrow_id && NodeOps[i][1][0] == 'escrow_approve') {
-                                    NodeOps.splice(i, 1)
+                                    spliceOp(i)
                                 }
                             }
                             delete plasma.pending[c.txid + ':listApproveA']
@@ -541,10 +544,11 @@ exports.transfer = (json, pc) => {
                         ops.push({ type: 'del', path: ['contracts', co, addr] })
                         ops.push({ type: 'del', path: ['chrono', c.expire_path] })
                         if (json.from == config.username) {
-                            delete plasma.pending[i + ':transfer']
+                            //delete plasma.pending[i + ':transfer']
+                            let NodeOps = GetNodeOps()
                             for (var i = 0; i < NodeOps.length; i++) {
                                 if (NodeOps[i][1][1].from == json.from && NodeOps[i][1][1].to == json.to && NodeOps[i][1][0] == 'transfer' && NodeOps[i][1][1].hive_amount == json.hive_amount && NodeOps[i][1][1].hbd_amount == json.hbd_amount) {
-                                    NodeOps.splice(i, 1)
+                                    spliceOp(i)
                                 }
                             }
                         }
