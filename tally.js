@@ -53,8 +53,10 @@ exports.tally = (num, plasma, isStreaming) => new Promise((resolve, reject) => {
                             tally.agreements.tally[tally.agreements.hashes[runner]]++
                         }
                 }
+                let threshhold = tally.agreements.votes
+                if (Object.keys(runners).length > threshhold) threshhold = Object.keys(runners).length
                 for (hash in tally.agreements.hashes) {
-                    if (tally.agreements.tally[tally.agreements.hashes[hash]] > (tally.agreements.votes / 3)) {
+                    if (tally.agreements.tally[tally.agreements.hashes[hash]] > (threshhold / 2)) {
                         consensus = tally.agreements.hashes[hash]
                         break;
                     }
