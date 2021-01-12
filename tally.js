@@ -107,8 +107,9 @@ exports.tally = (num, plasma, isStreaming) => new Promise((resolve, reject) => {
                     stats.lastBlock = stats.hashLastIBlock;
                     stats.hashLastIBlock = consensus;
                     for (var node in nodes) {
-                        var getHash;
-                        if (nodes[node].report.block_num > num - 50) {
+                        var getHash, getNum = 0
+                        try { getNum = nodes[node].report.block_num } catch (e) {}
+                        if (getNum > num - 50) {
                             nodes[node].attempts++;
                         }
                         try { getHash = nodes[node].report.hash; } catch (e) {}
