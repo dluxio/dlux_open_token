@@ -24,7 +24,7 @@ const bidRate = ENV.BIDRATE || 2500 //
 
 //HIVE CONFIGS
 var clientURL = ENV.APIURL || 'https://api.hive.blog'
-const clients = [
+const clients = ENV.clients || [
     'https://api.hive.blog',
     'https://anyx.io',
     'https://api.hivekings.com',
