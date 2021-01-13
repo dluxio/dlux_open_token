@@ -68,7 +68,7 @@ var recents = []
     //HIVE API CODE
 
 //Start Program Options   
-//startWith('QmWga999HtyCH12q82aCRbCTLmUZH7EnSTfKACsaZ739G1') //for testing and replaying
+//startWith('QmVNvs1xFUAP8r27URYacySySeDz7aZmmMjapgMKA9stzG') //for testing and replaying
 dynStart(config.leader)
 
 // API defs
@@ -130,6 +130,8 @@ function startApp() {
     processor.onOperation('escrow_approve', HR.escrow_approve);
     processor.onOperation('escrow_dispute', HR.escrow_dispute);
     processor.onOperation('escrow_release', HR.escrow_release);
+    processor.on('gov_down', HR.gov_down);
+    processor.on('gov_up', HR.gov_up);
     processor.on('node_add', HR.node_add); //node add and update
     processor.on('node_delete', HR.node_delete);
     processor.on('report', HR.report);
@@ -182,6 +184,32 @@ function startApp() {
                                 case 'denyT':
                                     promises.push(enforce(b.agent, b.txid, { id: b.id, acc: b.acc }, num))
                                     store.batch([{ type: 'del', path: ['chrono', delKey] }], [function() {}, function() { console.log('failure') }])
+                                    break;
+                                case 'gov_down': //needs work and testing
+                                    let plb = getPathNum(['balances', b.by]),
+                                        tgovp = getPathNum(['gov', 't']),
+                                        govp = getPathNum(['gov', b.by])
+                                    promises.push(powerDownOp([plb, tgovp, govp], b.by, delKey, num, chrops[i].split(':')[1], b))
+
+                                    function powerDownOp(promies, from, delkey, num, id, b) {
+                                        return new Promise((resolve, reject) => {
+                                            Promise.all(promies)
+                                                .then(bals => {
+                                                    let lbal = bals[0],
+                                                        tgov = bals[1],
+                                                        gbal = bals[2],
+                                                        ops = []
+                                                    ops.push({ type: 'put', path: ['balances', from], data: lbal + b.amount })
+                                                    ops.push({ type: 'put', path: ['gov', from], data: gbal - b.amount })
+                                                    ops.push({ type: 'put', path: ['gov', 't'], data: tgov - b.amount })
+                                                    ops.push({ type: 'put', path: ['feed', `${num}:vop_${id}`], data: `@${b.by}| ${parseFloat(b.amount/1000).toFixed(3)} ${config.TOKEN} withdrawn from governance.` })
+                                                    ops.push({ type: 'del', path: ['chrono', delkey] })
+                                                    ops.push({ type: 'del', path: ['govd', b.by, delkey] })
+                                                    store.batch(ops, [resolve, reject])
+                                                })
+                                                .catch(e => { console.log(e) })
+                                        })
+                                    }
                                     break;
                                 case 'power_down': //needs work and testing
                                     let lbp = getPathNum(['balances', b.by]),
@@ -460,6 +488,36 @@ function startWith(hash) {
                         if (!e) {
                             if (hash) {
                                 var cleanState = data[1]
+                                delete cleanState.powd
+                                delete cleanState.chrono['50494069:0']
+                                delete cleanState.chrono['50694069:0']
+                                delete cleanState.chrono['50894069:0']
+                                delete cleanState.chrono['51094069:0']
+                                delete cleanState.chrono['51294069:0']
+                                delete cleanState.chrono['51494069:0']
+                                delete cleanState.chrono['51694069:0']
+                                delete cleanState.chrono['51894069:0']
+                                delete cleanState.chrono['52094069:0']
+                                delete cleanState.chrono['52294069:0']
+                                delete cleanState.chrono['52494069:0']
+                                delete cleanState.chrono['52694069:0']
+                                delete cleanState.col
+                                delete cleanState.balances.undefined
+                                delete cleanState.markets.node['foxon.dlux'].burned
+                                cleanState.runners = {
+                                    disregardfiat: { l: 1 },
+                                    'dlux-io': { l: 1 },
+                                    markegiles: { l: 1 },
+                                    inconceivable: { l: 1 },
+                                    dluxfox: { l: 1 },
+                                    'foxon.dlux': { l: 1 },
+                                    heyhey: { l: 1 }
+                                }
+                                cleanState.gov = {}
+                                cleanState.gov.disregardfiat = 30000
+                                cleanState.gov.dluxfox = 20000
+                                cleanState.gov['foxon.dlux'] = 9000
+                                cleanState.stats.tokenSupply -= 65158
                                 store.put([], cleanState, function(err) {
                                     if (err) {
                                         console.log(err)
@@ -503,7 +561,7 @@ function startWith(hash) {
                 }
             } else {
                 startWith(config.engineCrank)
-                console.log(`${sh} failed to load, Replaying from genesis.\nYou may want to set the env var STARTHASH\nFind it at any token API such as ${config.mainAPI}`)
+                console.log(`${hash} failed to load, Replaying from genesis.\nYou may want to set the env var STARTHASH\nFind it at any token API such as ${config.mainAPI}`)
             }
         });
     } else {

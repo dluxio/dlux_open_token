@@ -137,6 +137,71 @@ describe('State', function() {
             })
     })
 
+    it('Gov Up Node opb:', () => {
+        let json = {
+            amount: 8000,
+            block_num: 2,
+            transaction_id: 2
+        }
+        return new Promise((resolve, reject) => {
+                app.gov_up(json, 'node-opb', true, [resolve, reject])
+            })
+            .then(ops => {
+                assert.equal(ops[0].data, 1000)
+                assert.equal(ops[0].path[1], 'node-opb')
+                assert.equal(ops[1].data, 8000)
+                assert.equal(ops[2].data, 8000)
+            })
+    })
+
+    it('Gov Up Node opa:', () => {
+        let json = {
+            amount: 80000,
+            block_num: 2,
+            transaction_id: 2
+        }
+        return new Promise((resolve, reject) => {
+                app.gov_up(json, 'node-opa', true, [resolve, reject])
+            })
+            .then(ops => {
+                assert.equal(ops[0].data, 10000)
+                assert.equal(ops[0].path[1], 'node-opa')
+                assert.equal(ops[1].data, 80000)
+                assert.equal(ops[2].data, 88000)
+            })
+    })
+
+    it('Gov Up Node leader:', () => {
+        let json = {
+            amount: 800000,
+            block_num: 2,
+            transaction_id: 2
+        }
+        return new Promise((resolve, reject) => {
+                app.gov_up(json, 'leader', true, [resolve, reject])
+            })
+            .then(ops => {
+                assert.equal(ops[0].data, 200000)
+                assert.equal(ops[0].path[1], 'leader')
+                assert.equal(ops[1].data, 800000)
+                assert.equal(ops[2].data, 888000)
+            })
+    })
+
+    it('Gov Up Node opd:', () => {
+        let json = {
+            amount: 800,
+            block_num: 2,
+            transaction_id: 2
+        }
+        return new Promise((resolve, reject) => {
+                app.gov_up(json, 'node-opd', true, [resolve, reject])
+            })
+            .then(ops => {
+                assert.equal(ops[0].data, '@node-opd| Invalid gov up')
+            })
+    })
+
     it('Testing over send:', () => {
         let json = {
             to: 'test-to',
@@ -205,8 +270,8 @@ describe('State', function() {
     it('Build consensus Leader:', () => {
         let json = {
             hash: 'hash',
-            block: 1,
-            block_num: 70,
+            block: 50499901,
+            block_num: 50499999,
             transaction_id: '5L'
         }
         return new Promise((resolve, reject) => {
@@ -221,8 +286,8 @@ describe('State', function() {
     it('Build consensus A:', () => {
         let json = {
             hash: 'hash',
-            block: 1,
-            block_num: 70,
+            block: 50499901,
+            block_num: 50499999,
             transaction_id: '5L'
         }
         return new Promise((resolve, reject) => {
@@ -237,8 +302,8 @@ describe('State', function() {
     it('Build consensus B:', () => {
         let json = {
             hash: 'hash',
-            block: 1,
-            block_num: 70,
+            block: 50499901,
+            block_num: 50499999,
             transaction_id: '5L'
         }
         return new Promise((resolve, reject) => {
@@ -253,8 +318,8 @@ describe('State', function() {
     it('Alt consensus D:', () => {
         let json = {
             hash: 'hash-dif',
-            block: 1,
-            block_num: 70,
+            block: 50499901,
+            block_num: 50499999,
             transaction_id: '5L'
         }
         return new Promise((resolve, reject) => {
@@ -269,8 +334,8 @@ describe('State', function() {
     it('Disallow Randos:', () => {
         let json = {
             hash: 'hash',
-            block: 1,
-            block_num: 70,
+            block: 50499901,
+            block_num: 50499999,
             transaction_id: '5L'
         }
         return new Promise((resolve, reject) => {
@@ -282,22 +347,33 @@ describe('State', function() {
     })
 
     it('Establish queue and consensus:', () => {
-        let plasma = {
-            hashLastIBlock: 'hash'
-        }
-        tally(100, plasma, true)
-            .then(ops => {
-                assert.equal(ops.consensus, 'hash')
-                assert.equal(ops.new_queue.leader.t, 101000000)
-                assert.equal(ops.new_queue['node-opa'].t, 90000)
-                assert.equal(ops.new_queue['node-opb'].t, 9000)
-                assert.equal(ops.still_running.leader.t, 101000000)
-                assert.equal(ops.still_running['node-opa'].t, 90000)
-                assert.equal(ops.stats.tokenSupply, 101090000)
-                assert.equal(ops.stats.multiSigCollateral, 101090000)
-            })
-    })
+            let plasma = {
+                hashLastIBlock: 'hash'
+            }
+            tally(50500000, plasma, true)
+                .then(ops => {
+                    assert.equal(ops.consensus, 'hash')
+                    assert.equal(ops.new_queue.leader.t, 800000)
+                    assert.equal(ops.new_queue['node-opa'].t, 80000)
+                    assert.equal(ops.new_queue['node-opb'].t, 8000)
+                    assert.equal(ops.still_running.leader.t, 800000)
+                    assert.equal(ops.still_running['node-opa'].t, 80000)
+                    assert.equal(ops.stats.tokenSupply, 203000096)
+                    assert.equal(ops.stats.multiSigCollateral, 80000)
+                    store.get(['markets', 'node', 'leader'], function(e, r) {
+                        console.log(r)
 
+                    })
+                })
+        })
+        /*
+            it('Check on nodes:', () => {
+                store.get(['markets', 'node', 'leader'], function(e, r) {
+                    console.log(r)
+
+                })
+            })
+        */
     it('Testing dlux hive sell listing:', () => {
         let json = {
             hive: 10,
@@ -677,7 +753,7 @@ describe('State', function() {
                 },
                 hours: 1
             }),
-            block_num: 102,
+            block_num: 50500005,
             transaction_id: 111,
             timestamp: '2021-01-15T12:00:00'
         }
@@ -685,6 +761,7 @@ describe('State', function() {
                 app.escrow_transfer(json, [resolve, reject])
             })
             .then(ops => {
+                console.log(ops)
                 assert.equal(ops[0].path[1], 'node-opb')
                 assert.equal(ops[0].path[2], 'DLUXQma1TSmexWi1TtRqKpYhVUpvos9GQ95uHchcJMdq6isCLk:listApproveA')
                 assert.equal(ops[1].path[1], 'node-opa')
@@ -713,7 +790,7 @@ describe('State', function() {
                 },
                 hours: 1
             }),
-            block_num: 102,
+            block_num: 50500005,
             transaction_id: 112,
             timestamp: '2021-01-15T12:00:00'
         }
@@ -748,7 +825,7 @@ describe('State', function() {
                 for: 'leader',
                 hours: 1
             }),
-            block_num: 102,
+            block_num: 50500005,
             transaction_id: 111,
             timestamp: '2021-01-15T12:00:00'
         }

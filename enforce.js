@@ -1,7 +1,7 @@
 const { getPathNum } = require("./getPathNum");
 const { getPathObj } = require("./getPathObj");
 const { store } = require("./index");
-const { chronAssign, penalty, add, nodeUpdate, deletePointer, addCol } = require('./lil_ops')
+const { chronAssign, penalty, add, nodeUpdate, deletePointer, addCol, addGov } = require('./lil_ops')
 
 function enforce(agent, txid, pointer, block_num) {
     console.log('Enforce params:', agent, txid, pointer);
@@ -12,8 +12,7 @@ function enforce(agent, txid, pointer, block_num) {
         Promise.all([Pop, Ppointer, PtokenSupply])
             .then(r => {
                 var enforced_op = r[0],
-                    point_to_contract = r[1],
-                    token_supply = r[2];
+                    point_to_contract = r[1]
                 console.log('enforce:', { enforced_op }, 'pointer:', { point_to_contract });
                 if (Object.keys(enforced_op).length) {
                     let op = txid.split(":")[1],
@@ -86,7 +85,7 @@ function enforce(agent, txid, pointer, block_num) {
                                         ops.push({ type: 'del', path: ['contracts', co, id] });
                                         ops.push({ type: 'put', path: ['stats', 'tokenSupply'], data: s - parseInt(c.escrow / 4) });
                                         lil_ops = [
-                                            add(c.agent, parseInt(c.escrow / 2)),
+                                            addGov(c.agent, parseInt(c.escrow / 2)),
                                             add(c.eo, parseInt(c.escrow / 4)),
                                             addCol(c.agent, -parseInt(c.escrow / 2)),
                                             addCol(c.tagent, -parseInt(c.escrow / 2)),
@@ -101,7 +100,7 @@ function enforce(agent, txid, pointer, block_num) {
                                         ops.push({ type: 'del', path: ['contracts', co, id] });
                                         ops.push({ type: 'put', path: ['stats', 'tokenSupply'], data: s - parseInt(c.escrow / 4) });
                                         lil_ops = [
-                                            add(c.agent, parseInt(c.escrow / 2)),
+                                            addGov(c.agent, parseInt(c.escrow / 2)),
                                             addCol(c.agent, -parseInt(c.escrow / 2)),
                                             addCol(c.tagent, -parseInt(c.escrow / 2)),
                                             add(c.eo, parseInt(c.escrow / 4)),
@@ -116,7 +115,7 @@ function enforce(agent, txid, pointer, block_num) {
                                         ops.push({ type: 'del', path: ['contracts', co, id] });
                                         ops.push({ type: 'put', path: ['stats', 'tokenSupply'], data: s - parseInt(c.escrow / 4) });
                                         lil_ops = [
-                                            add(c.tagent, parseInt(c.escrow / 2)),
+                                            addGov(c.tagent, parseInt(c.escrow / 2)),
                                             addCol(c.agent, -parseInt(c.escrow / 2)),
                                             addCol(c.tagent, -parseInt(c.escrow / 2)),
                                             add(c.eo, parseInt(c.escrow / 4)),
@@ -131,7 +130,7 @@ function enforce(agent, txid, pointer, block_num) {
                                         ops.push({ type: 'del', path: ['contracts', co, id] });
                                         ops.push({ type: 'put', path: ['stats', 'tokenSupply'], data: s - parseInt(c.escrow / 4) });
                                         lil_ops = [
-                                            add(c.agent, parseInt(c.escrow / 2)),
+                                            addGov(c.agent, parseInt(c.escrow / 2)),
                                             add(c.eo, parseInt(c.escrow / 4)),
                                             addCol(c.agent, -parseInt(c.escrow / 2)),
                                             addCol(c.tagent, -parseInt(c.escrow / 2)),
@@ -146,7 +145,7 @@ function enforce(agent, txid, pointer, block_num) {
                                         ops.push({ type: 'del', path: ['contracts', co, id] });
                                         ops.push({ type: 'put', path: ['stats', 'tokenSupply'], data: s - parseInt(c.escrow / 4) });
                                         lil_ops = [
-                                            add(c.tagent, parseInt(c.escrow / 2)),
+                                            addGov(c.tagent, parseInt(c.escrow / 2)),
                                             add(c.eo, parseInt(c.escrow / 4)),
                                             addCol(c.agent, -parseInt(c.escrow / 2)),
                                             addCol(c.tagent, -parseInt(c.escrow / 2)),
@@ -161,7 +160,7 @@ function enforce(agent, txid, pointer, block_num) {
                                         ops.push({ type: 'del', path: ['contracts', co, id] });
                                         ops.push({ type: 'put', path: ['stats', 'tokenSupply'], data: s - parseInt(c.escrow / 4) });
                                         lil_ops = [
-                                            add(c.tagent, parseInt(c.escrow / 2)),
+                                            addGov(c.tagent, parseInt(c.escrow / 2)),
                                             add(c.eo, parseInt(c.escrow / 4)),
                                             deletePointer(pointer.id, pointer.acc),
                                             nodeUpdate(c.agent, 'strike', parseInt(c.escrow / 4))
@@ -187,7 +186,7 @@ function enforce(agent, txid, pointer, block_num) {
                                         ops.push({ type: 'del', path: ['contracts', co, id] });
                                         ops.push({ type: 'put', path: ['stats', 'tokenSupply'], data: s - parseInt(c.escrow / 4) });
                                         lil_ops = [
-                                            add(c.agent, parseInt(c.escrow / 2)),
+                                            addGov(c.agent, parseInt(c.escrow / 2)),
                                             add(c.eo, parseInt(c.escrow / 4)),
                                             addCol(c.agent, -parseInt(c.escrow / 2)),
                                             addCol(c.tagent, -parseInt(c.escrow / 2)),

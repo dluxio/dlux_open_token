@@ -1,0 +1,89 @@
+const config = require('./../config')
+const { store } = require("../index");
+const { getPathNum } = require("../getPathNum");
+const { getPathObj } = require('../getPathObj')
+const { chronAssign } = require('../lil_ops')
+
+exports.gov_up = (json, from, active, pc) => {
+    var amount = parseInt(json.amount),
+        Pliquid = getPathNum(['balances', from]),
+        Pgovt = getPathNum(['gov', 't']),
+        Pgov = getPathNum(['gov', from]);
+
+    Promise.all([Pliquid, Pgovt, Pgov])
+        .then(bals => {
+            let lbal = bals[0],
+                govt = bals[1],
+                gbal = bals[2],
+                ops = [];
+            if (amount < lbal && active) {
+                ops.push({ type: 'put', path: ['balances', from], data: lbal - amount });
+                ops.push({ type: 'put', path: ['gov', from], data: gbal + amount });
+                ops.push({ type: 'put', path: ['gov', 't'], data: govt + amount });
+                ops.push({ type: 'put', path: ['feed', `${json.block_num}:${json.transaction_id}`], data: `@${from}| Locked ${parseFloat(json.amount / 1000).toFixed(3)} ${config.TOKEN} for Governance` });
+            } else {
+                ops.push({ type: 'put', path: ['feed', `${json.block_num}:${json.transaction_id}`], data: `@${from}| Invalid gov up` });
+            }
+            if (process.env.npm_lifecycle_event == 'test') pc[2] = ops
+            store.batch(ops, pc);
+        })
+        .catch(e => { console.log(e); });
+
+}
+
+exports.gov_down = (json, from, active, pc) => {
+    var amount = parseInt(json.amount),
+        Pgov = getPathNum(['gov', from]),
+        Pgovd = getPathObj(['govd', from])
+    Promise.all([Pgov, Pgovd, ])
+        .then(o => {
+            let gov = o[0],
+                downs = o[1] || {}
+            ops = [],
+                assigns = [];
+            if (typeof amount == 'number' && amount >= 0 && gov >= amount && active) {
+                var odd = parseInt(amount % 4),
+                    weekly = parseInt(amount / 4);
+                for (var i = 0; i < 4; i++) {
+                    if (i == 3) {
+                        weekly += odd;
+                    }
+                    assigns.push(chronAssign(parseInt(json.block_num + (201600 * (i + 1))), {
+                        block: parseInt(json.block_num + (201600 * (i + 1))),
+                        op: 'gov_down',
+                        amount: weekly,
+                        by: from
+                    }));
+                }
+                Promise.all(assigns)
+                    .then(a => {
+                        var newdowns = {};
+                        for (d in a) {
+                            newdowns[d] = 1;
+                        }
+
+                        for (i in downs) {
+                            ops.push({ type: 'del', path: ['chrono', i] });
+                            ops.push({ type: 'put', path: ['govd', from], data: newdowns });
+                        }
+                        ops.push({ type: 'put', path: ['feed', `${json.block_num}:${json.transaction_id}`], data: `@${from}| Set withdrawl of ${parseFloat(amount / 1000).toFixed(3)} ${config.TOKEN} from Governance` });
+                        if (process.env.npm_lifecycle_event == 'test') pc[2] = ops
+                        store.batch(ops, pc);
+                    });
+            } else if (typeof amount == 'number' && amount == 0 && active) {
+                for (i in downs) {
+                    ops.push({ type: 'del', path: ['chrono', i] });
+                }
+                ops.push({ type: 'put', path: ['feed', `${json.block_num}:${json.transaction_id}`], data: `@${from}| Canceled Governance withdrawl` });
+                if (process.env.npm_lifecycle_event == 'test') pc[2] = ops
+                store.batch(ops, pc);
+            } else {
+                ops.push({ type: 'put', path: ['feed', `${json.block_num}:${json.transaction_id}`], data: `@${from}| Invalid Governance withdrawl` });
+                if (process.env.npm_lifecycle_event == 'test') pc[2] = ops
+                store.batch(ops, pc);
+            }
+
+        })
+        .catch(e => { console.log(e); });
+
+}
