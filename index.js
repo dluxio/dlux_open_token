@@ -488,36 +488,6 @@ function startWith(hash) {
                         if (!e) {
                             if (hash) {
                                 var cleanState = data[1]
-                                delete cleanState.powd
-                                delete cleanState.chrono['50494069:0']
-                                delete cleanState.chrono['50694069:0']
-                                delete cleanState.chrono['50894069:0']
-                                delete cleanState.chrono['51094069:0']
-                                delete cleanState.chrono['51294069:0']
-                                delete cleanState.chrono['51494069:0']
-                                delete cleanState.chrono['51694069:0']
-                                delete cleanState.chrono['51894069:0']
-                                delete cleanState.chrono['52094069:0']
-                                delete cleanState.chrono['52294069:0']
-                                delete cleanState.chrono['52494069:0']
-                                delete cleanState.chrono['52694069:0']
-                                delete cleanState.col
-                                delete cleanState.balances.undefined
-                                delete cleanState.markets.node['foxon.dlux'].burned
-                                cleanState.runners = {
-                                    disregardfiat: { l: 1 },
-                                    'dlux-io': { l: 1 },
-                                    markegiles: { l: 1 },
-                                    inconceivable: { l: 1 },
-                                    dluxfox: { l: 1 },
-                                    'foxon.dlux': { l: 1 },
-                                    heyhey: { l: 1 }
-                                }
-                                cleanState.gov = {}
-                                cleanState.gov.disregardfiat = 30000
-                                cleanState.gov.dluxfox = 20000
-                                cleanState.gov['foxon.dlux'] = 9000
-                                cleanState.stats.tokenSupply -= 65158
                                 store.put([], cleanState, function(err) {
                                     if (err) {
                                         console.log(err)
