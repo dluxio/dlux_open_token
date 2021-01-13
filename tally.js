@@ -11,7 +11,7 @@ exports.tally = (num, plasma, isStreaming) => new Promise((resolve, reject) => {
         Pstats = getPathObj(['stats']),
         Prb = getPathObj(['balances']),
         Prcol = getPathObj(['col']),
-        Prpow = getPathObj(['pow']),
+        Prpow = getPathObj(['gov']),
         Prqueue = getPathObj(['queue'])
     Promise.all([Prunners, Pnode, Pstats, Prb, Prcol, Prpow, Prqueue]).then(function(v) {
         deleteObjs([
@@ -24,7 +24,7 @@ exports.tally = (num, plasma, isStreaming) => new Promise((resolve, reject) => {
                     stats = v[2],
                     rbal = v[3],
                     rcol = v[4],
-                    rpow = v[5],
+                    rgov = v[5],
                     queue = {},
                     tally = {
                         agreements: {
@@ -69,11 +69,20 @@ exports.tally = (num, plasma, isStreaming) => new Promise((resolve, reject) => {
                     stats.hashLastIBlock = consensus;
                     for (node in tally.agreements.hashes) {
                         if (tally.agreements.hashes[node] == consensus) {
-                            new_queue[node] = {
-                                t: (rbal[node] || 0) + (rcol[node] || 0) + (rpow[node] || 0),
-                                l: rbal[node] || 0,
-                                c: rcol[node] || 0,
-                                p: rpow[node] || 0
+                            if (num < 50500000) {
+                                new_queue[node] = {
+                                    t: (rbal[node] || 0) + (rcol[node] || 0) + (rgov[node] || 0),
+                                    l: rbal[node] || 0,
+                                    c: rcol[node] || 0,
+                                    g: rgov[node] || 0
+                                }
+                            } else {
+                                new_queue[node] = {
+                                    t: (rcol[node] || 0) + (rgov[node] || 0),
+                                    l: rbal[node] || 0,
+                                    c: rcol[node] || 0,
+                                    g: rgov[node] || 0
+                                }
                             }
                         }
                     }
@@ -84,13 +93,13 @@ exports.tally = (num, plasma, isStreaming) => new Promise((resolve, reject) => {
                             election[node] = new_queue[node]
                         }
                     }
-                    if (Object.keys(still_running).length < 25) {
+                    if (Object.keys(still_running).length < 13) {
                         let winner = {
                             node: '',
                             t: 0
                         }
                         for (node in election) {
-                            if (election[node].t > winner.t) {
+                            if (election[node].t > winner.t) { //disallow 0 bals in governance
                                 winner.node = node
                                 winner.t = election[node].t
                             }
@@ -99,9 +108,14 @@ exports.tally = (num, plasma, isStreaming) => new Promise((resolve, reject) => {
                             still_running[winner.node] = new_queue[winner.node]
                         }
                     }
-                    let MultiSigCollateral = 0
+                    let collateral = []
                     for (node in still_running) {
-                        MultiSigCollateral += still_running[node].t
+                        collateral.push(still_running[node].t)
+                    }
+                    collateral.sort((a, b) => a - b)
+                    let MultiSigCollateral = 0
+                    for (i = 0; i < parseInt(collateral.length / 2); i++) {
+                        MultiSigCollateral += collateral[i]
                     }
                     stats.multiSigCollateral = MultiSigCollateral
                     stats.lastBlock = stats.hashLastIBlock;
@@ -141,6 +155,7 @@ exports.tally = (num, plasma, isStreaming) => new Promise((resolve, reject) => {
                     { type: 'put', path: ['balances', 'ra'], data: rbal.ra }
                 ]
                 if (Object.keys(new_queue).length) ops.push({ type: 'put', path: ['queue'], data: new_queue })
+                    //if (process.env.npm_lifecycle_event == 'test') newPlasma = ops
                 store.batch(ops, [resolve, reject, newPlasma]);
                 if (process.env.npm_lifecycle_event != 'test') {
                     if (consensus && (consensus != plasma.hashLastIBlock || consensus != nodes[config.username].report.hash) && isStreaming) {
@@ -149,7 +164,7 @@ exports.tally = (num, plasma, isStreaming) => new Promise((resolve, reject) => {
                         //const blockState = Buffer.from(JSON.stringify([num, state]))
                         //plasma.hashBlock = '';
                         //plasma.hashLastIBlock = '';
-                        console.log(num + `:Abandoning ${plasma.hashLastIBlock} because ${errors[0]}`);
+                        console.log(num + `:Abandoning ${plasma.hashLastIBlock} because failed consensus.`);
                     }
                 }
             })

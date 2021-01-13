@@ -1,5 +1,6 @@
 const { onStreamingStart } = require('./onStreamingStart')
 const { send } = require('./send')
+const { gov_up, gov_down } = require('./gov')
 const { power_up, power_down } = require('./power')
 const { delegate_vesting_shares } = require('./delegate_vesting_shares')
 const { vote, vote_content } = require('./vote')
@@ -27,6 +28,8 @@ module.exports = {
     escrow_dispute,
     escrow_release,
     escrow_transfer,
+    gov_down,
+    gov_up,
     node_add,
     node_delete,
     nomention,

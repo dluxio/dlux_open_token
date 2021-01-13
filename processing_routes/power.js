@@ -43,10 +43,10 @@ exports.power_down = (json, from, active, pc) => {
                 ops = [],
                 assigns = [];
             if (typeof amount == 'number' && amount >= 0 && p >= amount && active) {
-                var odd = parseInt(amount % 13),
-                    weekly = parseInt(amount / 13);
-                for (var i = 0; i < 13; i++) {
-                    if (i == 12) {
+                var odd = parseInt(amount % 4),
+                    weekly = parseInt(amount / 4);
+                for (var i = 0; i < 4; i++) {
+                    if (i == 3) {
                         weekly += odd;
                     }
                     assigns.push(chronAssign(parseInt(json.block_num + (200000 * (i + 1))), {

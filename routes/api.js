@@ -1,5 +1,5 @@
 let config = require('./../config')
-const { store, NodeOps, VERSION } = require("./../index");
+const { store, GetNodeOps, VERSION } = require("./../index");
 const fetch = require('node-fetch');
 let { getPathNum } = require("./../getPathNum");
 let { getPathObj } = require("./../getPathObj");
@@ -180,7 +180,7 @@ exports.state = (req, res, next) => {
 
 exports.pending = (req, res, next) => {
     res.setHeader('Content-Type', 'application/json');
-    res.send(JSON.stringify(NodeOps(), null, 3))
+    res.send(JSON.stringify(GetNodeOps(), null, 3))
 }
 
 //heroku force https

@@ -26,6 +26,7 @@ function dao(num) {
                         });
                     }),
                     Pbals = getPathObj(['balances']),
+                    Pgovs = getPathObj(['gov']),
                     Prunners = getPathObj(['runners']),
                     Pnodes = getPathObj(['markets', 'node']),
                     Pstats = getPathObj(['stats']),
@@ -37,7 +38,7 @@ function dao(num) {
                     Pnomen = getPathObj(['nomention']),
                     Pposts = getPathObj(['posts']),
                     Pfeed = getPathObj(['feed']);
-                Promise.all([Pnews, Pbals, Prunners, Pnodes, Pstats, Pdelegations, Pico, Pdex, Pbr, Ppbal, Pnomen, Pposts, Pfeed]).then(function(v) {
+                Promise.all([Pnews, Pbals, Prunners, Pnodes, Pstats, Pdelegations, Pico, Pdex, Pbr, Ppbal, Pnomen, Pposts, Pfeed, Pgovs]).then(function(v) {
                             daops.push({ type: 'del', path: ['postQueue'] });
                             daops.push({ type: 'del', path: ['br'] });
                             daops.push({ type: 'del', path: ['rolling'] });
@@ -56,7 +57,8 @@ function dao(num) {
                                 nomention = v[10],
                                 cpost = v[11],
                                 feedCleaner = v[12],
-                                feedKeys = Object.keys(feedCleaner);
+                                govBals = v[13]
+                            feedKeys = Object.keys(feedCleaner);
                             console.log(cpost);
                             for (feedi = 0; feedi < feedKeys.length; feedi++) {
                                 if (feedKeys[feedi].split(':')[0] < num - 30240) {
@@ -116,10 +118,10 @@ function dao(num) {
                             }
                             for (var node in mnode) { //and pay them
                                 i = parseInt(mnode[node].wins / j * b);
-                                if (bals[node]) {
-                                    bals[node] += i;
+                                if (govBals[node]) {
+                                    govBals[node] += i;
                                 } else {
-                                    bals[node] = i;
+                                    govBals[node] = i;
                                 }
                                 bals.rn -= i;
                                 const _at = _atfun(node);
@@ -147,7 +149,7 @@ function dao(num) {
                                 post = post + `* ${parseFloat(parseInt(k) / 1000).toFixed(3)} ${config.TOKEN} for ${_at}${i}'s ${parseFloat(deles[i] / 1000000).toFixed(1)} Mvests.\n`;
                                 console.log(num + `:${k} ${config.TOKEN} awarded to ${i} for ${deles[i]} VESTS`);
                             }
-                            stats.dluxPerDel = parseInt(k / j);
+                            stats.dluxPerDel = parseFloat(k / j).toFixed(6);
                             post = post + `*****\n ## ICO Status\n`;
                             if (bals.ri < 100000000 && stats.tokenSupply < 100000000000) {
                                 stats.icoRound++;

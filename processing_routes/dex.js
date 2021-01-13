@@ -2,7 +2,7 @@ const config = require('./../config')
 const { store, GetNodeOps, newOps, unshiftOp, pushOp, spliceOp } = require('./../index')
 const { getPathNum } = require('./../getPathNum')
 const { getPathObj } = require('./../getPathObj')
-const { add, addCol, release, deletePointer, credit, nodeUpdate, penalty, chronAssign, forceCancel, hashThis, isEmpty } = require('./../lil_ops')
+const { add, addCol, addGov, release, deletePointer, credit, chronAssign, forceCancel, hashThis, isEmpty } = require('./../lil_ops')
 
 exports.dex_buy = (json, from, active, pc) => {
     let Pbal = getPathNum(['balances', from]),
@@ -154,7 +154,7 @@ exports.dex_hive_sell = (json, from, active, pc) => {
                 txid
             })
             Promise.all([path])
-                .then((r) => {
+                .then(r => {
                     contract.expire_path = r[0]
                     ops = [
                         { type: 'put', path: ['dex', 'hive', 'sellOrders', `${contract.rate}:${contract.txid}`], data: contract },
@@ -327,11 +327,11 @@ exports.escrow_approve = (json, pc) => {
                         if (c.approveAgent) {
                             if (parseFloat(c.hive) > 0) {
                                 //contract.type = 'sb'
-                                dataOps.push({ type: 'put', path: ['feed', `${json.block_num}:${c.txid}`], data: `@${c.eo}| signed a ${parseFloat(c.hive).toFixed(3)} HIVE buy order for ${parseFloat(c.amount).toFixed(3)}` })
+                                dataOps.push({ type: 'put', path: ['feed', `${json.block_num}:${c.txid}`], data: `@${c.eo}| signed a ${parseFloat(c.hive / 1000).toFixed(3)} HIVE buy order for ${parseFloat(c.amount /1000).toFixed(3)} ${config.TOKEN}` })
                                 dataOps.push({ type: 'put', path: ['dex', 'hive', 'buyOrders', `${c.rate}:${c.txid}`], data: c })
                             } else if (parseFloat(c.hbd) > 0) {
                                 //contract.type = 'db'
-                                dataOps.push({ type: 'put', path: ['feed', `${json.block_num}:${c.txid}`], data: `@${c.eo}| signed a ${parseFloat(c.hbd).toFixed(3)} HBD buy order for ${parseFloat(c.amount).toFixed(3)}` })
+                                dataOps.push({ type: 'put', path: ['feed', `${json.block_num}:${c.txid}`], data: `@${c.eo}| signed a ${parseFloat(c.hbd / 1000).toFixed(3)} HBD buy order for ${parseFloat(c.amount /1000).toFixed(3)} ${config.TOKEN}` })
                                 dataOps.push({ type: 'put', path: ['dex', 'hbd', 'buyOrders', `${c.rate}:${c.txid}`], data: c })
                             }
                         }
@@ -451,7 +451,7 @@ exports.escrow_release = (json, pc) => {
                     if (Object.keys(c).length && c.auths[2]) {
                         c.escrow = parseInt(c.escrow / 2)
                         let lil_ops = [
-                            add(json.agent, parseInt(c.escrow / 2)),
+                            addGov(json.agent, parseInt(c.escrow / 2)),
                             addCol(json.agent, -parseInt(c.escrow / 2)),
                             chronAssign(json.block_num + 200, { op: 'check', agent: c.auths[2][0], txid: c.txid + ':transfer', acc: c.from, id: c.escrow_id.toString() }),
                             credit(json.who)
@@ -470,8 +470,8 @@ exports.escrow_release = (json, pc) => {
                             .catch(e => { console.log(e) })
                     } else if (c.cancel && json.receiver == c.from) {
                         let lil_ops = [
-                            add(json.agent, parseInt(c.escrow / 2)),
-                            add(json.to, parseInt(c.escrow / 2)),
+                            addGov(json.agent, parseInt(c.escrow / 2)),
+                            addGov(json.to, parseInt(c.escrow / 2)),
                             addCol(json.agent, -parseInt(c.escrow / 2)),
                             addCol(json.to, -parseInt(c.escrow / 2)),
                             deletePointer(c.escrow_id, a.for),
@@ -534,7 +534,7 @@ exports.transfer = (json, pc) => {
                         if (c.type === 'sb' || c.type === 'db')
                             eo = c.from
                         let lil_ops = [
-                            add(json.from, parseInt(c.escrow)),
+                            addGov(json.from, parseInt(c.escrow)),
                             addCol(json.from, -parseInt(c.escrow)),
                             deletePointer(c.escrow_id, eo),
                             credit(json.from)
@@ -834,7 +834,7 @@ exports.escrow_transfer = (json, pc) => {
                             lil_ops.push(chronAssign(json.block_num + 200, { op: 'check', agent: contract.pending[1][0], txid: contract.txid + ':buyApproveA', acc: json.from, id: json.escrow_id.toString() }))
                             lil_ops.push(chronAssign(json.block_num + 200, { op: 'check', agent: contract.pending[0][0], txid: contract.txid + ':buyApproveT', acc: json.from, id: json.escrow_id.toString() }))
                             ops = [
-                                { type: 'put', path: ['feed', `${json.block_num}:${json.transaction_id}`], data: `@${json.from}| has bought ${meta}: ${parseFloat(contract.amount / 1000).toFixed(3)} for ${samount}` },
+                                { type: 'put', path: ['feed', `${json.block_num}:${json.transaction_id}`], data: `@${json.from}| has bought ${meta}: ${parseFloat(contract.amount / 1000).toFixed(3)} for ${samount}` }, //fix this for types
                                 { type: 'put', path: ['contracts', seller, meta.split(':')[1]], data: contract },
                                 { type: 'put', path: ['escrow', contract.pending[0][0], contract.txid + ':buyApproveT'], data: contract.pending[0][1] },
                                 { type: 'put', path: ['escrow', contract.pending[1][0], contract.txid + ':buyApproveA'], data: contract.pending[1][1] },
@@ -1146,7 +1146,7 @@ function deny(json, hiveVWMA, hbdVWMA) {
             to: json.to,
             agent: json.agent,
             escrow_id: json.escrow_id.toString(),
-            col: coll
+            col: 0
         }
     })
     chronAssign(json.block_num + 200, { op: 'denyA', agent: json.agent, txid: `${json.from}/${json.escrow_id}:denyA`, acc: json.from, id: json.escrow_id.toString() })
