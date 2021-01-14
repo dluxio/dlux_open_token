@@ -99,16 +99,12 @@ exports.tally = (num, plasma, isStreaming) => new Promise((resolve, reject) => {
                     //minimum to outweight large initial stake holders
                     //adjust size of runners group based on stake
                     let low_sum = 0
-                    let next = 0,
-                        next_bal = 0,
-                        last_bal = 0
+                    let last_bal = 0
                     counting_array.sort((a, b) => a - b)
                     for (i = 0; i < parseInt(counting_array.length / 2) + 1; i++) {
                         low_sum += counting_array[i]
                         last_bal = counting_array[i]
-                        next = i + 1
                     }
-                    next_bal = counting_array[next]
                     if (Object.keys(still_running).length < 25) {
                         let winner = {
                             node: '',
@@ -120,7 +116,7 @@ exports.tally = (num, plasma, isStreaming) => new Promise((resolve, reject) => {
                                 winner.t = election[node].t
                             }
                         }
-                        if (winner.node && (winner.t > next_bal || Object.keys(still_running).length < 7)) {
+                        if (winner.node && (winner.t > last_bal || Object.keys(still_running).length < 9)) {
                             still_running[winner.node] = new_queue[winner.node]
                         }
                     }
@@ -128,7 +124,6 @@ exports.tally = (num, plasma, isStreaming) => new Promise((resolve, reject) => {
                     for (node in still_running) {
                         collateral.push(still_running[node].t)
                     }
-                    collateral.sort((a, b) => a - b)
                     let MultiSigCollateral = 0
                     for (i = 0; i < collateral.length; i++) {
                         MultiSigCollateral += collateral[i]
