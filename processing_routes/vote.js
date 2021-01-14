@@ -21,6 +21,18 @@ exports.vote = (json, pc) => {
                     if (!pow) {
                         pc[0](pc[2])
                     } else {
+                        if (!Object.keys(up).length) {
+                            up = {
+                                max: pow * 50,
+                                last: 0,
+                                power: pow * 50
+                            }
+                            down = {
+                                max: pow * 50,
+                                last: 0,
+                                power: pow * 50
+                            }
+                        }
                         if (json.weight >= 0) {
                             weights = upPowerMagic(up, json)
                         } else {
@@ -31,7 +43,7 @@ exports.vote = (json, pc) => {
                             b: json.block_num,
                             v: weights.vote
                         }
-                        ops.push({ type: 'put', path: ['up', json.voter], data: weights.dowupn })
+                        ops.push({ type: 'put', path: ['up', json.voter], data: weights.up })
                         ops.push({ type: 'put', path: ['posts', json.author, json.permlink], data: p })
                         store.batch(ops, pc)
                     }
@@ -83,4 +95,64 @@ exports.vote_content = (json, from, active, pc) => {
         .catch(function(e) {
             console.log(e);
         });
+}
+
+function upPowerMagic(up, json) {
+    const healTime = json.block_num - up.last //144000 blocks in 5 days
+    const heal = parseInt(up.max * healTime / 144000)
+    var newPower = up.power + heal
+    if (newPower > up.max) {
+        newPower = up.max
+    }
+    var vote = parseInt(newPower * json.weight / 500000) //50 from max AND 10000 from full weight
+    newPower -= vote
+    const newUp = {
+        max: up.max,
+        last: json.block_num,
+        power: newPower
+    }
+    return { up: newUp, vote: vote }
+}
+
+function downPowerMagic(up, down, json) {
+    const downHealTime = json.block_num - down.last //144000 blocks in 5 days
+    const downHeal = parseInt(down.max * downHealTime / 144000)
+    var newDownPower = down.power + downHeal
+    if (newDownPower > down.max) {
+        newDownPower = down.max
+    }
+    const healTime = json.block_num - up.last //144000 blocks in 5 days
+    const heal = parseInt(up.max * healTime / 144000)
+    var newPower = up.power + heal
+    if (newPower > up.max) {
+        newPower = up.max
+    }
+    var bigSpender = false
+    var vote
+    var downvote = parseInt(newDownPower * json.weight / 500000) //5 from max AND 10000 from full weight
+    newDownPower -= downvote
+    if (newDownPower < down.max * 0.9) { //further down power vote effect up and down power meters
+        bigSpender = true
+    }
+    if (bigSpender) {
+        vote = parseInt(newPower * json.weight / 500000) //50 from max AND 10000 from full weight
+        if (vote > downVote) {
+            newPower -= vote
+            newDownPower -= vote
+        } else {
+            newPower -= downVote
+            newDownPower -= downVote
+        }
+    }
+    const newUp = {
+        max: up.max,
+        last: json.block_num,
+        power: newPower
+    }
+    const newDown = {
+        max: down.max,
+        last: json.block_num,
+        power: newDownPower
+    }
+    return { up: newUp, down: newDown, vote: vote }
 }
