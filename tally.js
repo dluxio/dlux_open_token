@@ -130,7 +130,7 @@ exports.tally = (num, plasma, isStreaming) => new Promise((resolve, reject) => {
                     }
                     collateral.sort((a, b) => a - b)
                     let MultiSigCollateral = 0
-                    for (i = 0; i < parseInt(collateral.length / 2); i++) {
+                    for (i = 0; i < collateral.length; i++) {
                         MultiSigCollateral += collateral[i]
                     }
                     stats.multiSigCollateral = MultiSigCollateral
