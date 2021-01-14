@@ -22,15 +22,13 @@ exports.dex_buy = (json, from, active, pc) => {
             if (found.auths)
                 agent = found.auths[0][1][1].to
             if (found.amount && active && bal >= found.amount) {
-                var PbalTo = getPathNum(['balances', agent]),
-                    PbalFor = getPathNum(['balances', found.from]),
+                var PbalFor = getPathNum(['balances', found.from]),
                     PBook = getPathObj(['dex', type, 'buyOrders'])
-                Promise.all([PbalTo, PbalFor, PBook])
+                Promise.all([PbalFor, PBook])
                     .then(function(v) {
                         console.log({ v })
-                        var toBal = v[0],
-                            fromBal = v[1],
-                            Book = v[2],
+                        var fromBal = v[0],
+                            Book = v[1],
                             ops = [],
                             lowest = 9999999999,
                             lil_ops = []
@@ -39,9 +37,7 @@ exports.dex_buy = (json, from, active, pc) => {
                                 lowest = parseFloat(i.split(":")[0])
                             }
                         }
-                        if (toBal > found.amount && parseFloat(found.rate) >= parseFloat(lowest) * 0.99) {
-                            toBal -= found.amount
-                            found.escrow = found.amount
+                        if (bal > found.amount && parseFloat(found.rate) >= parseFloat(lowest) * 0.99) {
                             bal -= found.amount
                             fromBal += found.amount
                             found.buyer = from
@@ -100,7 +96,6 @@ exports.dex_buy = (json, from, active, pc) => {
                                         { type: 'put', path: ['contracts', json.for, json.contract.split(':')[1]], data: found },
                                         { type: 'put', path: ['escrow', found.auths[0][0], found.txid + ':dispute'], data: found.auths[0][1] },
                                         { type: 'put', path: ['balances', from], data: bal },
-                                        { type: 'put', path: ['balances', agent], data: toBal },
                                         { type: 'put', path: ['balances', found.from], data: fromBal },
                                         { type: 'put', path: ['stats', 'HbdVWMA'], data: hbdVMWA },
                                         { type: 'put', path: ['stats', 'HiveVWMA'], data: hiveVMWA, },
@@ -520,7 +515,7 @@ exports.transfer = (json, pc) => {
                     co = json.memo.split(' ')[2],
                     cp = getPathObj(['contracts', co, addr]),
                     sp = getPathObj(['contracts', json.to, addr]),
-                    gp = getPathNum(['balances', json.from])
+                    gp = getPathNum(['gov', json.from])
                 Promise.all([cp, gp, sp])
                     .then(ret => {
                         let d = ret[1],
@@ -695,8 +690,8 @@ exports.escrow_transfer = (json, pc) => {
     if (timer > 518400000) { etime = true } //6 days 
     if (timer > 20000000) { btime = true } //6 hours
     let PfromBal = getPathNum(['balances', json.from]),
-        PtoBal = getPathNum(['balances', json.to]),
-        PagentBal = getPathNum(['balances', json.agent]),
+        PtoBal = getPathNum(['gov', json.to]),
+        PagentBal = getPathNum(['gov', json.agent]),
         PtoCol = getPathNum(['col', json.to]),
         PagentCol = getPathNum(['col', json.agent]),
         PtoNode = getPathObj(['markets', 'node', json.to]),
@@ -840,8 +835,8 @@ exports.escrow_transfer = (json, pc) => {
                                 { type: 'put', path: ['escrow', contract.pending[1][0], contract.txid + ':buyApproveA'], data: contract.pending[1][1] },
                                 { type: 'put', path: ['escrow', json.escrow_id.toString(), json.from], data: { 'for': seller, 'contract': meta.split(':')[1] } },
                                 { type: 'put', path: ['balances', json.from], data: fromBal },
-                                { type: 'put', path: ['balances', json.to], data: toBal },
-                                { type: 'put', path: ['balances', contract.agent], data: agentBal },
+                                { type: 'put', path: ['gov', json.to], data: toBal },
+                                { type: 'put', path: ['gov', json.agent], data: agentBal },
                                 { type: 'put', path: ['col', json.to], data: toCol },
                                 { type: 'put', path: ['col', contract.agent], data: agentCol },
                                 { type: 'put', path: ['dex', type, 'tick'], data: contract.rate },
@@ -991,8 +986,8 @@ exports.escrow_transfer = (json, pc) => {
                 Promise.all(lil_ops)
                     .then(expire_paths => {
                         contract.expire_path = expire_paths[2]
-                        ops.push({ type: 'put', path: ['balances', json.to], data: toBal - (dextxamount * 2) })
-                        ops.push({ type: 'put', path: ['balances', json.agent], data: agentBal - (dextxamount * 2) })
+                        ops.push({ type: 'put', path: ['gov', json.to], data: toBal - (dextxamount * 2) })
+                        ops.push({ type: 'put', path: ['gov', json.agent], data: agentBal - (dextxamount * 2) })
                         ops.push({ type: 'put', path: ['col', json.to], data: toCol + (dextxamount * 2) })
                         ops.push({ type: 'put', path: ['col', json.agent], data: agentCol + (dextxamount * 2) })
                         ops.push({ type: 'put', path: ['contracts', json.from, txid], data: contract })

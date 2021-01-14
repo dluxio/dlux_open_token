@@ -68,8 +68,8 @@ var recents = []
     //HIVE API CODE
 
 //Start Program Options   
-//startWith('QmVUiCGyoSs231zG5J5CoqLUekfP1tzSX3JAX5GdrbWXW4') //for testing and replaying
-dynStart(config.leader)
+startWith('QmdVzWMMzZKac3XYrUhcr3sGbRoqgfezctSob4QF5ctX71') //for testing and replaying
+    //dynStart(config.leader)
 
 // API defs
 api.use(API.https_redirect);
@@ -489,6 +489,13 @@ function startWith(hash) {
                         if (!e) {
                             if (hash) {
                                 var cleanState = data[1]
+                                cleanState.stats.tokenSupply -= 291070
+                                cleanState.balances.rishi556 += 500000
+                                cleanState.balances.foxon += 509000
+                                cleanState.balances.cadawg += 500000
+                                cleanState.balances['qwoyn-dlux'] += 500000
+                                cleanState.balances.makemoneyhd += 500000
+                                cleanState.balances.rm -= 2509000 //thanks early node testers :)
                                 store.put([], cleanState, function(err) {
                                     if (err) {
                                         console.log(err)
@@ -497,22 +504,44 @@ function startWith(hash) {
                                             if (!error) {
                                                 console.log(`State Check:  ${returns}\nAccount: ${config.username}\nKey: ${config.active.substr(0,3)}...`)
                                                 var supply = 0
+                                                var lbal = 0
                                                 for (bal in cleanState.balances) {
                                                     supply += cleanState.balances[bal]
+                                                    lbal += cleanState.balances[bal]
                                                 }
+                                                var gov = 0,
+                                                    govt = 0
+                                                try { govt = cleanState.gov.t } catch (e) {}
                                                 for (bal in cleanState.gov) {
-                                                    if (bal != 't') supply += cleanState.gov[bal]
+                                                    if (bal != 't') {
+                                                        supply += cleanState.gov[bal]
+                                                        gov += cleanState.gov[bal]
+                                                    }
                                                 }
+                                                var con = 0
                                                 for (user in cleanState.contracts) {
                                                     for (contract in cleanState.contracts[user]) {
-                                                        if (cleanState.contracts[user][contract].amount) supply += cleanState.contracts[user][contract].amount
+                                                        if (cleanState.contracts[user][contract].amount && (cleanState.contracts[user][contract].type == 'ss' || cleanState.contracts[user][contract].type == 'ds')) {
+                                                            supply += cleanState.contracts[user][contract].amount
+                                                            con += cleanState.contracts[user][contract].amount
+                                                        }
                                                     }
                                                 }
                                                 for (user in cleanState.col) {
                                                     supply += cleanState.col[user]
                                                 }
-                                                supply += cleanState.pow.t
+                                                var pow = 0,
+                                                    powt = cleanState.pow.t
+                                                for (bal in cleanState.pow) {
+                                                    if (bal != 't') {
+                                                        supply += cleanState.pow[bal]
+                                                        pow += cleanState.pow[bal]
+                                                    }
+                                                }
                                                 console.log(`supply check:state:${cleanState.stats.tokenSupply} vs check: ${supply}`)
+                                                if (cleanState.stats.tokenSupply != supply) {
+                                                    console.log({ lbal, gov, govt, pow, powt, con })
+                                                }
                                             }
                                         })
                                         startApp()

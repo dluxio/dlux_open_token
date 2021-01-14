@@ -162,7 +162,7 @@ exports.user = (req, res, next) => {
                 contracts: v[3],
                 up: v[6],
                 down: v[7],
-                gov: v[45],
+                gov: v[5],
                 node: config.username,
                 VERSION
             }, null, 3))
