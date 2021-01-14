@@ -4,45 +4,58 @@ const { getPathNum } = require('./../getPathNum')
 const { getPathObj } = require('./../getPathObj')
 
 exports.vote = (json, pc) => {
-    if (json.voter == config.leader) {
-        store.get(['escrow', json.voter], function(e, a) {
-            if (!e) {
-                var found = 0;
-                for (b in a) {
-                    console.log(a, b, json);
-                    if (a[b][1].permlink == json.permlink && a[b][1].author == json.author) {
-                        found++;
-                        let ops = [{ type: 'del', path: ['escrow', json.voter, b] }];
-                        store.batch(ops, pc);
-                        try {
-                            if (json.voter == config.username) {
-                                delete plasma.pending[b];
-                                /*
-                                for (var i = 0; i < NodeOps.length; i++) {
-                                    if (NodeOps[i][1][1].author == json.author && NodeOps[i][1][1].permlink == json.permlink && NodeOps[i][1][0] == 'vote') {
-                                        NodeOps.splice(i, 1);
-                                    }
-                                }
-                                */
-                            }
-                        } catch (e) { console.log(e); }
-                        break;
-                    } else {
-                        pc[0](pc[2]);
-                    }
-                }
-                if (!found) {
-                    pc[0](pc[2]);
-                }
-            } else {
-                pc[0](pc[2]);
+    getPathObj(['posts', `${json.author}/${json.permlink}`]).then(p => {
+        if (Object.keys(p).length) {
+            if (!Object.hasOwnProperty('votes')) {
+                p.votes = {}
             }
-        });
-    } else {
-        pc[0](pc[2]);
-    }
+            var PvotePow = getPathObj(['up', json.voter]),
+                PdVotePow = getPathObj(['down', json.voter])
+            PPow = getPathNum(['pow', json.voter])
+            Promise.all([PvotePow, PdVotePow, PPow]).then(function(v) {
+                    var up = v[0],
+                        down = v[1],
+                        pow = v[2],
+                        ops = [],
+                        weights
+                    if (!pow) {
+                        pc[0](pc[2])
+                    } else {
+                        if (!Object.keys(up).length) {
+                            up = {
+                                max: pow * 50,
+                                last: 0,
+                                power: pow * 50
+                            }
+                            down = {
+                                max: pow * 50,
+                                last: 0,
+                                power: pow * 50
+                            }
+                        }
+                        if (json.weight >= 0) {
+                            weights = upPowerMagic(up, json)
+                        } else {
+                            weights = downPowerMagic(up, down, json)
+                            ops.push({ type: 'put', path: ['down', json.voter], data: weights.down })
+                        }
+                        p.votes[json.voter] = {
+                            b: json.block_num,
+                            v: weights.vote
+                        }
+                        ops.push({ type: 'put', path: ['up', json.voter], data: weights.up })
+                        ops.push({ type: 'put', path: ['posts', `${json.author}/${json.permlink}`], data: p })
+                        store.batch(ops, pc)
+                    }
+                })
+                .catch(e => console.log(e))
+        } else {
+            pc[0](pc[2])
+        }
+    })
 }
 
+/*
 exports.vote_content = (json, from, active, pc) => {
     var powPromise = getPathNum(['pow', from]),
         postPromise = getPathObj(['posts', `${json.author}/${json.permlink}`]),
@@ -83,4 +96,64 @@ exports.vote_content = (json, from, active, pc) => {
         .catch(function(e) {
             console.log(e);
         });
+}
+*/
+function upPowerMagic(up, json) {
+    const healTime = json.block_num - up.last //144000 blocks in 5 days
+    const heal = parseInt(up.max * healTime / 144000)
+    var newPower = up.power + heal
+    if (newPower > up.max) {
+        newPower = up.max
+    }
+    var vote = parseInt(newPower * json.weight / 500000) //50 from max AND 10000 from full weight
+    newPower -= vote
+    const newUp = {
+        max: up.max,
+        last: json.block_num,
+        power: newPower
+    }
+    return { up: newUp, vote: vote }
+}
+
+function downPowerMagic(up, down, json) {
+    const downHealTime = json.block_num - down.last //144000 blocks in 5 days
+    const downHeal = parseInt(down.max * downHealTime / 144000)
+    var newDownPower = down.power + downHeal
+    if (newDownPower > down.max) {
+        newDownPower = down.max
+    }
+    const healTime = json.block_num - up.last //144000 blocks in 5 days
+    const heal = parseInt(up.max * healTime / 144000)
+    var newPower = up.power + heal
+    if (newPower > up.max) {
+        newPower = up.max
+    }
+    var bigSpender = false
+    var vote
+    var downvote = parseInt(newDownPower * json.weight / 500000) //5 from max AND 10000 from full weight
+    newDownPower -= downvote
+    if (newDownPower < down.max * 0.9) { //further down power vote effect up and down power meters
+        bigSpender = true
+    }
+    if (bigSpender) {
+        vote = parseInt(newPower * json.weight / 500000) //50 from max AND 10000 from full weight
+        if (vote > downVote) {
+            newPower -= vote
+            newDownPower -= vote
+        } else {
+            newPower -= downVote
+            newDownPower -= downVote
+        }
+    }
+    const newUp = {
+        max: up.max,
+        last: json.block_num,
+        power: newPower
+    }
+    const newDown = {
+        max: down.max,
+        last: json.block_num,
+        power: newDownPower
+    }
+    return { up: newUp, down: newDown, vote: vote }
 }

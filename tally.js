@@ -86,14 +86,30 @@ exports.tally = (num, plasma, isStreaming) => new Promise((resolve, reject) => {
                             }
                         }
                     }
+                    let counting_array = []
                     for (node in new_queue) {
                         if (runners.hasOwnProperty(node)) {
                             still_running[node] = new_queue[node]
+                            counting_array.push(new_queue[node])
                         } else {
                             election[node] = new_queue[node]
                         }
                     }
-                    if (Object.keys(still_running).length < 13) {
+                    //concerns, size of multi-sig transactions
+                    //minimum to outweight large initial stake holders
+                    //adjust size of runners group based on stake
+                    let low_sum = 0
+                    let next = 0,
+                        next_bal = 0,
+                        last_bal = 0
+                    counting_array.sort((a, b) => a - b)
+                    for (i = 0; i < parseInt(counting_array.length / 2) + 1; i++) {
+                        low_sum += counting_array[i]
+                        last_bal = counting_array[i]
+                        next = i + 1
+                    }
+                    next_bal = counting_array[next]
+                    if (Object.keys(still_running).length < 25) {
                         let winner = {
                             node: '',
                             t: 0
@@ -104,7 +120,7 @@ exports.tally = (num, plasma, isStreaming) => new Promise((resolve, reject) => {
                                 winner.t = election[node].t
                             }
                         }
-                        if (winner.node) {
+                        if (winner.node && (winner.t > next_bal || Object.keys(still_running).length < 7)) {
                             still_running[winner.node] = new_queue[winner.node]
                         }
                     }
@@ -118,6 +134,7 @@ exports.tally = (num, plasma, isStreaming) => new Promise((resolve, reject) => {
                         MultiSigCollateral += collateral[i]
                     }
                     stats.multiSigCollateral = MultiSigCollateral
+                    stats.safetyLimit = low_sum
                     stats.lastBlock = stats.hashLastIBlock;
                     stats.hashLastIBlock = consensus;
                     for (var node in nodes) {
