@@ -4,43 +4,43 @@ const { getPathNum } = require('./../getPathNum')
 const { getPathObj } = require('./../getPathObj')
 
 exports.vote = (json, pc) => {
-    if (json.voter == config.leader) {
-        store.get(['escrow', json.voter], function(e, a) {
-            if (!e) {
-                var found = 0;
-                for (b in a) {
-                    console.log(a, b, json);
-                    if (a[b][1].permlink == json.permlink && a[b][1].author == json.author) {
-                        found++;
-                        let ops = [{ type: 'del', path: ['escrow', json.voter, b] }];
-                        store.batch(ops, pc);
-                        try {
-                            if (json.voter == config.username) {
-                                delete plasma.pending[b];
-                                /*
-                                for (var i = 0; i < NodeOps.length; i++) {
-                                    if (NodeOps[i][1][1].author == json.author && NodeOps[i][1][1].permlink == json.permlink && NodeOps[i][1][0] == 'vote') {
-                                        NodeOps.splice(i, 1);
-                                    }
-                                }
-                                */
-                            }
-                        } catch (e) { console.log(e); }
-                        break;
-                    } else {
-                        pc[0](pc[2]);
-                    }
-                }
-                if (!found) {
-                    pc[0](pc[2]);
-                }
-            } else {
-                pc[0](pc[2]);
+    getPathObj(['posts', `${json.author}/${json.permlink}`]).then(p => {
+        if (Object.keys(p).length) {
+            if (!Object.hasOwnProperty('votes')) {
+                p.votes = {}
             }
-        });
-    } else {
-        pc[0](pc[2]);
-    }
+            var PvotePow = getPathObj(['up', json.voter]),
+                PdVotePow = getPathObj(['down', json.voter])
+            PPow = getPathNum(['pow', json.voter])
+            Promise.all([PvotePow, PdVotePow, PPow]).then(function(v) {
+                    var up = v[0],
+                        down = v[1],
+                        pow = v[2],
+                        ops = [],
+                        weights
+                    if (!pow) {
+                        pc[0](pc[2])
+                    } else {
+                        if (json.weight >= 0) {
+                            weights = upPowerMagic(up, json)
+                        } else {
+                            weights = downPowerMagic(up, down, json)
+                            ops.push({ type: 'put', path: ['down', json.voter], data: weights.down })
+                        }
+                        p.votes[json.voter] = {
+                            b: json.block_num,
+                            v: weights.vote
+                        }
+                        ops.push({ type: 'put', path: ['up', json.voter], data: weights.dowupn })
+                        ops.push({ type: 'put', path: ['posts', json.author, json.permlink], data: p })
+                        store.batch(ops, pc)
+                    }
+                })
+                .catch(e => console.log(e))
+        } else {
+            pc[0](pc[2])
+        }
+    })
 }
 
 exports.vote_content = (json, from, active, pc) => {
