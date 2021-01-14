@@ -3,7 +3,7 @@ const { send } = require('./send')
 const { gov_up, gov_down } = require('./gov')
 const { power_up, power_down } = require('./power')
 const { delegate_vesting_shares } = require('./delegate_vesting_shares')
-const { vote, vote_content } = require('./vote')
+const { vote } = require('./vote')
 const { cert } = require('./cert')
 const { sig } = require('./sig')
 const { cjv } = require('./cjv')
@@ -41,6 +41,5 @@ module.exports = {
     send,
     sig,
     transfer,
-    vote,
-    vote_content
+    vote
 }

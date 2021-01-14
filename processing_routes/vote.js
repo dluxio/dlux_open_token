@@ -55,6 +55,7 @@ exports.vote = (json, pc) => {
     })
 }
 
+/*
 exports.vote_content = (json, from, active, pc) => {
     var powPromise = getPathNum(['pow', from]),
         postPromise = getPathObj(['posts', `${json.author}/${json.permlink}`]),
@@ -96,7 +97,7 @@ exports.vote_content = (json, from, active, pc) => {
             console.log(e);
         });
 }
-
+*/
 function upPowerMagic(up, json) {
     const healTime = json.block_num - up.last //144000 blocks in 5 days
     const heal = parseInt(up.max * healTime / 144000)
