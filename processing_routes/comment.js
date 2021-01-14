@@ -3,11 +3,13 @@ const { rtrades } = require('./../rtrades')
 const { store, unshiftOp } = require('./../index')
 const { deleteObjs } = require('./../deleteObjs')
 const { chronAssign } = require('./../lil_ops')
+const { getPathObj } = require('../getPathObj')
 
 exports.comment = (json, pc) => {
     let meta = JSON.parse(json.json_metadata)
     let community_post = false
     if (json.author == config.leader && parseInt(json.permlink.split('dlux')[1]) > json.block_num - 31000) {
+        console.log('leader post')
         store.get(['escrow', json.author], function(e, a) {
             if (!e) {
                 var ops = []
@@ -23,30 +25,44 @@ exports.comment = (json, pc) => {
             }
         })
     } else if (meta.arHash || meta.vrHash || meta.appHash || meta.audHash) {
-        //store json until a vote or promote with comment options
-        var ops = []
-        ops.push({
-            type: 'put',
-            path: ['pend', `${json.author}/${json.permlink}`],
-            data: {
-                author: json.author,
-                permlink: json.permlink,
-                block_num: json.block_num,
-                meta
-            }
-        })
-        ops.push({
-            type: 'put',
-            path: ['chrono', `${json.block_num}:pend:${json.author}/${json.permlink}`],
-            data: {
-                author: json.author,
-                permlink: json.permlink,
-                block_num: json.block_num,
-                meta
-            }
-        })
-        if (process.env.npm_lifecycle_event == 'test') pc[2] = ops
-        store.batch(ops, pc)
+        Ppost = getPathObj(['post', `${json.author}/${json.permlink}`])
+        Promise.all([Ppost])
+            .then(postarray => {
+                post = postarray[0]
+                var ops = []
+                if (!Object.keys(post).length) { //check if promoted/voted
+                    //store json until a vote or promote with comment options
+                    ops.push({
+                        type: 'put',
+                        path: ['pend', `${json.author}/${json.permlink}`],
+                        data: {
+                            author: json.author,
+                            permlink: json.permlink,
+                            block_num: json.block_num,
+                            meta
+                        }
+                    })
+                    ops.push({
+                        type: 'put',
+                        path: ['chrono', `${json.block_num + 28800}:pend:${json.author}/${json.permlink}`],
+                        data: {
+                            author: json.author,
+                            permlink: json.permlink,
+                            block_num: json.block_num
+                        }
+                    })
+                } else {
+                    post.meta = meta
+                    ops.push({
+                        type: 'put',
+                        path: ['post', `${json.author}/${json.permlink}`],
+                        data: post
+                    })
+                }
+                if (process.env.npm_lifecycle_event == 'test') pc[2] = ops
+                store.batch(ops, pc)
+            })
+            .catch(e => { console.log(e) })
             /*
                 }
                 
@@ -97,7 +113,7 @@ exports.comment_options = (json, pc) => {
         if (filter[i].account == config.ben && filter[i].weight >= config.delegationWeight) {
             store.get(['pend', `${json.author}/${json.permlink}`], function(e, a) {
                 if (e) { console.log(e) }
-                if (a.permlink = json.permlink) {
+                if (Object.keys(a).length) {
                     chronAssign(json.block_num + 201600, {
                         block: parseInt(json.block_num + 201600),
                         op: 'post_reward',
@@ -124,7 +140,6 @@ exports.comment_options = (json, pc) => {
                                 json: JSON.stringify({
                                     a: json.author,
                                     p: json.permlink,
-                                    c: final,
                                     b: value //amount of bytes posted
                                 })
                             }]
@@ -134,8 +149,13 @@ exports.comment_options = (json, pc) => {
                         })
                     }
                     ops.push({ type: 'del', path: ['pend', `${json.author}/${json.permlink}`] })
-                    ops.push({ type: 'del', path: ['chrono', `${a.block_num}:pend:${json.author}/${json.permlink}`] })
+                    ops.push({ type: 'del', path: ['chrono', `${a.block_num + 28800}:pend:${json.author}/${json.permlink}`] })
                     ops.push({ type: 'put', path: ['feed', `${json.block_num}:${json.transaction_id}`], data: `@${json.author}|${json.permlink} added to ${config.TOKEN} rewardable content` })
+                    if (process.env.npm_lifecycle_event == 'test') pc[2] = ops
+                    store.batch(ops, pc)
+                } else {
+                    ops.push({ type: 'del', path: ['pend', `${json.author}/${json.permlink}`] })
+                    ops.push({ type: 'del', path: ['chrono', `${a.block_num + 28800}:pend:${json.author}/${json.permlink}`] })
                     if (process.env.npm_lifecycle_event == 'test') pc[2] = ops
                     store.batch(ops, pc)
                 }

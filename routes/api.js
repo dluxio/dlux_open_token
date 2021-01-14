@@ -104,17 +104,18 @@ exports.posts = (req, res, next) => {
     });
 }
 
+
 exports.PostAuthorPermlink = (req, res, next) => {
     try {
         let author = req.params.author,
             permlink = req.params.permlink
         res.setHeader('Content-Type', 'application/json')
-        archp = getPathObj(['posts', `s/${author}/${permlink}`]) //one of these will be empty
+            //archp = getPathObj(['posts', `s/${author}/${permlink}`]) //one of these will be empty
         nowp = getPathObj(['posts', `${author}/${permlink}`]) //now are still eligible for votes
-        Promise.all([archp, nowp])
+        Promise.all([nowp])
             .then(a => {
-                var arch = a[0],
-                    now = a[1]
+                var arch = a[1],
+                    now = a[0]
                 res.send(JSON.stringify({
                     now,
                     arch,
@@ -145,9 +146,12 @@ exports.user = (req, res, next) => {
         pb = getPathNum(['pow', un]),
         lp = getPathNum(['pow', 'n', un]),
         contracts = getPathObj(['contracts', un]),
-        incol = getPathNum(['col', un]) //collateral
+        incol = getPathNum(['col', un]), //collateral
+        gp = getPathNum(['pow', 'n', un]),
+        pup = getPathObj(['up', un]),
+        pdown = getPathObj(['down', un])
     res.setHeader('Content-Type', 'application/json');
-    Promise.all([bal, pb, lp, contracts, incol])
+    Promise.all([bal, pb, lp, contracts, incol, gp, pup, pdown])
         .then(function(v) {
             console.log(bal, pb, lp, contracts)
             res.send(JSON.stringify({
@@ -156,6 +160,9 @@ exports.user = (req, res, next) => {
                 powerBeared: v[2],
                 heldCollateral: v[4],
                 contracts: v[3],
+                up: v[6],
+                down: v[7],
+                gov: v[45],
                 node: config.username,
                 VERSION
             }, null, 3))
@@ -163,6 +170,35 @@ exports.user = (req, res, next) => {
         .catch(function(err) {
             console.log(err)
         })
+}
+
+exports.blog = (req, res, next) => {
+    let un = req.params.un
+    res.setHeader('Content-Type', 'application/json')
+    let unn = alphabeticShift(un)
+
+    function alphabeticShift(inputString) {
+        var newString = []
+        for (var i = 0; i < inputString.length; i++) {
+            if (i == inputString.length - 1) newString.push(String.fromCharCode(inputString.charCodeAt(i) + 1))
+            else newString.push(String.fromCharCode(inputString.charCodeAt(i)))
+        }
+        return newString.join("")
+    }
+    store.someChildren(['posts'], {
+        gte: un,
+        lte: unn
+    }, function(e, a) {
+        let obj = {}
+        for (p in a) {
+            obj[a] = p[a]
+        }
+        res.send(JSON.stringify({
+            blog: arr,
+            node: config.username,
+            VERSION
+        }, null, 3))
+    })
 }
 
 exports.state = (req, res, next) => {

@@ -68,8 +68,8 @@ var recents = []
     //HIVE API CODE
 
 //Start Program Options   
-//startWith('QmVNvs1xFUAP8r27URYacySySeDz7aZmmMjapgMKA9stzG') //for testing and replaying
-dynStart(config.leader)
+startWith('QmVAsz1coeA1U1KCbFLuxvvuqV8sY9wFd8GS3yiNrckjhv') //for testing and replaying
+    //dynStart(config.leader)
 
 // API defs
 api.use(API.https_redirect);
@@ -79,6 +79,7 @@ api.get('/stats', API.root);
 api.get('/state', API.state); //Do not recommend having a state dump in a production API
 api.get('/dex', API.dex);
 api.get('/@:un', API.user);
+api.get('/blog/@:un', API.blog);
 api.get('/report/:un', API.report); // probably not needed
 api.get('/markets', API.markets); //for finding node runner and tasks information
 api.get('/posts/:author/:permlink', API.PostAuthorPermlink);
@@ -498,6 +499,9 @@ function startWith(hash) {
                                                 var supply = 0
                                                 for (bal in cleanState.balances) {
                                                     supply += cleanState.balances[bal]
+                                                }
+                                                for (bal in cleanState.gov) {
+                                                    if (bal != 't') supply += cleanState.gov[bal]
                                                 }
                                                 for (user in cleanState.contracts) {
                                                     for (contract in cleanState.contracts[user]) {

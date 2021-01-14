@@ -44,7 +44,7 @@ exports.vote = (json, pc) => {
                             v: weights.vote
                         }
                         ops.push({ type: 'put', path: ['up', json.voter], data: weights.up })
-                        ops.push({ type: 'put', path: ['posts', json.author, json.permlink], data: p })
+                        ops.push({ type: 'put', path: ['posts', `${json.author}/${json.permlink}`], data: p })
                         store.batch(ops, pc)
                     }
                 })
