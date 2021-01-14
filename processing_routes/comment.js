@@ -6,7 +6,8 @@ const { chronAssign } = require('./../lil_ops')
 const { getPathObj } = require('../getPathObj')
 
 exports.comment = (json, pc) => {
-    let meta = JSON.parse(json.json_metadata)
+    let meta = {}
+    try { meta = JSON.parse(json.json_metadata) } catch (e) {}
     let community_post = false
     if (json.author == config.leader && parseInt(json.permlink.split('dlux')[1]) > json.block_num - 31000) {
         console.log('leader post')

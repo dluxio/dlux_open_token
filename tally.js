@@ -90,7 +90,7 @@ exports.tally = (num, plasma, isStreaming) => new Promise((resolve, reject) => {
                     for (node in new_queue) {
                         if (runners.hasOwnProperty(node)) {
                             still_running[node] = new_queue[node]
-                            counting_array.push(new_queue[node])
+                            counting_array.push(new_queue[node].t)
                         } else {
                             election[node] = new_queue[node]
                         }
