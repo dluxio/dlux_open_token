@@ -155,5 +155,5 @@ function downPowerMagic(up, down, json) {
         last: json.block_num,
         power: newDownPower
     }
-    return { up: newUp, down: newDown, vote: vote }
+    return { up: newUp, down: newDown, vote: downvote }
 }

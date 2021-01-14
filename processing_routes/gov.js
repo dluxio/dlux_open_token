@@ -16,7 +16,7 @@ exports.gov_up = (json, from, active, pc) => {
                 govt = bals[1],
                 gbal = bals[2],
                 ops = [];
-            if (amount < lbal && active) {
+            if (amount <= lbal && active) {
                 ops.push({ type: 'put', path: ['balances', from], data: lbal - amount });
                 ops.push({ type: 'put', path: ['gov', from], data: gbal + amount });
                 ops.push({ type: 'put', path: ['gov', 't'], data: govt + amount });
