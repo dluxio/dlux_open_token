@@ -68,8 +68,8 @@ var recents = []
     //HIVE API CODE
 
 //Start Program Options   
-startWith('Qmf9eokthcUXme5UUZSZguQ5WXjpSHXQsJeoGBfCjnbqKV') //for testing and replaying
-    //dynStart(config.leader)
+//startWith('Qmf9eokthcUXme5UUZSZguQ5WXjpSHXQsJeoGBfCjnbqKV') //for testing and replaying
+dynStart(config.leader)
 
 // API defs
 api.use(API.https_redirect);
@@ -489,13 +489,6 @@ function startWith(hash) {
                         if (!e) {
                             if (hash) {
                                 var cleanState = data[1]
-                                cleanState.balances.jenkem += 500000
-                                cleanState.balances.rishi556 += 500000
-                                cleanState.balances.foxon += 509000
-                                cleanState.balances.cadawg += 500000
-                                cleanState.balances['qwoyn-dlux'] += 500000
-                                cleanState.balances.makemoneyhd += 500000
-                                cleanState.balances.rm -= 3009000 //thanks early node testers :)
                                 store.put([], cleanState, function(err) {
                                     if (err) {
                                         console.log(err)

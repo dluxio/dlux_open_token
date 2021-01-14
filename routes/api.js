@@ -147,7 +147,7 @@ exports.user = (req, res, next) => {
         lp = getPathNum(['pow', 'n', un]),
         contracts = getPathObj(['contracts', un]),
         incol = getPathNum(['col', un]), //collateral
-        gp = getPathNum(['pow', 'n', un]),
+        gp = getPathNum(['gov', un]),
         pup = getPathObj(['up', un]),
         pdown = getPathObj(['down', un])
     res.setHeader('Content-Type', 'application/json');
