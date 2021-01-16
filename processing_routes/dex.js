@@ -97,8 +97,8 @@ exports.dex_buy = (json, from, active, pc) => {
                                         { type: 'put', path: ['escrow', found.auths[0][0], found.txid + ':dispute'], data: found.auths[0][1] },
                                         { type: 'put', path: ['balances', from], data: bal },
                                         { type: 'put', path: ['balances', found.from], data: fromBal },
-                                        { type: 'put', path: ['stats', 'HbdVWMA'], data: hbdVMWA },
-                                        { type: 'put', path: ['stats', 'HiveVWMA'], data: hiveVMWA, },
+                                        { type: 'put', path: ['stats', 'HbdVWMA'], data: hbdVWMA },
+                                        { type: 'put', path: ['stats', 'HiveVWMA'], data: hiveVWMA, },
                                         { type: 'put', path: ['dex', type, 'tick'], data: json.contract.split(':')[0] },
                                         { type: 'put', path: ['dex', type, 'his', `${hisE.block}:${json.contract.split(':')[1]}`], data: hisE },
                                         { type: 'del', path: ['dex', type, 'buyOrders', `${json.contract}`] }

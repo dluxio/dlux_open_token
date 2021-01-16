@@ -85,6 +85,61 @@ Deploy from heroku or similar and set ENV variables with a hive name and active 
 
 ***
 
+
+***
+
+### Running A Node
+
+### Prerequisites
+
+* This software has been tested on Node.js version 10 through 15
+* Node.js and git are required
+
+### Server Installation
+
+* Clone this repository
+
+`git clone https://github.com/dluxio/dlux_open_token.git`
+
+* Navigate to the root directory of token
+
+`cd dlux_open_token`
+
+* Set configuration variables
+
+`nano .env` or your favorite editor
+
+`username=hiveaccount
+active=hiveactivekey`
+
+* Quit editor and save changes
+
+* Install
+
+`npm install`
+
+* Start
+
+`npm start`
+
+### Recommendations
+
+* Script a way to automatically git pull to stay up to date with daily changes.
+* Setup a system service to restart on quits to keep your node online.
+
+### Cloud Installation
+
+* Choose a cloud provider
+* Fork this repository
+* Connect your fork to the cloud server
+* Set configuration variables
+
+`username=hiveaccount`
+
+`active=hiveactivekey`
+
+***
+
 ### To Build Your Own Token
 
 Branch this and find this part of `config.js`
