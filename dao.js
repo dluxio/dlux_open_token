@@ -26,7 +26,6 @@ function dao(num) {
                         });
                     }),
                     Pbals = getPathObj(['balances']),
-                    Pgovs = getPathObj(['gov']),
                     Prunners = getPathObj(['runners']),
                     Pnodes = getPathObj(['markets', 'node']),
                     Pstats = getPathObj(['stats']),
@@ -38,7 +37,7 @@ function dao(num) {
                     Pnomen = getPathObj(['nomention']),
                     Pposts = getPathObj(['posts']),
                     Pfeed = getPathObj(['feed']);
-                Promise.all([Pnews, Pbals, Prunners, Pnodes, Pstats, Pdelegations, Pico, Pdex, Pbr, Ppbal, Pnomen, Pposts, Pfeed, Pgovs]).then(function(v) {
+                Promise.all([Pnews, Pbals, Prunners, Pnodes, Pstats, Pdelegations, Pico, Pdex, Pbr, Ppbal, Pnomen, Pposts, Pfeed]).then(function(v) {
                             daops.push({ type: 'del', path: ['postQueue'] });
                             daops.push({ type: 'del', path: ['br'] });
                             daops.push({ type: 'del', path: ['rolling'] });
@@ -56,8 +55,7 @@ function dao(num) {
                                 powBal = v[9],
                                 nomention = v[10],
                                 cpost = v[11],
-                                feedCleaner = v[12],
-                                govBals = v[13]
+                                feedCleaner = v[12]
                             feedKeys = Object.keys(feedCleaner);
                             console.log(cpost);
                             for (feedi = 0; feedi < feedKeys.length; feedi++) {
@@ -118,10 +116,10 @@ function dao(num) {
                             }
                             for (var node in mnode) { //and pay them
                                 i = parseInt(mnode[node].wins / j * b);
-                                if (govBals[node]) {
-                                    govBals[node] += i;
+                                if (bals[node]) {
+                                    bals[node] += i;
                                 } else {
-                                    govBals[node] = i;
+                                    bals[node] = i;
                                 }
                                 bals.rn -= i;
                                 const _at = _atfun(node);
