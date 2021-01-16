@@ -444,13 +444,13 @@ exports.escrow_release = (json, pc) => {
             getPathObj(['contracts', a.for, a.contract])
                 .then(c => {
                     if (Object.keys(c).length && c.auths[2]) {
-                        c.escrow = parseInt(c.escrow / 2)
                         let lil_ops = [
                             addGov(json.agent, parseInt(c.escrow / 2)),
                             addCol(json.agent, -parseInt(c.escrow / 2)),
                             chronAssign(json.block_num + 200, { op: 'check', agent: c.auths[2][0], txid: c.txid + ':transfer', acc: c.from, id: c.escrow_id.toString() }),
                             credit(json.who)
                         ]
+                        c.escrow = parseInt(c.escrow / 2)
                         Promise.all(lil_ops)
                             .then(empty => {
                                 ops = [
@@ -534,7 +534,6 @@ exports.transfer = (json, pc) => {
                             deletePointer(c.escrow_id, eo),
                             credit(json.from)
                         ]
-                        ops.push({ type: 'put', path: ['balances', json.from], data: parseInt(g + d) })
                         ops.push({ type: 'del', path: ['escrow', json.from, addr + ':transfer'] })
                         ops.push({ type: 'del', path: ['contracts', co, addr] })
                         ops.push({ type: 'del', path: ['chrono', c.expire_path] })
