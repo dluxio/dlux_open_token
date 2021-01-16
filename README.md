@@ -10,6 +10,7 @@ These features are currently working and being tested for `0.9.0a`:
 
 * Send: Use custom_json with active permission, "ACJ" to send OPEN_TOEK tokens
 * Illiquid voting state. Power up and down OPEN_TOKEN for voting and delegation with ACJ
+* Illiquid governance token for determining consensus and collateral.
 * Chron to execute virtual operations: expire trades, powerdown stake, enforce penalties.
 * Hive posts that benefit the configured account at > the configured % are: 
    * entered into a voting eligible content pool

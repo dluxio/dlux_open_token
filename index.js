@@ -1,5 +1,5 @@
 const config = require('./config');
-const VERSION = 'v0.9.0a'
+const VERSION = 'v0.9.0a1'
 exports.VERSION = VERSION
 
 const hive = require('@hiveio/dhive');
@@ -68,8 +68,8 @@ var recents = []
     //HIVE API CODE
 
 //Start Program Options   
-startWith('QmNmm4rCWqnwW8qoRHu1tPjL2E2y1Xv3a7e9uD8goCy8Yx') //for testing and replaying
-    //dynStart(config.leader)
+//startWith('QmfE5mkivvYxa4PSXRREPM2ByzTmYJ8yvubufDomaaH8QW') //for testing and replaying
+dynStart(config.leader)
 
 // API defs
 api.use(API.https_redirect);
