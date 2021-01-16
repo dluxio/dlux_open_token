@@ -68,15 +68,15 @@ var recents = []
     //HIVE API CODE
 
 //Start Program Options   
-startWith('QmTpX7S9tKYs2nDXhDa1j5y58dVaPtYsNgMpxEt1oPsiyG') //for testing and replaying
-    //startWith('Qmd5EAjHdhtxjwCT35HcUkgVoaft5vU8KJDmcVbujRg9c6')
-    //dynStart(config.leader)
+//startWith('QmdNx8MfhcNy4YWTunJUUxQ8YPEdEFtEeYBPeB5mqXx7x1') //for testing and replaying
+dynStart(config.leader)
 
 // API defs
 api.use(API.https_redirect);
 api.use(cors())
 api.get('/', API.root);
 api.get('/stats', API.root);
+api.get('/coin', API.coin);
 api.get('/state', API.state); //Do not recommend having a state dump in a production API
 api.get('/dex', API.dex);
 api.get('/@:un', API.user);
@@ -490,11 +490,6 @@ function startWith(hash) {
                         if (!e) {
                             if (hash) {
                                 var cleanState = data[1]
-
-                                //cleanState.col.disregardfiat -= 1000
-                                //cleanState.gov.disregardfiat += 1000
-                                cleanState.stats.tokenSupply -= 642351
-
                                 store.put([], cleanState, function(err) {
                                     if (err) {
                                         console.log(err)

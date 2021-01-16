@@ -140,6 +140,62 @@ exports.report = (req, res, next) => {
     });
 }
 
+exports.coin = (req, res, next) => {
+    var state = {}
+    res.setHeader('Content-Type', 'application/json')
+    store.get([], function(err, obj) {
+        state = obj,
+            supply = 0
+        lbal = 0
+        for (bal in state.balances) {
+            supply += state.balances[bal]
+            lbal += state.balances[bal]
+        }
+        var gov = 0,
+            govt = 0
+        var con = 0
+        for (user in state.contracts) {
+            for (contract in state.contracts[user]) {
+                if (state.contracts[user][contract].amount && !state.contracts[user][contract].buyer && (state.contracts[user][contract].type == 'ss' || state.contracts[user][contract].type == 'ds')) {
+                    supply += state.contracts[user][contract].amount
+                    con += state.contracts[user][contract].amount
+                }
+            }
+        }
+        let coll = 0
+        for (user in state.col) {
+            supply += state.col[user]
+            coll += state.col[user]
+        }
+        try { govt = state.gov.t - coll } catch (e) {}
+        for (bal in state.gov) {
+            if (bal != 't') {
+                supply += state.gov[bal]
+                gov += state.gov[bal]
+            }
+        }
+        var pow = 0,
+            powt = state.pow.t
+        for (bal in state.pow) {
+            if (bal != 't') {
+                supply += state.pow[bal]
+                pow += state.pow[bal]
+            }
+        }
+        let info = {}
+        let check = `supply check:state:${state.stats.tokenSupply} vs check: ${supply}: ${state.stats.tokenSupply - supply}`
+        if (state.stats.tokenSupply != supply) {
+            info = { lbal, gov, govt, pow, powt, con }
+        }
+        res.send(JSON.stringify({
+            check,
+            info,
+            node: config.username,
+            VERSION
+        }, null, 3))
+    });
+}
+
 exports.user = (req, res, next) => {
     let un = req.params.un,
         bal = getPathNum(['balances', un]),
