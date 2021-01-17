@@ -31,14 +31,15 @@ exports.dex_buy = (json, from, active, pc) => {
                         var fromBal = v[0],
                             Book = v[1],
                             ops = [],
-                            lowest = 9999999999,
+                            highest = 0,
                             lil_ops = []
                         for (i in Book) {
-                            if (parseFloat(i.split(":")[0]) < lowest) {
-                                lowest = parseFloat(i.split(":")[0])
+                            if (parseFloat(i.split(":")[0]) > highest) {
+                                highest = parseFloat(i.split(":")[0])
                             }
                         }
-                        if (bal > found.amount && parseFloat(found.rate) >= parseFloat(lowest) * 0.99) {
+                        if (bal > found.amount // && parseFloat(found.rate) >= parseFloat(highest) * 0.99
+                        ) {
                             bal -= found.amount
                             fromBal += found.amount
                             found.buyer = from
@@ -572,6 +573,7 @@ exports.transfer = (json, pc) => {
                             g = c.escrow
                         if (c.type === 'sb' || c.type === 'db')
                             eo = c.from
+                        console.log(c)
                         let lil_ops = [
                             addGov(json.from, parseInt(c.escrow)),
                             addCol(json.from, -parseInt(c.escrow)),
@@ -579,6 +581,7 @@ exports.transfer = (json, pc) => {
                             deletePointer(c.escrow_id, eo),
                             credit(json.from)
                         ]
+                        console.log(json.from, parseInt(c.fee / 3))
                         ops.push({ type: 'del', path: ['escrow', json.from, addr + ':transfer'] })
                         ops.push({ type: 'del', path: ['contracts', co, addr] })
                         ops.push({ type: 'del', path: ['chrono', c.expire_path] })
@@ -1016,7 +1019,7 @@ exports.escrow_transfer = (json, pc) => {
                     escrow: (dextx[config.jsonTokenName] * 4),
                     agent: json.agent,
                     tagent: json.to,
-                    fee: json.fee,
+                    fee: fee,
                     approvals: 0,
                     auths,
                     reject
