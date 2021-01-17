@@ -86,7 +86,9 @@ function enforce(agent, txid, pointer, block_num) {
                                         ops.push({ type: 'put', path: ['stats', 'tokenSupply'], data: s - parseInt(c.escrow / 4) });
                                         lil_ops = [
                                             addGov(c.agent, parseInt(c.escrow / 2)),
-                                            add(c.eo, parseInt(c.escrow / 4)),
+                                            add(c.eo, parseInt(c.escrow / 4) - c.fee),
+                                            add(c.agent, parseInt(c.fee / 3)),
+                                            add('rn', c.fee - parseInt(c.fee / 3)),
                                             addCol(c.agent, -parseInt(c.escrow / 2)),
                                             addCol(c.tagent, -parseInt(c.escrow / 2)),
                                             deletePointer(pointer.id, pointer.acc),
@@ -103,6 +105,8 @@ function enforce(agent, txid, pointer, block_num) {
                                             addGov(c.agent, parseInt(c.escrow / 2)),
                                             addCol(c.agent, -parseInt(c.escrow / 2)),
                                             addCol(c.tagent, -parseInt(c.escrow / 2)),
+                                            add(c.agent, parseInt(c.fee / 3)),
+                                            add('rn', c.fee - parseInt(c.fee / 3)),
                                             add(c.eo, parseInt(c.escrow / 4)),
                                             deletePointer(pointer.id, pointer.acc),
                                             nodeUpdate(c.tagent, 'strike', parseInt(c.escrow / 4))
@@ -118,6 +122,8 @@ function enforce(agent, txid, pointer, block_num) {
                                             addGov(c.tagent, parseInt(c.escrow / 2)),
                                             addCol(c.agent, -parseInt(c.escrow / 2)),
                                             addCol(c.tagent, -parseInt(c.escrow / 2)),
+                                            add(c.tagent, parseInt(c.fee / 3)),
+                                            add('rn', c.fee - parseInt(c.fee / 3)),
                                             add(c.eo, parseInt(c.escrow / 4)),
                                             deletePointer(pointer.id, pointer.acc),
                                             nodeUpdate(c.agent, 'strike', parseInt(c.escrow / 4))
@@ -132,6 +138,8 @@ function enforce(agent, txid, pointer, block_num) {
                                         lil_ops = [
                                             addGov(c.agent, parseInt(c.escrow / 2)),
                                             add(c.eo, parseInt(c.escrow / 4)),
+                                            add(c.agent, parseInt(c.fee / 3)),
+                                            add('rn', c.fee - parseInt(c.fee / 3)),
                                             addCol(c.agent, -parseInt(c.escrow / 2)),
                                             addCol(c.tagent, -parseInt(c.escrow / 2)),
                                             deletePointer(pointer.id, pointer.acc),
@@ -147,6 +155,8 @@ function enforce(agent, txid, pointer, block_num) {
                                         lil_ops = [
                                             addGov(c.tagent, parseInt(c.escrow / 2)),
                                             add(c.eo, parseInt(c.escrow / 4)),
+                                            add(c.tagent, parseInt(c.fee / 3)),
+                                            add('rn', c.fee - parseInt(c.fee / 3)),
                                             addCol(c.agent, -parseInt(c.escrow / 2)),
                                             addCol(c.tagent, -parseInt(c.escrow / 2)),
                                             deletePointer(pointer.id, pointer.acc),
@@ -162,6 +172,8 @@ function enforce(agent, txid, pointer, block_num) {
                                         lil_ops = [
                                             addGov(c.tagent, parseInt(c.escrow / 2)),
                                             add(c.eo, parseInt(c.escrow / 4)),
+                                            add(c.tagent, parseInt(c.fee / 3)),
+                                            add('rn', c.fee - parseInt(c.fee / 3)),
                                             deletePointer(pointer.id, pointer.acc),
                                             nodeUpdate(c.agent, 'strike', parseInt(c.escrow / 4))
                                         ];
@@ -174,6 +186,7 @@ function enforce(agent, txid, pointer, block_num) {
                                         ops.push({ type: 'put', path: ['stats', 'tokenSupply'], data: s - parseInt(c.escrow / 2) });
                                         lil_ops = [
                                             add(c.eo, parseInt(c.escrow / 2)),
+                                            add('rn', parseInt(c.fee / 3)),
                                             addCol(c.tagent, -parseInt(c.escrow)),
                                             deletePointer(pointer.id, pointer.acc),
                                             nodeUpdate(c.tagent, 'strike', parseInt(c.escrow / 4))

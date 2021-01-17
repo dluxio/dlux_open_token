@@ -3,6 +3,7 @@ const { store, GetNodeOps, newOps, unshiftOp, pushOp, spliceOp } = require('./..
 const { getPathNum } = require('./../getPathNum')
 const { getPathObj } = require('./../getPathObj')
 const { add, addCol, addGov, release, deletePointer, credit, chronAssign, forceCancel, hashThis, isEmpty } = require('./../lil_ops')
+const { postToDiscord } = require('./../discord')
 
 exports.dex_buy = (json, from, active, pc) => {
     let Pbal = getPathNum(['balances', from]),
@@ -66,18 +67,22 @@ exports.dex_buy = (json, from, active, pc) => {
                                 lil_ops.push(forceCancel(hiveVWMA.rate, 'hive'))
                             }
                             if (found.hive) {
-                                ops.push({ type: 'put', path: ['feed', `${json.block_num}:${json.transaction_id}`], data: `@${from}| purchased ${parseFloat(found.hive / 1000).toFixed(3)} HIVE with ${parseFloat(found.amount / 1000).toFixed(3)} ${config.TOKEN} via DEX` })
+                                const msg = `@${from}| purchased ${parseFloat(found.hive / 1000).toFixed(3)} HIVE with ${parseFloat(found.amount / 1000).toFixed(3)} ${config.TOKEN} via DEX`
+                                if (config.hookurl) postToDiscord(msg)
+                                ops.push({ type: 'put', path: ['feed', `${json.block_num}:${json.transaction_id}`], data: msg })
                                 found.auths[2] = [agent, [
                                     "transfer",
                                     {
                                         "from": agent,
                                         "to": from,
                                         "amount": (found.hive / 1000).toFixed(3) + ' HIVE',
-                                        "memo": `${json.contract.split(':')[1]} by ${found.from} purchased with ${found.amount} ${config.TOKEN}`
+                                        "memo": `${json.contract.split(':')[1]} by ${found.from} purchased with ${parseFloat(found.amount / 1000).toFixed(3)} ${config.TOKEN}`
                                     }
                                 ]]
                             } else {
-                                ops.push({ type: 'put', path: ['feed', `${json.block_num}:${json.transaction_id}`], data: `@${from}| purchased ${parseFloat(found.hbd / 1000).toFixed(3)} HBD via DEX` })
+                                const msg = `@${from}| purchased ${parseFloat(found.hbd / 1000).toFixed(3)} HBD via DEX`
+                                if (config.hookurl) postToDiscord(msg)
+                                ops.push({ type: 'put', path: ['feed', `${json.block_num}:${json.transaction_id}`], data: msg })
                                 found.auths[2] = [agent, [
                                     "transfer",
                                     {
@@ -108,7 +113,9 @@ exports.dex_buy = (json, from, active, pc) => {
                                 })
                                 .catch(e => { console.log(e) })
                         } else {
-                            ops.push({ type: 'put', path: ['feed', `${json.block_num}:${json.transaction_id}`], data: `@${from}| has insuficient liquidity to purchase ${found.txid}` })
+                            const msg = `@${from}| has insuficient liquidity to purchase ${found.txid}`
+                            if (config.hookurl) postToDiscord(msg)
+                            ops.push({ type: 'put', path: ['feed', `${json.block_num}:${json.transaction_id}`], data: msg })
                             if (process.env.npm_lifecycle_event == 'test') pc[2] = ops
                             store.batch(ops, pc)
                         }
@@ -129,8 +136,9 @@ exports.dex_hive_sell = (json, from, active, pc) => {
         let hours = parseInt(json.hours) || 1
         if (hours > 120) { hours = 120 }
         const expBlock = json.block_num + (hours * 1200)
-        if (json[config.jsonTokenName] <= b && typeof buyAmount == 'number' && allowedPrice(hiveVWMA.rate, rate) && active) {
+        if (json[config.jsonTokenName] <= b && json[config.jsonTokenName] >= 4 && typeof buyAmount == 'number' && allowedPrice(hiveVWMA.rate, rate) && active) {
             var txid = config.TOKEN + hashThis(from + json.transaction_id)
+            let fee = parseInt(json[config.jsonTokenName] * 0.0025) + 3
             const contract = {
                 txid,
                 type: 'ss',
@@ -138,6 +146,7 @@ exports.dex_hive_sell = (json, from, active, pc) => {
                 from: from,
                 hive: buyAmount,
                 hbd: 0,
+                fee,
                 amount: parseInt(json[config.jsonTokenName]),
                 rate: parseFloat((buyAmount) / (json[config.jsonTokenName])).toFixed(6),
                 block: json.block_num
@@ -151,18 +160,22 @@ exports.dex_hive_sell = (json, from, active, pc) => {
             Promise.all([path])
                 .then(r => {
                     contract.expire_path = r[0]
+                    const msg = `@${from}| has placed order ${txid} to sell ${parseFloat(json[config.jsonTokenName] / 1000).toFixed(3)} for ${parseFloat(json.hive / 1000).toFixed(3)} HIVE`
+                    if (config.hookurl) postToDiscord(msg)
                     ops = [
                         { type: 'put', path: ['dex', 'hive', 'sellOrders', `${contract.rate}:${contract.txid}`], data: contract },
                         { type: 'put', path: ['balances', from], data: b - contract.amount },
                         { type: 'put', path: ['contracts', from, contract.txid], data: contract },
-                        { type: 'put', path: ['feed', `${json.block_num}:${json.transaction_id}`], data: `@${from}| has placed order ${txid} to sell ${parseFloat(json[config.jsonTokenName] / 1000).toFixed(3)} for ${parseFloat(json.hive / 1000).toFixed(3)} HIVE` }
+                        { type: 'put', path: ['feed', `${json.block_num}:${json.transaction_id}`], data: msg }
                     ]
                     if (process.env.npm_lifecycle_event == 'test') pc[2] = ops
                     store.batch(ops, pc)
                 })
                 .catch((e) => console.log(e))
         } else {
-            ops = [{ type: 'put', path: ['feed', `${json.block_num}:${json.transaction_id}`], data: `@${from}| tried to place an order to sell ${parseFloat(json[config.jsonTokenName] / 1000).toFixed(3)} for ${parseFloat(json.hive / 1000).toFixed(3)} HIVE` }]
+            const msg = `@${from}| tried to place an order to sell ${parseFloat(json[config.jsonTokenName] / 1000).toFixed(3)} for ${parseFloat(json.hive / 1000).toFixed(3)} HIVE`
+            if (config.hookurl) postToDiscord(msg)
+            ops = [{ type: 'put', path: ['feed', `${json.block_num}:${json.transaction_id}`], data: msg }]
             if (process.env.npm_lifecycle_event == 'test') pc[2] = ops
             store.batch(ops, pc)
         }
@@ -183,8 +196,9 @@ exports.dex_hbd_sell = (json, from, active, pc) => {
             let hours = parseInt(json.hours) || 1
             if (hours > 120) { hours = 120 }
             const expBlock = json.block_num + (hours * 1200)
-            if (json[config.jsonTokenName] <= b && typeof buyAmount == 'number' && allowedPrice(hbdVWMA.rate, rate) && active) {
+            if (json[config.jsonTokenName] <= b && json[config.jsonTokenName] >= 4 && typeof buyAmount == 'number' && allowedPrice(hbdVWMA.rate, rate) && active) {
                 var txid = config.TOKEN + hashThis(from + json.transaction_id)
+                let fee = parseInt(json[config.jsonTokenName] * 0.0025) + 3
                 const contract = {
                     txid,
                     type: 'ds',
@@ -192,6 +206,7 @@ exports.dex_hbd_sell = (json, from, active, pc) => {
                     hive: 0,
                     co: from,
                     hbd: buyAmount,
+                    fee,
                     amount: json[config.jsonTokenName],
                     rate,
                     block: json.block_num
@@ -205,18 +220,22 @@ exports.dex_hbd_sell = (json, from, active, pc) => {
                 Promise.all([path])
                     .then((r) => {
                         contract.expire_path = r[0]
+                        const msg = `@${from}| has placed order ${txid} to sell ${parseFloat(json[config.jsonTokenName] / 1000).toFixed(3)} for ${parseFloat(json.hbd / 1000).toFixed(3)} HBD`
+                        if (config.hookurl) postToDiscord(msg)
                         let ops = [
                             { type: 'put', path: ['dex', 'hbd', 'sellOrders', `${contract.rate}:${contract.txid}`], data: contract },
                             { type: 'put', path: ['balances', from], data: b - contract.amount },
                             { type: 'put', path: ['contracts', from, contract.txid], data: contract },
-                            { type: 'put', path: ['feed', `${json.block_num}:${json.transaction_id}`], data: `@${from}| has placed order ${txid} to sell ${parseFloat(json[config.jsonTokenName] / 1000).toFixed(3)} for ${parseFloat(json.hbd / 1000).toFixed(3)} HBD` }
+                            { type: 'put', path: ['feed', `${json.block_num}:${json.transaction_id}`], data: msg }
                         ]
                         if (process.env.npm_lifecycle_event == 'test') pc[2] = ops
                         store.batch(ops, pc)
                     })
                     .catch((e) => console.log(e))
             } else {
-                let ops = [{ type: 'put', path: ['feed', `${json.block_num}:${json.transaction_id}`], data: `@${from}| tried to place an order to sell ${parseFloat(json[config.jsonTokenName] / 1000).toFixed(3)} for ${parseFloat(json.hbd / 1000).toFixed(3)} HBD` }]
+                const msg = `@${from}| tried to place an order to sell ${parseFloat(json[config.jsonTokenName] / 1000).toFixed(3)} for ${parseFloat(json.hbd / 1000).toFixed(3)} HBD`
+                if (config.hookurl) postToDiscord(msg)
+                let ops = [{ type: 'put', path: ['feed', `${json.block_num}:${json.transaction_id}`], data: msg }]
                 if (process.env.npm_lifecycle_event == 'test') pc[2] = ops
                 store.batch(ops, pc)
             }
@@ -260,8 +279,9 @@ exports.escrow_approve = (json, pc) => {
                                         }
                                         //delete plasma.pending[c.txid + ':buyApproveA']
                                     }
-                                    console.log(a.contract)
-                                    dataOps.push({ type: 'put', path: ['feed', `${json.block_num}:${json.transaction_id}`], data: `@${json.who}| approved escrow for ${json.from}` })
+                                    const msg = `@${json.who}| approved escrow for ${json.from}`
+                                    if (config.hookurl) postToDiscord(msg)
+                                    dataOps.push({ type: 'put', path: ['feed', `${json.block_num}:${json.transaction_id}`], data: msg })
                                     dataOps.push({ type: 'put', path: ['contracts', a.for, a.contract], data: c })
                                     lil_ops.push(credit(json.who))
                                     Promise.all(lil_ops)
@@ -294,7 +314,9 @@ exports.escrow_approve = (json, pc) => {
                                         //delete plasma.pending[c.txid + ':buyApproveT']
                                     }
                                     console.log(a.contract, c)
-                                    dataOps.push({ type: 'put', path: ['feed', `${json.block_num}:${json.transaction_id}`], data: `@${json.who}| approved escrow for ${json.from}` })
+                                    const msg = `@${json.who}| approved escrow for ${json.from}`
+                                    if (config.hookurl) postToDiscord(msg)
+                                    dataOps.push({ type: 'put', path: ['feed', `${json.block_num}:${json.transaction_id}`], data: msg })
                                     dataOps.push({ type: 'put', path: ['contracts', a.for, a.contract], data: c })
                                     lil_ops.push(credit(json.who))
                                     Promise.all(lil_ops)
@@ -307,7 +329,9 @@ exports.escrow_approve = (json, pc) => {
                             })
                         }
                     } else if (json.approve && json.who == json.to && c.type) { //no contract update... update approvals?
-                        dataOps.push({ type: 'put', path: ['feed', `${json.block_num}:${json.transaction_id}`], data: `@${json.who}| approved escrow for ${json.from}` })
+                        const msg = `@${json.who}| approved escrow for ${json.from}`
+                        if (config.hookurl) postToDiscord(msg)
+                        dataOps.push({ type: 'put', path: ['feed', `${json.block_num}:${json.transaction_id}`], data: msg })
                         dataOps.push({ type: 'del', path: ['escrow', json.who, c.txid + ':listApproveT'] })
                         if (json.who == config.username) {
                             let NodeOps = GetNodeOps()
@@ -322,11 +346,15 @@ exports.escrow_approve = (json, pc) => {
                         if (c.approveAgent) {
                             if (parseFloat(c.hive) > 0) {
                                 //contract.type = 'sb'
-                                dataOps.push({ type: 'put', path: ['feed', `${json.block_num}:${c.txid}`], data: `@${c.eo}| signed a ${parseFloat(c.hive / 1000).toFixed(3)} HIVE buy order for ${parseFloat(c.amount /1000).toFixed(3)} ${config.TOKEN}` })
+                                const msg = `@${c.eo}| signed a ${parseFloat(c.hive / 1000).toFixed(3)} HIVE buy order for ${parseFloat(c.amount /1000).toFixed(3)} ${config.TOKEN}`
+                                if (config.hookurl) postToDiscord(msg)
+                                dataOps.push({ type: 'put', path: ['feed', `${json.block_num}:${c.txid}`], data: msg })
                                 dataOps.push({ type: 'put', path: ['dex', 'hive', 'buyOrders', `${c.rate}:${c.txid}`], data: c })
                             } else if (parseFloat(c.hbd) > 0) {
                                 //contract.type = 'db'
-                                dataOps.push({ type: 'put', path: ['feed', `${json.block_num}:${c.txid}`], data: `@${c.eo}| signed a ${parseFloat(c.hbd / 1000).toFixed(3)} HBD buy order for ${parseFloat(c.amount /1000).toFixed(3)} ${config.TOKEN}` })
+                                const msg = `@${c.eo}| signed a ${parseFloat(c.hbd / 1000).toFixed(3)} HBD buy order for ${parseFloat(c.amount /1000).toFixed(3)} ${config.TOKEN}`
+                                if (config.hookurl) postToDiscord(msg)
+                                dataOps.push({ type: 'put', path: ['feed', `${json.block_num}:${c.txid}`], data: msg })
                                 dataOps.push({ type: 'put', path: ['dex', 'hbd', 'buyOrders', `${c.rate}:${c.txid}`], data: c })
                             }
                         }
@@ -339,7 +367,9 @@ exports.escrow_approve = (json, pc) => {
                             })
                             .catch(e => { console.log(e) })
                     } else if (json.approve && json.who == json.agent && c.type) { //no contract update... update list approvals, maybe this is where to pull collateral?
-                        dataOps.push({ type: 'put', path: ['feed', `${json.block_num}:${json.transaction_id}`], data: `@${json.who}| approved escrow for ${json.from}` })
+                        const msg = `@${json.who}| approved escrow for ${json.from}`
+                        if (config.hookurl) postToDiscord(msg)
+                        dataOps.push({ type: 'put', path: ['feed', `${json.block_num}:${json.transaction_id}`], data: msg })
                         dataOps.push({ type: 'del', path: ['escrow', json.who, c.txid + ':listApproveA'] })
                         if (json.who == config.username) {
                             let NodeOps = GetNodeOps()
@@ -354,11 +384,15 @@ exports.escrow_approve = (json, pc) => {
                         if (c.approve_to) {
                             if (parseFloat(c.hive) > 0) {
                                 //contract.type = 'sb'
-                                dataOps.push({ type: 'put', path: ['feed', `${json.block_num}:${c.txid}`], data: `@${c.eo}| signed a ${parseFloat(c.hive).toFixed(3)} HIVE buy order for ${parseFloat(c.amount).toFixed(3)}` })
+                                const msg = `@${c.eo}| signed a ${parseFloat(c.hive / 1000).toFixed(3)} HIVE buy order for ${parseFloat(c.amount).toFixed(3)}`
+                                if (config.hookurl) postToDiscord(msg)
+                                dataOps.push({ type: 'put', path: ['feed', `${json.block_num}:${c.txid}`], data: msg })
                                 dataOps.push({ type: 'put', path: ['dex', 'hive', 'buyOrders', `${c.rate}:${c.txid}`], data: c })
                             } else if (parseFloat(c.hbd) > 0) {
                                 //contract.type = 'db'
-                                dataOps.push({ type: 'put', path: ['feed', `${json.block_num}:${c.txid}`], data: `@${c.eo}| signed a ${parseFloat(c.hbd).toFixed(3)} HBD buy order for ${parseFloat(c.amount).toFixed(3)}` })
+                                const msg = `@${c.eo}| signed a ${parseFloat(c.hbd / 1000).toFixed(3)} HBD buy order for ${parseFloat(c.amount).toFixed(3)}`
+                                if (config.hookurl) postToDiscord(msg)
+                                dataOps.push({ type: 'put', path: ['feed', `${json.block_num}:${c.txid}`], data: msg })
                                 dataOps.push({ type: 'put', path: ['dex', 'hbd', 'buyOrders', `${c.rate}:${c.txid}`], data: c })
                             }
                         }
@@ -421,10 +455,12 @@ exports.escrow_dispute = (json, pc) => {
                         ]
                         Promise.all(lil_ops)
                             .then(empty => {
+                                const msg = `@${json.who}| authorized ${json.agent} for ${c.txid}`
+                                if (config.hookurl) postToDiscord(msg)
                                 ops = [
                                     { type: 'put', path: ['escrow', c.auths[1][0], c.txid + ':release'], data: c.auths[1][1] },
                                     { type: 'put', path: ['contracts', a.for, a.contract], data: c },
-                                    { type: 'put', path: ['feed', `${json.block_num}:${json.transaction_id}`], data: `@${json.who}| authorized ${json.agent} for ${c.txid}` },
+                                    { type: 'put', path: ['feed', `${json.block_num}:${json.transaction_id}`], data: msg },
                                     { type: 'del', path: ['escrow', json.who, c.txid + `:dispute`] }
                                 ]
                                 if (process.env.npm_lifecycle_event == 'test') pc[2] = ops
@@ -453,10 +489,12 @@ exports.escrow_release = (json, pc) => {
                         c.escrow = parseInt(c.escrow / 2)
                         Promise.all(lil_ops)
                             .then(empty => {
+                                const msg = `@${json.who}| released funds for @${json.to} for ${c.txid}`
+                                if (config.hookurl) postToDiscord(msg)
                                 ops = [
                                     { type: 'put', path: ['escrow', c.auths[2][0], c.txid + ':transfer'], data: c.auths[2][1] },
                                     { type: 'put', path: ['contracts', a.for, a.contract], data: c },
-                                    { type: 'put', path: ['feed', `${json.block_num}:${json.transaction_id}`], data: `@${json.who}| released funds for @${json.to} for ${c.txid}` },
+                                    { type: 'put', path: ['feed', `${json.block_num}:${json.transaction_id}`], data: msg },
                                     { type: 'del', path: ['escrow', json.who, c.txid + `:release`] }
                                 ]
                                 if (process.env.npm_lifecycle_event == 'test') pc[2] = ops
@@ -469,14 +507,18 @@ exports.escrow_release = (json, pc) => {
                             addGov(json.to, parseInt(c.escrow / 2)),
                             addCol(json.agent, -parseInt(c.escrow / 2)),
                             addCol(json.to, -parseInt(c.escrow / 2)),
+                            add(json.agent, parseInt(c.fee / 3)),
+                            add('rn', parseInt(c.fee / 3) + c.fee - (parseInt(c.fee / 3) * 3)),
                             deletePointer(c.escrow_id, a.for),
                             credit(json.who)
                         ]
                         Promise.all(lil_ops)
                             .then(empty => {
+                                const msg = `@${json.from}| canceled ${c.txid}`
+                                if (config.hookurl) postToDiscord(msg)
                                 let ops = [
                                     { type: 'del', path: ['contracts', a.for, a.contract], data: c },
-                                    { type: 'put', path: ['feed', `${json.block_num}:${json.transaction_id}`], data: `@${json.from}| canceled ${c.txid}` },
+                                    { type: 'put', path: ['feed', `${json.block_num}:${json.transaction_id}`], data: msg },
                                     { type: 'del', path: ['chrono', c.expire_path] },
                                     { type: 'del', path: ['escrow', json.who, c.txid + `:cancel`] }
                                 ]
@@ -506,10 +548,12 @@ exports.transfer = (json, pc) => {
             }
             console.log('authed ' + auth)
             if (auth) {
+                const msg = `@${json.from}| sent @${json.to} ${json.amount} for ${json.memo.split(' ')[0]}`
+                if (config.hookurl) postToDiscord(msg)
                 ops.push({
                     type: 'put',
                     path: ['feed', `${json.block_num}:${json.transaction_id}`],
-                    data: `@${json.from}| sent @${json.to} ${json.amount} for ${json.memo.split(' ')[0]}`
+                    data: msg
                 })
                 let addr = json.memo.split(' ')[0],
                     co = json.memo.split(' ')[2],
@@ -531,6 +575,7 @@ exports.transfer = (json, pc) => {
                         let lil_ops = [
                             addGov(json.from, parseInt(c.escrow)),
                             addCol(json.from, -parseInt(c.escrow)),
+                            add(json.from, parseInt(c.fee / 3)),
                             deletePointer(c.escrow_id, eo),
                             credit(json.from)
                         ]
@@ -574,7 +619,9 @@ exports.transfer = (json, pc) => {
                 if (purchase < i) {
                     i -= purchase
                     b += purchase
-                    ops = [{ type: 'put', path: ['feed', `${json.block_num}:${json.transaction_id}`], data: `@${json.from}| bought ${parseFloat(purchase / 1000).toFixed(3)} ${config.TOKEN} with ${parseFloat(amount / 1000).toFixed(3)} HIVE` },
+                    const msg = `@${json.from}| bought ${parseFloat(purchase / 1000).toFixed(3)} ${config.TOKEN} with ${parseFloat(amount / 1000).toFixed(3)} HIVE`
+                    if (config.hookurl) postToDiscord(msg)
+                    ops = [{ type: 'put', path: ['feed', `${json.block_num}:${json.transaction_id}`], data: msg },
                         { type: 'put', path: ['balances', json.from], data: b },
                         { type: 'put', path: ['balances', 'ri'], data: i }
                     ]
@@ -585,20 +632,24 @@ exports.transfer = (json, pc) => {
                     b += i
                     const left = purchase - i
                     stats.outOnBlock = json.block_num
+                    const msg = `@${json.from}| bought ALL ${parseFloat(parseInt(purchase - left)).toFixed(3)} ${config.TOKEN} with ${parseFloat(parseInt(amount) / 1000).toFixed(3)} HIVE. And bid in the over-auction`
+                    if (config.hookurl) postToDiscord(msg)
                     ops = [
                         { type: 'put', path: ['ico', `${json.block_num}`, json.from], data: parseInt(amount * left / purchase) },
                         { type: 'put', path: ['balances', json.from], data: b },
                         { type: 'put', path: ['balances', 'ri'], data: 0 },
                         { type: 'put', path: ['stats'], data: stats },
-                        { type: 'put', path: ['feed', `${json.block_num}:${json.transaction_id}`], data: `@${json.from}| bought ALL ${parseFloat(parseInt(purchase - left)).toFixed(3)} ${config.TOKEN} with ${parseFloat(parseInt(amount) / 1000).toFixed(3)} HIVE. And bid in the over-auction` }
+                        { type: 'put', path: ['feed', `${json.block_num}:${json.transaction_id}`], data: msg }
                     ]
                     if (process.env.npm_lifecycle_event == 'test') pc[2] = ops
                     store.batch(ops, pc)
                 }
             } else {
+                const msg = `@${json.from}| bought ALL ${parseFloat(parseInt(purchase - left)).toFixed(3)} ${config.TOKEN} with ${parseFloat(parseInt(amount) / 1000).toFixed(3)} HIVE. And bid in the over-auction`
+                if (config.hookurl) postToDiscord(msg)
                 ops = [
                     { type: 'put', path: ['ico', `${json.block_num}`, json.from], data: parseInt(amount) },
-                    { type: 'put', path: ['feed', `${json.block_num}:${json.transaction_id}`], data: `@${json.from}| bought ALL ${parseFloat(parseInt(purchase - left)).toFixed(3)} ${config.TOKEN} with ${parseFloat(parseInt(amount) / 1000).toFixed(3)} HIVE. And bid in the over-auction` }
+                    { type: 'put', path: ['feed', `${json.block_num}:${json.transaction_id}`], data: msg }
                 ]
                 if (process.env.npm_lifecycle_event == 'test') pc[2] = ops
                 store.batch(ops, pc)
@@ -729,7 +780,7 @@ exports.escrow_transfer = (json, pc) => {
                             agentBal -= (contract.amount * 2) //collateral withdrawl of dlux
                             toCol += (contract.amount * 2) // collateral withdraw of dlux
                             agentCol += (contract.amount * 2) //collateral withdrawl of dlux
-                            fromBal += contract.amount // collateral held and therefore instant purchase
+                            fromBal += contract.amount - contract.fee // collateral held and therefore instant purchase
                             contract.escrow = (contract.amount * 4)
                             contract.agent = json.agent
                             contract.tagent = json.to
@@ -827,8 +878,10 @@ exports.escrow_transfer = (json, pc) => {
                             ]
                             lil_ops.push(chronAssign(json.block_num + 200, { op: 'check', agent: contract.pending[1][0], txid: contract.txid + ':buyApproveA', acc: json.from, id: json.escrow_id.toString() }))
                             lil_ops.push(chronAssign(json.block_num + 200, { op: 'check', agent: contract.pending[0][0], txid: contract.txid + ':buyApproveT', acc: json.from, id: json.escrow_id.toString() }))
+                            const msg = `@${json.from}| has bought ${meta}: ${parseFloat(contract.amount / 1000).toFixed(3)} for ${samount}`
+                            if (config.hookurl) postToDiscord(msg)
                             ops = [
-                                { type: 'put', path: ['feed', `${json.block_num}:${json.transaction_id}`], data: `@${json.from}| has bought ${meta}: ${parseFloat(contract.amount / 1000).toFixed(3)} for ${samount}` }, //fix this for types
+                                { type: 'put', path: ['feed', `${json.block_num}:${json.transaction_id}`], data: msg }, //fix this for types
                                 { type: 'put', path: ['contracts', seller, meta.split(':')[1]], data: contract },
                                 { type: 'put', path: ['escrow', contract.pending[0][0], contract.txid + ':buyApproveT'], data: contract.pending[0][1] },
                                 { type: 'put', path: ['escrow', contract.pending[1][0], contract.txid + ':buyApproveA'], data: contract.pending[1][1] },
@@ -863,7 +916,7 @@ exports.escrow_transfer = (json, pc) => {
                 if (process.env.npm_lifecycle_event == 'test') pc[2] = ops
                 store.batch(ops, pc)
             }
-        } else if (toBal > (dextxamount * 2) && agentBal > (dextxamount * 2) && typeof dextxamount === 'number' && dextxamount > 0 && isAgent && isDAgent && btime) {
+        } else if (toBal > (dextxamount * 2) && agentBal > (dextxamount * 2) && typeof dextxamount === 'number' && dextxamount > 4 && isAgent && isDAgent && btime) {
             var txid = config.TOKEN + hashThis(`${json.from}${json.transaction_id}`),
                 rate = parseFloat(parseInt(parseFloat(json.hive_amount) * 1000) / dextx[config.jsonTokenName]).toFixed(6),
                 allowed = false
@@ -947,25 +1000,27 @@ exports.escrow_transfer = (json, pc) => {
                             "hbd_amount": json.hbd_amount,
                             "hive_amount": json.hive_amount
                         }
-                    ]],
-                    contract = {
-                        txid,
-                        from: json.from,
-                        hive: parseInt(parseFloat(json.hive_amount) * 1000),
-                        hbd: parseInt(parseFloat(json.hbd_amount) * 1000),
-                        amount: dextx[config.jsonTokenName],
-                        rate,
-                        block: json.block_num,
-                        escrow_id: json.escrow_id,
-                        eo: json.from,
-                        escrow: (dextx[config.jsonTokenName] * 4),
-                        agent: json.agent,
-                        tagent: json.to,
-                        fee: json.fee,
-                        approvals: 0,
-                        auths,
-                        reject
-                    }
+                    ]]
+                let fee = parseInt(json[config.jsonTokenName] * 0.0025) + 3
+                contract = {
+                    txid,
+                    from: json.from,
+                    hive: parseInt(parseFloat(json.hive_amount) * 1000),
+                    hbd: parseInt(parseFloat(json.hbd_amount) * 1000),
+                    fee,
+                    amount: dextx[config.jsonTokenName],
+                    rate,
+                    block: json.block_num,
+                    escrow_id: json.escrow_id,
+                    eo: json.from,
+                    escrow: (dextx[config.jsonTokenName] * 4),
+                    agent: json.agent,
+                    tagent: json.to,
+                    fee: json.fee,
+                    approvals: 0,
+                    auths,
+                    reject
+                }
                 if (parseFloat(json.hive_amount) > 0) {
                     contract.type = 'sb'
                 } else if (parseFloat(json.hbd_amount) > 0) {
@@ -998,7 +1053,9 @@ exports.escrow_transfer = (json, pc) => {
             } else {
                 console.log(toBal > (dextxamount * 2), agentBal > (dextxamount * 2), typeof dextxamount === 'number', dextxamount > 0, isAgent, isDAgent, btime, 'buy checks')
                 var ops = []
-                ops.push({ type: 'put', path: ['feed', `${json.block_num}:${json.transaction_id}`], data: `@${json.from}| requested a trade outside of price curbs.` })
+                const msg = `@${json.from}| requested a trade outside of price curbs.`
+                if (config.hookurl) postToDiscord(msg)
+                ops.push({ type: 'put', path: ['feed', `${json.block_num}:${json.transaction_id}`], data: msg })
                 ops.push({
                     type: 'put',
                     path: ['escrow', json.agent, `${json.from}/${json.escrow_id}:denyA`],
@@ -1086,7 +1143,9 @@ function allowedPrice(volume_weighted_price, rate) {
 function deny(json, hiveVWMA, hbdVWMA) {
     var ops = []
         //console.log(toBal > (dextxamount * 2), agentBal > (dextxamount * 2), typeof dextxamount === 'number', dextxamount > 0, isAgent, isDAgent, btime, 'buy checks')
-    ops.push({ type: 'put', path: ['feed', `${json.block_num}:${json.transaction_id}`], data: `@${json.from}| improperly attempted to use the escrow network. Attempting escrow deny.` })
+    const msg = `@${json.from}| improperly attempted to use the escrow network. Attempting escrow deny.`
+    if (config.hookurl) postToDiscord(msg)
+    ops.push({ type: 'put', path: ['feed', `${json.block_num}:${json.transaction_id}`], data: msg })
     ops.push({
         type: 'put',
         path: ['escrow', json.agent, `${json.from}/${json.escrow_id}:denyA`],

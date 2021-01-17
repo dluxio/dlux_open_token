@@ -3,6 +3,7 @@ const { store } = require("../index");
 const { getPathNum } = require("../getPathNum");
 const { getPathObj } = require('../getPathObj')
 const { chronAssign } = require('../lil_ops')
+const { postToDiscord } = require('./../discord')
 
 exports.power_up = (json, from, active, pc) => {
     var amount = parseInt(json.amount),
@@ -22,7 +23,9 @@ exports.power_up = (json, from, active, pc) => {
                 ops.push({ type: 'put', path: ['balances', from], data: lbal - amount });
                 ops.push({ type: 'put', path: ['pow', from], data: pbal + amount });
                 ops.push({ type: 'put', path: ['pow', 't'], data: tpow + amount });
-                ops.push({ type: 'put', path: ['feed', `${json.block_num}:${json.transaction_id}`], data: `@${from}| Powered up ${parseFloat(json.amount / 1000).toFixed(3)} ${config.TOKEN}` });
+                const msg = `@${from}| Powered up ${parseFloat(json.amount / 1000).toFixed(3)} ${config.TOKEN}`
+                if (config.hookurl) postToDiscord(msg)
+                ops.push({ type: 'put', path: ['feed', `${json.block_num}:${json.transaction_id}`], data: msg });
             } else {
                 ops.push({ type: 'put', path: ['feed', `${json.block_num}:${json.transaction_id}`], data: `@${from}| Invalid power up` });
             }
@@ -67,7 +70,9 @@ exports.power_down = (json, from, active, pc) => {
                             ops.push({ type: 'del', path: ['chrono', downs[i]] });
                             ops.push({ type: 'put', path: ['powd', from, downs[i]], data: newdowns });
                         }
-                        ops.push({ type: 'put', path: ['feed', `${json.block_num}:${json.transaction_id}`], data: `@${from}| Powered down ${parseFloat(amount / 1000).toFixed(3)} ${config.TOKEN}` });
+                        const msg = `@${from}| Powered down ${parseFloat(amount / 1000).toFixed(3)} ${config.TOKEN}`
+                        if (config.hookurl) postToDiscord(msg)
+                        ops.push({ type: 'put', path: ['feed', `${json.block_num}:${json.transaction_id}`], data: msg });
                         store.batch(ops, pc);
                     });
             } else if (typeof amount == 'number' && amount == 0 && active) {

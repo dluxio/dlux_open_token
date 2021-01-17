@@ -3,6 +3,7 @@ const { store } = require('./../index')
 const { getPathObj } = require('./../getPathObj')
 const { deleteObjs } = require('./../deleteObjs')
 const { isEmpty } = require('./../lil_ops')
+const { postToDiscord } = require('./../discord')
 
 exports.node_add = function(json, from, active, pc) {
     if (json.domain && typeof json.domain === 'string') {
@@ -62,7 +63,9 @@ exports.node_add = function(json, from, active, pc) {
                     b.mirror = mirror
                     ops = [{ type: 'put', path: ['markets', 'node', from], data: b }]
                 }
-                ops.push({ type: 'put', path: ['feed', `${json.block_num}:${json.transaction_id}`], data: `@${from}| has bid the hive-state node ${json.domain} at ${json.bidRate}` })
+                const msg = `@${from}| has bid the hive-state node ${json.domain} at ${json.bidRate}`
+                if (config.hookurl) postToDiscord(msg)
+                ops.push({ type: 'put', path: ['feed', `${json.block_num}:${json.transaction_id}`], data: msg })
             } else {
                 console.log(e)
             }

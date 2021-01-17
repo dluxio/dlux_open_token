@@ -1,6 +1,7 @@
 const config = require('./../config')
 const { store } = require("./../index");
 const { getPathObj } = require("./../getPathObj");
+const { postToDiscord } = require('./../discord')
 
 exports.sig = (json, from, active, pc) => {
     var postPromise = getPathObj(['posts', `${json.author}/${json.permlink}`]);

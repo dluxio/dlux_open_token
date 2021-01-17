@@ -1,6 +1,7 @@
 const { store } = require("./../index");
 const { getPathObj } = require("./../getPathObj");
 const config = require("../config");
+//const { postToDiscord } = require('./../discord')
 
 exports.cjv = (json, from, active, pc) => {
     var postPromise = getPathObj(['posts', `${json.a}/${json.p}`]);

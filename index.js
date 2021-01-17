@@ -16,7 +16,6 @@ const ipfs = new IPFS({
     protocol: 'https'
 });
 exports.ipfs = ipfs;
-
 const rtrades = require('./rtrades');
 var Pathwise = require('./pathwise');
 var level = require('level');

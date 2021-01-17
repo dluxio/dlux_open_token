@@ -1,6 +1,7 @@
 const config = require('./../config')
 const { store } = require("./../index");
 const { getPathNum } = require("./../getPathNum");
+const { postToDiscord } = require('./../discord')
 
 exports.send = (json, from, active, pc) => {
     let fbalp = getPathNum(['balances', from]),
@@ -14,7 +15,9 @@ exports.send = (json, from, active, pc) => {
             if (json.to && typeof json.to == 'string' && send > 0 && fbal >= send && active) { //balance checks
                 ops.push({ type: 'put', path: ['balances', from], data: parseInt(fbal - send) });
                 ops.push({ type: 'put', path: ['balances', json.to], data: parseInt(tbal + send) });
-                ops.push({ type: 'put', path: ['feed', `${json.block_num}:${json.transaction_id}`], data: `@${from}| Sent @${json.to} ${parseFloat(parseInt(json.amount) / 1000).toFixed(3)} ${config.TOKEN}` });
+                let msg = `@${from}| Sent @${json.to} ${parseFloat(parseInt(json.amount) / 1000).toFixed(3)} ${config.TOKEN}`
+                if (config.hookurl) postToDiscord(msg)
+                ops.push({ type: 'put', path: ['feed', `${json.block_num}:${json.transaction_id}`], data: msg });
             } else {
                 ops.push({ type: 'put', path: ['feed', `${json.block_num}:${json.transaction_id}`], data: `@${from}| Invalid send operation` });
             }
