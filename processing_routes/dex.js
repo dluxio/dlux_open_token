@@ -483,6 +483,8 @@ exports.escrow_release = (json, pc) => {
                         let lil_ops = [
                             addGov(json.agent, parseInt(c.escrow / 2)),
                             addCol(json.agent, -parseInt(c.escrow / 2)),
+                            add(json.agent, parseInt(c.fee / 3)),
+                            add('rn', parseInt(c.fee / 3) + c.fee - (parseInt(c.fee / 3) * 3)),
                             chronAssign(json.block_num + 200, { op: 'check', agent: c.auths[2][0], txid: c.txid + ':transfer', acc: c.from, id: c.escrow_id.toString() }),
                             credit(json.who)
                         ]
@@ -507,8 +509,6 @@ exports.escrow_release = (json, pc) => {
                             addGov(json.to, parseInt(c.escrow / 2)),
                             addCol(json.agent, -parseInt(c.escrow / 2)),
                             addCol(json.to, -parseInt(c.escrow / 2)),
-                            add(json.agent, parseInt(c.fee / 3)),
-                            add('rn', parseInt(c.fee / 3) + c.fee - (parseInt(c.fee / 3) * 3)),
                             deletePointer(c.escrow_id, a.for),
                             credit(json.who)
                         ]

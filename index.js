@@ -1,5 +1,5 @@
 const config = require('./config');
-const VERSION = 'v0.9.0a1'
+const VERSION = 'v0.9.0a2'
 exports.VERSION = VERSION
 
 const hive = require('@hiveio/dhive');
@@ -67,8 +67,8 @@ var recents = []
     //HIVE API CODE
 
 //Start Program Options   
-//startWith('QmcL12W2gcPGsoxKPQ84U1bEP1E4GutTbDtCvyQ7ftuSE8') //for testing and replaying
-dynStart(config.leader)
+startWith('QmewfSXgmPNmew5VKjtWeTsqdQ2BmG2ECCRqaaVd6wwK8v') //for testing and replaying
+    //dynStart(config.leader)
 
 // API defs
 api.use(API.https_redirect);
@@ -489,6 +489,7 @@ function startWith(hash) {
                         if (!e) {
                             if (hash) {
                                 var cleanState = data[1]
+                                cleanState.stats.tokenSupply -= 320
                                 store.put([], cleanState, function(err) {
                                     if (err) {
                                         console.log(err)
