@@ -384,13 +384,13 @@ exports.escrow_approve = (json, pc) => {
                         if (c.approve_to) {
                             if (parseFloat(c.hive) > 0) {
                                 //contract.type = 'sb'
-                                const msg = `@${c.eo}| signed a ${parseFloat(c.hive / 1000).toFixed(3)} HIVE buy order for ${parseFloat(c.amount).toFixed(3)}`
+                                const msg = `@${c.eo}| signed a ${parseFloat(c.hive / 1000).toFixed(3)} HIVE buy order for ${parseFloat(c.amount/1000).toFixed(3)}`
                                 if (config.hookurl) postToDiscord(msg)
                                 dataOps.push({ type: 'put', path: ['feed', `${json.block_num}:${c.txid}`], data: msg })
                                 dataOps.push({ type: 'put', path: ['dex', 'hive', 'buyOrders', `${c.rate}:${c.txid}`], data: c })
                             } else if (parseFloat(c.hbd) > 0) {
                                 //contract.type = 'db'
-                                const msg = `@${c.eo}| signed a ${parseFloat(c.hbd / 1000).toFixed(3)} HBD buy order for ${parseFloat(c.amount).toFixed(3)}`
+                                const msg = `@${c.eo}| signed a ${parseFloat(c.hbd / 1000).toFixed(3)} HBD buy order for ${parseFloat(c.amount/1000).toFixed(3)}`
                                 if (config.hookurl) postToDiscord(msg)
                                 dataOps.push({ type: 'put', path: ['feed', `${json.block_num}:${c.txid}`], data: msg })
                                 dataOps.push({ type: 'put', path: ['dex', 'hbd', 'buyOrders', `${c.rate}:${c.txid}`], data: c })
@@ -715,6 +715,7 @@ exports.dex_clear = (json, from, active, pc) => {
 }
 
 exports.escrow_transfer = (json, pc) => {
+    console.log(json)
     var ops, dextx, seller, contract, isAgent, isDAgent, dextxamount, meta, done = 0,
         type = 'hive',
         hours
@@ -762,8 +763,8 @@ exports.escrow_transfer = (json, pc) => {
             agentBal = v[7],
             toCol = v[8],
             agentCol = v[9]
-        isAgent = (toNode.lastGood > json.block_num - 100)
-        isDAgent = (agentNode.lastGood > json.block_num - 100)
+        isAgent = (toNode.lastGood >= json.block_num - 200)
+        isDAgent = (agentNode.lastGood >= json.block_num - 200)
         buy = contract.amount
             //console.log(typeof buy === 'number', parseInt(json.hive_amount) / 1000 == buy, contract.type == 'ss', parseInt(json.hbd_amount) * 1000 == buy, contract.type == 'ds', isAgent, isDAgent, btime)
         if (typeof buy === 'number' && isAgent && isDAgent && btime) { //{txid, from: from, buying: buyAmount, amount: json[config.jsonTokenName], [json[config.jsonTokenName]]:buyAmount, rate:parseFloat((json[config.jsonTokenName])/(buyAmount)).toFixed(6), block:current, partial: json.partial || true

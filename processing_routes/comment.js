@@ -4,7 +4,7 @@ const { store, unshiftOp } = require('./../index')
 const { deleteObjs } = require('./../deleteObjs')
 const { chronAssign } = require('./../lil_ops')
 const { getPathObj } = require('../getPathObj')
-const { postToDiscord } = require('./../discord')
+const { postToDiscord, contentToDiscord } = require('./../discord')
 
 exports.comment = (json, pc) => {
     let meta = {}
@@ -153,7 +153,7 @@ exports.comment_options = (json, pc) => {
                     ops.push({ type: 'del', path: ['pend', `${json.author}/${json.permlink}`] })
                     ops.push({ type: 'del', path: ['chrono', `${a.block_num + 28800}:pend:${json.author}/${json.permlink}`] })
                     const msg = `@${json.author}|${json.permlink} added to ${config.TOKEN} rewardable content`
-                    if (config.hookurl) postToDiscord(msg) //embed discord
+                    if (config.hookurl) contentToDiscord(json.author, json.permlink)
                     ops.push({ type: 'put', path: ['feed', `${json.block_num}:${json.transaction_id}`], data: msg })
                     if (process.env.npm_lifecycle_event == 'test') pc[2] = ops
                     store.batch(ops, pc)
