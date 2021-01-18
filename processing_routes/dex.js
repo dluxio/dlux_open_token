@@ -38,8 +38,7 @@ exports.dex_buy = (json, from, active, pc) => {
                                 highest = parseFloat(i.split(":")[0])
                             }
                         }
-                        if (bal > found.amount // && parseFloat(found.rate) >= parseFloat(highest) * 0.99
-                        ) {
+                        if (bal > found.amount && parseFloat(found.rate) >= parseFloat(highest) * 0.99) {
                             bal -= found.amount
                             fromBal += found.amount
                             found.buyer = from
@@ -722,7 +721,7 @@ exports.escrow_transfer = (json, pc) => {
     try {
         dextx = JSON.parse(json.json_meta).dextx
         dextxamount = parseInt(dextx[config.jsonTokenName])
-        hours = JSON.parse(json.json_meta).hours
+        hours = JSON.parse(json.json_meta).hours || parseInt(dextx.hours)
     } catch (e) {}
     if (!hours) { hours = 1 }
     if (hours > 120) { hours = 120 }
