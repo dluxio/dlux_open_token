@@ -12,11 +12,13 @@ exports.tally = (num, plasma, isStreaming) => new Promise((resolve, reject) => {
         Prb = getPathObj(['balances']),
         Prcol = getPathObj(['col']),
         Prpow = getPathObj(['gov']),
-        Prqueue = getPathObj(['queue'])
-    Promise.all([Prunners, Pnode, Pstats, Prb, Prcol, Prpow, Prqueue]).then(function(v) {
+        Prqueue = getPathObj(['queue']),
+        Ppending = getPathObj(['pendingpayment'])
+    Promise.all([Prunners, Pnode, Pstats, Prb, Prcol, Prpow, Prqueue, Ppending]).then(function(v) {
         deleteObjs([
                 ['runners'],
-                ['queue']
+                ['queue'],
+                ['pendingpayment']
             ])
             .then(empty => {
                 var runners = v[0],
@@ -26,6 +28,7 @@ exports.tally = (num, plasma, isStreaming) => new Promise((resolve, reject) => {
                     rcol = v[4],
                     rgov = v[5],
                     queue = {},
+                    pending = v[7],
                     tally = {
                         agreements: {
                             hashes: {},
@@ -157,32 +160,85 @@ exports.tally = (num, plasma, isStreaming) => new Promise((resolve, reject) => {
                     still_running,
                     stats
                 };
-                const mint = parseInt(stats.tokenSupply / stats.interestRate);
-                stats.tokenSupply += mint;
-                rbal.ra += mint;
-                let ops = [
-                    { type: 'put', path: ['stats'], data: stats },
-                    { type: 'put', path: ['runners'], data: still_running },
-                    { type: 'put', path: ['markets', 'node'], data: nodes },
-                    { type: 'put', path: ['balances', 'ra'], data: rbal.ra }
-                ]
-                if (Object.keys(new_queue).length) ops.push({ type: 'put', path: ['queue'], data: new_queue })
-                    //if (process.env.npm_lifecycle_event == 'test') newPlasma = ops
-                store.batch(ops, [resolve, reject, newPlasma]);
-                if (process.env.npm_lifecycle_event != 'test') {
-                    if (consensus && (consensus != plasma.hashLastIBlock || consensus != nodes[config.username].report.hash && nodes[config.username].report.block_num > num - 100) && isStreaming) {
-                        exit(consensus);
-                        //var errors = ['failed Consensus'];
-                        //const blockState = Buffer.from(JSON.stringify([num, state]))
-                        //plasma.hashBlock = '';
-                        //plasma.hashLastIBlock = '';
-                        console.log(num + `:Abandoning ${plasma.hashLastIBlock} because failed consensus.`);
-                    }
+                let weights = 0,
+                    running_weight = parseInt(stats.movingWeight.running / 2016)
+                for (post in pending) {
+                    weights += pending[post].t.totalWeight
                 }
+                let this_weight = parseInt(weights / 2016),
+                    this_payout = parseInt(13300 * this_weight / running_weight) //subtract this from the rc account... 13300 is 70% of inflation
+                stats.movingWeight.running = parseInt(((stats.movingWeight.running * 2015) / 2016) + (weights / 2016)) //7 day average at 5 minute intervals
+                payout(this_payout, weights, pending)
+                    .then(change => {
+                        const mint = parseInt(stats.tokenSupply / stats.interestRate);
+                        stats.tokenSupply += mint;
+                        rbal.ra += mint;
+                        let ops = [
+                            { type: 'put', path: ['stats'], data: stats },
+                            { type: 'put', path: ['runners'], data: still_running },
+                            { type: 'put', path: ['markets', 'node'], data: nodes },
+                            { type: 'put', path: ['balances', 'ra'], data: rbal.ra },
+                            { type: 'put', path: ['balances', 'rc'], data: rbal.rc - this_payout }
+                        ]
+                        if (Object.keys(new_queue).length) ops.push({ type: 'put', path: ['queue'], data: new_queue })
+                            //if (process.env.npm_lifecycle_event == 'test') newPlasma = ops
+                        store.batch(ops, [resolve, reject, newPlasma]);
+                        if (process.env.npm_lifecycle_event != 'test') {
+                            if (consensus && (consensus != plasma.hashLastIBlock || consensus != nodes[config.username].report.hash && nodes[config.username].report.block_num > num - 100) && isStreaming) {
+                                exit(consensus);
+                                //var errors = ['failed Consensus'];
+                                //const blockState = Buffer.from(JSON.stringify([num, state]))
+                                //plasma.hashBlock = '';
+                                //plasma.hashLastIBlock = '';
+                                console.log(num + `:Abandoning ${plasma.hashLastIBlock} because failed consensus.`);
+                            }
+                        }
+                    })
             })
             .catch(e => { console.log(e); });
     });
 })
+
+function payout(this_payout, weights, pending) {
+    return new Promise((resolve, reject) => {
+        let payments = {},
+            out = 0
+        for (post in pending) {
+            payments[post.split('/')[0]] = 0
+            for (voter in pending[post].votes) {
+                payments[voter] = 0
+            }
+        }
+        for (post in pending) {
+            if (pending[post].t.totalWeight > 0) {
+                const TotalPostPayout = parseInt(this_payout * (pending[post].t.totalWeight) / weights)
+                payments[post.split('/')[0]] += parseInt(TotalPostPayout / 2) //author reward
+                out += parseInt(TotalPostPayout / 2)
+                for (voter in pending[post].votes) {
+                    if (pending[post].votes[voter].v > 0) {
+                        const this_vote = parseInt((TotalPostPayout * pending[post].votes[voter].w) / (pending[post].t.linearWeight * 2))
+                        payments[voter] += this_vote
+                        out += this_vote
+                    }
+                }
+            }
+        }
+        let promises = []
+        for (account in payments) {
+            promises.push(getPathNum(['balances', account]))
+        }
+        Promise.all(promises).then(p => {
+            let i = 0,
+                ops = []
+            for (account in payments) {
+                ops.push({ type: 'put', path: ['balances', account], data: p[i] + payments[account] })
+                i++
+            }
+            let paid = this_payout - out
+            store.batch(ops, [resolve, reject, paid]) //return the paid ammount so millitokens aren't lost
+        })
+    })
+}
 
 /*
 function check() { //is this needed at all? -not until doing oracle checks i think

@@ -50,7 +50,8 @@ exports.comment = (json, pc) => {
                         data: {
                             author: json.author,
                             permlink: json.permlink,
-                            block_num: json.block_num
+                            block_num: json.block_num,
+                            op: 'post_reward'
                         }
                     })
                 } else {

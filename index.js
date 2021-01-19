@@ -241,25 +241,31 @@ function startApp() {
                                 case 'post_reward': //needs work and/or testing
                                     promises.push(postRewardOP(b, num, chrops[i].split(':')[1], delKey))
 
-                                    function postRewardOP(b, num, id, delkey) {
+                                    function postRewardOP(p, num, id, delkey) {
+                                        console.log(p)
+                                        let l = p
                                         return new Promise((resolve, reject) => {
-                                            store.get(['posts', `${b.author}/${b.permlink}`], function(e, a) {
+                                            store.get(['posts', `${l.author}/${l.permlink}`], function(e, a) {
+                                                let b = a
                                                 let ops = []
-                                                console.log(a)
-                                                a.title = a.customJSON.p.d
-                                                delete a.customJSON.p.d
-                                                a.c = a.customJSON.p
-                                                delete a.customJSON.p
-                                                delete a.customJSON.s
-                                                delete a.customJSON.pw
-                                                delete a.customJSON.sw
+                                                let totals = {
+                                                    totalWeight: 0,
+                                                    linearWeight: 0
+                                                }
+                                                for (vote in b.votes) {
+                                                    totals.totalWeight += b.votes[vote].v
+                                                    linearWeight = parseInt(b.votes[vote].v * ((201600 - (b.votes[vote].b + b.block)) / 201600))
+                                                    totals.linearWeight += linearWeight
+                                                    b.votes[vote].w = linearWeight
+                                                }
+                                                let half = parseInt(totals.totalWeight / 2)
+                                                totals.curationTotal = half
+                                                totals.authorTotal = totals.totalWeight - half
+                                                b.t = totals
                                                 ops.push({
                                                     type: 'put',
-                                                    path: ['br', `${b.author}/${b.permlink}`],
-                                                    data: {
-                                                        op: 'dao_content',
-                                                        post: a
-                                                    }
+                                                    path: ['pendingpayment', `${b.author}/${b.permlink}`],
+                                                    data: b
                                                 })
                                                 ops.push({ type: 'del', path: ['chrono', delkey] })
                                                 ops.push({ type: 'put', path: ['feed', `${num}:vop_${id}`], data: `@${b.author}| Post:${b.permlink} voting expired.` })
@@ -489,6 +495,7 @@ function startWith(hash) {
                         if (!e) {
                             if (hash) {
                                 var cleanState = data[1]
+                                cleanState.stats.movingWeight = { running: 10000000000 }
                                 store.put([], cleanState, function(err) {
                                     if (err) {
                                         console.log(err)
