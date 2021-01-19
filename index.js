@@ -495,7 +495,6 @@ function startWith(hash) {
                         if (!e) {
                             if (hash) {
                                 var cleanState = data[1]
-                                cleanState.stats.movingWeight = { running: 10000000000 }
                                 store.put([], cleanState, function(err) {
                                     if (err) {
                                         console.log(err)
