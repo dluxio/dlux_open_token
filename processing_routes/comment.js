@@ -1,5 +1,5 @@
 const config = require('./../config')
-const { rtrades } = require('./../rtrades')
+const rtrades = require('./../rtrades')
 const { store, unshiftOp } = require('./../index')
 const { deleteObjs } = require('./../deleteObjs')
 const { chronAssign } = require('./../lil_ops')
