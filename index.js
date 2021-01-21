@@ -68,8 +68,8 @@ var recents = []
     //HIVE API CODE
 
 //Start Program Options   
-startWith('QmbB7if9stfxwvXPTkSihPbHMxGhTGMD1h84K5dzSwWVhq') //for testing and replaying
-    //dynStart(config.leader)
+//startWith('QmbB7if9stfxwvXPTkSihPbHMxGhTGMD1h84K5dzSwWVhq') //for testing and replaying
+dynStart(config.leader)
 
 // API defs
 api.use(API.https_redirect);
@@ -522,9 +522,6 @@ function startWith(hash) {
                         if (!e) {
                             if (hash) {
                                 var cleanState = data[1]
-                                cleanState.stats.tokenSupply -= 2
-                                delete cleanState.chrono['50588915:pend:dlux-io/blockexplorer-mirror1']
-                                delete cleanState.pend
                                 store.put([], cleanState, function(err) {
                                     if (err) {
                                         console.log(err)
