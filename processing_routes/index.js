@@ -1,7 +1,7 @@
 const { onStreamingStart } = require('./onStreamingStart')
 const { send } = require('./send')
 const { gov_up, gov_down } = require('./gov')
-const { power_up, power_down } = require('./power')
+const { power_up, power_down, power_grant } = require('./power')
 const { delegate_vesting_shares } = require('./delegate_vesting_shares')
 const { vote } = require('./vote')
 const { cert } = require('./cert')
@@ -35,6 +35,7 @@ module.exports = {
     nomention,
     onStreamingStart,
     power_down,
+    power_grant,
     power_up,
     q4d,
     report,

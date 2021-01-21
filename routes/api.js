@@ -200,20 +200,22 @@ exports.user = (req, res, next) => {
     let un = req.params.un,
         bal = getPathNum(['balances', un]),
         pb = getPathNum(['pow', un]),
-        lp = getPathNum(['pow', 'n', un]),
+        lp = getPathNum(['granted', un, 't']),
+        lg = getPathNum(['granting', un, 't']),
         contracts = getPathObj(['contracts', un]),
         incol = getPathNum(['col', un]), //collateral
         gp = getPathNum(['gov', un]),
         pup = getPathObj(['up', un]),
         pdown = getPathObj(['down', un])
     res.setHeader('Content-Type', 'application/json');
-    Promise.all([bal, pb, lp, contracts, incol, gp, pup, pdown])
+    Promise.all([bal, pb, lp, contracts, incol, gp, pup, pdown, lg])
         .then(function(v) {
             console.log(bal, pb, lp, contracts)
             res.send(JSON.stringify({
                 balance: v[0],
                 poweredUp: v[1],
-                powerBeared: v[2],
+                granted: v[2],
+                granting: v[8],
                 heldCollateral: v[4],
                 contracts: v[3],
                 up: v[6],

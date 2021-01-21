@@ -23,12 +23,11 @@ exports.contentToDiscord = (author, permlink) => {
         .then(j => j.json())
         .then(result => {
             r = result.result
-            console.log(r)
             const embed = new MessageBuilder()
                 .setTitle('New DLUX content!')
                 .setAuthor(author, 'https://cdn.discordapp.com/embed/avatars/0.png', `https://www.dlux.io/@${author}`)
                 .setURL(`https://www.dlux.io/dlux/${author}/${permlink}`)
-                .addField(r.title, JSON.parse(r.json_metadata).description, true)
+                .addField(r.title, (JSON.parse(r.json_metadata).description || 'View this on dlux.io'), true)
                 //.addField('Second field', 'this is not inline')
                 .setColor('#00b0f4')
                 //.setThumbnail('https://cdn.discordapp.com/embed/avatars/0.png')
@@ -37,7 +36,8 @@ exports.contentToDiscord = (author, permlink) => {
                 //.setFooter('Hey its a footer', 'https://cdn.discordapp.com/embed/avatars/0.png')
                 .setTimestamp();
 
-            hook.send(embed);
+            hook.send(embed)
+                .catch(e => console.log(e))
         }).catch(e => { console.log(e) })
 
 }

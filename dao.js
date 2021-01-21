@@ -36,8 +36,9 @@ function dao(num) {
                     Ppbal = getPathNum(['pow', 't']),
                     Pnomen = getPathObj(['nomention']),
                     Pposts = getPathObj(['posts']),
-                    Pfeed = getPathObj(['feed']);
-                Promise.all([Pnews, Pbals, Prunners, Pnodes, Pstats, Pdelegations, Pico, Pdex, Pbr, Ppbal, Pnomen, Pposts, Pfeed]).then(function(v) {
+                    Pfeed = getPathObj(['feed']),
+                    Ppaid = getPathObj(['paid']);
+                Promise.all([Pnews, Pbals, Prunners, Pnodes, Pstats, Pdelegations, Pico, Pdex, Pbr, Ppbal, Pnomen, Pposts, Pfeed, Ppaid]).then(function(v) {
                             daops.push({ type: 'del', path: ['postQueue'] });
                             daops.push({ type: 'del', path: ['br'] });
                             daops.push({ type: 'del', path: ['rolling'] });
@@ -55,12 +56,17 @@ function dao(num) {
                                 powBal = v[9],
                                 nomention = v[10],
                                 cpost = v[11],
-                                feedCleaner = v[12]
+                                feedCleaner = v[12],
+                                paidCleaner = v[12]
                             feedKeys = Object.keys(feedCleaner);
-                            console.log(cpost);
                             for (feedi = 0; feedi < feedKeys.length; feedi++) {
                                 if (feedKeys[feedi].split(':')[0] < num - 30240) {
                                     daops.push({ type: 'del', path: ['feed', feedKeys[feedi]] });
+                                }
+                            }
+                            for (paid in paidCleaner) {
+                                if (paid < num - 30240) {
+                                    daops.push({ type: 'del', path: ['paid', paid] });
                                 }
                             }
                             news = news;
@@ -283,8 +289,8 @@ function dao(num) {
                                 dex.hbd.days[num] = hib;
                             }
                             console.log(stats);
-
                             post = post + `*****\n### DEX Report\n#### Volume Weighted Prices:\n* ${parseFloat(stats.HiveVWMA.rate).toFixed(3)} HIVE per ${config.TOKEN}\n* ${parseFloat(stats.HbdVWMA.rate).toFixed(3)} HBD per ${config.TOKEN}\n#### Daily Volume:\n* ${parseFloat(vol / 1000).toFixed(3)} ${config.TOKEN}\n* ${parseFloat(vols / 1000).toFixed(3)} HIVE\n* ${parseFloat(parseInt(volhbd) / 1000).toFixed(3)} HBD\n*****\n`;
+                            stats.movingWeight.dailyPool = bals.ra
                             bals.rc = bals.rc + bals.ra;
                             bals.ra = 0;
                             var q = 0,

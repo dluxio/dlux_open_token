@@ -3,7 +3,7 @@ const { store } = require("../index");
 const { getPathNum } = require("../getPathNum");
 const { getPathObj } = require('../getPathObj')
 const { chronAssign } = require('../lil_ops')
-const { postToDiscord } = require('./../discord')
+const { postToDiscord } = require('./../discord');
 
 exports.power_up = (json, from, active, pc) => {
     var amount = parseInt(json.amount),
@@ -28,6 +28,107 @@ exports.power_up = (json, from, active, pc) => {
                 ops.push({ type: 'put', path: ['feed', `${json.block_num}:${json.transaction_id}`], data: msg });
             } else {
                 ops.push({ type: 'put', path: ['feed', `${json.block_num}:${json.transaction_id}`], data: `@${from}| Invalid power up` });
+            }
+            store.batch(ops, pc);
+        })
+        .catch(e => { console.log(e); });
+
+}
+
+exports.power_grant = (json, from, active, pc) => {
+    var amount = parseInt(json.amount),
+        to = json.to,
+        Pgranting_from_total = getPathNum(['granting', from, 't']),
+        Pgranting_to_from = getPathNum(['granting', from, to]),
+        Pgranted_to_from = getPathNum(['granted', to, from]),
+        Pgranted_to_total = getPathNum(['granted', to, 't']),
+        Ppower = getPathNum(['pow', from]),
+        Pup_from = getPathObj(['up', from]),
+        Pdown_from = getPathObj(['down', from]),
+        Pup_to = getPathObj(['up', to]),
+        Pdown_to = getPathObj(['down', to])
+    Promise.all([
+            Ppower,
+            Pgranted_to_from,
+            Pgranted_to_total,
+            Pgranting_to_from,
+            Pgranting_from_total,
+            Pup_from,
+            Pup_to,
+            Pdown_from,
+            Pdown_to
+        ])
+        .then(mem => {
+            let from_power = mem[0],
+                granted_to_from = mem[1],
+                granted_to_total = mem[2],
+                granting_to_from = mem[3],
+                granting_from_total = mem[4],
+                up_from = mem[5],
+                up_to = mem[6],
+                down_from = mem[7],
+                down_to = mem[8],
+                ops = [];
+            if (amount < from_power && amount >= 0 && active) {
+                if (amount > granted_to_from) {
+                    let more = amount - granted_to_from
+                    if (up_from.max) {
+                        up_from.max -= more
+                    }
+                    if (down_from.max) {
+                        down_from.max -= more
+                    }
+                    if (up_to.max) {
+                        up_to.max += more
+                    }
+                    if (down_to.max) {
+                        down_to.max += more
+                    }
+                    ops.push({ type: 'put', path: ['granting', from, 't'], data: granting_from_total + more });
+                    ops.push({ type: 'put', path: ['granting', from, to], data: granting_to_from + more });
+                    ops.push({ type: 'put', path: ['granted', to, from], data: granted_to_from + more });
+                    ops.push({ type: 'put', path: ['granted', to, 't'], data: granted_to_total + more });
+                    ops.push({ type: 'put', path: ['pow', from], data: from_power - more }); //weeks wait? chron ops? no because of the power growth at vote
+                    ops.push({ type: 'put', path: ['up', from], data: up_from });
+                    ops.push({ type: 'put', path: ['down', from], data: down_from });
+                    ops.push({ type: 'put', path: ['up', to], data: up_to });
+                    ops.push({ type: 'put', path: ['down', to], data: down_to });
+                    const msg = `@${from}| Has granted ${parseFloat(amount/1000).toFixed(3)} to ${to}`
+                    if (config.hookurl) postToDiscord(msg)
+                    ops.push({ type: 'put', path: ['feed', `${json.block_num}:${json.transaction_id}`], data: msg });
+                } else if (amount < granted_to_from) {
+                    let less = granted_to_from - amount
+                    if (up_from.max) {
+                        up_from.max += less
+                    }
+                    if (down_from.max) {
+                        down_from.max += less
+                    }
+                    if (up_to.max) {
+                        up_to.max -= less
+                    }
+                    if (down_to.max) {
+                        down_to.max -= less
+                    }
+                    ops.push({ type: 'put', path: ['granting', from, 't'], data: granting_from_total - less });
+                    ops.push({ type: 'put', path: ['granting', from, to], data: granting_to_from - less });
+                    ops.push({ type: 'put', path: ['granted', to, from], data: granted_to_from - less });
+                    ops.push({ type: 'put', path: ['granted', to, 't'], data: granted_to_total - less });
+                    ops.push({ type: 'put', path: ['pow', from], data: from_power + less });
+                    ops.push({ type: 'put', path: ['up', from], data: up_from });
+                    ops.push({ type: 'put', path: ['down', from], data: down_from });
+                    ops.push({ type: 'put', path: ['up', to], data: up_to });
+                    ops.push({ type: 'put', path: ['down', to], data: down_to });
+                    const msg = `@${from}| Has granted ${parseFloat(amount/1000).toFixed(3)} to ${to}`
+                    if (config.hookurl) postToDiscord(msg)
+                    ops.push({ type: 'put', path: ['feed', `${json.block_num}:${json.transaction_id}`], data: msg });
+                } else {
+                    const msg = `@${from}| Has already granted ${parseFloat(amount/1000).toFixed(3)} to ${to}`
+                    if (config.hookurl) postToDiscord(msg)
+                    ops.push({ type: 'put', path: ['feed', `${json.block_num}:${json.transaction_id}`], data: msg });
+                }
+            } else {
+                ops.push({ type: 'put', path: ['feed', `${json.block_num}:${json.transaction_id}`], data: `@${from}| Invalid delegation` });
             }
             store.batch(ops, pc);
         })

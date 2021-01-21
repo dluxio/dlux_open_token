@@ -9,8 +9,7 @@ exports.report = (json, from, active, pc) => {
                 b.report = json
                 delete b.report.timestamp
                 var ops = [
-                    { type: 'put', path: ['markets', 'node', from], data: b },
-                    { type: 'put', path: ['feed', `${json.block_num}:${json.transaction_id}`], data: `@${from}| Report processed` }
+                    { type: 'put', path: ['markets', 'node', from], data: b }
                 ]
                 if (process.env.npm_lifecycle_event == 'test') pc[2] = ops
                 store.batch(ops, pc)

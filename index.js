@@ -1,5 +1,5 @@
 const config = require('./config');
-const VERSION = 'v0.9.0a2'
+const VERSION = 'v0.9.0a3'
 exports.VERSION = VERSION
 
 const hive = require('@hiveio/dhive');
@@ -44,6 +44,7 @@ const HR = require('./processing_routes/index')
 const { enforce } = require("./enforce");
 exports.exit = exit;
 const { tally } = require("./tally");
+const { voter } = require("./voter");
 const { report } = require("./report");
 const { ipfsSaveState } = require("./ipfsSaveState");
 const { waitup } = require("./waitup");
@@ -67,8 +68,8 @@ var recents = []
     //HIVE API CODE
 
 //Start Program Options   
-//startWith('QmewfSXgmPNmew5VKjtWeTsqdQ2BmG2ECCRqaaVd6wwK8v') //for testing and replaying
-dynStart(config.leader)
+startWith('QmbB7if9stfxwvXPTkSihPbHMxGhTGMD1h84K5dzSwWVhq') //for testing and replaying
+    //dynStart(config.leader)
 
 // API defs
 api.use(API.https_redirect);
@@ -110,8 +111,7 @@ var plasma = {
     jwt;
 exports.jwt = jwt;
 
-var rtradesToken = '' //for centralized IPFS pinning
-    //grabs an API token for IPFS pinning of TOKEN posts
+//grabs an API token for IPFS pinning of TOKEN posts
 if (config.rta && config.rtp) {
     rtrades.handleLogin(config.rta, config.rtp)
 }
@@ -122,6 +122,7 @@ function startApp() {
     processor.on('send', HR.send);
     processor.on('power_up', HR.power_up); // power up tokens for vote power in layer 2 token proof of brain
     processor.on('power_down', HR.power_down);
+    processor.on('power_grant', HR.power_grant);
     processor.on('vote_content', HR.vote_content);
     processor.on('dex_buy', HR.dex_buy);
     processor.on('dex_hive_sell', HR.dex_hive_sell);
@@ -238,15 +239,12 @@ function startApp() {
                                         })
                                     }
                                     break;
-                                case 'post_reward': //needs work and/or testing
+                                case 'post_reward':
                                     promises.push(postRewardOP(b, num, chrops[i].split(':')[1], delKey))
 
-                                    function postRewardOP(p, num, id, delkey) {
-                                        console.log(p)
-                                        let l = p
+                                    function postRewardOP(l, num, id, delkey) {
                                         return new Promise((resolve, reject) => {
-                                            store.get(['posts', `${l.author}/${l.permlink}`], function(e, a) {
-                                                let b = a
+                                            store.get(['posts', `${l.author}/${l.permlink}`], function(e, b) {
                                                 let ops = []
                                                 let totals = {
                                                     totalWeight: 0,
@@ -277,6 +275,32 @@ function startApp() {
                                     }
 
                                     break;
+                                case 'post_vote':
+                                    promises.push(postVoteOP(b, delKey))
+
+                                    function postVoteOP(l, delkey) {
+                                        return new Promise((resolve, reject) => {
+                                            store.get(['posts', `${l.author}/${l.permlink}`], function(e, b) {
+                                                let ops = []
+                                                let totalWeight = 0
+                                                for (vote in b.votes) {
+                                                    totalWeight += b.votes[vote].v
+                                                }
+                                                b.v = totalWeight
+                                                if (b.v > 0) {
+                                                    ops.push({
+                                                        type: 'put',
+                                                        path: ['pendingvote', `${b.author}/${b.permlink}`],
+                                                        data: b
+                                                    })
+                                                }
+                                                ops.push({ type: 'del', path: ['chrono', delkey] })
+                                                store.batch(ops, [resolve, reject])
+                                            })
+                                        })
+                                    }
+
+                                    break;
                                 default:
 
                             }
@@ -300,11 +324,14 @@ function startApp() {
                             })
                             .catch(e => { console.log(e) })
                     }
-                    if ((num - 20000) % 30240 === 0) { //time for daily magic
+                    if ((num - 20003) % 30240 === 0) { //time for daily magic
                         promises.push(dao(num))
                     }
                     if (num % 100 === 0) {
                         promises.push(tally(num, plasma, processor.isStreaming()));
+                    }
+                    if ((num - 2) % 3000 === 0) {
+                        promises.push(voter());
                     }
                     if (num % 100 === 1) {
                         store.get([], function(err, obj) {
@@ -495,6 +522,9 @@ function startWith(hash) {
                         if (!e) {
                             if (hash) {
                                 var cleanState = data[1]
+                                cleanState.stats.tokenSupply -= 2
+                                delete cleanState.chrono['50588915:pend:dlux-io/blockexplorer-mirror1']
+                                delete cleanState.pend
                                 store.put([], cleanState, function(err) {
                                     if (err) {
                                         console.log(err)

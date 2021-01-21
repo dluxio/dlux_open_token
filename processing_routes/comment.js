@@ -51,7 +51,7 @@ exports.comment = (json, pc) => {
                             author: json.author,
                             permlink: json.permlink,
                             block_num: json.block_num,
-                            op: 'post_reward'
+                            op: 'del_pend'
                         }
                     })
                 } else {
@@ -170,73 +170,3 @@ exports.comment_options = (json, pc) => {
         }
     }
 }
-
-/*
-processor.onOperation('comment', function(json, pc) { //grab posts to reward
-        let meta = JSON.parse(json.json_metadata)
-        let community_post = false
-        //store meta data, promote post if comment options with bens, demote if vote.
-        if (meta.arHash || meta.vrHash || meta.appHash || meta.audHash){
-            
-        }
-
-        /* //tag search for -LEO Community
-        for (tag in meta.tags) {
-            if (community_post) { break; }
-            for (i = 0; i < config.community_tags.length; i++) {
-                if (tag == config.community_tags[i]) {
-                    community_post = true
-                    break;
-                }
-            }
-        }
-if (community_post) {
-
- //tag picker only -LEO Community
-    var exp_path = chronAssign(json.block_num + 201600, { op: 'post_reward', a: json.author, p: json.permlink })
-    promies.all([exp_path])
-        .then(r => {
-            const post = {
-                author: json.author,
-                permlink: json.permlink,
-                expire_path: r[0],
-                block: json.block_num
-            }
-            var ops = [{ type: 'put', path: ['posts', json.author, json.permlink], data: post }]
-            store.batch(ops, pc)
-        })
-        .catch(e => console.log(e))
-        
-} else {
-    pc[0](pc[2])
-}
-
-if (json.author == config.leader) { //clear auto-voter
-    store.get(['escrow', json.author], function(e, a) {
-        if (!e) {
-            var ops = []
-            for (b in a) {
-                if (a[b][1].permlink == json.permlink && b == 'comment') {
-                    ops.push({ type: 'del', path: ['escrow', json.author, b] })
-                    if (json.author == config.username) {
-                        for (var i = 0; i < NodeOps.length; i++) {
-                            if (NodeOps[i][1][1].permlink == json.permlink && NodeOps[i][1][0] == 'comment') {
-                                NodeOps.splice(i, 1)
-                            }
-                        }
-                        delete plasma.pending[b]
-                    }
-                    break;
-                }
-            }
-            store.batch(ops, pc)
-        } else {
-            console.log(e)
-        }
-    })
-} else {
-    pc[0](pc[2])
-}
-
-});
-*/
