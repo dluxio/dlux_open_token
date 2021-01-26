@@ -1,5 +1,5 @@
 const config = require('./config');
-const VERSION = 'v0.9.0a3'
+const VERSION = 'v1.0.0a1'
 exports.VERSION = VERSION
 
 const hive = require('@hiveio/dhive');

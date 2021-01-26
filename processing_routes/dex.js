@@ -57,14 +57,14 @@ exports.dex_buy = (json, from, active, pc) => {
                                     block: json.block_num,
                                     vol: parseInt(found.amount + (hbdVWMA.vol * hbdTimeWeight))
                                 }
-                                lil_ops.push(forceCancel(hbdVWMA.rate, 'hbd'))
+                                lil_ops.push(forceCancel(hbdVWMA.rate, 'hbd', json.block_num))
                             } else {
                                 hiveVWMA = {
                                     rate: parseFloat(((found.rate * found.amount) + (parseFloat(hiveVWMA.rate) * hiveVWMA.vol * hiveTimeWeight)) / (found.amount + (hiveVWMA.vol * hiveTimeWeight))).toFixed(6),
                                     block: json.block_num,
                                     vol: parseInt(found.amount + (hiveVWMA.vol * hiveTimeWeight))
                                 }
-                                lil_ops.push(forceCancel(hiveVWMA.rate, 'hive'))
+                                lil_ops.push(forceCancel(hiveVWMA.rate, 'hive', json.block_num))
                             }
                             if (found.hive) {
                                 const msg = `@${from}| purchased ${parseFloat(found.hive / 1000).toFixed(3)} HIVE with ${parseFloat(found.amount / 1000).toFixed(3)} ${config.TOKEN} via DEX`
@@ -811,7 +811,7 @@ exports.escrow_transfer = (json, pc) => {
                                     block: json.block_num,
                                     vol: parseInt(contract.amount + (hiveVWMA.vol * hiveTimeWeight))
                                 }
-                                lil_ops.push(forceCancel(hiveVWMA.rate, 'hive'))
+                                lil_ops.push(forceCancel(hiveVWMA.rate, 'hive', json.block_num))
                             } else {
                                 samount = `${parseFloat(contract.hbd / 1000).toFixed(3)} HBD`
                                 hbdVWMA = {
@@ -819,7 +819,7 @@ exports.escrow_transfer = (json, pc) => {
                                     block: json.block_num,
                                     vol: parseInt(contract.amount + (hbdVWMA.vol * hbdTimeWeight))
                                 }
-                                lil_ops.push(forceCancel(hbdVWMA.rate, 'hbd'))
+                                lil_ops.push(forceCancel(hbdVWMA.rate, 'hbd', json.block_num))
                             }
                             contract.pending = [
                                 [json.to, [
