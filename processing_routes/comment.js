@@ -4,6 +4,7 @@ const { store, unshiftOp } = require('./../index')
 const { deleteObjs } = require('./../deleteObjs')
 const { chronAssign } = require('./../lil_ops')
 const { getPathObj } = require('../getPathObj')
+var request = require('request');
 const { postToDiscord, contentToDiscord } = require('./../discord')
 
 exports.comment = (json, pc) => {
@@ -133,6 +134,33 @@ exports.comment_options = (json, pc) => {
                             customJSON: a.meta
                         }
                     })
+                    if (config.pintoken) {
+                        var pins = []
+                        for (i in a.meta.assets) {
+                            if (a.meta.assets[i].pin) pins.push({ hash: a.meta.assets[i].hash })
+                            if (a.meta.assets[i].pin && a.meta.assets[i].thumbHash && a.meta.assets[i].thumbHash != a.meta.assets[i].hash) pins.push({ hash: a.meta.assets[i].hash })
+                        }
+                        if (pins.length) {
+                            var options = {
+                                'method': 'POST',
+                                'url': config.pinurl,
+                                'headers': {
+                                    'Content-Type': 'application/json'
+                                },
+                                formData: {
+                                    'items': JSON.stringify(pins),
+                                    'secret': config.pintoken,
+                                    'by': json.author,
+                                    'block': json.block_num.toString()
+                                }
+                            };
+                            request(options, function(error, response) {
+                                if (error) throw new Error(error);
+                                console.log(response.body);
+                            });
+                        }
+                    }
+                    /*
                     if (config.username == config.leader) {
                         var bytes = rtrades.checkNpin(a.meta.assets)
                         bytes.then(function(value) {
@@ -151,6 +179,7 @@ exports.comment_options = (json, pc) => {
                             ])
                         })
                     }
+                    */
                     ops.push({ type: 'del', path: ['pend', `${json.author}/${json.permlink}`] })
                     ops.push({ type: 'del', path: ['chrono', `${a.block_num + 28800}:pend:${json.author}/${json.permlink}`] })
                     const msg = `@${json.author}|${json.permlink} added to ${config.TOKEN} rewardable content`

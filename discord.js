@@ -26,7 +26,7 @@ exports.contentToDiscord = (author, permlink) => {
             const embed = new MessageBuilder()
                 .setTitle('New DLUX content!')
                 .setAuthor(author, 'https://cdn.discordapp.com/embed/avatars/0.png', `https://www.dlux.io/@${author}`)
-                .setURL(`https://www.dlux.io/dlux/${author}/${permlink}`)
+                .setURL(`https://www.dlux.io/dlux/@${author}/${permlink}`)
                 .addField(r.title, (JSON.parse(r.json_metadata).description || 'View this on dlux.io'), true)
                 //.addField('Second field', 'this is not inline')
                 .setColor('#00b0f4')

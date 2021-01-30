@@ -9,6 +9,8 @@ const NODEDOMAIN = ENV.domain || 'http://dlux-token.herokuapp.com' //where your 
 const acm = ENV.account_creator || false //account creation market ... use your accounts HP to claim account tokens
 const mirror = ENV.mirror || false //makes identical posts, votes and IPFS pins as the leader account
 const port = ENV.PORT || 3000;
+const pintoken = ENV.pintoken || '';
+const pinurl = ENV.pinurl || '';
 
 // testing configs for replays
 const override = ENV.override || 0 //will use standard restarts after this blocknumber
@@ -72,6 +74,8 @@ let config = {
     bidRate,
     engineCrank,
     port,
+    pintoken,
+    pinurl,
     clientURL,
     clients,
     acm,
