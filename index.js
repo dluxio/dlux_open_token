@@ -68,8 +68,8 @@ var recents = []
     //HIVE API CODE
 
 //Start Program Options   
-//startWith('QmcfWfv9XFibw8ipVq1VJqtpTgTnEXtVHtpPCQnh5Bc2Hr') //for testing and replaying
-dynStart(config.leader)
+startWith('QmWMjJeE3bAU8tcevgKLd2aJDQmS3FzsdNZFL67reZKWPz') //for testing and replaying
+    //dynStart(config.leader)
 
 // API defs
 api.use(API.https_redirect);
@@ -191,9 +191,9 @@ function startApp() {
                                     let plb = getPathNum(['balances', b.by]),
                                         tgovp = getPathNum(['gov', 't']),
                                         govp = getPathNum(['gov', b.by])
-                                    promises.push(powerDownOp([plb, tgovp, govp], b.by, delKey, num, chrops[i].split(':')[1], b))
+                                    promises.push(govDownOp([plb, tgovp, govp], b.by, delKey, num, chrops[i].split(':')[1], b))
 
-                                    function powerDownOp(promies, from, delkey, num, id, b) {
+                                    function govDownOp(promies, from, delkey, num, id, b) {
                                         return new Promise((resolve, reject) => {
                                             Promise.all(promies)
                                                 .then(bals => {
@@ -201,6 +201,9 @@ function startApp() {
                                                         tgov = bals[1],
                                                         gbal = bals[2],
                                                         ops = []
+                                                    if (gbal - b.amount < 0) {
+                                                        b.amount = gbal
+                                                    }
                                                     ops.push({ type: 'put', path: ['balances', from], data: lbal + b.amount })
                                                     ops.push({ type: 'put', path: ['gov', from], data: gbal - b.amount })
                                                     ops.push({ type: 'put', path: ['gov', 't'], data: tgov - b.amount })
@@ -227,6 +230,9 @@ function startApp() {
                                                         tpow = bals[1],
                                                         pbal = bals[2],
                                                         ops = []
+                                                    if (pbal - b.amount < 0) {
+                                                        b.amount = pbal
+                                                    }
                                                     ops.push({ type: 'put', path: ['balances', from], data: lbal + b.amount })
                                                     ops.push({ type: 'put', path: ['pow', from], data: pbal - b.amount })
                                                     ops.push({ type: 'put', path: ['pow', 't'], data: tpow - b.amount })
@@ -522,6 +528,35 @@ function startWith(hash) {
                         if (!e) {
                             if (hash) {
                                 var cleanState = data[1]
+
+                                cleanState.balances['ats-david'] += cleanState.gov['ats-david']
+                                cleanState.gov['ats-david'] = 0
+                                cleanState.gov['qwoyn-dlux'] += cleanState.pow['qwoyn-dlux']
+                                cleanState.pow['qwoyn-dlux'] = 0
+                                var govBal = 0
+                                var powBal = 0
+                                for (bal in cleanState.gov) {
+                                    if (bal != 't') {
+                                        govBal += cleanState.gov[bal]
+                                    }
+                                }
+
+                                for (bal in cleanState.pow) {
+                                    if (bal != 't') {
+                                        powBal += cleanState.pow[bal]
+                                    }
+                                }
+                                cleanState.gov.t = govBal
+                                cleanState.pow.t = powBal
+                                cleanState.stats.tokenSupply += 4250000
+                                delete cleanState.pend
+                                for (var op in cleanState.chrono) {
+                                    if (cleanState.chrono[op].op == 'expire') {} else if (cleanState.chrono[op].op == 'post_reward') {
+
+                                    } else {
+                                        delete cleanState.chrono[op]
+                                    }
+                                }
                                 store.put([], cleanState, function(err) {
                                     if (err) {
                                         console.log(err)
