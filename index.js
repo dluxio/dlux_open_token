@@ -68,8 +68,8 @@ var recents = []
     //HIVE API CODE
 
 //Start Program Options   
-startWith('QmWMjJeE3bAU8tcevgKLd2aJDQmS3FzsdNZFL67reZKWPz') //for testing and replaying
-    //dynStart(config.leader)
+//startWith('QmWMjJeE3bAU8tcevgKLd2aJDQmS3FzsdNZFL67reZKWPz') //for testing and replaying
+dynStart(config.leader)
 
 // API defs
 api.use(API.https_redirect);
@@ -528,35 +528,6 @@ function startWith(hash) {
                         if (!e) {
                             if (hash) {
                                 var cleanState = data[1]
-
-                                cleanState.balances['ats-david'] += cleanState.gov['ats-david']
-                                cleanState.gov['ats-david'] = 0
-                                cleanState.gov['qwoyn-dlux'] += cleanState.pow['qwoyn-dlux']
-                                cleanState.pow['qwoyn-dlux'] = 0
-                                var govBal = 0
-                                var powBal = 0
-                                for (bal in cleanState.gov) {
-                                    if (bal != 't') {
-                                        govBal += cleanState.gov[bal]
-                                    }
-                                }
-
-                                for (bal in cleanState.pow) {
-                                    if (bal != 't') {
-                                        powBal += cleanState.pow[bal]
-                                    }
-                                }
-                                cleanState.gov.t = govBal
-                                cleanState.pow.t = powBal
-                                cleanState.stats.tokenSupply += 4250000
-                                delete cleanState.pend
-                                for (var op in cleanState.chrono) {
-                                    if (cleanState.chrono[op].op == 'expire') {} else if (cleanState.chrono[op].op == 'post_reward') {
-
-                                    } else {
-                                        delete cleanState.chrono[op]
-                                    }
-                                }
                                 store.put([], cleanState, function(err) {
                                     if (err) {
                                         console.log(err)
