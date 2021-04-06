@@ -68,8 +68,8 @@ var recents = []
     //HIVE API CODE
 
 //Start Program Options   
-startWith('QmPgZNQcJgtFNMMduLF1buk6mDbLYWHMk65Zj95mhdwuD5') //for testing and replaying
-    //dynStart(config.leader)
+//startWith('QmPgZNQcJgtFNMMduLF1buk6mDbLYWHMk65Zj95mhdwuD5') //for testing and replaying
+dynStart(config.leader)
 
 // API defs
 api.use(API.https_redirect);
@@ -528,7 +528,6 @@ function startWith(hash) {
                         if (!e) {
                             if (hash) {
                                 var cleanState = data[1]
-                                delete cleanState.escrow['dlux-io']
                                 store.put([], cleanState, function(err) {
                                     if (err) {
                                         console.log(err)
