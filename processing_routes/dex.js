@@ -38,7 +38,7 @@ exports.dex_buy = (json, from, active, pc) => {
                                 highest = parseFloat(i.split(":")[0])
                             }
                         }
-                        if (bal > found.amount && parseFloat(found.rate) >= parseFloat(highest) * 0.99) {
+                        if (bal > found.amount && parseFloat(found.rate) >= parseFloat(highest) * 0.99 && Book.hasOwnProperty(json.contract)) {
                             bal -= found.amount
                             fromBal += found.amount
                             found.buyer = from
