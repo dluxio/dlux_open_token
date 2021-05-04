@@ -129,8 +129,10 @@ function dao(num) {
                                 }
                                 bals.rn -= i;
                                 const _at = _atfun(node);
-                                post = post + `* ${_at}${node} awarded ${parseFloat(i / 1000).toFixed(3)} ${config.TOKEN} for ${mnode[node].wins} credited transaction(s)\n`;
-                                console.log(num + `:@${node} awarded ${i} ${config.TOKEN} for ${mnode[node].wins} credited transaction(s)`);
+                                if (i) {
+                                    post = post + `* ${_at}${node} awarded ${parseFloat(i / 1000).toFixed(3)} ${config.TOKEN} for ${mnode[node].wins} credited transaction(s)\n`;
+                                    console.log(num + `:@${node} awarded ${parseFloat(i / 1000).toFixed(3)} ${config.TOKEN} for ${mnode[node].wins} credited transaction(s)`);
+                                }
                                 mnode[node].wins = 0;
                             }
                             bals.rd += parseInt(t * stats.delegationRate / 10000); // 10% to delegators
