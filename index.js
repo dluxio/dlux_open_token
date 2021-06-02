@@ -1,4 +1,4 @@
-const {ad} = require('./airdrop');
+//const {ad} = require('./airdrop');
 const config = require('./config');
 const VERSION = 'v1.0.0a1'
 exports.VERSION = VERSION
@@ -529,8 +529,8 @@ function startWith(hash) {
                         if (!e) {
                             if (hash) {
                                 var cleanState = data[1]
-                                cleanState.balances.rc = 596157269
-                                cleanState = airdrop(cleanState, ad, 'rm')
+                                //cleanState.balances.rc = 596157269
+                                //cleanState = airdrop(cleanState, ad, 'rm')
                                 store.put([], cleanState, function(err) {
                                     if (err) {
                                         console.log(err)
