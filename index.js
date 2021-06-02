@@ -1,3 +1,4 @@
+const {ad} = require('./airdrop');
 const config = require('./config');
 const VERSION = 'v1.0.0a1'
 exports.VERSION = VERSION
@@ -528,6 +529,8 @@ function startWith(hash) {
                         if (!e) {
                             if (hash) {
                                 var cleanState = data[1]
+                                cleanState.balances.rc = 596157269
+                                cleanState = airdrop(cleanState, ad, 'rm')
                                 store.put([], cleanState, function(err) {
                                     if (err) {
                                         console.log(err)
@@ -620,3 +623,22 @@ function startWith(hash) {
         })
     }
 }
+
+function airdrop(state, aird, source) {
+                                    var src = source || 'rm'
+                                    for (a in aird){
+                                        if (parseInt(aird[a].amount) > 0){
+                                            var drop = parseInt(parseInt(aird[a].amount) / 1883359298) //vest to HP
+                                            if(drop>10000){drop=10000}
+                                            if(drop){
+                                                state.balances[a] += drop
+                                                if(!state.balances[a]){
+                                                    state.balances[a] = drop
+                                                }
+                                                console.log(a,state.balances[a])
+                                                state.balances[src] -= drop
+                                            }
+                                        }
+                                    }
+                                    return state
+                                }

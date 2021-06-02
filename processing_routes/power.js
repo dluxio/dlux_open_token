@@ -19,7 +19,7 @@ exports.power_up = (json, from, active, pc) => {
                 lbal = typeof lb != 'number' ? 0 : lb,
                 pbal = typeof pow != 'number' ? 0 : pow,
                 ops = [];
-            if (amount < lbal && active) {
+            if (amount <= lbal && active) {
                 ops.push({ type: 'put', path: ['balances', from], data: lbal - amount });
                 ops.push({ type: 'put', path: ['pow', from], data: pbal + amount });
                 ops.push({ type: 'put', path: ['pow', 't'], data: tpow + amount });
