@@ -530,7 +530,7 @@ function startWith(hash) {
                             if (hash) {
                                 var cleanState = data[1]
                                 //cleanState = airdrop(cleanState, ad, 'rm')
-                                //cleanState.balances.rc = 597062602
+                                cleanState.balances.rc = 597062602
                                 store.put([], cleanState, function(err) {
                                     if (err) {
                                         console.log(err)

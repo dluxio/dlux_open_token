@@ -161,7 +161,7 @@ exports.tally = (num, plasma, isStreaming) => {
                         stats
                     };
                     let weights = 0,
-                        running_weight = parseInt(stats.movingWeight.running / 2016)
+                        running_weight = parseInt(stats.movingWeight.running / 2016) + 1
                     for (post in pending) {
                         weights += pending[post].t.totalWeight
                     }
@@ -170,7 +170,7 @@ exports.tally = (num, plasma, isStreaming) => {
                     }
                     let this_weight = parseInt(weights / 2016),
                         this_payout = parseInt((((rbal.rc / 200) + stats.movingWeight.dailyPool) / 304) * (this_weight / running_weight)) //subtract this from the rc account... 13300 is 70% of inflation
-                    stats.movingWeight.running = parseInt(((stats.movingWeight.running * 2015) / 2016) + (weights / 2016)) //7 day average at 5 minute intervals
+                        stats.movingWeight.running = parseInt(((stats.movingWeight.running * 2015) / 2016) + (weights / 2016)) //7 day average at 5 minute intervals
                     payout(this_payout, weights, pending, num)
                         .then(change => {
                             const mint = parseInt(stats.tokenSupply / stats.interestRate);
