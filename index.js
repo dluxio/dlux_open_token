@@ -1,6 +1,6 @@
 const {ad} = require('./airdrop');
 const config = require('./config');
-const VERSION = 'v1.0.0a1'
+const VERSION = 'v1.0.0b1'
 exports.VERSION = VERSION
 
 const hive = require('@hiveio/dhive');
