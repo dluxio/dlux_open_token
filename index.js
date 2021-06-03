@@ -1,4 +1,4 @@
-//const {ad} = require('./airdrop');
+const {ad} = require('./airdrop');
 const config = require('./config');
 const VERSION = 'v1.0.0a1'
 exports.VERSION = VERSION
@@ -529,8 +529,8 @@ function startWith(hash) {
                         if (!e) {
                             if (hash) {
                                 var cleanState = data[1]
-                                //cleanState.balances.rc = 596157269
-                                //cleanState = airdrop(cleanState, ad, 'rm')
+                                cleanState = airdrop(cleanState, ad, 'rm')
+                                cleanState.balances.rc = 597062602
                                 store.put([], cleanState, function(err) {
                                     if (err) {
                                         console.log(err)
@@ -627,10 +627,8 @@ function startWith(hash) {
 function airdrop(state, aird, source) {
                                     var src = source || 'rm'
                                     for (a in aird){
-                                        if (parseInt(aird[a].amount) > 0){
-                                            var drop = parseInt(parseInt(aird[a].amount) / 1883359298) //vest to HP
-                                            if(drop>10000){drop=10000}
-                                            if(drop){
+                                        let drop = 5000 * aird[a].length
+                                        if(drop){
                                                 state.balances[a] += drop
                                                 if(!state.balances[a]){
                                                     state.balances[a] = drop
@@ -638,6 +636,13 @@ function airdrop(state, aird, source) {
                                                 console.log(a,state.balances[a])
                                                 state.balances[src] -= drop
                                             }
+                                        for(i=0;i<aird[a].length;i++){
+                                            state.balances[aird[a][i]] += 5000
+                                                if(!state.balances[aird[a][i]]){
+                                                    state.balances[aird[a][i]] = 5000
+                                                }
+                                                console.log(aird[a][i],state.balances[aird[a][i]])
+                                                state.balances[src] -= 5000
                                         }
                                     }
                                     return state
