@@ -5,7 +5,7 @@ const { getPathObj } = require('./../getPathObj')
 const { deleteObjs } = require('./../deleteObjs');
 
 exports.vote = (json, pc) => {
-    if (json.voter = config.leader) {
+    if (json.voter == config.leader) {
         deleteObjs([
                 ['escrow', config.leader, `vote:${json.author}/${json.permlink}`]
             ])
@@ -13,6 +13,7 @@ exports.vote = (json, pc) => {
             .catch(e => console.log(e))
     } else {
         getPathObj(['posts', `${json.author}/${json.permlink}`]).then(p => {
+            console.log({p})
             if (Object.keys(p).length) {
                 if (!Object.hasOwnProperty('votes')) {
                     p.votes = {}
