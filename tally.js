@@ -161,7 +161,11 @@ exports.tally = (num, plasma, isStreaming) => {
                         stats
                     };
                     let weights = 0,
-                        running_weight = parseInt(stats.movingWeight.running / 2016) + 1
+                        inflation_floor = parseInt(stats.movingWeight.running / 4032) //probably way high
+                        running_weight = parseInt(stats.movingWeight.running / 2016)
+                    if (running_weight < inflation_floor){
+                        running_weight = inflation_floor
+                    }
                     for (post in pending) {
                         weights += pending[post].t.totalWeight
                     }

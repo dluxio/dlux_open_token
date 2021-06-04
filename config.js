@@ -61,6 +61,7 @@ const mainAPI = 'token.dlux.io' //leaders API probably
 const mainFE = 'dlux.io' //frontend for content
 const mainIPFS = 'a.ipfs.dlux.io' //IPFS service
 const mainICO = 'robotolux' //Account collecting ICO HIVE
+const footer = `\n[Find us on Discord](https://discord.gg/Beeb38j)`
 
 //Aditionally on your branch, look closely at dao, this is where tokenomics happen and custom status posts are made
 
@@ -96,7 +97,8 @@ let config = {
     jsonTokenName,
     mainFE,
     mainIPFS,
-    mainICO
+    mainICO,
+    footer
 };
 
 module.exports = config;
