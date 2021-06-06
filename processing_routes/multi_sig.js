@@ -1,32 +1,50 @@
-  //multi-sig ops
-  /*
+const config = require('./../config')
+const { store } = require("./../index");
+const { getPathObj } = require("../getPathObj");
+
+  
     processor.onOperation('account_update', function(json, pc) { //ensure proper keys are on record for DAO accounts
         let agentsP = getPathObj(['agents']),
             statsP = getPathObj(['stats']),
-            keysP = getPathObj(['keyPairs'])
-        Promise.all([agentsP, statsP, keysP])
+            keysP = getPathObj(['markets', 'node', json.account, 'puBkey'])
+        Promise.all([agentsP, statsP, keysP, runnersP])
             .then(a => {
                 let agents = a[0],
                     stats = a[1],
-                    keyPairs = a[2],
+                    keyPair = a[2],
                     ops = []
-                if (json.account == config.msaccount) {
-                    stats.auths = {}
-                    for (var agent in agents) {
-                        agents[agent].o = 0
+                if (json.account == config.msaccount && json.active != null) { //update agents
+                    for (agent in agents) { //list of public keys ever used with the current weight
+                        agents[agent].o = 0 //turn all weights to 0
+                        agents[agent].a = 0 //owner active weights
                     }
-                    for (var i = 0; i < json.owner.key_auths.length; i++) {
-                        stats.auth[json.owner.key_auths[i][0]] = 1
-                        agents[keyPairs[json.owner.key_auths[i][0]]].o = 1
+                    if(json.active !== undefined){
+                        for (i = 0; i < json.active.key_auths.length; i++) {
+                            stats.auth[json.active.key_auths[i][0]] = json.active.key_auths[i][1]
+                            if(agents[keyPairs[json.active.key_auths[i][0]]] !== undefined){
+                                agents[keyPairs[json.active.key_auths[i][0]]] = {}
+                            }
+                            agents[keyPairs[json.active.key_auths[i][0]]].a = json.active.key_auths[i][1]
+                        }
+                        stats.auth_at = json.active.weight_threshold
+                    }
+                    if(json.owner !== undefined){
+                        for (i = 0; i < json.owner.key_auths.length; i++) {
+                            stats.auth[json.owner.key_auths[i][0]] = json.owner.key_auths[i][1]
+                            if(agents[keyPairs[json.owner.key_auths[i][0]]] !== undefined){
+                                agents[keyPairs[json.owner.key_auths[i][0]]] = {}
+                            }
+                            agents[keyPairs[json.owner.key_auths[i][0]]].o = json.owner.key_auths[i][1]
+                        }
+                        stats.auth_ot = json.owner.weight_threshold
                     }
                     //auto update active public keys
                     ops.push({ type: 'put', path: ['stats'], data: stats })
                     ops.push({ type: 'put', path: ['agents'], data: agents })
                     console.log(ops);
                     store.batch(ops, pc)
-                } else if (agents[json.account] != null && json.active != null) {
-                    ops.push({ type: 'put', path: ['agents', json.account, 'p'], data: json.active.key_auths[0][0] }) //keep record of public keys of agents
-                    ops.push({ type: 'put', path: ['keyPairs', json.active.key_auths[0][0]], data: json.account })
+                } else if (keyPair && json.active !== undefined) {
+                    ops.push({ type: 'put', path: ['markets', 'node', json.account, 'puBkey'], data: json.active.key_auths[0][0] }) //keep record of public keys of node operators
                     console.log(ops);
                     store.batch(ops, pc)
                 } else {
@@ -35,7 +53,7 @@
             })
             .catch(e => { console.log(e) })
     });
-
+/*
     processor.onOperation('claim_account', function(json, pc) {
         getPathObj(['agents', json.creator])
             .then(re => {

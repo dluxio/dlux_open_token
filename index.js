@@ -50,7 +50,7 @@ const { report } = require("./report");
 const { ipfsSaveState } = require("./ipfsSaveState");
 const { waitup } = require("./waitup");
 const { dao } = require("./dao");
-const { release } = require('./lil_ops')
+const { release, recast } = require('./lil_ops')
 const hiveState = require('./processor');
 const api = express()
 var http = require('http').Server(api);
@@ -172,6 +172,10 @@ function startApp() {
                         store.get(['chrono', chrops[i]], function(e, b) {
                             console.log(b)
                             switch (b.op) {
+                                case 'ms_send':
+                                    promises.push(recast(b.attempts, b.txid, num))
+                                    store.batch([{ type: 'del', path: ['chrono', delKey] }], [function() {}, function() { console.log('failure') }])
+                                    break;
                                 case 'expire':
                                     promises.push(release(b.from, b.txid, num))
                                     store.batch([{ type: 'del', path: ['chrono', delKey] }], [function() {}, function() { console.log('failure') }])
@@ -324,6 +328,7 @@ function startApp() {
                         //check(num) //not promised, read only
                     }
                     if (num % 100 === 50 && processor.isStreaming()) {
+                        plasma.bh = processor.getBlockHeader()
                         report(plasma)
                             .then(nodeOp => {
                                 console.log(nodeOp)

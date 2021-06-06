@@ -10,7 +10,12 @@ function report(plasma) {
             json: JSON.stringify({
                 hash: plasma.hashLastIBlock,
                 block: plasma.hashBlock,
-                stash: plasma.privHash
+                stash: plasma.privHash,
+                ms: {
+                    exp: new Date((new Date(plasma.bh.timestamp).getTime()) + 86400000).toISOString().slice(0, -5),
+                    rbn: plasma.bh.block_number,
+                    rbp: Buffer.from(plasma.bh.block_id, 'hex').readUInt32LE(4) 
+                }
             })
         }];
         resolve([

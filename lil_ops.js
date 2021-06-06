@@ -4,6 +4,11 @@ const { getPathObj } = require('./getPathObj')
 const crypto = require('crypto');
 const bs58 = require('bs58');
 const hashFunction = Buffer.from('12', 'hex');
+const {
+  Client,  
+  Signature,
+  cryptoUtils,
+} = require('@hiveio/dhive');
 const stringify = require('json-stable-stringify');
 
 const forceCancel = (rate, type, block_num) => {
@@ -184,6 +189,55 @@ const chronAssign = (block, op) => {
 }
 exports.chronAssign = chronAssign
 
+const recast = (attempts, txid, bn) => {
+    return new Promise((resolve, reject) => {
+        var tries = JSON.parse(attempts)
+        var Pop = getPathObj(['ms', 'ops', txid]),
+            Pstats = getPathObj(['stats']),
+            Pagents = getPathObj(['agents'])
+    Promise.all([Pop, Pstats, Pagents])
+        .then(got => {
+            let msop = JSON.parse(got[0]),
+                stats = got[1],
+                agents = got[2],
+                ops = [],
+                sigsA = [],
+                auths = 0,
+                op = {
+                    expiration: msop.expiration,
+                    extensions: msop.extensions,
+                    operations: msop.operations,
+                    ref_block_num: msop.ref_block_num,
+                    ref_block_prefix: msop.ref_block_prefix,
+                }
+                for (sig in msop.signatures){
+                    if(signedBy(op, msop.signatures[sig], agents)){
+                        auths++
+                        sigsA.push(msop.signatures[sig]) //edgecase authorized signature removed
+                    }
+                }
+                if(auths < stats.auth_at){
+                    ops.push({ type: 'put', path: ['feed', `${bn}:v_op`], data: `Multi-Sig Failure at Recast: Insufficient Signatures` })
+                } else {
+                msop.signatures = sigsA
+                broadcast(msop)
+                    .then(r=>console.log('Multi-Sig Send Success\n', r))
+                    .catch(e=>console.log('Multi-Sig Send Failure\n', e))
+                msop.chron = chronAssign(bn + 30, {
+                        block: bn + 30,
+                        op: 'ms_send',
+                        attempts: JSON.stringify(tries),
+                        txid: txid
+                    })
+                
+                ops.push({ type: 'put', path: ['ms', 'ops', txid], data: JSON.stringify(msop) })
+                }
+                store.batch([{ type: 'put', path: ['chrono', t], data: op }], [resolve, reject, t])
+            })
+    })
+}
+exports.recast = recast
+
 const release = (from, txid, bn) => {
     return new Promise((resolve, reject) => {
         store.get(['contracts', from, txid], function(er, a) {
@@ -272,3 +326,31 @@ function isEmpty(obj) {
     return true
 }
 exports.isEmpty = isEmpty;
+
+function signedBy(op, Sig, keys){
+    let signed = false
+    const sig = Signature.fromString(Sig);
+    const digest = cryptoUtils.transactionDigest(op);
+    const key = (new Signature(sig.data, sig.recovery)).recover(digest);
+    const publicKey = key.toString()
+    for(i in keys){
+        if(i === publicKey){
+            signed = i
+            break
+        }    
+    }
+    return signed
+}
+exports.signedBy = signedBy
+
+function broadcast(op){
+    return new Promise((resolve, reject) => {
+        const client = new dhive.Client(config.clientURL);
+
+        client.broadcast.send(stx)
+            .then(r=>resolve(r)) //I guess log this?
+            .catch(e=>reject(e)) //loop different API?
+    })
+}
+
+exports.broadcast = broadcast

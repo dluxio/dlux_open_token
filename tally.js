@@ -72,21 +72,12 @@ exports.tally = (num, plasma, isStreaming) => {
                         stats.hashLastIBlock = consensus;
                         for (node in tally.agreements.hashes) {
                             if (tally.agreements.hashes[node] == consensus) {
-                                if (num < 50500000) {
-                                    new_queue[node] = {
-                                        t: (rbal[node] || 0) + (rcol[node] || 0) + (rgov[node] || 0),
-                                        l: rbal[node] || 0,
-                                        c: rcol[node] || 0,
-                                        g: rgov[node] || 0
-                                    }
-                                } else {
-                                    new_queue[node] = {
+                                new_queue[node] = {
                                         t: (rcol[node] || 0) + (rgov[node] || 0),
                                         l: rbal[node] || 0,
                                         c: rcol[node] || 0,
                                         g: rgov[node] || 0
                                     }
-                                }
                             }
                         }
                         let counting_array = []
@@ -126,6 +117,52 @@ exports.tally = (num, plasma, isStreaming) => {
                         let collateral = []
                         for (node in still_running) {
                             collateral.push(still_running[node].t)
+                        }
+                        for (node in still_running) {
+                            collateral.push(still_running[node].t)
+                        }
+                        var possible_ms_headers = {
+                            e:{}, //expiration
+                            n:{}, //number
+                            p:{}, //prefix
+                            ec: 0, //counters
+                            pc: 0,
+                            nc: 0
+                        }
+                        for (node in still_running) {
+                            if(!possible_ms_headers.e[nodes[node].report.ms.exp]){
+                                possible_ms_headers.e[nodes[node].report.ms.exp] = 1
+                            } else {
+                                possible_ms_headers.e[nodes[node].report.ms.exp]++
+                            }
+                            if(!possible_ms_headers.n[nodes[node].report.ms.rbn]){
+                                possible_ms_headers.n[nodes[node].report.ms.rbn] = 1
+                            } else {
+                                possible_ms_headers.n[nodes[node].report.ms.rbn]++
+                            }
+                            if(!possible_ms_headers.p[nodes[node].report.ms.rbp]){
+                                possible_ms_headers.p[nodes[node].report.ms.rbp] = 1
+                            } else {
+                                possible_ms_headers.p[nodes[node].report.ms.rbp]++
+                            }
+                        }
+                        for(opt in possible_ms_headers.e){
+                            if(possible_ms_headers.e[opt] > possible_ms_headers.ec){
+                                stats.ms_exp = opt
+                                possible_ms_headers.ec = possible_ms_headers.e[opt]
+                            }
+                        }
+                        for(opt in possible_ms_headers.p){
+                            if(possible_ms_headers.p[opt] > possible_ms_headers.pc){
+                                stats.ms_ref_prefix = opt
+                                possible_ms_headers.pc = possible_ms_headers.p[opt]
+                            }
+                        }
+                        for(opt in possible_ms_headers.n){
+                            if(possible_ms_headers.n[opt] > possible_ms_headers.nc){
+                                stats.ms_ref_num = opt
+                                possible_ms_headers.nc = possible_ms_headers.n[opt]
+                            }
                         }
                         let MultiSigCollateral = 0
                         for (i = 0; i < collateral.length; i++) {
@@ -255,6 +292,8 @@ function payout(this_payout, weights, pending, num) {
         })
     })
 }
+
+
 
 /*
 function check() { //is this needed at all? -not until doing oracle checks i think
