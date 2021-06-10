@@ -6,7 +6,7 @@ module.exports = function(client, steem, currentBlockNumber = 1, blockComputeSpe
     var onStreamingStart = function() {};
 
     var isStreaming;
-
+    var block_header;
     var stream;
 
     var stopping = false;
@@ -41,6 +41,11 @@ module.exports = function(client, steem, currentBlockNumber = 1, blockComputeSpe
             // in getBlock()
             client.database.getBlock(blockNum)
                 .then((result) => {
+                    block_header = {
+                        timestamp: result.timestamp,
+                        block_id: result.block_id,
+                        block_number: blockNum
+                    }
                     processBlock(result, blockNum)
                         .then(r => {
                             currentBlockNumber++;
@@ -60,7 +65,7 @@ module.exports = function(client, steem, currentBlockNumber = 1, blockComputeSpe
                         .catch(e => { console.log('failed at catch:', e) })
                 })
                 .catch((err) => {
-                    console.log(' catch:' + err)
+                    console.log('get block catch:' + err)
                     cycleapi()
                 })
         }
@@ -203,6 +208,10 @@ module.exports = function(client, steem, currentBlockNumber = 1, blockComputeSpe
 
         isStreaming: function() {
             return isStreaming;
+        },
+
+        getBlockHeader: function() {
+            return block_header;
         },
 
         onStreamingStart: function(callback) {
