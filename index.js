@@ -1,4 +1,3 @@
-const {ad} = require('./airdrop');
 const config = require('./config');
 const VERSION = 'v1.0.0b2'
 exports.VERSION = VERSION
@@ -30,6 +29,7 @@ const op = ChainTypes.operations
 const walletOperationsBitmask = makeBitMaskFilter([op.custom_json])
 const hiveClient = require('@hiveio/hive-js');
 hiveClient.api.setOptions({ url: config.clientURL });
+console.log('Using APIURL: ', config.clientURL)
 exports.hiveClient = hiveClient
 
 var NodeOps = [];
@@ -50,7 +50,7 @@ const { report } = require("./report");
 const { ipfsSaveState } = require("./ipfsSaveState");
 const { waitup } = require("./waitup");
 const { dao } = require("./dao");
-const { release } = require('./lil_ops')
+const { release, recast } = require('./lil_ops')
 const hiveState = require('./processor');
 const api = express()
 var http = require('http').Server(api);
@@ -60,7 +60,7 @@ exports.escrow = escrow;
 var startingBlock = config.starting_block
     //var current
     //exports.current = current
-const streamMode = args.mode || 'irreversible'; //latest is probably good enough
+const streamMode = args.mode || 'irreversible';
 console.log("Streaming using mode", streamMode);
 var processor;
 var live_dex = {}, //for feedback, unused currently
@@ -69,7 +69,7 @@ var recents = []
     //HIVE API CODE
 
 //Start Program Options   
-//startWith('QmYDfbRfJ7yB457rTDPHtsXaooKfa7k3RnjNK187WF17XZ') //for testing and replaying
+//startWith('QmXSsH1PvmL22HuJ9duBJYyy6eFKJA6qmwvjxZAp6bRGSs') //for testing and replaying
 dynStart(config.leader)
 
 // API defs
@@ -172,6 +172,10 @@ function startApp() {
                         store.get(['chrono', chrops[i]], function(e, b) {
                             console.log(b)
                             switch (b.op) {
+                                case 'ms_send':
+                                    promises.push(recast(b.attempts, b.txid, num))
+                                    store.batch([{ type: 'del', path: ['chrono', delKey] }], [function() {}, function() { console.log('failure') }])
+                                    break;
                                 case 'expire':
                                     promises.push(release(b.from, b.txid, num))
                                     store.batch([{ type: 'del', path: ['chrono', delKey] }], [function() {}, function() { console.log('failure') }])
@@ -259,7 +263,7 @@ function startApp() {
                                                 }
                                                 for (vote in b.votes) {
                                                     totals.totalWeight += b.votes[vote].v
-                                                    linearWeight = parseInt(b.votes[vote].v * ((201600 - (b.votes[vote].b + b.block)) / 201600))
+                                                    linearWeight = parseInt(b.votes[vote].v * ((201600 - (b.votes[vote].b - b.block)) / 201600))
                                                     totals.linearWeight += linearWeight
                                                     b.votes[vote].w = linearWeight
                                                 }
@@ -324,6 +328,7 @@ function startApp() {
                         //check(num) //not promised, read only
                     }
                     if (num % 100 === 50 && processor.isStreaming()) {
+                        plasma.bh = processor.getBlockHeader()
                         report(plasma)
                             .then(nodeOp => {
                                 console.log(nodeOp)
@@ -436,6 +441,7 @@ function startApp() {
 function exit(consensus) {
     console.log(`Restarting with ${consensus}...`);
     processor.stop(function() {
+        console.log('scope check')
         if (consensus) {
             startWith(consensus)
         } else {
@@ -474,6 +480,7 @@ function cycleAPI() {
         c = -1
     }
     config.clientURL = config.clients[c + 1]
+    console.log('Using APIURL: ', config.clientURL)
     client = new hive.Client(config.clientURL)
     exit(plasma.hashLastIBlock)
 }
@@ -529,7 +536,70 @@ function startWith(hash) {
                         if (!e) {
                             if (hash) {
                                 var cleanState = data[1]
-                                //cleanState = airdrop(cleanState, ad, 'rm')
+                                cleanState.balances.lightsplasher = 912558
+                                cleanState.paid = {
+                                    "54647800": {
+            "lightsplasher/my-first-try-at-dlux": {
+               "author": "lightsplasher",
+               "author_payout": 912558,
+               "block": 54446105,
+               "customJSON": {
+                  "Hash360": "QmNNDob3vEgMhnsJjXHEQouDpuNqADpLazugUfY5d2Toh2",
+                  "app": "dlux/0.0.9",
+                  "assets": {
+                     "0": {
+                        "hash": "QmZ9QS2qyYZbFx5Xh7qL5J5Lp4y8Z6YrLK7XEmN47TVa54",
+                        "name": "IMG_20160731_104902.vr_sm.jpg",
+                        "pin": true,
+                        "size": 1143818,
+                        "thumbHash": "QmZ9QS2qyYZbFx5Xh7qL5J5Lp4y8Z6YrLK7XEmN47TVa54",
+                        "type": "ts"
+                     }
+                  },
+                  "format": "markdown",
+                  "tags": {
+                     "0": "dlux",
+                     "1": "photography",
+                     "2": "hiking",
+                     "3": "panorama"
+                  },
+                  "vrHash": "QmNby3SMAAa9hBVHvdkKvvTqs7ssK4nYa2jBdZkxqmRc16",
+                  "xr": true
+               },
+               "paid": 1825116,
+               "permlink": "my-first-try-at-dlux",
+               "t": {
+                  "authorTotal": 480055260,
+                  "curationTotal": 480055260,
+                  "linearWeight": 710248387,
+                  "totalWeight": 960110520
+               },
+               "votes": {
+                  "disregardfiat": {
+                     "b": 54498570,
+                     "p": 912463,
+                     "v": 960011520,
+                     "w": 710175188
+                  },
+                  "inconceivable": {
+                     "b": 54498644,
+                     "p": 94,
+                     "v": 99000,
+                     "w": 73199
+                  }
+               }
+            }
+         }
+        }
+        cleanState.balances.disregardfiat = 69620980
+        cleanState.balances.inconceivable = 4757788
+        cleanState.balances.rc = 602747083 + 109787
+        for (label in cleanState.chrono){
+            if (label.split('pend')[1]){
+                delete cleanState.chrono[label]
+            }
+        }
+        delete cleanState.pend
                                 store.put([], cleanState, function(err) {
                                     if (err) {
                                         console.log(err)
@@ -622,27 +692,3 @@ function startWith(hash) {
         })
     }
 }
-
-function airdrop(state, aird, source) {
-                                    var src = source || 'rm'
-                                    for (a in aird){
-                                        let drop = 5000 * aird[a].length
-                                        if(drop){
-                                                state.balances[a] += drop
-                                                if(!state.balances[a]){
-                                                    state.balances[a] = drop
-                                                }
-                                                console.log(a,state.balances[a])
-                                                state.balances[src] -= drop
-                                            }
-                                        for(i=0;i<aird[a].length;i++){
-                                            state.balances[aird[a][i]] += 5000
-                                                if(!state.balances[aird[a][i]]){
-                                                    state.balances[aird[a][i]] = 5000
-                                                }
-                                                console.log(aird[a][i],state.balances[aird[a][i]])
-                                                state.balances[src] -= 5000
-                                        }
-                                    }
-                                    return state
-                                }

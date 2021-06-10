@@ -160,14 +160,15 @@ exports.tally = (num, plasma, isStreaming) => {
                         still_running,
                         stats
                     };
-                    let weights = 0,
-                        inflation_floor = parseInt(stats.movingWeight.running / 4032) //probably way high
+                    
+                    let weights = 0
+                    for (post in pending) {
+                        weights += pending[post].t.totalWeight
+                    }
+                    let inflation_floor = parseInt((stats.movingWeight.running + (weights/140)) / 2016) //minimum payout in time period
                         running_weight = parseInt(stats.movingWeight.running / 2016)
                     if (running_weight < inflation_floor){
                         running_weight = inflation_floor
-                    }
-                    for (post in pending) {
-                        weights += pending[post].t.totalWeight
                     }
                     if (num < 50700000) {
                         stats.movingWeight.dailyPool = 700000
