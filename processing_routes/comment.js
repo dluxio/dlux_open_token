@@ -110,7 +110,6 @@ exports.comment_options = (json, pc) => {
     try {
         var filter = json.extensions[0][1].beneficiaries
     } catch (e) {
-        console.log('fail on bens')
         pc[0](pc[2])
         return
     }
