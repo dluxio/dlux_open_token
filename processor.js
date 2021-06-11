@@ -102,7 +102,6 @@ module.exports = function(client, steem, currentBlockNumber = 1, blockComputeSpe
 
     function transactional(ops, i, pc, num, block) {
         if (ops.length) {
-            console.log(ops[i])
             doOp(ops[i], [ops, i, pc, num, block])
                 .then(v => {
                     if (ops.length > i + 1) {
