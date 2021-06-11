@@ -170,8 +170,10 @@ function startApp() {
                     for (var i in chrops) {
                         let delKey = chrops[i]
                         store.get(['chrono', chrops[i]], function(e, b) {
-                            console.log(b)
                             switch (b.op) {
+                                case 'del_pend':
+                                    store.batch([{ type: 'del', path: ['chrono', delKey] }, { type: 'del', path: ['pend', `${b.author}/${b.permlink}`]}], [function() {}, function() { console.log('failure') }])
+                                    break;
                                 case 'ms_send':
                                     promises.push(recast(b.attempts, b.txid, num))
                                     store.batch([{ type: 'del', path: ['chrono', delKey] }], [function() {}, function() { console.log('failure') }])

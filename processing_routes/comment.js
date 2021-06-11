@@ -12,7 +12,7 @@ exports.comment = (json, pc) => {
     try { meta = JSON.parse(json.json_metadata) } catch (e) {}
     let community_post = false
     if (json.author == config.leader && parseInt(json.permlink.split('dlux')[1]) > json.block_num - 31000) {
-        console.log('leader post')
+        //console.log('leader post')
         store.get(['escrow', json.author], function(e, a) {
             if (!e) {
                 var ops = []
@@ -28,7 +28,7 @@ exports.comment = (json, pc) => {
             }
         })
     } else if (meta.arHash || meta.vrHash || meta.appHash || meta.audHash) {
-        Ppost = getPathObj(['post', `${json.author}/${json.permlink}`])
+        Ppost = getPathObj(['posts', `${json.author}/${json.permlink}`])
         Promise.all([Ppost])
             .then(postarray => {
                 post = postarray[0]
@@ -106,9 +106,11 @@ exports.comment = (json, pc) => {
 }
 
 exports.comment_options = (json, pc) => {
+    //console.log(json)
     try {
         var filter = json.extensions[0][1].beneficiaries
     } catch (e) {
+        console.log('fail on bens')
         pc[0](pc[2])
         return
     }

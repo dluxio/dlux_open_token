@@ -119,7 +119,8 @@ exports.tally = (num, plasma, isStreaming) => {
                                     winner.t = election[node].t
                                 }
                             }
-                            if (winner.node && (winner.t > ((low_sum - last_bal) / (Object.keys(still_running).length / 2)) || Object.keys(still_running).length < 9)) { //simple test to see if the election will benifit the runners collateral totals
+                            stats.gov_threshhold = parseInt((low_sum - last_bal) / (Object.keys(still_running).length / 2)) 
+                            if (winner.node && (winner.t > stats.gov_threshhold || Object.keys(still_running).length < 9)) { //simple test to see if the election will benifit the runners collateral totals
                                 still_running[winner.node] = new_queue[winner.node]
                             }
                         }
