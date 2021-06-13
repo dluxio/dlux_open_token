@@ -160,7 +160,7 @@ function updatePostVotes(post){ //live votes
         pool.query(`UPDATE posts
                     SET votes = ${votes},
                         voteweight = ${voteweight},
-                        voters = '${record.voters}'
+                        voters = '${voters}'
                     WHERE author = '${post.author}' AND
                         permlink = '${post.permlink}';`, (err, res) => {
                 if (err) {

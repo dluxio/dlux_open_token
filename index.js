@@ -442,14 +442,13 @@ function startApp() {
 
 function exit(consensus) {
     console.log(`Restarting with ${consensus}...`);
-    processor.stop(function() {
-        console.log('scope check') //this fails so ... trouble shoot
+    processor.stop(function() {});
+    console.log('scope check2') //this fails so ... trouble shoot
         if (consensus) {
             startWith(consensus)
         } else {
             dynStart(config.leader)
         }
-    });
 }
 
 function waitfor(promises_array) {
