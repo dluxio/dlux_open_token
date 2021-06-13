@@ -15,6 +15,7 @@ exports.vote = (json, pc) => {
     } else {
         getPathObj(['posts', `${json.author}/${json.permlink}`]).then(p => {
             if (Object.keys(p).length) {
+                console.log({p})
                 if (!Object.hasOwnProperty('votes')) {
                     p.votes = {}
                 }
