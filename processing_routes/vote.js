@@ -19,6 +19,7 @@ exports.vote = (json, pc) => {
                 if (!Object.hasOwnProperty('votes')) {
                     p.votes = {}
                 }
+                console.log({p})
                 var PvotePow = getPathObj(['up', json.voter]),
                     PdVotePow = getPathObj(['down', json.voter]),
                     PPow = getPathNum(['pow', json.voter]),

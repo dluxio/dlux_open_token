@@ -158,7 +158,7 @@ function updatePostVotes(post){ //live votes
             voters += v + ','
         }
         console.log({voters})
-        voters = voters.substring(0,-1)
+        voters = voters.substring(0,voters.length -1 )
         console.log({voters})
         pool.query(`UPDATE posts
                     SET votes = ${votes},
