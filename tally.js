@@ -120,7 +120,7 @@ exports.tally = (num, plasma, isStreaming) => {
                                     winner.t = election[node].t
                                 }
                             }
-                            console.log({counting_array, low_sum, last_bal, still_running})
+                            //console.log({counting_array, low_sum, last_bal, still_running})
                             stats.gov_threshhold = parseInt((low_sum - last_bal) / (Object.keys(still_running).length / 2)) 
                             if (winner.node && (winner.t > stats.gov_threshhold || Object.keys(still_running).length < 9)) { //simple test to see if the election will benifit the runners collateral totals
                                 still_running[winner.node] = new_queue[winner.node]
