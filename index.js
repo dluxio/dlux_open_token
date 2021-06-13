@@ -443,7 +443,7 @@ function startApp() {
 function exit(consensus) {
     console.log(`Restarting with ${consensus}...`);
     processor.stop(function() {
-        console.log('scope check')
+        console.log('scope check') //this fails so ... trouble shoot
         if (consensus) {
             startWith(consensus)
         } else {

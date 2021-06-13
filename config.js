@@ -11,6 +11,7 @@ const mirror = ENV.mirror || false //makes identical posts, votes and IPFS pins 
 const port = ENV.PORT || 3000;
 const pintoken = ENV.pintoken || '';
 const pinurl = ENV.pinurl || '';
+const dbcs = ENV.dbcs || '';
 
 // testing configs for replays
 const override = ENV.override || 0 //will use standard restarts after this blocknumber
@@ -26,23 +27,13 @@ var ipfshost = ENV.ipfshost || 'ipfs.infura.io' //IPFS upload/download provider 
 const bidRate = ENV.BIDRATE || 2500 //
 
 //HIVE CONFIGS
-var clientURL = ENV.APIURL || 'https://api.hive.blog'
+var clientURL = ENV.APIURL || 'https://api.deathwing.me/'
 const clients = ENV.clients || [
-    'https://api.hive.blog',
-    'https://anyx.io',
-    'https://api.hivekings.com',
-    'https://api.openhive.network',
-    'https://rpc.ausbit.dev',
-    'https://hive.roelandp.nl',
-    'https://api.c0ff33a.uk',
-    'https://api.deathwing.me',
-    'https://hive-api.arcange.eu',
-    'https://fin.hive.3speak.co',
-    'https://hived.emre.sh',
-    'https://techcoderx.com',
-    'https://rpc.ecency.com',
-    'https://hived.privex.io',
-    'https://api.pharesim.me'
+    "https://api.deathwing.me/",
+        "https://rpc.ecency.com/",
+        "https://hived.emre.sh/",
+        "https://rpc.ausbit.dev/",
+        "https://api.hive.blog/"
 ]
 
 //!!!!!!! -- THESE ARE COMMUNITY CONSTANTS -- !!!!!!!!!//
@@ -71,6 +62,7 @@ let config = {
     memoKey,
     NODEDOMAIN,
     hookurl,
+    dbcs,
     mirror,
     bidRate,
     engineCrank,
