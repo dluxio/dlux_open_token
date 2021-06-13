@@ -15,11 +15,8 @@ exports.vote = (json, pc) => {
     } else {
         getPathObj(['posts', `${json.author}/${json.permlink}`]).then(p => {
             if (Object.keys(p).length) {
-                console.log({p})
-                if (!Object.hasOwnProperty('votes')) {
-                    p.votes = {}
-                }
-                console.log({p})
+                const oldVotes = p.votes || {}
+                p.votes = oldVotes
                 var PvotePow = getPathObj(['up', json.voter]),
                     PdVotePow = getPathObj(['down', json.voter]),
                     PPow = getPathNum(['pow', json.voter]),

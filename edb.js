@@ -149,7 +149,6 @@ exports.updatePostVotes = updatePostVotes
 
 function updatePostVotes(post){ //live votes
     return new Promise((r,e)=>{
-        console.log(post)
         let votes = Object.keys(post.votes).length,
             voteweight = 0,
             voters = ''
@@ -157,9 +156,7 @@ function updatePostVotes(post){ //live votes
             voteweight += post.votes[v].v
             voters += v + ','
         }
-        console.log({voters})
         voters = voters.substring(0,voters.length -1 )
-        console.log({voters})
         pool.query(`UPDATE posts
                     SET votes = ${votes},
                         voteweight = ${voteweight},
