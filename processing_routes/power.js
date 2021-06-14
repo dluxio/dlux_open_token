@@ -166,7 +166,7 @@ exports.power_down = (json, from, active, pc) => {
                         for (d in a) {
                             newdowns[d] = a[d];
                         }
-                        ops.push({ type: 'put', path: ['powd', from, downs[i]], data: newdowns });
+                        ops.push({ type: 'put', path: ['powd', from], data: newdowns });
                         for (i in downs) {
                             ops.push({ type: 'del', path: ['chrono', downs[i]] });
                         }
