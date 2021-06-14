@@ -308,7 +308,7 @@ function startApp() {
                                                 if (b.v > 0) {
                                                     ops.push({
                                                         type: 'put',
-                                                        path: ['pendingvote', `${b.author}/${b.permlink}`],
+                                                        path: ['pendingvote', `${l.author}/${l.permlink}`],
                                                         data: b
                                                     })
                                                 }

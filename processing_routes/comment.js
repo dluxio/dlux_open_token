@@ -120,12 +120,19 @@ exports.comment_options = (json, pc) => {
             store.get(['pend', `${json.author}/${json.permlink}`], function(e, a) {
                 if (e) { console.log(e) }
                 if (Object.keys(a).length) {
-                    chronAssign(json.block_num + 201600, {
+                    var assigns = []
+                    assigns.push(chronAssign(json.block_num + 201600, {
                         block: parseInt(json.block_num + 201600),
                         op: 'post_reward',
                         author: json.author,
                         permlink: json.permlink
-                    })
+                    }))
+                    assigns.push(chronAssign(parseInt(json.block_num + 20000), {
+                        block: parseInt(json.block_num + 20000),
+                        op: 'post_vote',
+                        author: json.author,
+                        permlink: json.permlink
+                    }))
                     ops.push({
                         type: 'put',
                         path: ['posts', `${json.author}/${json.permlink}`],
@@ -195,7 +202,10 @@ exports.comment_options = (json, pc) => {
                     if (config.hookurl) contentToDiscord(json.author, json.permlink)
                     ops.push({ type: 'put', path: ['feed', `${json.block_num}:${json.transaction_id}`], data: msg })
                     if (process.env.npm_lifecycle_event == 'test') pc[2] = ops
-                    store.batch(ops, pc)
+                    Promise.all(assigns)
+                    .then(v=>{
+                        store.batch(ops, pc)
+                    })
                 } else {
                     ops.push({ type: 'del', path: ['pend', `${json.author}/${json.permlink}`] })
                     ops.push({ type: 'del', path: ['chrono', `${a.block_num + 28800}:pend:${json.author}/${json.permlink}`] })
