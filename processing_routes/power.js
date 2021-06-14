@@ -164,7 +164,7 @@ exports.power_down = (json, from, active, pc) => {
                     .then(a => {
                         var newdowns = {};
                         for (d in a) {
-                            newdowns[d] = a[d];
+                            newdowns[a[d]] = a[d];
                         }
                         ops.push({ type: 'put', path: ['powd', from], data: newdowns });
                         for (i in downs) {

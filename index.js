@@ -542,6 +542,9 @@ function startWith(hash) {
                         if (!e) {
                             if (hash) {
                                 var cleanState = data[1]
+                                delete cleanState.escrow
+                                delete cleanState.contracts.steinreich
+                                delete cleanState.powd
                                 store.put([], cleanState, function(err) {
                                     if (err) {
                                         console.log(err)
