@@ -64,10 +64,9 @@ exports.gov_down = (json, from, active, pc) => {
                         for (d in a) {
                             newdowns[d] = 1;
                         }
-
+                        ops.push({ type: 'put', path: ['govd', from], data: newdowns });
                         for (i in downs) {
                             ops.push({ type: 'del', path: ['chrono', i] });
-                            ops.push({ type: 'put', path: ['govd', from], data: newdowns });
                         }
                         const msg = `@${from}| Set withdrawl of ${parseFloat(amount / 1000).toFixed(3)} ${config.TOKEN} from Governance`
                         if (config.hookurl) postToDiscord(msg)
