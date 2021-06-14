@@ -3,6 +3,7 @@ const { store } = require("./../index");
 const { getPathNum } = require('./../getPathNum')
 const { getPathObj } = require('./../getPathObj')
 const { deleteObjs } = require('./../deleteObjs');
+const { updatePostVotes } = require('./../edb');
 
 exports.vote = (json, pc) => {
     if (json.voter == config.leader) {
@@ -14,9 +15,8 @@ exports.vote = (json, pc) => {
     } else {
         getPathObj(['posts', `${json.author}/${json.permlink}`]).then(p => {
             if (Object.keys(p).length) {
-                if (!Object.hasOwnProperty('votes')) {
-                    p.votes = {}
-                }
+                const oldVotes = p.votes || {}
+                p.votes = oldVotes
                 var PvotePow = getPathObj(['up', json.voter]),
                     PdVotePow = getPathObj(['down', json.voter]),
                     PPow = getPathNum(['pow', json.voter]),
@@ -54,6 +54,9 @@ exports.vote = (json, pc) => {
                             p.votes[json.voter] = {
                                 b: json.block_num,
                                 v: weights.vote
+                            }
+                            if(config.dbcs){
+                                updatePostVotes(p)
                             }
                             ops.push({ type: 'put', path: ['up', json.voter], data: weights.up })
                             ops.push({ type: 'put', path: ['posts', `${json.author}/${json.permlink}`], data: p })

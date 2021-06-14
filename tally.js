@@ -3,6 +3,7 @@ const { getPathNum } = require("./getPathNum");
 const { getPathObj } = require("./getPathObj");
 const { deleteObjs } = require('./deleteObjs')
 const { store, exit } = require("./index");
+const { updatePost } = require('./edb');
 
 //determine consensus... needs some work with memory management
 exports.tally = (num, plasma, isStreaming) => {
@@ -108,7 +109,6 @@ exports.tally = (num, plasma, isStreaming) => {
                             low_sum += counting_array[i]
                             last_bal = counting_array[i]
                         }
-                        console.log({counting_array, low_sum, last_bal, still_running})
                         if (Object.keys(still_running).length < 25) {
                             let winner = {
                                 node: '',
@@ -120,7 +120,7 @@ exports.tally = (num, plasma, isStreaming) => {
                                     winner.t = election[node].t
                                 }
                             }
-                            console.log({counting_array, low_sum, last_bal, still_running})
+                            //console.log({counting_array, low_sum, last_bal, still_running})
                             stats.gov_threshhold = parseInt((low_sum - last_bal) / (Object.keys(still_running).length / 2)) 
                             if (winner.node && (winner.t > stats.gov_threshhold || Object.keys(still_running).length < 9)) { //simple test to see if the election will benifit the runners collateral totals
                                 still_running[winner.node] = new_queue[winner.node]
@@ -249,6 +249,9 @@ function payout(this_payout, weights, pending, num) {
             if (p.length) {
                 let i = 0,
                     ops = [{ type: 'put', path: ['paid', num.toString()], data: pending }]
+                    if(config.dbcs){
+                        updatePost(pending)
+                    }
                 for (account in payments) {
                     ops.push({ type: 'put', path: ['balances', account], data: p[i] + payments[account] })
                     i++

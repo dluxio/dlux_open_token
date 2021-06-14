@@ -164,12 +164,11 @@ exports.power_down = (json, from, active, pc) => {
                     .then(a => {
                         var newdowns = {};
                         for (d in a) {
-                            newdowns[d] = a[d];
+                            newdowns[a[d]] = a[d];
                         }
-
+                        ops.push({ type: 'put', path: ['powd', from], data: newdowns });
                         for (i in downs) {
                             ops.push({ type: 'del', path: ['chrono', downs[i]] });
-                            ops.push({ type: 'put', path: ['powd', from, downs[i]], data: newdowns });
                         }
                         const msg = `@${from}| Powered down ${parseFloat(amount / 1000).toFixed(3)} ${config.TOKEN}`
                         if (config.hookurl) postToDiscord(msg)

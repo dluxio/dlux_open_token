@@ -59,13 +59,14 @@ function dao(num) {
                                 feedCleaner = v[12],
                                 paidCleaner = v[12]
                             feedKeys = Object.keys(feedCleaner);
+                            paidKeys = Object.keys(paidCleaner);
                             for (feedi = 0; feedi < feedKeys.length; feedi++) {
                                 if (feedKeys[feedi].split(':')[0] < num - 30240) {
                                     daops.push({ type: 'del', path: ['feed', feedKeys[feedi]] });
                                 }
                             }
-                            for (paid in paidCleaner) {
-                                if (paid < num - 30240) {
+                            for (paidi = 0; paidi < paidKeys.length; paidi++) {
+                                if (parseInt(paidKeys[paidi]) < num - 30240) {
                                     daops.push({ type: 'del', path: ['paid', paid] });
                                 }
                             }

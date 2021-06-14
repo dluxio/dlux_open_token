@@ -1,11 +1,12 @@
 const config = require('./../config')
-const rtrades = require('./../rtrades')
+//const rtrades = require('./../rtrades')
 const { store, unshiftOp } = require('./../index')
-const { deleteObjs } = require('./../deleteObjs')
+//const { deleteObjs } = require('./../deleteObjs')
 const { chronAssign } = require('./../lil_ops')
 const { getPathObj } = require('../getPathObj')
 var request = require('request');
-const { postToDiscord, contentToDiscord } = require('./../discord')
+const { contentToDiscord } = require('./../discord')
+const { insertNewPost } = require('./../edb');
 
 exports.comment = (json, pc) => {
     let meta = {}
@@ -135,6 +136,13 @@ exports.comment_options = (json, pc) => {
                             customJSON: a.meta
                         }
                     })
+                    if(config.dbcs){
+                                insertNewPost({
+                            block: json.block_num,
+                            author: json.author,
+                            permlink: json.permlink
+                        })
+                            }
                     if (config.pintoken) {
                         var pins = []
                         for (i in a.meta.assets) {

@@ -82,6 +82,11 @@ api.get('/state', API.state); //Do not recommend having a state dump in a produc
 api.get('/dex', API.dex);
 api.get('/@:un', API.user);
 api.get('/blog/@:un', API.blog);
+api.get('/dapps/@:author', API.getAuthorPosts);
+api.get('/dapps/@:author/:permlink', API.getPost);
+api.get('/new', API.getNewPosts);
+api.get('/trending', API.getTrendingPosts);
+api.get('/promoted', API.getPromotedPosts);
 api.get('/report/:un', API.report); // probably not needed
 api.get('/markets', API.markets); //for finding node runner and tasks information
 api.get('/posts/:author/:permlink', API.PostAuthorPermlink);
@@ -442,14 +447,13 @@ function startApp() {
 
 function exit(consensus) {
     console.log(`Restarting with ${consensus}...`);
-    processor.stop(function() {
-        console.log('scope check')
+    processor.stop(function() {});
+    console.log('scope check2') //this fails so ... trouble shoot
         if (consensus) {
             startWith(consensus)
         } else {
             dynStart(config.leader)
         }
-    });
 }
 
 function waitfor(promises_array) {
@@ -538,6 +542,9 @@ function startWith(hash) {
                         if (!e) {
                             if (hash) {
                                 var cleanState = data[1]
+                                delete cleanState.escrow
+                                delete cleanState.contracts.steinreich
+                                delete cleanState.powd
                                 store.put([], cleanState, function(err) {
                                     if (err) {
                                         console.log(err)

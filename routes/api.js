@@ -4,6 +4,13 @@ const fetch = require('node-fetch');
 let { getPathNum } = require("./../getPathNum");
 let { getPathObj } = require("./../getPathObj");
 const decodeURIcomponent = require('decode-uri-component');
+const { 
+    getPromotedPosts,
+    getTrendingPosts,
+    getPost,
+    getNewPosts,
+    getAuthorPosts 
+    } = require('./../edb');
 //const { reject } = require('async');
 
 exports.root = (req, res, next) => {
@@ -138,6 +145,129 @@ exports.report = (req, res, next) => {
             VERSION
         }, null, 3))
     });
+}
+
+exports.getPromotedPosts = (req, res, next) => {
+    let amt = parseInt(req.query.a),
+        off = parseInt(req.query.o)
+    if(amt < 1){
+        amt = 50
+    } else if (amt > 100){
+        amt = 100
+    }
+    if(off < 0){
+        off = 0
+    }
+    res.setHeader('Content-Type', 'application/json')
+    getPromotedPosts(amt, off)
+        .then(r =>{
+            res.send(JSON.stringify({
+                        result: r,
+                        node: config.username,
+                        VERSION
+                    }, null, 3))
+        })
+        .catch(e=>{
+            console.log(e)
+
+        })
+}
+
+exports.getTrendingPosts = (req, res, next) => {
+    let amt = parseInt(req.query.a),
+        off = parseInt(req.query.o)
+    if(amt < 1){
+        amt = 50
+    } else if (amt > 100){
+        amt = 100
+    }
+    if(off < 0){
+        off = 0
+    }
+    res.setHeader('Content-Type', 'application/json')
+    getTrendingPosts(amt, off)
+        .then(r =>{
+            res.send(JSON.stringify({
+                        result: r,
+                        node: config.username,
+                        VERSION
+                    }, null, 3))
+        })
+        .catch(e=>{
+            console.log(e)
+
+        })
+}
+
+exports.getNewPosts = (req, res, next) => {
+    let amt = parseInt(req.query.a),
+        off = parseInt(req.query.o)
+    if(amt < 1){
+        amt = 50
+    } else if (amt > 100){
+        amt = 100
+    }
+    if(off < 0){
+        off = 0
+    }
+    res.setHeader('Content-Type', 'application/json')
+    getNewPosts(amt, off)
+        .then(r =>{
+            res.send(JSON.stringify({
+                        result: r,
+                        node: config.username,
+                        VERSION
+                    }, null, 3))
+        })
+        .catch(e=>{
+            console.log(e)
+
+        })
+}
+
+exports.getAuthorPosts = (req, res, next) => {
+    let amt = parseInt(req.query.a),
+        off = parseInt(req.query.o),
+        author = req.params.author
+    if(amt < 1){
+        amt = 50
+    } else if (amt > 100){
+        amt = 100
+    }
+    if(off < 0){
+        off = 0
+    }
+    res.setHeader('Content-Type', 'application/json')
+    getAuthorPosts(author, amt, off)
+        .then(r =>{
+            res.send(JSON.stringify({
+                        result: r,
+                        node: config.username,
+                        VERSION
+                    }, null, 3))
+        })
+        .catch(e=>{
+            console.log(e)
+
+        })
+}
+
+exports.getPost = (req, res, next) => {
+    let permlink= req.params.permlink,
+        author = req.params.author
+    res.setHeader('Content-Type', 'application/json')
+    getPost(author, permlink)
+        .then(r =>{
+            res.send(JSON.stringify({
+                        result: r,
+                        node: config.username,
+                        VERSION
+                    }, null, 3))
+        })
+        .catch(e=>{
+            console.log(e)
+
+        })
 }
 
 exports.coin = (req, res, next) => {

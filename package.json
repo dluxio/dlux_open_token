@@ -37,6 +37,7 @@
         "level": "^5.0.1",
         "level-pathwise": "^4.0.0",
         "node-fetch": "^2.6.0",
+        "pg": "^8.6.0",
         "request": "^2.88.2",
         "xmlhttprequest": "^1.8.0"
     },
