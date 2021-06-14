@@ -307,10 +307,7 @@ function updateStat(stat){ //is good
         int: stat.int
     }
     return new Promise((r,e)=>{
-        getPost(post.author,post.permlink)
-        .then(ret=>{
-            console.log(ret)
-            pool.query(`UPDATE statssi
+        pool.query(`UPDATE statssi
                     SET int = '${record.int}'
                     WHERE string = '${record.string}';`, (err, res) => {
                 if (err) {
@@ -326,7 +323,33 @@ function updateStat(stat){ //is good
                     r(res)
                 }
             });
-        })
+    })
+}
 
+exports.updatePromote = updatePromote
+
+function updatePromote(author, permlink, amt){ //is good
+    return new Promise((r,e)=>{
+        getPost(post.author,post.permlink)
+            .then(post => {
+                amount = post.promote + amt
+                pool.query(`UPDATE posts
+                    SET promote = '${amount}'
+                    WHERE author = '${author}' AND
+                        permlink = '${permlink}';`, (err, res) => {
+                if (err) {
+                    insertStats(stat)
+                    .then(ret=>{
+                        r(ret)
+                    })
+                    .catch(errr=>{
+                        console.log(err,errr)
+                        e(err,errr)
+                    })
+                } else {
+                    r(res)
+                }
+            });
+            })
     })
 }
