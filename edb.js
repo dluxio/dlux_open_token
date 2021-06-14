@@ -21,31 +21,81 @@ function getStats(table){
     })
 }
 
-function getPost(author,permlink){
-    return new Promise ((r,e)=>{
-        pool.query(`SELECT * FROM posts WHERE author = '${author}' AND permlink = '${permlink}';`, (err, res) => {
-    if (err) {
-        console.log(`Error - Failed to select all from posts`);
-        e(err);
-    }
-    else{
-        r(res.rows);
-    }
-});
-    })
-}
+exports.getPromotedPosts = getPromotedPosts
 
-exports.getPost = getPost
-
-function selectSomeRecent(amount, offset){
+function getPromotedPosts(amount, offset){
     let off = offset,
         amt = amount
         if(!amount)amt = 50
         if(!off)off = 0
     return new Promise ((r,e)=>{
-        pool.query(`SELECT * FROM posts ORDER BY block DESC OFFSET ${off} ROWS FETCH FIRST ${amt} ROW ONLY;`, (err, res) => {
+        pool.query(`SELECT 
+                        author, 
+                        permlink, 
+                        block, 
+                        votes, 
+                        voteweight, 
+                        promote, 
+                        paid 
+                    FROM 
+                        posts 
+                    WHERE 
+                        promote > 0
+                    ORDER BY 
+                        promote DESC
+                    OFFSET ${off} ROWS FETCH FIRST ${amt} ROWS ONLY;`, (err, res) => {
+            if (err) {
+                console.log(`Error - Failed to select some new from ${table}`);
+                e(err);
+            }
+            else{
+                r(res.rows);
+            }
+        });
+    })
+}
+
+exports.getTrendingPosts = getTrendingPosts
+
+function getTrendingPosts(amount, offset){
+    let off = offset,
+        amt = amount
+        if(!amount)amt = 50
+        if(!off)off = 0
+    return new Promise ((r,e)=>{
+        pool.query(`SELECT 
+                        author, 
+                        permlink, 
+                        block, 
+                        votes, 
+                        voteweight, 
+                        promote, 
+                        paid 
+                    FROM 
+                        posts 
+                    WHERE 
+                        paid = false
+                    ORDER BY 
+                        voteweight DESC
+                    OFFSET ${off} ROWS FETCH FIRST ${amt} ROWS ONLY;`, (err, res) => {
+            if (err) {
+                console.log(`Error - Failed to select some new from ${table}`);
+                e(err);
+            }
+            else{
+                r(res.rows);
+            }
+        });
+    })
+}
+
+exports.getPost = getPost
+
+function getPost(author,permlink){
+    return new Promise ((r,e)=>{
+        pool.query(`SELECT * FROM posts WHERE author = '${author}' AND permlink = '${permlink}';`, (err, res) => {
     if (err) {
-        console.log(`Error - Failed to select some new from ${table}`);
+        console.log(`Error - Failed to get a post from posts`);
         e(err);
     }
     else{
@@ -54,6 +104,61 @@ function selectSomeRecent(amount, offset){
 });
     })
 }
+
+exports.getNewPosts = getNewPosts
+
+function getNewPosts(amount, offset){
+    let off = offset,
+        amt = amount
+        if(!amount)amt = 50
+        if(!off)off = 0
+    return new Promise ((r,e)=>{
+        pool.query(`SELECT author, permlink, block, votes, voteweight, promote, paid FROM posts ORDER BY block DESC OFFSET ${off} ROWS FETCH FIRST ${amt} ROWS ONLY;`, (err, res) => {
+            if (err) {
+                console.log(`Error - Failed to select some new from ${table}`);
+                e(err);
+            }
+            else{
+                r(res.rows);
+            }
+        });
+    })
+}
+
+exports.getAuthorPosts = getAuthorPosts
+
+function getAuthorPosts(author, amount, offset){
+    let off = offset,
+        amt = amount
+        if(!amount)amt = 50
+        if(!off)off = 0
+    return new Promise ((r,e)=>{
+        pool.query(`SELECT 
+                        author, 
+                        permlink, 
+                        block, 
+                        votes, 
+                        voteweight, 
+                        promote, 
+                        paid 
+                    FROM 
+                        posts
+                    WHERE
+                        author = '${author}' 
+                    ORDER BY 
+                        block DESC 
+                    OFFSET ${off} ROWS FETCH FIRST ${amt} ROWS ONLY;`, (err, res) => {
+            if (err) {
+                console.log(`Error - Failed to select some new from ${table}`);
+                e(err);
+            }
+            else{
+                r(res.rows);
+            }
+        });
+    })
+}
+
 
 exports.insertNewPost = insertNewPost
 

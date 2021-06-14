@@ -82,6 +82,11 @@ api.get('/state', API.state); //Do not recommend having a state dump in a produc
 api.get('/dex', API.dex);
 api.get('/@:un', API.user);
 api.get('/blog/@:un', API.blog);
+api.get('/dapps/@:author', API.getAuthorPosts);
+api.get('/dapps/@:author/:permlink', API.getPost);
+api.get('/new', API.getNewPosts);
+api.get('/trending', API.getTrendingPosts);
+api.get('/promoted', API.getPromotedPosts);
 api.get('/report/:un', API.report); // probably not needed
 api.get('/markets', API.markets); //for finding node runner and tasks information
 api.get('/posts/:author/:permlink', API.PostAuthorPermlink);
