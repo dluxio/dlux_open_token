@@ -70,7 +70,8 @@ var recents = []
 
 //Start Program Options   
 //startWith('QmXSsH1PvmL22HuJ9duBJYyy6eFKJA6qmwvjxZAp6bRGSs') //for testing and replaying
-dynStart(config.leader)
+//dynStart(config.leader)
+dynStart('rishi556-dlux')
 
 // API defs
 api.use(API.https_redirect);
