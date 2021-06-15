@@ -1,7 +1,8 @@
 const { getPathObj } = require("./getPathObj");
 const { deleteObjs } = require('./deleteObjs');
 const { store } = require("./index");
-const config = require('./config')
+const config = require('./config');
+const { post } = require("request");
 
 //determine consensus... needs some work with memory management
 exports.voter = () => {
@@ -19,6 +20,10 @@ exports.voter = () => {
                             totalWeight += posts[post].v
                         }
                         for (post in posts) {
+                            let b = {
+                                author: post.split('/')[0],
+                                permlink: post.split('/')[1]
+                            }
                             ops.push({
                                 type: 'put',
                                 path: ['escrow', config.leader, `vote:${b.author}/${b.permlink}`],
