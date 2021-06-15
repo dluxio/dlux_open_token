@@ -205,27 +205,29 @@ function insertNewPost(post){ //is good
 
 exports.updatePost = updatePost
 
-function updatePost(post){ //is good
+function updatePost(post){ 
+    let record = {
+            author: post.author,
+            permlink: post.permlink,
+            block: post.block,
+            votes: Object.keys(post.votes).length,
+            voteweight: post.t.totalWeight,
+            paid: true,
+            payout: post.paid,
+            payout_author: post.author_payout,
+            linear_weight: post.t.linearWeight || 0,
+            voters: post.voters || '',
+            voters_paid: post.voters_paid || '',
+        }
+        for(v in post.votes){
+            record.voters += v + ','
+            record.voters_paid += post.votes[v].p + ','
+        }
+        record.voters = record.voters.substring(0, record.voters.length -1)
+        record.voters_paid = record.voters_paid.substring(0, record.voters_paid.length -1)
     return new Promise((r,e)=>{
         getPost(post.author,post.permlink)
         .then(ret=>{
-            let record = {
-                    author: post.author,
-                    permlink: post.permlink,
-                    block: post.block,
-                    votes: Object.keys(post.votes).length,
-                    voteweight: post.t.totalWeight,
-                    paid: true,
-                    payout: post.paid,
-                    payout_author: post.author_payout,
-                    linear_weight: post.t.linearWeight || 0,
-                    voters: post.voters || '',
-                    voters_paid: post.voters_paid || '',
-                }
-            for(v of post.votes){
-                record.voters += v + ','
-                record.voters_paid += post.votes[v].p
-            }
             pool.query(`UPDATE posts
                     SET votes = ${record.votes},
                         voteweight = ${record.voteweight},

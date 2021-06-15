@@ -69,7 +69,7 @@ var recents = []
     //HIVE API CODE
 
 //Start Program Options   
-//startWith('QmRgA3Pq7WdKFQ96feDHs7YQetYgjNm2Y8CMH6TP44KYxM') //for testing and replaying
+//startWith('QmYtoG37ud1xpnC2BxV5GTRJEu4LEEgnADZSmDqUf8izdC') //for testing and replaying
 dynStart(config.leader)
 
 
@@ -287,7 +287,6 @@ function startApp() {
                                                 ops.push({ type: 'del', path: ['chrono', delkey] })
                                                 ops.push({ type: 'put', path: ['feed', `${num}:vop_${id}`], data: `@${b.author}| Post:${b.permlink} voting expired.` })
                                                 ops.push({ type: 'del', path: ['posts', `${b.author}/${b.permlink}`] })
-                                                console.log(ops)
                                                 store.batch(ops, [resolve, reject])
                                             })
                                         })
