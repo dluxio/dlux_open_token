@@ -2,7 +2,6 @@ const { getPathObj } = require("./getPathObj");
 const { deleteObjs } = require('./deleteObjs');
 const { store } = require("./index");
 const config = require('./config');
-const { post } = require("request");
 
 //determine consensus... needs some work with memory management
 exports.voter = () => {

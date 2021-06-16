@@ -66,7 +66,9 @@ function dao(num) {
                                 }
                             }
                             for (paidi = 0; paidi < paidKeys.length; paidi++) {
+                                console.log(paidKeys[paidi])
                                 if (parseInt(paidKeys[paidi]) < num - 30240) {
+                                    console.log(paidKeys[paidi])
                                     daops.push({ type: 'del', path: ['paid', paidKeys[paidi]] });
                                 }
                             }
