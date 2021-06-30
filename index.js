@@ -398,7 +398,7 @@ function startApp() {
                                             ops.push(NodeOps[i][1])
                                             NodeOps[i][0][1] = 1
                                             cjbool = true
-                                        } else if (odeOps[i][1][0] == 'custom_json'){
+                                        } else if (NodeOps[i][1][0] == 'custom_json'){
                                             // don't send two jsons at once
                                         } else { //need transaction limits here... how many votes or transfers can be done at once?
                                             ops.push(NodeOps[i][1])
