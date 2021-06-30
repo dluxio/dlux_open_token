@@ -1,5 +1,5 @@
 const config = require('./../config')
-//const rtrades = require('./../rtrades')
+const { ipfsVerify } = require('./../rtrades')
 const { store, unshiftOp } = require('./../index')
 //const { deleteObjs } = require('./../deleteObjs')
 const { chronAssign } = require('./../lil_ops')
@@ -60,7 +60,7 @@ exports.comment = (json, pc) => {
                     post.meta = meta
                     ops.push({
                         type: 'put',
-                        path: ['post', `${json.author}/${json.permlink}`],
+                        path: ['posts', `${json.author}/${json.permlink}`],
                         data: post
                     })
                 }
@@ -149,7 +149,29 @@ exports.comment_options = (json, pc) => {
                             author: json.author,
                             permlink: json.permlink
                         })
+                    }
+                    var pins = {}
+                    for (i in a.meta.assets) {
+                            if (a.meta.assets[i].pin) {
+                                pins[a.meta.assets[i].hash] = { 
+                                    h: a.meta.assets[i].hash, //hash
+                                    b: 0, //bytes
+                                    v: 0  //verifies
+                                }
                             }
+                            if (a.meta.assets[i].pin && a.meta.assets[i].thumbHash && a.meta.assets[i].thumbHash != a.meta.assets[i].hash){
+                                pins[a.meta.assets[i].thumbHash] = { 
+                                    h: a.meta.assets[i].thumbHash, //hash
+                                    b: 0, //bytes
+                                    v: 0  //verifies
+                                }
+                            }
+                    }
+                    ops.push({ type: 'put', path: ['ipfs', 'unbundled', `${json.author}:${json.permlink}`], data: pins })
+                    if(config.pintoken){
+                        //ipfsVerify(`${json.author}:${json.permlink}`, pins)
+                    }
+                    /*
                     if (config.pintoken) {
                         var pins = []
                         for (i in a.meta.assets) {
@@ -176,6 +198,7 @@ exports.comment_options = (json, pc) => {
                             });
                         }
                     }
+                    */
                     /*
                     if (config.username == config.leader) {
                         var bytes = rtrades.checkNpin(a.meta.assets)

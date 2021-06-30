@@ -69,8 +69,8 @@ var recents = []
     //HIVE API CODE
 
 //Start Program Options   
-//startWith('QmW7Sfv5QZKtDL4Cc6br973HEHmscFunNGcKY7aS5t3HS7') //for testing and replaying
-dynStart(config.leader)
+startWith('QmWCeBSjzeBC8Q9dDhF7ZcHxozgkv9d6XdwSMT7pVwytr5') //for testing and replaying
+//dynStart(config.leader)
 
 
 // API defs
@@ -204,7 +204,7 @@ function startApp() {
                                     let plb = getPathNum(['balances', b.by]),
                                         tgovp = getPathNum(['gov', 't']),
                                         govp = getPathNum(['gov', b.by])
-                                    promises.push(govDownOp([plb, tgovp, govp], b.by, delKey, num, chrops[i].split(':')[1], b))
+                                    promises.push(govDownOp([plb, tgovp, govp], b.by, delKey, num, delKey.split(':')[1], b))
 
                                     function govDownOp(promies, from, delkey, num, id, b) {
                                         return new Promise((resolve, reject) => {
@@ -233,7 +233,7 @@ function startApp() {
                                     let lbp = getPathNum(['balances', b.by]),
                                         tpowp = getPathNum(['pow', 't']),
                                         powp = getPathNum(['pow', b.by])
-                                    promises.push(powerDownOp([lbp, tpowp, powp], b.by, delKey, num, chrops[i].split(':')[1], b))
+                                    promises.push(powerDownOp([lbp, tpowp, powp], b.by, delKey, num, delKey.split(':')[1], b))
 
                                     function powerDownOp(promies, from, delkey, num, id, b) {
                                         return new Promise((resolve, reject) => {
@@ -259,7 +259,7 @@ function startApp() {
                                     }
                                     break;
                                 case 'post_reward':
-                                    promises.push(postRewardOP(b, num, chrops[i].split(':')[1], delKey))
+                                    promises.push(postRewardOP(b, num, delKey.split(':')[1], delKey))
 
                                     function postRewardOP(l, num, id, delkey) {
                                         return new Promise((resolve, reject) => {
@@ -495,12 +495,13 @@ function cycleAPI() {
 //this will include other accounts that are in the node network and the consensus state will be found if this is the wrong chain
 function dynStart(account) {
     let accountToQuery = account || config.username
+    hiveClient.api.setOptions({ url: config.startURL });
     hiveClient.api.getAccountHistory(accountToQuery, -1, 100, ...walletOperationsBitmask, function(err, result) {
         if (err) {
             console.log(err)
             dynStart(config.leader)
         } else {
-
+            hiveClient.api.setOptions({ url: config.clientURL });
             let ebus = result.filter(tx => tx[1].op[1].id === `${config.prefix}report`)
             for (i = ebus.length - 1; i >= 0; i--) {
                 if (JSON.parse(ebus[i][1].op[1].json).hash && parseInt(JSON.parse(ebus[i][1].op[1].json).block) > parseInt(config.override)) {
