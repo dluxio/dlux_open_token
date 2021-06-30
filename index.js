@@ -496,6 +496,7 @@ function cycleAPI() {
 function dynStart(account) {
     let accountToQuery = account || config.username
     hiveClient.api.setOptions({ url: config.startURL });
+    console.log('Starting URL: ', config.startURL)
     hiveClient.api.getAccountHistory(accountToQuery, -1, 100, ...walletOperationsBitmask, function(err, result) {
         if (err) {
             console.log(err)
