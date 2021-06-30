@@ -68,7 +68,6 @@ exports.vote = (json, pc) => {
                 pc[0](pc[2])
             }
         })
-        .catch(e => pc[0](pc[2]))
     }
 }
 

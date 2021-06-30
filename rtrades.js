@@ -1,7 +1,7 @@
 const config = require('./config');
 const fetch = require('node-fetch');
-const { store } = require("./index");
-const { getPathObj } = require("./getPathObj");
+//const { store } = require("./index");
+//const { getPathObj } = require("./getPathObj");
 module.exports = {
     ipfsVerify: function (str, pinobj) {
         return new Promise ((resolve, reject) => {
