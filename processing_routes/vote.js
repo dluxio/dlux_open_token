@@ -63,11 +63,12 @@ exports.vote = (json, pc) => {
                             store.batch(ops, pc)
                         }
                     })
-                    .catch(e => console.log(e))
+                    .catch(e => pc[0](pc[2]))
             } else {
                 pc[0](pc[2])
             }
         })
+        .catch(e => pc[0](pc[2]))
     }
 }
 
