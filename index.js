@@ -394,7 +394,7 @@ function startApp() {
                                     cjbool = false
                                 for (i = 0; i < NodeOps.length; i++) {
                                     if (NodeOps[i][0][1] == 0 && NodeOps[i][0][0] <= 100) {
-                                        if (odeOps[i][1][0] == 'custom_json' && !cjbool){
+                                        if (NodeOps[i][1][0] == 'custom_json' && !cjbool){
                                             ops.push(NodeOps[i][1])
                                             NodeOps[i][0][1] = 1
                                             cjbool = true
