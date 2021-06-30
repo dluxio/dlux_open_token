@@ -28,6 +28,8 @@ const { ChainTypes, makeBitMaskFilter, ops } = require('@hiveio/hive-js/lib/auth
 const op = ChainTypes.operations
 const walletOperationsBitmask = makeBitMaskFilter([op.custom_json])
 const hiveClient = require('@hiveio/hive-js');
+const broadcastClient = require('@hiveio/hive-js');
+broadcastClient.api.setOptions({ url: config.startURL });
 hiveClient.api.setOptions({ url: config.clientURL });
 console.log('Using APIURL: ', config.clientURL)
 exports.hiveClient = hiveClient
@@ -338,7 +340,7 @@ function startApp() {
                         plasma.bh = processor.getBlockHeader()
                         report(plasma)
                             .then(nodeOp => {
-                                console.log(nodeOp)
+                                //console.log(nodeOp)
                                 NodeOps.unshift(nodeOp)
                             })
                             .catch(e => { console.log(e) })
@@ -388,11 +390,20 @@ function startApp() {
                                         plasma.pending[b] = true
                                     }
                                 }
-                                var ops = []
+                                var ops = [],
+                                    cjbool = false
                                 for (i = 0; i < NodeOps.length; i++) {
                                     if (NodeOps[i][0][1] == 0 && NodeOps[i][0][0] <= 100) {
-                                        ops.push(NodeOps[i][1])
-                                        NodeOps[i][0][1] = 1
+                                        if (odeOps[i][1][0] == 'custom_json' && !cjbool){
+                                            ops.push(NodeOps[i][1])
+                                            NodeOps[i][0][1] = 1
+                                            cjbool = true
+                                        } else if (odeOps[i][1][0] == 'custom_json'){
+                                            // don't send two jsons at once
+                                        } else { //need transaction limits here... how many votes or transfers can be done at once?
+                                            ops.push(NodeOps[i][1])
+                                            NodeOps[i][0][1] = 1
+                                        }
                                     } else if (NodeOps[i][0][0] < 100) {
                                         NodeOps[i][0][0]++
                                     } else if (NodeOps[i][0][0] == 100) {
@@ -405,20 +416,24 @@ function startApp() {
                                     }
                                 }
                                 if (ops.length) {
+                                    let logop = ''
+                                    for (i in ops){
+
+                                    }
                                     console.log('attempting broadcast', ops)
-                                    hiveClient.broadcast.send({
+                                    broadcastClient.broadcast.send({
                                         extensions: [],
                                         operations: ops
                                     }, [config.active], (err, result) => {
                                         if (err) {
-                                            console.log(err)
+                                            console.log(err) //push ops back in.
                                             for (q = 0; q < ops.length; q++) {
                                                 if (NodeOps[q][0][1] == 1) {
                                                     NodeOps[q][0][1] = 3
                                                 }
                                             }
                                         } else {
-                                            console.log(result)
+                                            console.log('Success! txid: ' + result.id)
                                             for (q = ops.length - 1; q > -1; q--) {
                                                 if (NodeOps[q][0][0] = 1) {
                                                     NodeOps.splice(q, 1)
