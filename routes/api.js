@@ -83,7 +83,7 @@ exports.tickers = (req, res, next) => {
                         info.hive.high = v[0].hive.his[item].rate
                     }
                     info.hive.tv += parseFloat(v[0].hive.his[item].amount)
-                    info.hive.bv += parseFloat(v[0].hive.his[item].amount) + parseFloat(v[0].hive.his[item].rate)
+                    info.hive.bv += parseFloat(parseFloat(v[0].hive.his[item].amount) * parseFloat(v[0].hive.his[item].rate) / 1000).toFixed(3)
                 }
             }
             for (item in v[0].hbd.his){
@@ -95,26 +95,26 @@ exports.tickers = (req, res, next) => {
                         info.hbd.high = v[0].hbd.his[item].rate
                     }
                     info.hbd.tv += parseFloat(v[0].hbd.his[item].amount)
-                    info.hbd.bv += parseFloat(v[0].hbd.his[item].amount) + parseFloat(v[0].hbd.his[item].rate)
+                    info.hbd.bv += parseFloat(parseFloat(v[0].hbd.his[item].amount) * parseFloat(v[0].hbd.his[item].rate) / 1000).toFixed(3)
                 }
             }
             for (item in v[0].hbd.sellOrders){
-                if (v[0].hbd.sellOrders.rate < info.hbd.ask){
+                if (parseFloat(v[0].hbd.sellOrders.rate) < info.hbd.ask){
                     info.hbd.ask = v[0].hbd.sellOrders.rate
                 }
             }
             for (item in v[0].hbd.buyOrders){
-                if (v[0].hbd.buyOrders.rate > info.hbd.bid){
+                if (parseFloat(v[0].hbd.buyOrders.rate) > info.hbd.bid){
                     info.hbd.bid = v[0].hbd.buyOrders.rate
                 }
             }
             for (item in v[0].hive.sellOrders){
-                if (v[0].hive.sellOrders.rate < info.hive.ask){
+                if (parseFloat(v[0].hive.sellOrders.rate) < info.hive.ask){
                     info.hive.ask = v[0].hive.sellOrders.rate
                 }
             }
             for (item in v[0].hive.buyOrders){
-                if (v[0].hive.buyOrders.rate > info.hive.bid){
+                if (parseFloat(v[0].hive.buyOrders.rate) > info.hive.bid){
                     info.hive.bid = v[0].hive.buyOrders.rate
                 }
             }
