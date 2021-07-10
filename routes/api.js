@@ -315,13 +315,14 @@ exports.historical_trades = (req, res, next) => {
                 }]
                
            }
-           */
+           
             if (typ.indexOf('buy') < 0){
                 buy = []
             }
             if (typ.indexOf('sell') < 0){
                 sell = []
             }
+            */
             res.send(JSON.stringify({
                 sell,
                 buy,
