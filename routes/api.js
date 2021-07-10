@@ -99,23 +99,23 @@ exports.tickers = (req, res, next) => {
                 }
             }
             for (item in v[0].hbd.sellOrders){
-                if (parseFloat(v[0].hbd.sellOrders.rate) < info.hbd.ask){
-                    info.hbd.ask = v[0].hbd.sellOrders.rate
+                if (parseFloat(v[0].hbd.sellOrders[item].rate) < info.hbd.ask){
+                    info.hbd.ask = v[0].hbd.sellOrders[item].rate
                 }
             }
             for (item in v[0].hbd.buyOrders){
-                if (parseFloat(v[0].hbd.buyOrders.rate) > info.hbd.bid){
-                    info.hbd.bid = v[0].hbd.buyOrders.rate
+                if (parseFloat(v[0].hbd.buyOrders[item].rate) > info.hbd.bid){
+                    info.hbd.bid = v[0].hbd.buyOrders[item].rate
                 }
             }
             for (item in v[0].hive.sellOrders){
-                if (parseFloat(v[0].hive.sellOrders.rate) < info.hive.ask){
-                    info.hive.ask = v[0].hive.sellOrders.rate
+                if (parseFloat(v[0].hive.sellOrders[item].rate) < info.hive.ask){
+                    info.hive.ask = v[0].hive.sellOrders[item].rate
                 }
             }
             for (item in v[0].hive.buyOrders){
-                if (parseFloat(v[0].hive.buyOrders.rate) > info.hive.bid){
-                    info.hive.bid = v[0].hive.buyOrders.rate
+                if (parseFloat(v[0].hive.buyOrders[item].rate) > info.hive.bid){
+                    info.hive.bid = v[0].hive.buyOrders[item].rate
                 }
             }
             var hive = {
