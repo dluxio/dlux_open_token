@@ -265,7 +265,7 @@ exports.historical_trades = (req, res, next) => {
             var buy = [],
                 sell = [],
                 count = 0
-            for(item=0;item< v[0][pair].his.length;item++){
+            for(item=0;item < v[0][pair]?.his.length || 0;item++){
                 const record = {        
                     "trade_id":item.split(':')[1],
                     "price":v[0][pair].his[item].rate,
