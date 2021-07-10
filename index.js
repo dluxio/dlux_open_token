@@ -84,6 +84,12 @@ api.get('/stats', API.root);
 api.get('/coin', API.coin);
 api.get('/state', API.state); //Do not recommend having a state dump in a production API
 api.get('/dex', API.dex);
+api.get('/api/tickers', API.tickers);
+api.get('/api/orderbook', API.orderbook);
+api.get('/api/orderbook/:ticker_id', API.orderbook);
+api.get('/api/pairs', API.pairs);
+api.get('/api/historical_trades', API.tickers);
+api.get('/api/historical_trades/:ticker_id', API.tickers);
 api.get('/@:un', API.user);
 api.get('/blog/@:un', API.blog);
 api.get('/dapps/@:author', API.getAuthorPosts);
