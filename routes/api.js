@@ -272,9 +272,9 @@ exports.historical_trades = (req, res, next) => {
                     "base_volume":parseFloat(v[0][pair].his[item].rate * v[0][pair].his[item].amount).toFixed(3),
                     "target_volume":v[0][pair].his[item].amount,
                     "trade_timestamp":v[0][pair].his[item].timestamp || Date.now() - ((v[1].lastIBlock - v[0][pair].his[item].block)*3000),
-                    "type":v[0][pair].his[item].type
+                    "type":v[0][pair].his[item].type || "buy"
                 }
-                [v[0][pair].his[item].type].push(record)
+                [v[0][pair].his[item].type || "buy"].push(record)
             }
             /*
             open, close, top, bottom, dlux pairvolume 
