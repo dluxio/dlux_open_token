@@ -90,6 +90,7 @@ api.get('/api/orderbook/:ticker_id', API.orderbook);
 api.get('/api/pairs', API.pairs);
 api.get('/api/historical_trades', API.tickers);
 api.get('/api/historical_trades/:ticker_id', API.tickers);
+api.get('/api/mirrors', API.mirrors);
 api.get('/@:un', API.user);
 api.get('/blog/@:un', API.blog);
 api.get('/dapps/@:author', API.getAuthorPosts);
@@ -473,7 +474,6 @@ function startApp() {
 function exit(consensus) {
     console.log(`Restarting with ${consensus}...`);
     processor.stop(function() {});
-    console.log('scope check2') //this fails so ... trouble shoot
         if (consensus) {
             startWith(consensus)
         } else {

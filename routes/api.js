@@ -367,6 +367,27 @@ exports.markets = (req, res, next) => {
         })
 }
 
+exports.mirrors = (req, res, next) => {
+    var nodes = getPathObj(['markets', 'node'])
+    var queue = getPathObj(['queue'])
+    res.setHeader('Content-Type', 'application/json');
+    Promise.all([nodes, queue])
+        .then(function(v) {
+            var apis = []
+            for (node in v[1]){
+                apis.push({api_url:v[0][node].domain, node})
+            }
+            res.send(JSON.stringify({
+                apis,
+                node: config.username,
+                VERSION
+            }, null, 3))
+        })
+        .catch(function(err) {
+            console.log(err)
+        })
+}
+
 exports.runners = (req, res, next) => {
     res.setHeader('Content-Type', 'application/json')
     store.get(['runners'], function(err, obj) {
