@@ -274,7 +274,11 @@ exports.historical_trades = (req, res, next) => {
                     "trade_timestamp":v[0][pair].his[item].timestamp || Date.now() - ((v[1].lastIBlock - v[0][pair].his[item].block)*3000),
                     "type":v[0][pair].his[item].type || "buy"
                 }
-                [v[0][pair].his[item].type || "buy"].push(record)
+                if(record.type == 'buy'){
+                    buy.push(record)
+                } else {
+                    sell.push(record)
+                }
             }
             /*
             open, close, top, bottom, dlux pairvolume 
