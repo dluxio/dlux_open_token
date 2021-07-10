@@ -252,13 +252,13 @@ exports.historical_trades = (req, res, next) => {
             getHistory([dex, stats], 'hbd', type, limit)
             break;
         default:
-            break;
-    }
-    res.send(JSON.stringify({
+            res.send(JSON.stringify({
                 error: 'Ticker_ID is not supported',
                 node: config.username,
                 VERSION
             }, null, 3))
+            break;
+    }
     function getHistory(promises, pair, typ, lim){
     Promise.all(promises)
         .then(function(v) {
