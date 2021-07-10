@@ -83,7 +83,7 @@ exports.tickers = (req, res, next) => {
                         info.hive.high = v[0].hive.his[item].rate
                     }
                     info.hive.tv += parseFloat(v[0].hive.his[item].amount)
-                    info.hive.bv += parseFloat(parseFloat(v[0].hive.his[item].amount) * parseFloat(v[0].hive.his[item].rate) / 1000).toFixed(3)
+                    info.hive.bv += parseFloat(parseFloat(v[0].hive.his[item].amount) * parseFloat(v[0].hive.his[item].rate)).toFixed(3)
                 }
             }
             for (item in v[0].hbd.his){
@@ -95,7 +95,7 @@ exports.tickers = (req, res, next) => {
                         info.hbd.high = v[0].hbd.his[item].rate
                     }
                     info.hbd.tv += parseFloat(v[0].hbd.his[item].amount)
-                    info.hbd.bv += parseFloat(parseFloat(v[0].hbd.his[item].amount) * parseFloat(v[0].hbd.his[item].rate) / 1000).toFixed(3)
+                    info.hbd.bv += parseFloat(parseFloat(v[0].hbd.his[item].amount) * parseFloat(v[0].hbd.his[item].rate)).toFixed(3)
                 }
             }
             for (item in v[0].hbd.sellOrders){
