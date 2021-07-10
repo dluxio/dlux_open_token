@@ -162,17 +162,17 @@ exports.orderbook = (req, res, next) => {
     const depth = parseInt(req.query.depth) || 50
     res.setHeader('Content-Type', 'application/json');
     switch (pair) {
-        case 'HIVE_DLUX':
-            orderbook.ticker_id = 'HIVE_DLUX'
+        case `HIVE_${config.TOKEN}`:
+            orderbook.ticker_id = `HIVE_${config.TOKEN}`
             makeBook(depth, [dex, stats])
             break;
-        case 'HBD_DLUX':
-            orderbook.ticker_id = 'HBD_DLUX'
+        case `HBD_${config.TOKEN}`:
+            orderbook.ticker_id = `HBD_${config.TOKEN}`
             makeBook(depth, [dex, stats])
             break;
         default:
             res.send(JSON.stringify({
-                ERROR: 'ticker_id must be HIVE_DLUX or HBD_DLUX',
+                ERROR: `ticker_id must be HIVE_${config.TOKEN} or HBD_${config.TOKEN}`,
                 node: config.username,
                 VERSION
             }, null, 3))
@@ -245,10 +245,10 @@ exports.historical_trades = (req, res, next) => {
     }
     res.setHeader('Content-Type', 'application/json');
     switch (pair) {
-        case 'HIVE_DLUX':
+        case `HIVE_${config.TOKEN}`:
             getHistory([dex, stats], 'hive', type, limit)
             break;
-        case 'HBD_DLUX':
+        case `HBD_${config.TOKEN}`:
             getHistory([dex, stats], 'hbd', type, limit)
             break;
         default:
