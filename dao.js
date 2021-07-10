@@ -233,7 +233,7 @@ function dao(num) {
                                 hi = {},
                                 hib = {};
                             for (var int in dex.hive.his) {
-                                if (dex.hive.his[int].block < num - 30240) {
+                                if (dex.hive.his[int].block < num - 60480) {
                                     his.push(dex.hive.his[int]);
                                     daops.push({ type: 'del', path: ['dex', 'hive', 'his', int] });
                                 } else {
@@ -242,7 +242,7 @@ function dao(num) {
                                 }
                             }
                             for (var int in dex.hbd.his) {
-                                if (dex.hbd.his[int].block < num - 30240) {
+                                if (dex.hbd.his[int].block < num - 60480) {
                                     hisb.push(dex.hbd.his[int]);
                                     daops.push({ type: 'del', path: ['dex', 'hbd', 'his', int] });
                                 } else {
@@ -265,7 +265,7 @@ function dao(num) {
                                         hi.b = parseFloat(his[int].rate);
                                     }
 
-                                    hi.v += parseInt(parseInt(his[int].amount) * parseInt(his[int].rate));
+                                    hi.v += parseFloat(parseInt(his[int].amount) * parseInt(his[int].rate));
                                     hi.d += parseInt(his[int].amount);
                                 }
                                 if (!dex.hive.days)

@@ -27,6 +27,310 @@ exports.root = (req, res, next) => {
     });
 }
 
+exports.pairs = (req, res, next) => {
+    res.setHeader('Content-Type', 'application/json');
+    const pairs = [
+        {
+            ticker_id: `HIVE_${config.TOKEN}`,
+            base: "HIVE",
+            target: config.TOKEN,
+        },
+        {
+            ticker_id: `HBD_${config.TOKEN}`,
+            base: "HBD",
+            target: config.TOKEN,
+        }
+    ]
+    res.send(JSON.stringify(pairs, null, 3))
+}
+
+exports.tickers = (req, res, next) => {
+    var dex = getPathObj(['dex'])
+    var stats = getPathObj(['stats'])
+    res.setHeader('Content-Type', 'application/json');
+    Promise.all([dex, stats])
+        .then(function(v) {
+            var info = {
+                hive:{
+                    low: v[0].hive.tick,
+                    bv: 0,
+                    tv: 0,
+                    high: v[0].hive.tick,
+                    bid: 0, 
+                    ask: 999999999
+                },
+                hbd:{
+                    low: v[0].hbd.tick,
+                    high: v[0].hbd.tick,
+                    bv: 0,
+                    tv: 0,
+                    bid: 0, 
+                    ask: 999999999
+                }
+            }
+            for (item in v[0].hive.his){
+                if (v[0].hive.his[item].block > v[1].lastIBlock - 28800){
+                    // if (v[0].hive.his[item].block < hive.open){
+                    //     hive.open = v[0].hive.his[item].block
+                    //     hive.o = parseFloat(v[0].hive.his[item].rate)
+                    //     hive.tv += v[0].hive.his[item].amount
+                    //     hive.bv += v[0].hive.his[item].amount v[0].hive.his[item].rate
+                    // }
+                    if(v[0].hive.his[item].rate < info.hive.low){
+                        info.hive.low = v[0].hive.his[item].rate
+                    }
+                    if(v[0].hive.his[item].rate > info.hive.high){
+                        info.hive.high = v[0].hive.his[item].rate
+                    }
+                    info.hive.tv += parseFloat(v[0].hive.his[item].amount)
+                    info.hive.bv += parseFloat(v[0].hive.his[item].amount) + parseFloat(v[0].hive.his[item].rate)
+                }
+            }
+            for (item in v[0].hbd.his){
+                if (v[0].hbd.his[item].block > v[1].lastIBlock - 28800){
+                    if(v[0].hbd.his[item].rate < info.hbd.low){
+                        info.hbd.low = v[0].hbd.his[item].rate
+                    }
+                    if(v[0].hbd.his[item].rate > info.hbd.high){
+                        info.hbd.high = v[0].hbd.his[item].rate
+                    }
+                    info.hbd.tv += parseFloat(v[0].hbd.his[item].amount)
+                    info.hbd.bv += parseFloat(v[0].hbd.his[item].amount) + parseFloat(v[0].hbd.his[item].rate)
+                }
+            }
+            for (item in v[0].hbd.sellOrders){
+                if (v[0].hbd.sellOrders.rate < info.hbd.ask){
+                    info.hbd.ask = v[0].hbd.sellOrders.rate
+                }
+            }
+            for (item in v[0].hbd.buyOrders){
+                if (v[0].hbd.buyOrders.rate > info.hbd.bid){
+                    info.hbd.bid = v[0].hbd.buyOrders.rate
+                }
+            }
+            for (item in v[0].hive.sellOrders){
+                if (v[0].hive.sellOrders.rate < info.hive.ask){
+                    info.hive.ask = v[0].hive.sellOrders.rate
+                }
+            }
+            for (item in v[0].hive.buyOrders){
+                if (v[0].hive.buyOrders.rate > info.hive.bid){
+                    info.hive.bid = v[0].hive.buyOrders.rate
+                }
+            }
+            var hive = {
+                ticker_id: `HIVE_${config.TOKEN}`,
+                base_currency: "HIVE",
+                target_currency: config.TOKEN,
+                last_price: v[0].hive.tick,
+                base_volume: parseFloat(parseFloat(info.hive.bv) / 1000).toFixed(3),
+                target_volume: parseFloat(parseFloat(info.hive.tv) / 1000).toFixed(3),
+                bid: info.hive.bid,
+                ask: info.hive.ask,
+                high: info.hive.high,
+                low: info.hive.low
+            },
+            hbd = {
+                ticker_id: `HBD_${config.TOKEN}`,
+                base_currency: "HBD",
+                target_currency: config.TOKEN,
+                last_price: v[0].hbd.tick,
+                base_volume: parseFloat(parseFloat(info.hbd.bv) / 1000).toFixed(3),
+                target_volume: parseFloat(parseFloat(info.hbd.tv) / 1000).toFixed(3),
+                bid: info.hbd.bid,
+                ask: info.hbd.ask,
+                high: info.hbd.high,
+                low: info.hbd.low
+            }
+            res.send(JSON.stringify(
+                [hive,hbd], null, 3))
+        })
+        .catch(function(err) {
+            console.log(err)
+        })
+}
+
+exports.orderbook = (req, res, next) => {
+    var dex = getPathObj(['dex'])
+    var stats = getPathObj(['stats'])
+    var orderbook = {
+        timestamp: Date.now(),
+        bids: [],
+        asks: []
+    }
+    var pair = req.params.ticker_id || req.query.ticker_id
+    const depth = parseInt(req.query.depth) || 50
+    res.setHeader('Content-Type', 'application/json');
+    switch (pair) {
+        case 'HIVE_DLUX':
+            orderbook.ticker_id = 'HIVE_DLUX'
+            makeBook(depth, [dex, stats])
+            break;
+        case 'HBD_DLUX':
+            orderbook.ticker_id = 'HBD_DLUX'
+            makeBook(depth, [dex, stats])
+            break;
+        default:
+            res.send(JSON.stringify({
+                ERROR: 'ticker_id must be HIVE_DLUX or HBD_DLUX',
+                node: config.username,
+                VERSION
+            }, null, 3))
+            break;
+    }
+    function makeBook(dep, promises){
+        var get = dep
+        if(!get)get = 50
+        const type = orderbook.ticker_id.split('_')[0].toLowerCase()
+    Promise.all(promises)
+        .then(function(v) {
+            var count1 = 0, count2 = 0
+            for (item in v[0][type].sellOrders){
+                orderbook.asks.push([v[0][type].sellOrders[item].rate,parseFloat(v[0][type].sellOrders[item].amount / 1000).toFixed(3)])
+                count1++
+                if(count1 == get)break;
+            }
+            for (item in v[0][type].buyOrders){
+                orderbook.bids.push([v[0][type].buyOrders[item].rate,parseFloat(v[0][type].buyOrders[item].amount / 1000).toFixed(3)])
+                count2++
+                if(count2 == get)break;
+            }
+            res.send(JSON.stringify({
+                asks:orderbook.asks,
+                bids:orderbook.bids,
+                timestamp: orderbook.timestamp,
+                ticker_id: orderbook.ticker_id,
+                node: config.username,
+                VERSION
+            }, null, 3))
+        })
+        .catch(function(err) {
+            console.log(err)
+        })
+    }
+}
+
+exports.historical_trades = (req, res, next) => {
+    var dex = getPathObj(['dex'])
+    var stats = getPathObj(['stats'])
+    var orderbook = {
+        timestamp: Date.now(),
+        buys: [],
+        sells: []
+    }
+    /*
+{        
+      trade_id:1234567,
+      price:"50.1",
+      base_volume:"0.1",
+      target_volume:"1",
+      trade_timestamp:"1700050000",
+      type:"buy"
+   }
+
+    */
+    var pair = req.params.ticker_id || req.query.ticker_id
+    const limit = parseInt(req.query.limit) || 50
+    var type = req.query.type
+    switch (type) {
+        case 'buy':
+            type = ['buy']
+            break;
+        case 'ask':
+            type = ['sell']
+            break;
+        default:
+            type = ['buy','sell']
+            break;
+    }
+    res.setHeader('Content-Type', 'application/json');
+    switch (pair) {
+        case 'HIVE_DLUX':
+            getHistory([dex, queue], 'hive', type, limit)
+            break;
+        case 'HBD_DLUX':
+            getHistory([dex, queue], 'hbd', type, limit)
+            break;
+        default:
+            break;
+    }
+    res.send(JSON.stringify({
+                error: 'Ticker_ID is not supported',
+                node: config.username,
+                VERSION
+            }, null, 3))
+    function getHistory(promises, pair, typ, lim){
+    Promise.all(promises)
+        .then(function(v) {
+            var buy = [],
+                sell = [],
+                count = 0
+            for(item of v[0][pair].his){
+                const record = {        
+                    "trade_id":item.split(':')[1],
+                    "price":v[0][pair].his[item].rate,
+                    "base_volume":parseFloat(v[0][pair].his[item].rate * v[0][pair].his[item].amount).toFixed(3),
+                    "target_volume":v[0][pair].his[item].amount,
+                    "trade_timestamp":v[0][pair].his[item].timestamp || Date.now() - ((v[1].lastIBlock - v[0][pair].his[item].block)*3000),
+                    "type":v[0][pair].his[item].type
+                }
+                [v[0][pair].his[item].type].push(record)
+            }
+            /*
+            open, close, top, bottom, dlux pairvolume 
+            for(item of v[0][pair].days){
+                const record = {        
+                    "trade_id":item.split(':')[1],
+                    "price":v[0][pair].his[item].rate,
+                    "base_volume":parseFloat(v[0][pair].his[item].rate * v[0][pair].his[item].amount).toFixed(3),
+                    "target_volume":v[0][pair].his[item].amount,
+                    "trade_timestamp":v[0][pair].his[item].timestamp || Date.now() - ((v[1].lastIBlock - v[0][pair].his[item].block)*3000),
+                    "type":v[0][pair].his[item].type
+                }
+                [v[0][pair].his[item].type].push(record)
+            }
+            
+           function makeTrades(day, closeBlock){
+               var num = 0
+               if(day.o != day.c){
+                   num++
+                   if(day.t > day.c)num++
+                   if(day.b < day.c)num++
+               } else if (day.t != day.c){
+
+               } else if (day.b != day.c){
+
+               }
+               var trades = [{        
+                    "trade_id":closeBlock + 'c',
+                    "price": day.c,
+                    "base_volume":parseFloat(v[0][pair].his[item].rate * v[0][pair].his[item].amount).toFixed(3),
+                    "target_volume":v[0][pair].his[item].amount,
+                    "trade_timestamp":Date.now() - ((v[1].lastIBlock - closeBlock) * 3000),
+                    "type": "buy"
+                }]
+               
+           }
+           */
+            if (typ.indexOf('buy') < 0){
+                buy = []
+            }
+            if (typ.indexOf('sell') < 0){
+                sell = []
+            }
+            res.send(JSON.stringify({
+                sell,
+                buy,
+                node: config.username,
+                VERSION
+            }, null, 3))
+        })
+        .catch(function(err) {
+            console.log(err)
+        })
+    }
+}
+
 exports.dex = (req, res, next) => {
     var dex = getPathObj(['dex'])
     var queue = getPathObj(['queue'])

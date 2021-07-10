@@ -45,7 +45,9 @@ exports.dex_buy = (json, from, active, pc) => {
                             var hisE = {
                                 rate: found.rate,
                                 block: json.block_num,
-                                amount: found.amount
+                                amount: found.amount,
+                                type: "sell",
+                                timestamp: json.timestamp
                             }
                             hiveTimeWeight = 1 - ((json.block_num - hiveVWMA.block) * 0.000033)
                             hbdTimeWeight = 1 - ((json.block_num - hbdVWMA.block) * 0.000033)
@@ -796,7 +798,9 @@ exports.escrow_transfer = (json, pc) => {
                             var hisE = {
                                     rate: contract.rate,
                                     block: json.block_num,
-                                    amount: contract.amount
+                                    amount: contract.amount,
+                                    type: "buy",
+                                    timestamp: json.timestamp
                                 },
                                 samount,
                                 lil_ops = []

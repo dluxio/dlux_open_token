@@ -54,6 +54,7 @@ const { waitup } = require("./waitup");
 const { dao } = require("./dao");
 const { release, recast } = require('./lil_ops')
 const hiveState = require('./processor');
+const { getPathObj } = require('./getPathObj');
 const api = express()
 var http = require('http').Server(api);
 var escrow = false;
@@ -391,7 +392,8 @@ function startApp() {
                                     }
                                 }
                                 var ops = [],
-                                    cjbool = false
+                                    cjbool = false,
+                                    votebool = false
                                 for (i = 0; i < NodeOps.length; i++) {
                                     if (NodeOps[i][0][1] == 0 && NodeOps[i][0][0] <= 100) {
                                         if (NodeOps[i][1][0] == 'custom_json' && !cjbool){
@@ -400,6 +402,12 @@ function startApp() {
                                             cjbool = true
                                         } else if (NodeOps[i][1][0] == 'custom_json'){
                                             // don't send two jsons at once
+                                        } else if (NodeOps[i][1][0] == 'vote' && !votebool){
+                                            ops.push(NodeOps[i][1])
+                                            NodeOps[i][0][1] = 1
+                                            votebool = true
+                                        } else if (NodeOps[i][1][0] == 'vote'){
+                                            // don't send two votes at once
                                         } else { //need transaction limits here... how many votes or transfers can be done at once?
                                             ops.push(NodeOps[i][1])
                                             NodeOps[i][0][1] = 1
@@ -416,10 +424,6 @@ function startApp() {
                                     }
                                 }
                                 if (ops.length) {
-                                    let logop = ''
-                                    for (i in ops){
-
-                                    }
                                     console.log('attempting broadcast', ops)
                                     broadcastClient.broadcast.send({
                                         extensions: [],
