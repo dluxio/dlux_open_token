@@ -246,10 +246,10 @@ exports.historical_trades = (req, res, next) => {
     res.setHeader('Content-Type', 'application/json');
     switch (pair) {
         case 'HIVE_DLUX':
-            getHistory([dex, queue], 'hive', type, limit)
+            getHistory([dex, stats], 'hive', type, limit)
             break;
         case 'HBD_DLUX':
-            getHistory([dex, queue], 'hbd', type, limit)
+            getHistory([dex, stats], 'hbd', type, limit)
             break;
         default:
             break;
