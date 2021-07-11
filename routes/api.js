@@ -265,13 +265,13 @@ exports.historical_trades = (req, res, next) => {
             var buy = [],
                 sell = [],
                 count = 0
-            for(var item = 0; item < v[0][pair]?.his?.length; item++){
+            if(v[0][pair].his)for(var item in v[0][pair].his){
                 const record = {        
                     "trade_id":item.split(':')[1],
                     "price":v[0][pair].his[item].rate,
-                    "base_volume":parseFloat(v[0][pair].his[item].rate * v[0][pair].his[item].amount).toFixed(3),
-                    "target_volume":v[0][pair].his[item].amount,
-                    "trade_timestamp":v[0][pair].his[item].timestamp || Date.now() - ((v[1].lastIBlock - v[0][pair].his[item].block)*3000),
+                    "base_volume":parseFloat(v[0][pair].his[item].rate * v[0][pair].his[item].amount / 1000).toFixed(3),
+                    "target_volume": parseFloat(parseFloat(v[0][pair].his[item].amount) / 1000).toFixed(3),
+                    "trade_timestamp": v[0][pair].his[item].timestamp || Date.now() - ((v[1].lastIBlock - v[0][pair].his[item].block)*3000),
                     "type":v[0][pair].his[item].type || "buy"
                 }
                 if(record.type == 'buy'){
@@ -315,14 +315,14 @@ exports.historical_trades = (req, res, next) => {
                 }]
                
            }
-           
+           */
             if (typ.indexOf('buy') < 0){
                 buy = []
             }
             if (typ.indexOf('sell') < 0){
                 sell = []
             }
-            */
+            
             res.send(JSON.stringify({
                 sell,
                 buy,
@@ -345,6 +345,32 @@ exports.dex = (req, res, next) => {
             res.send(JSON.stringify({
                 markets: v[0],
                 queue: v[1],
+                node: config.username,
+                VERSION
+            }, null, 3))
+        })
+        .catch(function(err) {
+            console.log(err)
+        })
+}
+
+exports.detail = (req, res, next) => {
+    var stats = getPathObj(['stats'])
+    res.setHeader('Content-Type', 'application/json');
+    Promise.all([stats])
+        .then(function(v) {
+            const DLUX = {
+                issuetime: 0,
+                supply:0,
+                incirc:0,
+                wp:`whitepaper`,
+                ws:`website`,
+                be:`blockexplorer`,
+                text: `DLUX is a network`
+            }
+
+            res.send(JSON.stringify({
+                coins: [DLUX],
                 node: config.username,
                 VERSION
             }, null, 3))
