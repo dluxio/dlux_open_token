@@ -364,8 +364,8 @@ exports.dex = (req, res, next) => {
 function fetchHive(){
     return new Promise((resolve, reject)=>{
         if (RAM.lastUpdate < Date.now() - 60000){
-            fetch("https://api.hive.blog", {
-                body: `{"jsonrpc":"2.0", "method":"database_api.get_dynamic_global_properties, "id":1}`,
+            fetch(config.clientURL, {
+                body: `{"jsonrpc":"2.0", "method":"database_api.get_dynamic_global_properties", "id":1}`,
                 headers: {
                     "Content-Type": "application/x-www-form-urlencoded"
                 },
@@ -373,8 +373,9 @@ function fetchHive(){
                 })
                 .then(r => r.json())
                 .then(res => {
+                    console.log(res)
                     RAM.lastUpdate = Date.now()
-                    RAM.hiveDyn = res
+                    RAM.hiveDyn = res.result
                     resolve('OK')
                 })
                 .catch(e=>reject(e))
@@ -390,6 +391,7 @@ exports.detail = (req, res, next) => {
     res.setHeader('Content-Type', 'application/json');
     Promise.all([stats, hiveStats])
         .then(function(v) {
+            console.log(RAM.hiveDyn)
             const DLUX = {
                 name: 'Decentralized Limitless User eXperiences',
                 symbol: 'DLUX',
@@ -404,24 +406,24 @@ exports.detail = (req, res, next) => {
                 HIVE ={
                 name: 'HIVE',
                 symbol: 'HIVE',
-                icon: 'https://www.dlux.io/img/dlux-hive-logo-alpha.svg',
-                supply:'5% Fixed Inflation, No Cap.',
+                icon: 'https://www.dlux.io/img/hextacular.svg',
+                supply:RAM.hiveDyn.current_supply,
                 incirc: parseFloat(v[0].tokenSupply / 1000).toFixed(3),
-                wp:`https://docs.google.com/document/d/1_jHIJsX0BRa5ujX0s-CQg3UoQC2CBW4wooP2lSSh3n0/edit?usp=sharing`,
-                ws:`https://www.dlux.io`,
+                wp:`https://hive.io/whitepaper.pdf`,
+                ws:`https://hive.io`,
                 be:`https://hiveblockexplorer.com/`,
-                text: `DLUX is a Web3.0 technology that is focused on providing distibution of eXtended(Virtual and Augmented) Reality. It supports any browser based applications that can be statically delivered through IPFS. The DLUX Token Architecture is Proof Of Stake as a layer 2 technology on the HIVE blockchain to take advantage of free transactions. With the first WYSIWYG VR Builder of any blockchain environment and the first Decentralized Exchange on the Hive Blockchain DLUX is committed to breaking any boundaries for adoption of world changing technologies.`
+                text: `HIVE is a DPoS blockchain with free transactions and a method to post and rate content.`
             }, 
                 HBD = {
                 name: 'Hive Backed Dollars',
                 symbol: 'HBD',
-                icon: 'https://www.dlux.io/img/dlux-hive-logo-alpha.svg',
-                supply:'5% Fixed Inflation, No Cap.',
+                icon: 'https://www.dlux.io/img/hbd_green.svg',
+                supply: RAM.hiveDyn.current_hbd_supply,
                 incirc: parseFloat(v[0].tokenSupply / 1000).toFixed(3),
-                wp:`https://docs.google.com/document/d/1_jHIJsX0BRa5ujX0s-CQg3UoQC2CBW4wooP2lSSh3n0/edit?usp=sharing`,
-                ws:`https://www.dlux.io`,
+                wp:`https://hive.io/whitepaper.pdf`,
+                ws:`https://hive.io`,
                 be:`https://hiveblockexplorer.com/`,
-                text: `DLUX is a Web3.0 technology that is focused on providing distibution of eXtended(Virtual and Augmented) Reality. It supports any browser based applications that can be statically delivered through IPFS. The DLUX Token Architecture is Proof Of Stake as a layer 2 technology on the HIVE blockchain to take advantage of free transactions. With the first WYSIWYG VR Builder of any blockchain environment and the first Decentralized Exchange on the Hive Blockchain DLUX is committed to breaking any boundaries for adoption of world changing technologies.`
+                text: `HBD is a Decentralized Dollar Token backed by HIVE. It's always redemable for $1 of Hive at the average price of hive over three days. It pays ${parseFloat(RAM.hiveDyn.hbd_interest_rate / 100).toFixed(2)}% while stored in a saving account with a 3 day withdrawl period.`
             }
 
             res.send(JSON.stringify({
