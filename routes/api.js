@@ -13,6 +13,11 @@ const {
     } = require('./../edb');
 //const { reject } = require('async');
 
+var RAM = {
+    lastUpdate: 0,
+    Hive: ''
+}
+
 exports.root = (req, res, next) => {
     var stats = {};
     res.setHeader('Content-Type', 'application/json');
@@ -354,17 +359,65 @@ exports.dex = (req, res, next) => {
         })
 }
 
+// fetch hive details
+
+function fetchHive(){
+    return new Promise((resolve, reject)=>{
+        if (RAM.lastUpdate < Date.now() - 60000){
+            fetch("https://api.hive.blog", {
+                body: `{"jsonrpc":"2.0", "method":"database_api.get_dynamic_global_properties, "id":1}`,
+                headers: {
+                    "Content-Type": "application/x-www-form-urlencoded"
+                },
+                method: "POST"
+                })
+                .then(r => r.json())
+                .then(res => {
+                    RAM.lastUpdate = Date.now()
+                    RAM.hiveDyn = res
+                    resolve('OK')
+                })
+                .catch(e=>reject(e))
+        } else {
+            resolve('OK')        
+        }
+    })
+}
+
 exports.detail = (req, res, next) => {
-    var stats = getPathObj(['stats'])
+    var stats = getPathObj(['stats']),
+        hiveStats = fetchHive()
     res.setHeader('Content-Type', 'application/json');
-    Promise.all([stats])
+    Promise.all([stats, hiveStats])
         .then(function(v) {
             const DLUX = {
                 name: 'Decentralized Limitless User eXperiences',
                 symbol: 'DLUX',
                 icon: 'https://www.dlux.io/img/dlux-hive-logo-alpha.svg',
-                supply:'Unlimited',
-                incirc:v[0].tokenSupply,
+                supply:'5% Fixed Inflation, No Cap.',
+                incirc: parseFloat(v[0].tokenSupply / 1000).toFixed(3),
+                wp:`https://docs.google.com/document/d/1_jHIJsX0BRa5ujX0s-CQg3UoQC2CBW4wooP2lSSh3n0/edit?usp=sharing`,
+                ws:`https://www.dlux.io`,
+                be:`https://hiveblockexplorer.com/`,
+                text: `DLUX is a Web3.0 technology that is focused on providing distibution of eXtended(Virtual and Augmented) Reality. It supports any browser based applications that can be statically delivered through IPFS. The DLUX Token Architecture is Proof Of Stake as a layer 2 technology on the HIVE blockchain to take advantage of free transactions. With the first WYSIWYG VR Builder of any blockchain environment and the first Decentralized Exchange on the Hive Blockchain DLUX is committed to breaking any boundaries for adoption of world changing technologies.`
+            },
+                HIVE ={
+                name: 'HIVE',
+                symbol: 'HIVE',
+                icon: 'https://www.dlux.io/img/dlux-hive-logo-alpha.svg',
+                supply:'5% Fixed Inflation, No Cap.',
+                incirc: parseFloat(v[0].tokenSupply / 1000).toFixed(3),
+                wp:`https://docs.google.com/document/d/1_jHIJsX0BRa5ujX0s-CQg3UoQC2CBW4wooP2lSSh3n0/edit?usp=sharing`,
+                ws:`https://www.dlux.io`,
+                be:`https://hiveblockexplorer.com/`,
+                text: `DLUX is a Web3.0 technology that is focused on providing distibution of eXtended(Virtual and Augmented) Reality. It supports any browser based applications that can be statically delivered through IPFS. The DLUX Token Architecture is Proof Of Stake as a layer 2 technology on the HIVE blockchain to take advantage of free transactions. With the first WYSIWYG VR Builder of any blockchain environment and the first Decentralized Exchange on the Hive Blockchain DLUX is committed to breaking any boundaries for adoption of world changing technologies.`
+            }, 
+                HBD = {
+                name: 'Hive Backed Dollars',
+                symbol: 'HBD',
+                icon: 'https://www.dlux.io/img/dlux-hive-logo-alpha.svg',
+                supply:'5% Fixed Inflation, No Cap.',
+                incirc: parseFloat(v[0].tokenSupply / 1000).toFixed(3),
                 wp:`https://docs.google.com/document/d/1_jHIJsX0BRa5ujX0s-CQg3UoQC2CBW4wooP2lSSh3n0/edit?usp=sharing`,
                 ws:`https://www.dlux.io`,
                 be:`https://hiveblockexplorer.com/`,
