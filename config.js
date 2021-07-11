@@ -11,7 +11,7 @@ const mirror = ENV.mirror || false //makes identical posts, votes and IPFS pins 
 const port = ENV.PORT || 3000;
 const pintoken = ENV.pintoken || '';
 const pinurl = ENV.pinurl || '';
-const dbcs = ENV.dbcs || '';
+const dbcs = ENV.DATABASE_URL || '';
 
 // testing configs for replays
 const override = ENV.override || 0 //will use standard restarts after this blocknumber
@@ -27,7 +27,8 @@ var ipfshost = ENV.ipfshost || 'ipfs.infura.io' //IPFS upload/download provider 
 const bidRate = ENV.BIDRATE || 2500 //
 
 //HIVE CONFIGS
-var clientURL = ENV.APIURL || "https://api.hive.blog/"
+var startURL = ENV.STARTURL || "https://rpc.ecency.com/"
+var clientURL = ENV.APIURL || startURL
 const clients = ENV.clients || [
     "https://api.deathwing.me/",
         "https://rpc.ecency.com/",
@@ -70,6 +71,7 @@ let config = {
     pintoken,
     pinurl,
     clientURL,
+    startURL,
     clients,
     acm,
     rta,

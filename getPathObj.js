@@ -4,7 +4,8 @@ function getPathObj(path) {
     return new Promise(function(resolve, reject) {
         store.get(path, function(err, obj) {
             if (err) {
-                reject(err);
+                console.log(path)
+                resolve({});
             } else {
                 resolve(obj);
             }

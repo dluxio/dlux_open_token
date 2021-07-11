@@ -71,6 +71,7 @@ exports.tally = (num, plasma, isStreaming) => {
                     console.log('Consensus: ' + consensus)
                     if (consensus) {
                         stats.hashLastIBlock = consensus;
+                        stats.lastIBlock = num - 100
                         for (node in tally.agreements.hashes) {
                             if (tally.agreements.hashes[node] == consensus) {
                                 if (num < 50500000) {

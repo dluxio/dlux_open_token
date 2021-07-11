@@ -28,6 +28,8 @@ const { ChainTypes, makeBitMaskFilter, ops } = require('@hiveio/hive-js/lib/auth
 const op = ChainTypes.operations
 const walletOperationsBitmask = makeBitMaskFilter([op.custom_json])
 const hiveClient = require('@hiveio/hive-js');
+const broadcastClient = require('@hiveio/hive-js');
+broadcastClient.api.setOptions({ url: config.startURL });
 hiveClient.api.setOptions({ url: config.clientURL });
 console.log('Using APIURL: ', config.clientURL)
 exports.hiveClient = hiveClient
@@ -52,6 +54,7 @@ const { waitup } = require("./waitup");
 const { dao } = require("./dao");
 const { release, recast } = require('./lil_ops')
 const hiveState = require('./processor');
+const { getPathObj } = require('./getPathObj');
 const api = express()
 var http = require('http').Server(api);
 var escrow = false;
@@ -69,7 +72,7 @@ var recents = []
     //HIVE API CODE
 
 //Start Program Options   
-//startWith('QmW7Sfv5QZKtDL4Cc6br973HEHmscFunNGcKY7aS5t3HS7') //for testing and replaying
+//startWith('QmWCeBSjzeBC8Q9dDhF7ZcHxozgkv9d6XdwSMT7pVwytr5') //for testing and replaying
 dynStart(config.leader)
 
 
@@ -81,6 +84,14 @@ api.get('/stats', API.root);
 api.get('/coin', API.coin);
 api.get('/state', API.state); //Do not recommend having a state dump in a production API
 api.get('/dex', API.dex);
+api.get('/api/tickers', API.tickers);
+api.get('/api/orderbook', API.orderbook);
+api.get('/api/orderbook/:ticker_id', API.orderbook);
+api.get('/api/pairs', API.pairs);
+api.get('/api/historical_trades', API.historical_trades);
+api.get('/api/historical_trades/:ticker_id', API.historical_trades);
+api.get('/api/mirrors', API.mirrors);
+api.get('/api/coin_detail', API.detail);
 api.get('/@:un', API.user);
 api.get('/blog/@:un', API.blog);
 api.get('/dapps/@:author', API.getAuthorPosts);
@@ -204,7 +215,7 @@ function startApp() {
                                     let plb = getPathNum(['balances', b.by]),
                                         tgovp = getPathNum(['gov', 't']),
                                         govp = getPathNum(['gov', b.by])
-                                    promises.push(govDownOp([plb, tgovp, govp], b.by, delKey, num, chrops[i].split(':')[1], b))
+                                    promises.push(govDownOp([plb, tgovp, govp], b.by, delKey, num, delKey.split(':')[1], b))
 
                                     function govDownOp(promies, from, delkey, num, id, b) {
                                         return new Promise((resolve, reject) => {
@@ -233,7 +244,7 @@ function startApp() {
                                     let lbp = getPathNum(['balances', b.by]),
                                         tpowp = getPathNum(['pow', 't']),
                                         powp = getPathNum(['pow', b.by])
-                                    promises.push(powerDownOp([lbp, tpowp, powp], b.by, delKey, num, chrops[i].split(':')[1], b))
+                                    promises.push(powerDownOp([lbp, tpowp, powp], b.by, delKey, num, delKey.split(':')[1], b))
 
                                     function powerDownOp(promies, from, delkey, num, id, b) {
                                         return new Promise((resolve, reject) => {
@@ -259,7 +270,7 @@ function startApp() {
                                     }
                                     break;
                                 case 'post_reward':
-                                    promises.push(postRewardOP(b, num, chrops[i].split(':')[1], delKey))
+                                    promises.push(postRewardOP(b, num, delKey.split(':')[1], delKey))
 
                                     function postRewardOP(l, num, id, delkey) {
                                         return new Promise((resolve, reject) => {
@@ -338,7 +349,7 @@ function startApp() {
                         plasma.bh = processor.getBlockHeader()
                         report(plasma)
                             .then(nodeOp => {
-                                console.log(nodeOp)
+                                //console.log(nodeOp)
                                 NodeOps.unshift(nodeOp)
                             })
                             .catch(e => { console.log(e) })
@@ -388,11 +399,27 @@ function startApp() {
                                         plasma.pending[b] = true
                                     }
                                 }
-                                var ops = []
+                                var ops = [],
+                                    cjbool = false,
+                                    votebool = false
                                 for (i = 0; i < NodeOps.length; i++) {
                                     if (NodeOps[i][0][1] == 0 && NodeOps[i][0][0] <= 100) {
-                                        ops.push(NodeOps[i][1])
-                                        NodeOps[i][0][1] = 1
+                                        if (NodeOps[i][1][0] == 'custom_json' && !cjbool){
+                                            ops.push(NodeOps[i][1])
+                                            NodeOps[i][0][1] = 1
+                                            cjbool = true
+                                        } else if (NodeOps[i][1][0] == 'custom_json'){
+                                            // don't send two jsons at once
+                                        } else if (NodeOps[i][1][0] == 'vote' && !votebool){
+                                            ops.push(NodeOps[i][1])
+                                            NodeOps[i][0][1] = 1
+                                            votebool = true
+                                        } else if (NodeOps[i][1][0] == 'vote'){
+                                            // don't send two votes at once
+                                        } else { //need transaction limits here... how many votes or transfers can be done at once?
+                                            ops.push(NodeOps[i][1])
+                                            NodeOps[i][0][1] = 1
+                                        }
                                     } else if (NodeOps[i][0][0] < 100) {
                                         NodeOps[i][0][0]++
                                     } else if (NodeOps[i][0][0] == 100) {
@@ -406,19 +433,19 @@ function startApp() {
                                 }
                                 if (ops.length) {
                                     console.log('attempting broadcast', ops)
-                                    hiveClient.broadcast.send({
+                                    broadcastClient.broadcast.send({
                                         extensions: [],
                                         operations: ops
                                     }, [config.active], (err, result) => {
                                         if (err) {
-                                            console.log(err)
+                                            console.log(err) //push ops back in.
                                             for (q = 0; q < ops.length; q++) {
                                                 if (NodeOps[q][0][1] == 1) {
                                                     NodeOps[q][0][1] = 3
                                                 }
                                             }
                                         } else {
-                                            console.log(result)
+                                            console.log('Success! txid: ' + result.id)
                                             for (q = ops.length - 1; q > -1; q--) {
                                                 if (NodeOps[q][0][0] = 1) {
                                                     NodeOps.splice(q, 1)
@@ -448,7 +475,6 @@ function startApp() {
 function exit(consensus) {
     console.log(`Restarting with ${consensus}...`);
     processor.stop(function() {});
-    console.log('scope check2') //this fails so ... trouble shoot
         if (consensus) {
             startWith(consensus)
         } else {
@@ -495,12 +521,14 @@ function cycleAPI() {
 //this will include other accounts that are in the node network and the consensus state will be found if this is the wrong chain
 function dynStart(account) {
     let accountToQuery = account || config.username
+    hiveClient.api.setOptions({ url: config.startURL });
+    console.log('Starting URL: ', config.startURL)
     hiveClient.api.getAccountHistory(accountToQuery, -1, 100, ...walletOperationsBitmask, function(err, result) {
         if (err) {
             console.log(err)
             dynStart(config.leader)
         } else {
-
+            hiveClient.api.setOptions({ url: config.clientURL });
             let ebus = result.filter(tx => tx[1].op[1].id === `${config.prefix}report`)
             for (i = ebus.length - 1; i >= 0; i--) {
                 if (JSON.parse(ebus[i][1].op[1].json).hash && parseInt(JSON.parse(ebus[i][1].op[1].json).block) > parseInt(config.override)) {
