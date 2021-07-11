@@ -91,6 +91,7 @@ api.get('/api/pairs', API.pairs);
 api.get('/api/historical_trades', API.historical_trades);
 api.get('/api/historical_trades/:ticker_id', API.historical_trades);
 api.get('/api/mirrors', API.mirrors);
+api.get('/api/coin_detail', API.detail);
 api.get('/@:un', API.user);
 api.get('/blog/@:un', API.blog);
 api.get('/dapps/@:author', API.getAuthorPosts);
