@@ -425,7 +425,7 @@ exports.detail = (req, res, next) => {
             }
 
             res.send(JSON.stringify({
-                coins: [DLUX],
+                coins: [DLUX,HIVE,HBD],
                 node: config.username,
                 VERSION
             }, null, 3))
