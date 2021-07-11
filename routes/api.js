@@ -360,13 +360,15 @@ exports.detail = (req, res, next) => {
     Promise.all([stats])
         .then(function(v) {
             const DLUX = {
-                issuetime: 0,
-                supply:0,
-                incirc:0,
-                wp:`whitepaper`,
-                ws:`website`,
-                be:`blockexplorer`,
-                text: `DLUX is a network`
+                name: 'Decentralized Limitless User eXperiences',
+                symbol: 'DLUX',
+                icon: 'https://www.dlux.io/img/dlux-hive-logo-alpha.svg',
+                supply:'Unlimited',
+                incirc:v[0].tokenSupply,
+                wp:`https://docs.google.com/document/d/1_jHIJsX0BRa5ujX0s-CQg3UoQC2CBW4wooP2lSSh3n0/edit?usp=sharing`,
+                ws:`https://www.dlux.io`,
+                be:`https://hiveblockexplorer.com/`,
+                text: `DLUX is a Web3.0 technology that is focused on providing distibution of eXtended(Virtual and Augmented) Reality. It supports any browser based applications that can be statically delivered through IPFS. The DLUX Token Architecture is Proof Of Stake as a layer 2 technology on the HIVE blockchain to take advantage of free transactions. With the first WYSIWYG VR Builder of any blockchain environment and the first Decentralized Exchange on the Hive Blockchain DLUX is committed to breaking any boundaries for adoption of world changing technologies.`
             }
 
             res.send(JSON.stringify({
