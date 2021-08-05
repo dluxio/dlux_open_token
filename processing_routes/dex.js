@@ -607,7 +607,7 @@ exports.transfer = (json, pc) => {
             }
         }
     })
-    if (json.to == config.mainICO && json.amount.split(' ')[1] == 'HIVE') { //the ICO disribution... should be in multi sig account
+    if (config.ICO && json.to == config.mainICO && json.amount.split(' ')[1] == 'HIVE') { //the ICO disribution... should be in multi sig account
         const amount = parseInt(parseFloat(json.amount) * 1000)
         var purchase,
             Pstats = getPathObj(['stats']),

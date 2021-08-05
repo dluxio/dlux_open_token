@@ -157,14 +157,14 @@ function startApp() {
     processor.on('report', HR.report);
     processor.on('queueForDaily', HR.q4d)
     processor.on('nomention', HR.nomention)
-    processor.onOperation('comment_options', HR.comment_options);
+    if(config.POB)processor.onOperation('comment_options', HR.comment_options);
     processor.on('cjv', HR.cjv);
     processor.on('sig', HR.sig); //dlux is for putting executable programs into IPFS... this is for additional accounts to sign the code as non-malicious
     processor.on('cert', HR.cert); // json.cert is an open ended hope to interact with executable posts... unexplored
-    processor.onOperation('vote', HR.vote) //layer 2 voting
+    if(config.POB)processor.onOperation('vote', HR.vote) //layer 2 voting
     processor.onOperation('transfer', HR.transfer);
-    processor.onOperation('delegate_vesting_shares', HR.delegate_vesting_shares);
-    processor.onOperation('comment', HR.comment);
+    if(config.DELEGATION)processor.onOperation('delegate_vesting_shares', HR.delegate_vesting_shares);
+    if(config.DAILY || config.POB)processor.onOperation('comment', HR.comment);
     //do things in cycles based on block time
     processor.onBlock(
         function(num, pc) {

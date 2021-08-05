@@ -54,6 +54,10 @@ const mainFE = 'dlux.io' //frontend for content
 const mainIPFS = 'a.ipfs.dlux.io' //IPFS service
 const mainICO = 'robotolux' //Account collecting ICO HIVE
 const footer = `\n[Find us on Discord](https://discord.gg/Beeb38j)`
+const POB = true //enable Proof of Brain
+const ICO = true //enable ICO
+const DELEGATION = true //enable delegation rewards
+const DAILY = true //enable daily posts
 
 //Aditionally on your branch, look closely at dao, this is where tokenomics happen and custom status posts are made
 
@@ -92,7 +96,11 @@ let config = {
     mainFE,
     mainIPFS,
     mainICO,
-    footer
+    footer,
+    POB,
+    ICO,
+    DELEGATION,
+    DAILY
 };
 
 module.exports = config;
