@@ -570,8 +570,9 @@ function startWith(hash) {
                         if (!e) {
                             if (hash) {
                                 var cleanState = data[1]
-                                delete cleanState.paid
-                                delete cleanState.post
+                                //stuff to make MS work
+                                cleanState.stats.MSHeld = 0
+                                cleanState.stats.max_transfer = 20
                                 store.put([], cleanState, function(err) {
                                     if (err) {
                                         console.log(err)
