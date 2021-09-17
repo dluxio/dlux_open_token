@@ -137,9 +137,8 @@ exports.power_grant = (json, from, active, pc) => {
 }
 
 exports.power_down = (json, from, active, pc) => {
-    var amount = parseInt(json.amount),
-        powp = getPathNum(['pow', from]);
-    powd = getPathObj(['powd', from]);
+    var powp = getPathNum(['pow', from]),
+        powd = getPathObj(['powd', from]);
     Promise.all([powp, powd])
         .then(o => {
             let p = typeof o[0] != 'number' ? 0 : o[0],
@@ -168,7 +167,7 @@ exports.power_down = (json, from, active, pc) => {
                         }
                         ops.push({ type: 'put', path: ['powd', from], data: newdowns });
                         for (i in downs) {
-                            ops.push({ type: 'del', path: ['chrono', downs[i]] });
+                            ops.push({ type: 'del', path: ['chrono', i] });
                         }
                         const msg = `@${from}| Powered down ${parseFloat(amount / 1000).toFixed(3)} ${config.TOKEN}`
                         if (config.hookurl) postToDiscord(msg)

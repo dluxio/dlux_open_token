@@ -69,7 +69,7 @@ function dao(num) {
                                 console.log(paidKeys[paidi])
                                 if (parseInt(paidKeys[paidi]) < num - 30240) {
                                     console.log(paidKeys[paidi])
-                                    daops.push({ type: 'del', path: ['paid', paidKeys[paidi]] });
+                                    daops.push({ type: 'del', path: ['paid', paidKeys[paidi].toString()] });
                                 }
                             }
                             news = news;

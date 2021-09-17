@@ -1,3 +1,5 @@
+const fetch = require('node-fetch');
+const { Base64 } = require('./helpers');
 module.exports = function(client, steem, currentBlockNumber = 1, blockComputeSpeed = 1000, prefix = '', mode = 'latest', cycleapi) {
     var onCustomJsonOperation = {}; // Stores the function to be run for each operation id.
     var onOperation = {};
@@ -24,6 +26,23 @@ module.exports = function(client, steem, currentBlockNumber = 1, blockComputeSpe
         })
     }
 
+    function getVops (bn){
+        return new Promise((resolve, reject) => {
+            fetch(client.currentAddress, {
+                body: `{"jsonrpc":"2.0", "method":"condenser_api.get_ops_in_block", "params":[${bn},true], "id":1}`,
+                headers: {
+                    "Content-Type": "application/x-www-form-urlencoded"
+                },
+                method: "POST"
+            })
+            .then(res => res.json())
+            .then(json => {
+                resolve(json.result)
+            })
+            .catch(err => {reject(err)})
+        });
+    }
+
     function isAtRealTime(callback) {
         getHeadOrIrreversibleBlockNumber(function(result) {
             if (currentBlockNumber >= result) {
@@ -39,14 +58,17 @@ module.exports = function(client, steem, currentBlockNumber = 1, blockComputeSpe
 
             var blockNum = currentBlockNumber; // Helper variable to prevent race condition
             // in getBlock()
+            var vops = getVops(blockNum)
             client.database.getBlock(blockNum)
                 .then((result) => {
+                    /*
                     block_header = {
                         timestamp: result.timestamp,
                         block_id: result.block_id,
                         block_number: blockNum
                     }
-                    processBlock(result, blockNum)
+                    */
+                    processBlock(result, blockNum, vops)
                         .then(r => {
                             currentBlockNumber++;
                             if (!stopping) {
@@ -100,18 +122,42 @@ module.exports = function(client, steem, currentBlockNumber = 1, blockComputeSpe
     }
 
 
-    function transactional(ops, i, pc, num, block) {
+    function transactional(ops, i, pc, num, block, vops) {
         if (ops.length) {
-            doOp(ops[i], [ops, i, pc, num, block])
+            
+            doOp(ops[i], [ops, i, pc, num, block, vops])
                 .then(v => {
                     if (ops.length > i + 1) {
-                        transactional(v[0], v[1] + 1, v[2], v[3], v[4])
+                        transactional(v[0], v[1] + 1, v[2], v[3], v[4], v[5])
                     } else {
-                        onNewBlock(num, v)
+                        if(vops){
+                            var Vops = []
+                            vops.then(vo=>{
+                                for(var j = 0; j < vo.length; j++){
+                                    if(onOperation[vo[j].op[0]] !== undefined){
+                                    var json = vo[j].op[1]
+                                    json.block_num = vo[j].block
+                                    json.txid = vo[j].trx_id
+                                    Vops.push([vo[j].op[0],json])
+                                    }
+                                }
+                                if(Vops.length){
+                                    transactional(Vops, 0, v[2], v[3], v[4])
+                                } else {
+                                    onNewBlock(num, v)
+                                        .then(r => {
+                                            pc[0](pc[2])
+                                        })
+                                        .catch(e => { console.log(e) })
+                                }
+                            })
+                        } else {
+                            onNewBlock(num, v)
                             .then(r => {
                                 pc[0](pc[2])
                             })
                             .catch(e => { console.log(e) })
+                        }
                     }
                 })
                 .catch(e => {
@@ -138,9 +184,16 @@ module.exports = function(client, steem, currentBlockNumber = 1, blockComputeSpe
                 }
             })
         }
+
+        function doVop(op, pc) {
+            return new Promise((resolve, reject) => {
+                console.log(op, pc)
+                onVOperation[op[0]](op[1], [resolve, reject, pc]);
+            })
+        }
     }
 
-    function processBlock(block, num) {
+    function processBlock(block, num, Pvops) {
         return new Promise((resolve, reject) => {
             var transactions = block.transactions;
             let ops = []
@@ -155,6 +208,7 @@ module.exports = function(client, steem, currentBlockNumber = 1, blockComputeSpe
                             ip.transaction_id = transactions[i].transaction_id
                             ip.block_num = transactions[i].block_num
                             ip.timestamp = block.timestamp
+                            ip.prand = block.witness_signature
                             if (!from) {
                                 from = op[1].required_auths[0];
                                 active = true
@@ -165,11 +219,12 @@ module.exports = function(client, steem, currentBlockNumber = 1, blockComputeSpe
                         op[1].transaction_id = transactions[i].transaction_id
                         op[1].block_num = transactions[i].block_num
                         op[1].timestamp = block.timestamp
+                        op[1].prand = block.witness_signature
                         ops.push([op[0], op[1]]) //onOperation[op[0]](op[1]);
                     }
                 }
             }
-            transactional(ops, 0, [resolve, reject], num, block)
+            transactional(ops, 0, [resolve, reject], num, block, Pvops)
         })
     }
 

@@ -401,7 +401,7 @@ exports.detail = (req, res, next) => {
                 wp:`https://docs.google.com/document/d/1_jHIJsX0BRa5ujX0s-CQg3UoQC2CBW4wooP2lSSh3n0/edit?usp=sharing`,
                 ws:`https://www.dlux.io`,
                 be:`https://hiveblockexplorer.com/`,
-                text: `DLUX is a Web3.0 technology that is focused on providing distibution of eXtended(Virtual and Augmented) Reality. It supports any browser based applications that can be statically delivered through IPFS. The DLUX Token Architecture is Proof Of Stake as a layer 2 technology on the HIVE blockchain to take advantage of free transactions. With the first WYSIWYG VR Builder of any blockchain environment and the first Decentralized Exchange on the Hive Blockchain DLUX is committed to breaking any boundaries for adoption of world changing technologies.`
+                text: `DLUX is a Web3.0 technology that is focused on providing distribution of eXtended (Virtual and Augmented) Reality. It supports any browser based applications that can be statically delivered through IPFS. The DLUX Token Architecture is Proof of Stake as a layer 2 technology on the HIVE blockchain to take advantage of free transactions. With the first WYSIWYG VR Builder of any blockchain environment and the first Decentralized Exchange on the Hive Blockchain, DLUX is committed to breaking any boundaries for adoption of world changing technologies.`
             },
                 HIVE ={
                 name: 'HIVE',
@@ -423,7 +423,7 @@ exports.detail = (req, res, next) => {
                 wp:`https://hive.io/whitepaper.pdf`,
                 ws:`https://hive.io`,
                 be:`https://hiveblockexplorer.com/`,
-                text: `HBD is a Decentralized Dollar Token backed by HIVE. It's always redemable for $1 of Hive at the average price of hive over three days. It pays ${parseFloat(RAM.hiveDyn.hbd_interest_rate / 100).toFixed(2)}% while stored in a saving account with a 3 day withdrawl period.`
+                text: `Hive-backed dollars (HBD) are a unique type of trustless stablecoin that is backed by the underlying value of the Hive blockchain itself instead of external collateral or a centralized entity. HBD are pegged to value of USD. Staking HBD pays a variable APR, currently ${parseFloat(RAM.hiveDyn.hbd_interest_rate / 100).toFixed(2)}%.`
             }
 
             res.send(JSON.stringify({
