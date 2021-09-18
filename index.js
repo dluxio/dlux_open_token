@@ -577,8 +577,6 @@ function startWith(hash) {
                             if (hash) {
                                 var cleanState = data[1]
                                 //stuff to make MS work
-                                cleanState.stats.MSHeld = 0
-                                cleanState.stats.max_transfer = 20
                                 store.put([], cleanState, function(err) {
                                     if (err) {
                                         console.log(err)

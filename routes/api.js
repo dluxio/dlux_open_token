@@ -550,14 +550,14 @@ exports.PostAuthorPermlink = (req, res, next) => {
 
 /*
 api.get('/api/nfts/:user', API.nfts);
-api.get('/api/nft/:item', API.item); V
+api.get('/api/nft/:item', API.item);
 api.get('/api/sets', API.sets);
-api.get('/api/set/:set', API.set); V
-api.get('/api/auctions', API.auctions); V
-api.get('/api/sales', API.sales); V
+api.get('/api/set/:set', API.set);
+api.get('/api/auctions', API.auctions);
+api.get('/api/sales', API.sales);
 */
 
-exports.items = (req, res, next) => {
+exports.item = (req, res, next) => {
     let user = req.params.user
     try {
         res.setHeader('Content-Type', 'application/json')
