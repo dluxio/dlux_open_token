@@ -557,7 +557,7 @@ api.get('/api/auctions', API.auctions);
 api.get('/api/sales', API.sales);
 */
 
-exports.item = (req, res, next) => {
+exports.nfts = (req, res, next) => {
     let user = req.params.user
     try {
         res.setHeader('Content-Type', 'application/json')
