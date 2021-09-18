@@ -1,4 +1,5 @@
 let config = require('./../config')
+const { Base64} = require('./../helpers')
 const { store, GetNodeOps, VERSION } = require("./../index");
 const fetch = require('node-fetch');
 let { getPathNum } = require("./../getPathNum");
@@ -544,6 +545,157 @@ exports.PostAuthorPermlink = (req, res, next) => {
                 }, null, 3))
             })
             .catch(e => { console.log(e) })
+    } catch (e) { res.send('Something went wrong') }
+}
+
+/*
+api.get('/api/nfts/:user', API.nfts);
+api.get('/api/nft/:item', API.item); V
+api.get('/api/sets', API.sets);
+api.get('/api/set/:set', API.set); V
+api.get('/api/auctions', API.auctions); V
+api.get('/api/sales', API.sales); V
+*/
+
+exports.items = (req, res, next) => {
+    let user = req.params.user
+    try {
+        res.setHeader('Content-Type', 'application/json')
+        res.send(JSON.stringify({
+                    result:[{
+                        item: 'A6',
+                        set: `set1`
+                    },{
+                        item: 'A7',
+                        set: `set2`,
+                    }],
+                    user,
+                    node: config.username,
+                    VERSION
+                }, null, 3))
+    } catch (e) { res.send('Something went wrong') }
+}
+
+exports.sets = (req, res, next) => {
+    try {
+        res.setHeader('Content-Type', 'application/json')
+        res.send(JSON.stringify({
+                    result:[{
+                        set: `set1`,
+                        name: `Bees`, 
+                    },{
+                        set: `set2`,
+                        name: `Punks`, 
+                    }],
+                    node: config.username,
+                    VERSION
+                }, null, 3))
+    } catch (e) { res.send('Something went wrong') }
+}
+
+exports.auctions = (req, res, next) => {
+    try {
+        res.setHeader('Content-Type', 'application/json')
+        res.send(JSON.stringify({
+                    result:[{
+                        item: `set:item`,
+                        price: 1000, //starting price
+                        time: 3600, //time in seconds
+                        bids: 12, //expires
+                        by:'disregardfiat' 
+                    },{
+                        item: `set2:item1`,
+                        price: 500, //starting price
+                        time: 7200, //time in seconds
+                        bids: 2, //expires
+                        by:'dale' 
+                    }],
+                    node: config.username,
+                    VERSION
+                }, null, 3))
+    } catch (e) { res.send('Something went wrong') }
+}
+
+exports.sales = (req, res, next) => {
+    try {
+        res.setHeader('Content-Type', 'application/json')
+        res.send(JSON.stringify({
+                    result:[{
+                        item: `set:item`,
+                        price: 1000, //starting price
+                        time: 3600,
+                        by:'disregardfiat' 
+                    },{
+                        item: `set2:item1`,
+                        price: 500, //starting price
+                        time: 7200,
+                        by:'dale' 
+                    }],
+                    node: config.username,
+                    VERSION
+                }, null, 3))
+    } catch (e) { res.send('Something went wrong') }
+}
+
+exports.set = (req, res, next) => {
+    try {
+        let set = req.params.set
+        res.setHeader('Content-Type', 'application/json')
+        res.send(JSON.stringify({
+                    set: { //5 plus set name bytes
+                            "author":"author", //the account that pays the set fee, --23 bytes
+                            "script":"QmWCeBSjzeBC8Q9dDhF7ZcHxozgkv9d6XdwSMT7pVwytr5", //build app hash --53bytes
+                            "issued":2, //issued counter for IDs -6bytes
+                            "max":6, //max issue -6-10bytes
+                            "name":"bees", //name of set, 7+ bytes
+                            "royalty": 0, // 8 bytes
+                            "type":1, // 5bytes
+                            "link":"author/permlink", //count bytes ~50
+                            "base":['ipfsNeuterpng', 'ipfsMalePNG', 'ipfsFemalePNG'], //base "hash,hash,hash" <- assemble array at run time, save bytes, and likely works better with db handler
+                            "uniques":[`01_owner`], //unique
+                            "characteristics":[
+                                [['ipfsLayer1PNGa'],['ipfsLayer1PNGb']], //<- and allows for base64 storage of ints 
+                                [['ipfsLayer2PNGa'],['ipfsLayer2PNGb'],['ipfsLayer2PNGc']]    
+                            ], //characteristics of layers ... count bytes... 
+                        },
+                    node: config.username,
+                    VERSION
+                }, null, 3))
+    } catch (e) { res.send('Something went wrong') }
+}
+
+exports.item = (req, res, next) => {
+    try {
+        let item = req.params.item,
+            set = item.split(':')[0]
+            nft = item.split(':')[1]
+        res.setHeader('Content-Type', 'application/json')
+        res.send(JSON.stringify({
+                    item: {
+                        unique: nft,
+                        last_modified: Base64.toNumber('4AAAA'),
+
+                    },
+                    name: item,
+                    set: { //5 plus set name bytes
+                            "author":"author", //the account that pays the set fee, --23 bytes
+                            "script":"QmWCeBSjzeBC8Q9dDhF7ZcHxozgkv9d6XdwSMT7pVwytr5", //build app hash --53bytes
+                            "issued":0, //issued counter for IDs -6bytes
+                            "max":6, //max issue -6-10bytes
+                            "name":"bees", //name of set, 7+ bytes
+                            "royalty": 0, // 8 bytes
+                            "type":1, // 5bytes
+                            "link":"author/permlink", //count bytes ~50
+                            "base":['ipfsNeuterpng', 'ipfsMalePNG', 'ipfsFemalePNG'], //base "hash,hash,hash" <- assemble array at run time, save bytes, and likely works better with db handler
+                            "uniques":[`${item}_owner`], //unique
+                            "characteristics":[
+                                [['ipfsLayer1PNGa'],['ipfsLayer1PNGb']], //<- and allows for base64 storage of ints 
+                                [['ipfsLayer2PNGa'],['ipfsLayer2PNGb'],['ipfsLayer2PNGc']]    
+                            ], //characteristics of layers ... count bytes... 
+                        },
+                    node: config.username,
+                    VERSION
+                }, null, 3))
     } catch (e) { res.send('Something went wrong') }
 }
 
