@@ -668,7 +668,20 @@ exports.set = (req, res, next) => {
                             "type":1, // 5bytes
                             "encoding":"svg",
                             "link":"nft-research-creation-and-distribution", //count bytes ~50
-                             //characteristics of layers ... count bytes... 
+                             items: [
+                                 {UID: 'A6',
+                                owner: 'disregardfiat'},
+                                {UID: 'A7',
+                                owner: 'disregardfiat'},
+                                {UID: 'F3',
+                                owner: 'ls'},
+                                {UID: 'a3',
+                                owner: 'ls'},
+                                {UID: 'GG',
+                                owner: 'ah'},
+                                {UID: 'gg',
+                                owner: 'ah'}
+                             ]
                         },
                     node: config.username,
                     VERSION
