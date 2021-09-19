@@ -557,17 +557,23 @@ api.get('/api/auctions', API.auctions);
 api.get('/api/sales', API.sales);
 */
 
+exports.compile = (req, res, next) => {
+    let set = req.params.set,
+        item = req.params.item
+    
+}
+
 exports.nfts = (req, res, next) => {
     let user = req.params.user
     try {
         res.setHeader('Content-Type', 'application/json')
         res.send(JSON.stringify({
                     result:[{
-                        item: 'A6',
-                        set: `set1`
+                        uid: 'A6',
+                        set: `dlux`
                     },{
-                        item: 'A7',
-                        set: `set2`,
+                        uid: 'A7',
+                        set: `dlux`,
                     }],
                     user,
                     node: config.username,
@@ -581,11 +587,11 @@ exports.sets = (req, res, next) => {
         res.setHeader('Content-Type', 'application/json')
         res.send(JSON.stringify({
                     result:[{
-                        set: `set1`,
-                        name: `Bees`, 
+                        set: `dlux`,
+                        link: 'disregardfiat/nft-research-creation-and-distribution'
                     },{
-                        set: `set2`,
-                        name: `Punks`, 
+                        set: `bees`,
+                        link: 'disregardfiat/nft-research-creation-and-distribution'
                     }],
                     node: config.username,
                     VERSION
@@ -595,19 +601,23 @@ exports.sets = (req, res, next) => {
 
 exports.auctions = (req, res, next) => {
     try {
+        var auctionTimer = {}
+        auctionTimer.expiryIn = now.setHours(now.getHours() + 4);
+        auctionTimer.expiryUTC = new Date(auctionTimer.expiryIn);
+        auctionTimer.expiryString = auctionTimer.expiryUTC.toISOString().slice(0, -5);
         res.setHeader('Content-Type', 'application/json')
         res.send(JSON.stringify({
                     result:[{
-                        item: `set:item`,
+                        uid: 'GG',
+                        set: 'dlux',
                         price: 1000, //starting price
-                        time: 3600, //time in seconds
-                        bids: 12, //expires
+                        time: auctionTimer.expiryString,
                         by:'disregardfiat' 
                     },{
-                        item: `set2:item1`,
+                        uid: 'gg',
+                        set: 'dlux',
                         price: 500, //starting price
-                        time: 7200, //time in seconds
-                        bids: 2, //expires
+                        time: auctionTimer.expiryString,
                         by:'dale' 
                     }],
                     node: config.username,
@@ -618,17 +628,23 @@ exports.auctions = (req, res, next) => {
 
 exports.sales = (req, res, next) => {
     try {
+        var auctionTimer = {}
+        auctionTimer.expiryIn = now.setHours(now.getHours() + 4);
+        auctionTimer.expiryUTC = new Date(auctionTimer.expiryIn);
+        auctionTimer.expiryString = auctionTimer.expiryUTC.toISOString().slice(0, -5);
         res.setHeader('Content-Type', 'application/json')
         res.send(JSON.stringify({
                     result:[{
-                        item: `set:item`,
+                        uid: 'F3',
+                        set: 'dlux',
                         price: 1000, //starting price
-                        time: 3600,
+                        time: auctionTimer.expiryString,
                         by:'disregardfiat' 
                     },{
-                        item: `set2:item1`,
+                        uid: 'a3',
+                        set: 'dlux',
                         price: 500, //starting price
-                        time: 7200,
+                        time: auctionTimer.expiryString,
                         by:'dale' 
                     }],
                     node: config.username,
@@ -643,20 +659,16 @@ exports.set = (req, res, next) => {
         res.setHeader('Content-Type', 'application/json')
         res.send(JSON.stringify({
                     set: { //5 plus set name bytes
-                            "author":"author", //the account that pays the set fee, --23 bytes
-                            "script":"QmWCeBSjzeBC8Q9dDhF7ZcHxozgkv9d6XdwSMT7pVwytr5", //build app hash --53bytes
-                            "issued":2, //issued counter for IDs -6bytes
-                            "max":6, //max issue -6-10bytes
-                            "name":"bees", //name of set, 7+ bytes
-                            "royalty": 0, // 8 bytes
+                            "author":"disregardfiat", //the account that pays the set fee, --23 bytes
+                            "script":"QmPsxgySUZibuojuUWCMQJpT2uZhijY4Cf7tuJKR8gpZqq", //build app hash --53bytes
+                            "issued":4000, //issued counter for IDs -6bytes
+                            "max":4096, //max issue -6-10bytes
+                            "set":"dlux", //name of set, 7+ bytes
+                            "royalty": 100, // 8 bytes
                             "type":1, // 5bytes
-                            "link":"author/permlink", //count bytes ~50
-                            "base":['ipfsNeuterpng', 'ipfsMalePNG', 'ipfsFemalePNG'], //base "hash,hash,hash" <- assemble array at run time, save bytes, and likely works better with db handler
-                            "uniques":[`01_owner`], //unique
-                            "characteristics":[
-                                [['ipfsLayer1PNGa'],['ipfsLayer1PNGb']], //<- and allows for base64 storage of ints 
-                                [['ipfsLayer2PNGa'],['ipfsLayer2PNGb'],['ipfsLayer2PNGc']]    
-                            ], //characteristics of layers ... count bytes... 
+                            "encoding":"svg",
+                            "link":"nft-research-creation-and-distribution", //count bytes ~50
+                             //characteristics of layers ... count bytes... 
                         },
                     node: config.username,
                     VERSION
@@ -672,26 +684,22 @@ exports.item = (req, res, next) => {
         res.setHeader('Content-Type', 'application/json')
         res.send(JSON.stringify({
                     item: {
-                        unique: nft,
+                        uid: nft,
+                        set: set,
                         last_modified: Base64.toNumber('4AAAA'),
 
                     },
-                    name: item,
                     set: { //5 plus set name bytes
-                            "author":"author", //the account that pays the set fee, --23 bytes
-                            "script":"QmWCeBSjzeBC8Q9dDhF7ZcHxozgkv9d6XdwSMT7pVwytr5", //build app hash --53bytes
-                            "issued":0, //issued counter for IDs -6bytes
-                            "max":6, //max issue -6-10bytes
-                            "name":"bees", //name of set, 7+ bytes
-                            "royalty": 0, // 8 bytes
+                            "author":"disregardfiat", //the account that pays the set fee, --23 bytes
+                            "script":"QmPsxgySUZibuojuUWCMQJpT2uZhijY4Cf7tuJKR8gpZqq", //build app hash --53bytes
+                            "issued":4000, //issued counter for IDs -6bytes
+                            "max":4096, //max issue -6-10bytes
+                            "set":"dlux", //name of set, 7+ bytes
+                            "royalty": 100, // 8 bytes
                             "type":1, // 5bytes
-                            "link":"author/permlink", //count bytes ~50
-                            "base":['ipfsNeuterpng', 'ipfsMalePNG', 'ipfsFemalePNG'], //base "hash,hash,hash" <- assemble array at run time, save bytes, and likely works better with db handler
-                            "uniques":[`${item}_owner`], //unique
-                            "characteristics":[
-                                [['ipfsLayer1PNGa'],['ipfsLayer1PNGb']], //<- and allows for base64 storage of ints 
-                                [['ipfsLayer2PNGa'],['ipfsLayer2PNGb'],['ipfsLayer2PNGc']]    
-                            ], //characteristics of layers ... count bytes... 
+                            "encoding":"svg",
+                            "link":"nft-research-creation-and-distribution", //count bytes ~50
+                             //characteristics of layers ... count bytes... 
                         },
                     node: config.username,
                     VERSION
