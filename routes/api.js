@@ -661,7 +661,7 @@ exports.set = (req, res, next) => {
                     set: { //5 plus set name bytes
                             "author":"disregardfiat", //the account that pays the set fee, --23 bytes
                             "script":"QmPsxgySUZibuojuUWCMQJpT2uZhijY4Cf7tuJKR8gpZqq", //build app hash --53bytes
-                            "issued":4000, //issued counter for IDs -6bytes
+                            "issued":6, //issued counter for IDs -6bytes
                             "max":4096, //max issue -6-10bytes
                             "set":"dlux", //name of set, 7+ bytes
                             "royalty": 100, // 8 bytes
@@ -669,17 +669,17 @@ exports.set = (req, res, next) => {
                             "encoding":"svg",
                             "link":"nft-research-creation-and-distribution", //count bytes ~50
                              items: [
-                                 {UID: 'A6',
+                                 {uid: 'A6',
                                 owner: 'disregardfiat'},
-                                {UID: 'A7',
+                                {uid: 'A7',
                                 owner: 'disregardfiat'},
-                                {UID: 'F3',
+                                {uid: 'F3',
                                 owner: 'ls'},
-                                {UID: 'a3',
+                                {uid: 'a3',
                                 owner: 'ls'},
-                                {UID: 'GG',
+                                {uid: 'GG',
                                 owner: 'ah'},
-                                {UID: 'gg',
+                                {uid: 'gg',
                                 owner: 'ah'}
                              ]
                         },
