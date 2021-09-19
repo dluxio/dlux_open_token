@@ -602,6 +602,7 @@ exports.sets = (req, res, next) => {
 exports.auctions = (req, res, next) => {
     try {
         var auctionTimer = {}
+        let now = new Date();
         auctionTimer.expiryIn = now.setHours(now.getHours() + 4);
         auctionTimer.expiryUTC = new Date(auctionTimer.expiryIn);
         auctionTimer.expiryString = auctionTimer.expiryUTC.toISOString().slice(0, -5);
@@ -623,12 +624,13 @@ exports.auctions = (req, res, next) => {
                     node: config.username,
                     VERSION
                 }, null, 3))
-    } catch (e) { res.send('Something went wrong') }
+    } catch (e) { res.send(e) }
 }
 
 exports.sales = (req, res, next) => {
     try {
         var auctionTimer = {}
+        let now = new Date();
         auctionTimer.expiryIn = now.setHours(now.getHours() + 4);
         auctionTimer.expiryUTC = new Date(auctionTimer.expiryIn);
         auctionTimer.expiryString = auctionTimer.expiryUTC.toISOString().slice(0, -5);
@@ -652,7 +654,7 @@ exports.sales = (req, res, next) => {
                     node: config.username,
                     VERSION
                 }, null, 3))
-    } catch (e) { res.send('Something went wrong') }
+    } catch (e) { res.send(e) }
 }
 
 exports.set = (req, res, next) => {
@@ -662,16 +664,22 @@ exports.set = (req, res, next) => {
         res.send(JSON.stringify({
                 result:[
                                  {uid: 'A6',
+                                 set: 'dlux',
                                 owner: 'disregardfiat'},
                                 {uid: 'A7',
+                                 set: 'dlux',
                                 owner: 'disregardfiat'},
                                 {uid: 'F3',
+                                 set: 'dlux',
                                 owner: 'ls'},
                                 {uid: 'a3',
+                                 set: 'dlux',
                                 owner: 'ls'},
                                 {uid: 'GG',
+                                 set: 'dlux',
                                 owner: 'ah'},
                                 {uid: 'gg',
+                                 set: 'dlux',
                                 owner: 'ah'}
                              ],
                     set: { //5 plus set name bytes
