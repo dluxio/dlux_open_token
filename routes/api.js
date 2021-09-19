@@ -639,12 +639,14 @@ exports.sales = (req, res, next) => {
                         set: 'dlux',
                         price: 1000, //starting price
                         time: auctionTimer.expiryString,
+                        bids: 12,
                         by:'disregardfiat' 
                     },{
                         uid: 'a3',
                         set: 'dlux',
                         price: 500, //starting price
                         time: auctionTimer.expiryString,
+                        bids: 6,
                         by:'dale' 
                     }],
                     node: config.username,
@@ -658,17 +660,7 @@ exports.set = (req, res, next) => {
         let set = req.params.set
         res.setHeader('Content-Type', 'application/json')
         res.send(JSON.stringify({
-                    set: { //5 plus set name bytes
-                            "author":"disregardfiat", //the account that pays the set fee, --23 bytes
-                            "script":"QmPsxgySUZibuojuUWCMQJpT2uZhijY4Cf7tuJKR8gpZqq", //build app hash --53bytes
-                            "issued":6, //issued counter for IDs -6bytes
-                            "max":4096, //max issue -6-10bytes
-                            "set":"dlux", //name of set, 7+ bytes
-                            "royalty": 100, // 8 bytes
-                            "type":1, // 5bytes
-                            "encoding":"svg",
-                            "link":"nft-research-creation-and-distribution", //count bytes ~50
-                             items: [
+                result:[
                                  {uid: 'A6',
                                 owner: 'disregardfiat'},
                                 {uid: 'A7',
@@ -681,7 +673,17 @@ exports.set = (req, res, next) => {
                                 owner: 'ah'},
                                 {uid: 'gg',
                                 owner: 'ah'}
-                             ]
+                             ],
+                    set: { //5 plus set name bytes
+                            "author":"disregardfiat", //the account that pays the set fee, --23 bytes
+                            "script":"QmPsxgySUZibuojuUWCMQJpT2uZhijY4Cf7tuJKR8gpZqq", //build app hash --53bytes
+                            "issued":6, //issued counter for IDs -6bytes
+                            "max":4096, //max issue -6-10bytes
+                            "set":"dlux", //name of set, 7+ bytes
+                            "royalty": 100, // 8 bytes
+                            "type":1, // 5bytes
+                            "encoding":"svg",
+                            "link":"nft-research-creation-and-distribution"
                         },
                     node: config.username,
                     VERSION
