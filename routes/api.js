@@ -684,7 +684,7 @@ exports.set = (req, res, next) => {
                              ],
                     set: { //5 plus set name bytes
                             "author":"disregardfiat", //the account that pays the set fee, --23 bytes
-                            "script":"QmSgK9hQoQDCKPSmtGTgj9GLYvQKp2Xz2WuP5sBFr1Co5e", //build app hash --53bytes
+                            "script":"QmXdXf72ZmgXCua4s3sb4qmWoDdrwEkJbLT7HFHLJMH15W", //build app hash --53bytes
                             "issued":6, //issued counter for IDs -6bytes
                             "max":4096, //max issue -6-10bytes
                             "set":"dlux", //name of set, 7+ bytes
@@ -714,7 +714,7 @@ exports.item = (req, res, next) => {
                     },
                     set: { //5 plus set name bytes
                             "author":"disregardfiat", //the account that pays the set fee, --23 bytes
-                            "script":"QmSgK9hQoQDCKPSmtGTgj9GLYvQKp2Xz2WuP5sBFr1Co5e", //build app hash --53bytes
+                            "script":"QmXdXf72ZmgXCua4s3sb4qmWoDdrwEkJbLT7HFHLJMH15W", //build app hash --53bytes
                             "issued":4000, //issued counter for IDs -6bytes
                             "max":4096, //max issue -6-10bytes
                             "set":"dlux", //name of set, 7+ bytes
