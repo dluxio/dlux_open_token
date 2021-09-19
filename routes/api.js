@@ -570,10 +570,12 @@ exports.nfts = (req, res, next) => {
         res.send(JSON.stringify({
                     result:[{
                         uid: 'A6',
-                        set: `dlux`
+                        set: `dlux`,
+                        script: 'QmYW6yW84BFPhC2XJ5kWnwBPzAqLUPLJeT66AL7qhzRBxW'
                     },{
                         uid: 'A7',
                         set: `dlux`,
+                        script: 'QmYW6yW84BFPhC2XJ5kWnwBPzAqLUPLJeT66AL7qhzRBxW'
                     }],
                     user,
                     node: config.username,
@@ -588,10 +590,12 @@ exports.sets = (req, res, next) => {
         res.send(JSON.stringify({
                     result:[{
                         set: `dlux`,
-                        link: 'disregardfiat/nft-research-creation-and-distribution'
+                        link: 'disregardfiat/nft-research-creation-and-distribution',
+                        script: 'QmYW6yW84BFPhC2XJ5kWnwBPzAqLUPLJeT66AL7qhzRBxW'
                     },{
                         set: `bees`,
-                        link: 'disregardfiat/nft-research-creation-and-distribution'
+                        link: 'disregardfiat/nft-research-creation-and-distribution',
+                        script: 'QmYW6yW84BFPhC2XJ5kWnwBPzAqLUPLJeT66AL7qhzRBxW'
                     }],
                     node: config.username,
                     VERSION
@@ -613,13 +617,15 @@ exports.auctions = (req, res, next) => {
                         set: 'dlux',
                         price: 1000, //starting price
                         time: auctionTimer.expiryString,
-                        by:'disregardfiat' 
+                        by:'disregardfiat',
+                        script: 'QmYW6yW84BFPhC2XJ5kWnwBPzAqLUPLJeT66AL7qhzRBxW'
                     },{
                         uid: 'gg',
                         set: 'dlux',
                         price: 500, //starting price
                         time: auctionTimer.expiryString,
-                        by:'dale' 
+                        by:'dale',
+                        script: 'QmYW6yW84BFPhC2XJ5kWnwBPzAqLUPLJeT66AL7qhzRBxW'
                     }],
                     node: config.username,
                     VERSION
@@ -642,14 +648,16 @@ exports.sales = (req, res, next) => {
                         price: 1000, //starting price
                         time: auctionTimer.expiryString,
                         bids: 12,
-                        by:'disregardfiat' 
+                        by:'disregardfiat',
+                        script: 'QmYW6yW84BFPhC2XJ5kWnwBPzAqLUPLJeT66AL7qhzRBxW'
                     },{
                         uid: 'a3',
                         set: 'dlux',
                         price: 500, //starting price
                         time: auctionTimer.expiryString,
                         bids: 6,
-                        by:'dale' 
+                        by:'dale',
+                        script: 'QmYW6yW84BFPhC2XJ5kWnwBPzAqLUPLJeT66AL7qhzRBxW'
                     }],
                     node: config.username,
                     VERSION
@@ -663,28 +671,34 @@ exports.set = (req, res, next) => {
         res.setHeader('Content-Type', 'application/json')
         res.send(JSON.stringify({
                 result:[
-                                 {uid: 'A6',
-                                 set: 'dlux',
-                                owner: 'disregardfiat'},
-                                {uid: 'A7',
-                                 set: 'dlux',
-                                owner: 'disregardfiat'},
-                                {uid: 'F3',
-                                 set: 'dlux',
-                                owner: 'ls'},
-                                {uid: 'a3',
-                                 set: 'dlux',
-                                owner: 'ls'},
-                                {uid: 'GG',
-                                 set: 'dlux',
-                                owner: 'ah'},
-                                {uid: 'gg',
-                                 set: 'dlux',
-                                owner: 'ah'}
-                             ],
+                        {uid: 'A6',
+                        set: 'dlux',
+                        owner: 'disregardfiat',
+                        script: 'QmYW6yW84BFPhC2XJ5kWnwBPzAqLUPLJeT66AL7qhzRBxW'},
+                        {uid: 'A7',
+                            set: 'dlux',
+                        owner: 'disregardfiat',
+                        script: 'QmYW6yW84BFPhC2XJ5kWnwBPzAqLUPLJeT66AL7qhzRBxW'},
+                        {uid: 'F3',
+                            set: 'dlux',
+                        owner: 'ls',
+                        script: 'QmYW6yW84BFPhC2XJ5kWnwBPzAqLUPLJeT66AL7qhzRBxW'},
+                        {uid: 'a3',
+                            set: 'dlux',
+                        owner: 'ls',
+                        script: 'QmYW6yW84BFPhC2XJ5kWnwBPzAqLUPLJeT66AL7qhzRBxW'},
+                        {uid: 'GG',
+                            set: 'dlux',
+                        owner: 'ah',
+                        script: 'QmYW6yW84BFPhC2XJ5kWnwBPzAqLUPLJeT66AL7qhzRBxW'},
+                        {uid: 'gg',
+                            set: 'dlux',
+                        owner: 'ah',
+                        script: 'QmYW6yW84BFPhC2XJ5kWnwBPzAqLUPLJeT66AL7qhzRBxW'}
+                        ],
                     set: { //5 plus set name bytes
                             "author":"disregardfiat", //the account that pays the set fee, --23 bytes
-                            "script":"QmXdXf72ZmgXCua4s3sb4qmWoDdrwEkJbLT7HFHLJMH15W", //build app hash --53bytes
+                            "script":"QmYW6yW84BFPhC2XJ5kWnwBPzAqLUPLJeT66AL7qhzRBxW", //build app hash --53bytes
                             "issued":6, //issued counter for IDs -6bytes
                             "max":4096, //max issue -6-10bytes
                             "set":"dlux", //name of set, 7+ bytes
@@ -714,7 +728,7 @@ exports.item = (req, res, next) => {
                     },
                     set: { //5 plus set name bytes
                             "author":"disregardfiat", //the account that pays the set fee, --23 bytes
-                            "script":"QmXdXf72ZmgXCua4s3sb4qmWoDdrwEkJbLT7HFHLJMH15W", //build app hash --53bytes
+                            "script":"QmYW6yW84BFPhC2XJ5kWnwBPzAqLUPLJeT66AL7qhzRBxW", //build app hash --53bytes
                             "issued":4000, //issued counter for IDs -6bytes
                             "max":4096, //max issue -6-10bytes
                             "set":"dlux", //name of set, 7+ bytes
