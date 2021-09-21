@@ -61,13 +61,13 @@ if (window.addEventListener) {
         }, "*");
     }
     }
-function onLoad(){
+function onLoad(id){
     window.parent.postMessage({
         'func': 'loaded',
-        'message': 'dlux'
+        'message': id
         }, "*");
 }
 //</script>
 */
 //</head>
-//<body id="body">Append ?NFT_UID to the address bar to see that NFT. "...html?A6"<script>const uid = location.href.split('?')[1]; if(uid){compile(uid, true)}else{onLoad()}</script></body></html>
+//<body id="body">Append ?NFT_UID to the address bar to see that NFT. "...html?A6"<script>const uid = location.href.split('?')[1]; if(uid){compile(uid, true)}else{onLoad(uid)}</script></body></html>

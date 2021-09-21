@@ -615,16 +615,28 @@ exports.auctions = (req, res, next) => {
                     result:[{
                         uid: 'GG',
                         set: 'dlux',
-                        price: 1000, //starting price
+                        price: {
+                            amount: 1500,
+                            precision: 3,
+                            token: 'DLUX'
+                        }, //starting price
                         time: auctionTimer.expiryString,
                         by:'disregardfiat',
+                        bids: 12,
+                        bidder: 'you',
                         script: 'QmYW6yW84BFPhC2XJ5kWnwBPzAqLUPLJeT66AL7qhzRBxW'
                     },{
                         uid: 'gg',
                         set: 'dlux',
-                        price: 500, //starting price
+                        price: {
+                            amount: 500,
+                            precision: 3,
+                            token: 'DLUX'
+                        }, //starting price
                         time: auctionTimer.expiryString,
                         by:'dale',
+                        bids: 6,
+                        bidder: 'not-you',
                         script: 'QmYW6yW84BFPhC2XJ5kWnwBPzAqLUPLJeT66AL7qhzRBxW'
                     }],
                     node: config.username,
@@ -645,17 +657,23 @@ exports.sales = (req, res, next) => {
                     result:[{
                         uid: 'F3',
                         set: 'dlux',
-                        price: 1000, //starting price
+                        price: {
+                            amount: 1000,
+                            precision: 3,
+                            token: 'DLUX'
+                        }, //starting price
                         time: auctionTimer.expiryString,
-                        bids: 12,
                         by:'disregardfiat',
                         script: 'QmYW6yW84BFPhC2XJ5kWnwBPzAqLUPLJeT66AL7qhzRBxW'
                     },{
                         uid: 'a3',
                         set: 'dlux',
-                        price: 500, //starting price
+                        price: {
+                            amount: 500,
+                            precision: 3,
+                            token: 'DLUX'
+                        }, //starting price
                         time: auctionTimer.expiryString,
-                        bids: 6,
                         by:'dale',
                         script: 'QmYW6yW84BFPhC2XJ5kWnwBPzAqLUPLJeT66AL7qhzRBxW'
                     }],
