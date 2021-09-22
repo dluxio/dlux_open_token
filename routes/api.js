@@ -577,6 +577,7 @@ exports.nfts = (req, res, next) => {
                         set: `dlux`,
                         script: 'QmYW6yW84BFPhC2XJ5kWnwBPzAqLUPLJeT66AL7qhzRBxW'
                     }],
+                    mint_tokens: [{set:'dlux'},{set:'dlux'}],
                     user,
                     node: config.username,
                     VERSION
@@ -645,6 +646,71 @@ exports.auctions = (req, res, next) => {
     } catch (e) { res.send(e) }
 }
 
+
+exports.mint_auctions = (req, res, next) => {
+    try {
+        var auctionTimer = {}
+        let now = new Date();
+        auctionTimer.expiryIn = now.setHours(now.getHours() + 4);
+        auctionTimer.expiryUTC = new Date(auctionTimer.expiryIn);
+        auctionTimer.expiryString = auctionTimer.expiryUTC.toISOString().slice(0, -5);
+        res.setHeader('Content-Type', 'application/json')
+        res.send(JSON.stringify({
+                    result: [[{
+                        set: 'dlux',
+                        price: {
+                            amount: 2100,
+                            precision: 3,
+                            token: 'DLUX'
+                        }, //starting price
+                        time: auctionTimer.expiryString,
+                        by:'dale',
+                        bids: 3,
+                        bidder: 'not-you',
+                        script: 'QmYW6yW84BFPhC2XJ5kWnwBPzAqLUPLJeT66AL7qhzRBxW'
+                    },{
+                        set: 'dlux',
+                        price: {
+                            amount: 2000,
+                            precision: 3,
+                            token: 'DLUX'
+                        }, //starting price
+                        time: auctionTimer.expiryString,
+                        by:'dale',
+                        bids: 9,
+                        bidder: 'not-you',
+                        script: 'QmYW6yW84BFPhC2XJ5kWnwBPzAqLUPLJeT66AL7qhzRBxW'
+                    }],[{
+                        set: 'bees',
+                        price: {
+                            amount: 200,
+                            precision: 3,
+                            token: 'DLUX'
+                        }, //starting price
+                        time: auctionTimer.expiryString,
+                        by:'dale',
+                        bids: 3,
+                        bidder: 'not-you',
+                        script: 'QmYW6yW84BFPhC2XJ5kWnwBPzAqLUPLJeT66AL7qhzRBxW'
+                    },{
+                        set: 'bees',
+                        price: {
+                            amount: 3000,
+                            precision: 3,
+                            token: 'DLUX'
+                        }, //starting price
+                        time: auctionTimer.expiryString,
+                        by:'dale',
+                        bids: 9,
+                        bidder: 'not-you',
+                        script: 'QmYW6yW84BFPhC2XJ5kWnwBPzAqLUPLJeT66AL7qhzRBxW'
+                    }]],
+                    node: config.username,
+                    VERSION
+                }, null, 3))
+    } catch (e) { res.send(e) }
+}
+
 exports.sales = (req, res, next) => {
     try {
         var auctionTimer = {}
@@ -677,6 +743,54 @@ exports.sales = (req, res, next) => {
                         by:'dale',
                         script: 'QmYW6yW84BFPhC2XJ5kWnwBPzAqLUPLJeT66AL7qhzRBxW'
                     }],
+                    mint:[[
+                        {
+                        set: 'dlux',
+                        price: {
+                            amount: 25000,
+                            precision: 3,
+                            token: 'DLUX'
+                        }, //starting price
+                        time: auctionTimer.expiryString,
+                        by:'dale',
+                        script: 'QmYW6yW84BFPhC2XJ5kWnwBPzAqLUPLJeT66AL7qhzRBxW'
+                        },
+                        {
+                        set: 'dlux',
+                        price: {
+                            amount: 75000,
+                            precision: 3,
+                            token: 'DLUX'
+                        }, //starting price
+                        time: auctionTimer.expiryString,
+                        by:'dale',
+                        script: 'QmYW6yW84BFPhC2XJ5kWnwBPzAqLUPLJeT66AL7qhzRBxW'
+                        } 
+                    ],[{
+                        set: 'bees',
+                        price: {
+                            amount: 400,
+                            precision: 3,
+                            token: 'DLUX'
+                        }, //starting price
+                        time: auctionTimer.expiryString,
+                        by:'dale',
+                        bids: 3,
+                        bidder: 'not-you',
+                        script: 'QmYW6yW84BFPhC2XJ5kWnwBPzAqLUPLJeT66AL7qhzRBxW'
+                    },{
+                        set: 'bees',
+                        price: {
+                            amount: 450,
+                            precision: 3,
+                            token: 'DLUX'
+                        }, //starting price
+                        time: auctionTimer.expiryString,
+                        by:'dale',
+                        bids: 9,
+                        bidder: 'not-you',
+                        script: 'QmYW6yW84BFPhC2XJ5kWnwBPzAqLUPLJeT66AL7qhzRBxW'
+                    }]],
                     node: config.username,
                     VERSION
                 }, null, 3))
@@ -723,7 +837,12 @@ exports.set = (req, res, next) => {
                             "royalty": 100, // 8 bytes
                             "type":1, // 5bytes
                             "encoding":"svg",
-                            "link":"nft-research-creation-and-distribution"
+                            "link":"nft-research-creation-and-distribution",
+                            "bond":{
+                                amount: 100000,
+                                precision: 3,
+                                token: 'DLUX'
+                            }
                         },
                     node: config.username,
                     VERSION

@@ -97,6 +97,7 @@ api.get('/api/nft/:item', API.item);
 api.get('/api/sets', API.sets);
 api.get('/api/set/:set', API.set);
 api.get('/api/auctions', API.auctions);
+api.get('/api/mintauctions', API.mint_auctions);
 api.get('/api/sales', API.sales);
 api.get('/@:un', API.user);
 api.get('/blog/@:un', API.blog);
