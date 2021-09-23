@@ -665,7 +665,7 @@ exports.mint_auctions = (req, res, next) => {
         auctionTimer.expiryString = auctionTimer.expiryUTC.toISOString().slice(0, -5);
         res.setHeader('Content-Type', 'application/json')
         res.send(JSON.stringify({
-                    result: [[
+                    result: [
                         {
                         set: 'dlux',
                         items:[
@@ -711,7 +711,7 @@ exports.mint_auctions = (req, res, next) => {
                         ],
                         script: 'QmYW6yW84BFPhC2XJ5kWnwBPzAqLUPLJeT66AL7qhzRBxW'
                         } 
-                    ]],
+                    ],
                     node: config.username,
                     VERSION
                 }, null, 3))
