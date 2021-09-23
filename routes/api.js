@@ -577,7 +577,16 @@ exports.nfts = (req, res, next) => {
                         set: `dlux`,
                         script: 'QmYW6yW84BFPhC2XJ5kWnwBPzAqLUPLJeT66AL7qhzRBxW'
                     }],
-                    mint_tokens: [{set:'dlux'},{set:'dlux'}],
+                    mint_tokens: [
+                        {set:'dlux', 
+                        qty:4, 
+                        type:1,
+                        script: 'QmYW6yW84BFPhC2XJ5kWnwBPzAqLUPLJeT66AL7qhzRBxW'
+                    },{set:'bees', 
+                        qty:1, 
+                        type:1,
+                        script: 'QmYW6yW84BFPhC2XJ5kWnwBPzAqLUPLJeT66AL7qhzRBxW'
+                    }],
                     user,
                     node: config.username,
                     VERSION
@@ -656,55 +665,53 @@ exports.mint_auctions = (req, res, next) => {
         auctionTimer.expiryString = auctionTimer.expiryUTC.toISOString().slice(0, -5);
         res.setHeader('Content-Type', 'application/json')
         res.send(JSON.stringify({
-                    result: [[{
+                    result: [[
+                        {
                         set: 'dlux',
-                        price: {
-                            amount: 2100,
-                            precision: 3,
-                            token: 'DLUX'
-                        }, //starting price
-                        time: auctionTimer.expiryString,
-                        by:'dale',
-                        bids: 3,
-                        bidder: 'not-you',
+                        items:[
+                            {price: {
+                                amount: 75000,
+                                precision: 3,
+                                token: 'DLUX'
+                            },
+                            time: auctionTimer.expiryString,
+                            by:'dale',
+                            bids: 2,
+                            bidder: 'not-you',
+                            },
+                            {price: {
+                                amount: 76000,
+                                precision: 3,
+                                token: 'DLUX'
+                                },
+                            time: auctionTimer.expiryString,
+                            by:'carl',
+                            bids: 1,
+                            bidder: 'you'},
+                        ],
                         script: 'QmYW6yW84BFPhC2XJ5kWnwBPzAqLUPLJeT66AL7qhzRBxW'
-                    },{
-                        set: 'dlux',
-                        price: {
-                            amount: 2000,
-                            precision: 3,
-                            token: 'DLUX'
-                        }, //starting price
-                        time: auctionTimer.expiryString,
-                        by:'dale',
-                        bids: 9,
-                        bidder: 'not-you',
-                        script: 'QmYW6yW84BFPhC2XJ5kWnwBPzAqLUPLJeT66AL7qhzRBxW'
-                    }],[{
+                        },
+                        {
                         set: 'bees',
-                        price: {
-                            amount: 200,
-                            precision: 3,
-                            token: 'DLUX'
-                        }, //starting price
-                        time: auctionTimer.expiryString,
-                        by:'dale',
-                        bids: 3,
-                        bidder: 'not-you',
+                        items: [
+                            {price:{
+                                amount: 400,
+                                precision: 3,
+                                token: 'DLUX'
+                            },
+                            time: auctionTimer.expiryString,
+                            by:'dale'},
+                            {price:{
+                                amount: 500,
+                                precision: 3,
+                                token: 'DLUX'
+                            },
+                            time: auctionTimer.expiryString,
+                            by:'dale'},
+                        ],
                         script: 'QmYW6yW84BFPhC2XJ5kWnwBPzAqLUPLJeT66AL7qhzRBxW'
-                    },{
-                        set: 'bees',
-                        price: {
-                            amount: 3000,
-                            precision: 3,
-                            token: 'DLUX'
-                        }, //starting price
-                        time: auctionTimer.expiryString,
-                        by:'dale',
-                        bids: 9,
-                        bidder: 'not-you',
-                        script: 'QmYW6yW84BFPhC2XJ5kWnwBPzAqLUPLJeT66AL7qhzRBxW'
-                    }]],
+                        } 
+                    ]],
                     node: config.username,
                     VERSION
                 }, null, 3))
@@ -746,51 +753,45 @@ exports.sales = (req, res, next) => {
                     mint:[[
                         {
                         set: 'dlux',
-                        price: {
-                            amount: 25000,
-                            precision: 3,
-                            token: 'DLUX'
-                        }, //starting price
-                        time: auctionTimer.expiryString,
-                        by:'dale',
+                        items:[
+                            {price: {
+                                amount: 75000,
+                                precision: 3,
+                                token: 'DLUX'
+                            },
+                            time: auctionTimer.expiryString,
+                            by:'dale'},
+                            {price: {
+                                amount: 76000,
+                                precision: 3,
+                                token: 'DLUX'
+                                },
+                            time: auctionTimer.expiryString,
+                            by:'carl'}
+                        ],
                         script: 'QmYW6yW84BFPhC2XJ5kWnwBPzAqLUPLJeT66AL7qhzRBxW'
                         },
                         {
-                        set: 'dlux',
-                        price: {
-                            amount: 75000,
-                            precision: 3,
-                            token: 'DLUX'
-                        }, //starting price
-                        time: auctionTimer.expiryString,
-                        by:'dale',
+                        set: 'bees',
+                        items: [
+                            {price:{
+                                amount: 400,
+                                precision: 3,
+                                token: 'DLUX'
+                            },
+                            time: auctionTimer.expiryString,
+                            by:'dale'},
+                            {price:{
+                                amount: 500,
+                                precision: 3,
+                                token: 'DLUX'
+                            },
+                            time: auctionTimer.expiryString,
+                            by:'dale'},
+                        ],
                         script: 'QmYW6yW84BFPhC2XJ5kWnwBPzAqLUPLJeT66AL7qhzRBxW'
                         } 
-                    ],[{
-                        set: 'bees',
-                        price: {
-                            amount: 400,
-                            precision: 3,
-                            token: 'DLUX'
-                        }, //starting price
-                        time: auctionTimer.expiryString,
-                        by:'dale',
-                        bids: 3,
-                        bidder: 'not-you',
-                        script: 'QmYW6yW84BFPhC2XJ5kWnwBPzAqLUPLJeT66AL7qhzRBxW'
-                    },{
-                        set: 'bees',
-                        price: {
-                            amount: 450,
-                            precision: 3,
-                            token: 'DLUX'
-                        }, //starting price
-                        time: auctionTimer.expiryString,
-                        by:'dale',
-                        bids: 9,
-                        bidder: 'not-you',
-                        script: 'QmYW6yW84BFPhC2XJ5kWnwBPzAqLUPLJeT66AL7qhzRBxW'
-                    }]],
+                    ]],
                     node: config.username,
                     VERSION
                 }, null, 3))
