@@ -47,7 +47,6 @@ Pathwise.prototype._write = function(batch, key, obj, fn) {
 
 Pathwise.prototype.batch = function(ops, pc) { // promise chain[resolve(), reject(), info]
     var self = this;
-    console.log(ops)
     var batch = this._db.batch();
     var next = after(ops.length, function(err) {
         if (err && pc[1]) {
