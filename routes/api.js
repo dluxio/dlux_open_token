@@ -754,7 +754,8 @@ exports.sales = (req, res, next) => {
                         {
                         set: 'dlux',
                         items:[
-                            {price: {
+                            {
+                                price: {
                                 amount: 75000,
                                 precision: 3,
                                 token: 'DLUX'
@@ -834,6 +835,7 @@ exports.set = (req, res, next) => {
                             "script":"QmYW6yW84BFPhC2XJ5kWnwBPzAqLUPLJeT66AL7qhzRBxW", //build app hash --53bytes
                             "issued":6, //issued counter for IDs -6bytes
                             "max":4096, //max issue -6-10bytes
+                            "min":0,
                             "set":"dlux", //name of set, 7+ bytes
                             "royalty": 100, // 8 bytes
                             "type":1, // 5bytes
