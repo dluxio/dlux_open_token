@@ -348,20 +348,21 @@ exports.dex = (req, res, next) => {
     res.setHeader('Content-Type', 'application/json');
     Promise.all([dex, queue])
         .then(function(v) {
+            var markets = v[0]
             for(item in v[0].hive.sellOrders){
-                v[0].hive.sellOrders.key = item
+                markets.hive.sellOrders.key = item
             }
             for(item in v[0].hive.buyOrders){
-                v[0].hive.buyOrders.key = item
+                markets.hive.buyOrders.key = item
             }
             for(item in v[0].hbd.sellOrders){
-                v[0].hbd.sellOrders.key = item
+                markets.hbd.sellOrders.key = item
             }
             for(item in v[0].hbd.buyOrders){
-                v[0].hbd.buyOrders.key = item
+                markets.hbd.buyOrders.key = item
             }
             res.send(JSON.stringify({
-                markets: v[0],
+                markets,
                 queue: v[1],
                 node: config.username,
                 VERSION
