@@ -73,7 +73,7 @@ var recents = []
 
 //Start Program Options   
 //startWith('QmNwNMVdpEZDgFug4xMLvgFwDpiXFiEXPkrDmVtEvMtNYS') //for testing and replaying
-dynStart('disregardfiat')
+dynStart('inconceivable')
 
 
 // API defs
