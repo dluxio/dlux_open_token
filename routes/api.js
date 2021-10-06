@@ -349,17 +349,25 @@ exports.dex = (req, res, next) => {
     Promise.all([dex, queue])
         .then(function(v) {
             var markets = v[0]
+            markets.hive.sells = []
+            markets.hive.buys = []
+            markets.hbd.sells = []
+            markets.hbd.buys = []
             for(item in v[0].hive.sellOrders){
                 markets.hive.sellOrders[item].key = item
+                markets.hive.sells.push(markets.hive.sellOrders[item])
             }
             for(item in v[0].hive.buyOrders){
                 markets.hive.buyOrders[item].key = item
+                markets.hive.buys.push(markets.hive.buyOrders[item])
             }
             for(item in v[0].hbd.sellOrders){
                 markets.hbd.sellOrders[item].key = item
+                markets.hbd.sells.push(markets.hbd.sellOrders[item])
             }
             for(item in v[0].hbd.buyOrders){
                 markets.hbd.buyOrders[item].key = item
+                markets.hbd.buys.push(markets.hbd.buyOrders[item])
             }
             res.send(JSON.stringify({
                 markets,
