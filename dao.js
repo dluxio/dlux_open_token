@@ -107,7 +107,7 @@ function dao(num) {
                                 bals.rm = 1000000000;
                             }
                             bals.ra = parseInt(bals.ra) - parseInt(t * stats.marketingRate / 10000);
-
+                            
                             i = 0, j = 0;
                             post = post + `${parseFloat(parseInt(bals.rm) / 1000).toFixed(3)} ${config.TOKEN} is in the Marketing Allocation.\n##### Node Rewards for Elected Reports and Escrow Transfers\n`;
                             console.log(num + `:${bals.rm} is availible in the marketing account\n${bals.rn} ${config.TOKEN} set asside to distribute to nodes`);
@@ -123,20 +123,22 @@ function dao(num) {
                                     return '@';
                                 }
                             }
-                            for (var node in mnode) { //and pay them
-                                i = parseInt(mnode[node].wins / j * b);
-                                if (bals[node]) {
-                                    bals[node] += i;
-                                } else {
-                                    bals[node] = i;
+                            if(j){
+                                for (var node in mnode) { //and pay them
+                                    i = parseInt(mnode[node].wins / j * b);
+                                    if (bals[node]) {
+                                        bals[node] += i;
+                                    } else {
+                                        bals[node] = i;
+                                    }
+                                    bals.rn -= i;
+                                    const _at = _atfun(node);
+                                    if (i) {
+                                        post = post + `* ${_at}${node} awarded ${parseFloat(i / 1000).toFixed(3)} ${config.TOKEN} for ${mnode[node].wins} credited transaction(s)\n`;
+                                        console.log(num + `:@${node} awarded ${parseFloat(i / 1000).toFixed(3)} ${config.TOKEN} for ${mnode[node].wins} credited transaction(s)`);
+                                    }
+                                    mnode[node].wins = 0;
                                 }
-                                bals.rn -= i;
-                                const _at = _atfun(node);
-                                if (i) {
-                                    post = post + `* ${_at}${node} awarded ${parseFloat(i / 1000).toFixed(3)} ${config.TOKEN} for ${mnode[node].wins} credited transaction(s)\n`;
-                                    console.log(num + `:@${node} awarded ${parseFloat(i / 1000).toFixed(3)} ${config.TOKEN} for ${mnode[node].wins} credited transaction(s)`);
-                                }
-                                mnode[node].wins = 0;
                             }
                             bals.rd += parseInt(t * stats.delegationRate / 10000); // 10% to delegators
                             post = post + `### ${parseFloat(parseInt(bals.rd) / 1000).toFixed(3)} ${config.TOKEN} set aside for @${config.delegation} delegators\n`;
@@ -377,7 +379,7 @@ function dao(num) {
                     })
                 }
             ];
-            console.log(op);
+            //console.log(op);
             daops.push({ type: 'put', path: ['dex'], data: dex });
             daops.push({ type: 'put', path: ['stats'], data: stats });
             daops.push({ type: 'put', path: ['balances'], data: bals });

@@ -349,7 +349,6 @@ exports.dex = (req, res, next) => {
     Promise.all([dex, queue])
         .then(function(v) {
             var markets = v[0]
-            console.log(v[0])
             for(item in v[0].hive.sellOrders){
                 markets.hive.sellOrders[item].key = item
             }
