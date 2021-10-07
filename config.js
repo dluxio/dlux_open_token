@@ -42,6 +42,7 @@ const clients = ENV.clients || [
 const starting_block = 49988008; //from what block does your token start
 const prefix = 'dlux_' //Community token name for Custom Json IDs
 const TOKEN = 'DLUX' //Token name
+const precision = 3 //precision of token
 const tag = 'dlux' //the fe.com/<tag>/@<leader>/<permlink>
 const jsonTokenName = 'dlux' //what customJSON in Escrows and sends is looking for
 const leader = 'dlux-io' //Default account to pull state from, will post token 
@@ -86,6 +87,7 @@ let config = {
     delegation,
     delegationWeight,
     TOKEN,
+    precision,
     tag,
     mainAPI,
     jsonTokenName,

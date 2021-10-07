@@ -357,80 +357,100 @@ exports.dex = (req, res, next) => {
                 markets.hive.sellOrders[item].key = item
                 var order = markets.hive.sellOrders[item]
                 order.hive = {
-                            amount: order.hive,
-                            precision: 3,
-                            token: 'HIVE'
-                        }
+                    amount: order.hive,
+                    precision: 3,
+                    token: 'HIVE'
+                }
                 order.hbd = {
-                            amount: order.hbd,
-                            precision: 3,
-                            token: 'HBD'
-                        }
+                    amount: order.hbd,
+                    precision: 3,
+                    token: 'HBD'
+                }
                 order.amount = {
-                            amount: order.amount,
-                            precision: 3,
-                            token: config.TOKEN
-                        }
+                    amount: order.amount,
+                    precision: config.precision,
+                    token: config.TOKEN
+                }
+                order.fee = {
+                    amount: order.fee,
+                    precision: config.precision,
+                    token: config.TOKEN
+                }
                 markets.hive.sells.push(order)
             }
             for(item in v[0].hive.buyOrders){
                 markets.hive.buyOrders[item].key = item
                 var order = markets.hive.buyOrders[item]
                 order.hive = {
-                            amount: order.hive,
-                            precision: 3,
-                            token: 'HIVE'
-                        }
+                    amount: order.hive,
+                    precision: 3,
+                    token: 'HIVE'
+                }
                 order.hbd = {
-                            amount: order.hbd,
-                            precision: 3,
-                            token: 'HBD'
-                        }
+                    amount: order.hbd,
+                    precision: 3,
+                    token: 'HBD'
+                }
                 order.amount = {
-                            amount: order.amount,
-                            precision: 3,
-                            token: config.TOKEN
-                        }
+                    amount: order.amount,
+                    precision: config.precision,
+                    token: config.TOKEN
+                }
+                order.fee = {
+                    amount: order.fee,
+                    precision: config.precision,
+                    token: config.TOKEN
+                }
                 markets.hive.buys.push(order)
             }
             for(item in v[0].hbd.sellOrders){
                 markets.hbd.sellOrders[item].key = item
                 var order = markets.hbd.sellOrders[item]
                 order.hive = {
-                            amount: order.hive,
-                            precision: 3,
-                            token: 'HIVE'
-                        }
+                    amount: order.hive,
+                    precision: 3,
+                    token: 'HIVE'
+                }
                 order.hbd = {
-                            amount: order.hbd,
-                            precision: 3,
-                            token: 'HBD'
-                        }
+                    amount: order.hbd,
+                    precision: 3,
+                    token: 'HBD'
+                }
                 order.amount = {
-                            amount: order.amount,
-                            precision: 3,
-                            token: config.TOKEN
-                        }
+                    amount: order.amount,
+                    precision: config.precision,
+                    token: config.TOKEN
+                }
+                order.fee = {
+                    amount: order.fee,
+                    precision: config.precision,
+                    token: config.TOKEN
+                }
                 markets.hbd.sells.push(order)
             }
             for(item in v[0].hbd.buyOrders){
                 markets.hbd.buyOrders[item].key = item
                 var order = markets.hbd.buyOrders[item]
                 order.hive = {
-                            amount: order.hive,
-                            precision: 3,
-                            token: 'HIVE'
-                        }
+                    amount: order.hive,
+                    precision: 3,
+                    token: 'HIVE'
+                }
                 order.hbd = {
-                            amount: order.hbd,
-                            precision: 3,
-                            token: 'HBD'
-                        }
+                    amount: order.hbd,
+                    precision: 3,
+                    token: 'HBD'
+                }
                 order.amount = {
-                            amount: order.amount,
-                            precision: 3,
-                            token: config.TOKEN
-                        }
+                    amount: order.amount,
+                    precision: config.precision,
+                    token: config.TOKEN
+                }
+                order.fee = {
+                    amount: order.fee,
+                    precision: config.precision,
+                    token: config.TOKEN
+                }
                 markets.hbd.buys.push(order)
             }
             res.send(JSON.stringify({
@@ -712,8 +732,8 @@ exports.auctions = (req, res, next) => {
                         set: 'dlux',
                         price: {
                             amount: 1500,
-                            precision: 3,
-                            token: 'DLUX'
+                            precision: config.precision,
+                            token: config.TOKEN
                         }, //starting price
                         time: auctionTimer.expiryString,
                         by:'disregardfiat',
