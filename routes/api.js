@@ -355,7 +355,10 @@ exports.dex = (req, res, next) => {
             markets.hbd.buys = []
             for(item in v[0].hive.sellOrders){
                 markets.hive.sellOrders[item].key = item
-                var order = markets.hive.sellOrders[item]
+                var order = {}
+                for (let key in markets.hive.sellOrders[item]) {
+                    order[key] = markets.hive.sellOrders[item][key];
+                }
                 order.hive = {
                     amount: order.hive,
                     precision: 3,
@@ -380,7 +383,10 @@ exports.dex = (req, res, next) => {
             }
             for(item in v[0].hive.buyOrders){
                 markets.hive.buyOrders[item].key = item
-                var order = markets.hive.buyOrders[item]
+                var order = {}
+                for (let key in markets.hive.buyOrders[item]) {
+                    order[key] = markets.hive.buyOrders[item][key];
+                }
                 order.hive = {
                     amount: order.hive,
                     precision: 3,
@@ -405,7 +411,10 @@ exports.dex = (req, res, next) => {
             }
             for(item in v[0].hbd.sellOrders){
                 markets.hbd.sellOrders[item].key = item
-                var order = markets.hbd.sellOrders[item]
+                var order = {}
+                for (let key in markets.hbd.sellOrders[item]) {
+                    order[key] = markets.hbd.sellOrders[item][key];
+                }
                 order.hive = {
                     amount: order.hive,
                     precision: 3,
@@ -430,7 +439,10 @@ exports.dex = (req, res, next) => {
             }
             for(item in v[0].hbd.buyOrders){
                 markets.hbd.buyOrders[item].key = item
-                var order = markets.hbd.buyOrders[item]
+                var order = {}
+                for (let key in markets.hbd.buyOrders[item]) {
+                    order[key] = markets.hbd.buyOrders[item][key];
+                }
                 order.hive = {
                     amount: order.hive,
                     precision: 3,
