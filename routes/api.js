@@ -355,19 +355,83 @@ exports.dex = (req, res, next) => {
             markets.hbd.buys = []
             for(item in v[0].hive.sellOrders){
                 markets.hive.sellOrders[item].key = item
-                markets.hive.sells.push(markets.hive.sellOrders[item])
+                var order = markets.hive.sellOrders[item]
+                order.hive = {
+                            amount: order.hive,
+                            precision: 3,
+                            token: 'HIVE'
+                        }
+                order.hbd = {
+                            amount: order.hbd,
+                            precision: 3,
+                            token: 'HBD'
+                        }
+                order.amount = {
+                            amount: order.amount,
+                            precision: 3,
+                            token: config.TOKEN
+                        }
+                markets.hive.sells.push(order)
             }
             for(item in v[0].hive.buyOrders){
                 markets.hive.buyOrders[item].key = item
-                markets.hive.buys.push(markets.hive.buyOrders[item])
+                var order = markets.hive.buyOrders[item]
+                order.hive = {
+                            amount: order.hive,
+                            precision: 3,
+                            token: 'HIVE'
+                        }
+                order.hbd = {
+                            amount: order.hbd,
+                            precision: 3,
+                            token: 'HBD'
+                        }
+                order.amount = {
+                            amount: order.amount,
+                            precision: 3,
+                            token: config.TOKEN
+                        }
+                markets.hive.buys.push(order)
             }
             for(item in v[0].hbd.sellOrders){
                 markets.hbd.sellOrders[item].key = item
-                markets.hbd.sells.push(markets.hbd.sellOrders[item])
+                var order = markets.hbd.sellOrders[item]
+                order.hive = {
+                            amount: order.hive,
+                            precision: 3,
+                            token: 'HIVE'
+                        }
+                order.hbd = {
+                            amount: order.hbd,
+                            precision: 3,
+                            token: 'HBD'
+                        }
+                order.amount = {
+                            amount: order.amount,
+                            precision: 3,
+                            token: config.TOKEN
+                        }
+                markets.hbd.sells.push(order)
             }
             for(item in v[0].hbd.buyOrders){
                 markets.hbd.buyOrders[item].key = item
-                markets.hbd.buys.push(markets.hbd.buyOrders[item])
+                var order = markets.hbd.buyOrders[item]
+                order.hive = {
+                            amount: order.hive,
+                            precision: 3,
+                            token: 'HIVE'
+                        }
+                order.hbd = {
+                            amount: order.hbd,
+                            precision: 3,
+                            token: 'HBD'
+                        }
+                order.amount = {
+                            amount: order.amount,
+                            precision: 3,
+                            token: config.TOKEN
+                        }
+                markets.hbd.buys.push(order)
             }
             res.send(JSON.stringify({
                 markets,
