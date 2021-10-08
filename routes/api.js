@@ -688,21 +688,21 @@ exports.nfts = (req, res, next) => {
                     result:[{
                         uid: 'A6',
                         set: `dlux`,
-                        script: 'QmYW6yW84BFPhC2XJ5kWnwBPzAqLUPLJeT66AL7qhzRBxW'
+                        script: 'QmcxXKkAQoN9vNBdpm88VUj81fvvWR7ySkjryxdNejBRnY'
                     },{
                         uid: 'A7',
                         set: `dlux`,
-                        script: 'QmYW6yW84BFPhC2XJ5kWnwBPzAqLUPLJeT66AL7qhzRBxW'
+                        script: 'QmcxXKkAQoN9vNBdpm88VUj81fvvWR7ySkjryxdNejBRnY'
                     }],
                     mint_tokens: [
                         {set:'dlux', 
                         qty:4, 
                         type:1,
-                        script: 'QmYW6yW84BFPhC2XJ5kWnwBPzAqLUPLJeT66AL7qhzRBxW'
+                        script: 'QmcxXKkAQoN9vNBdpm88VUj81fvvWR7ySkjryxdNejBRnY'
                     },{set:'bees', 
                         qty:1, 
                         type:1,
-                        script: 'QmYW6yW84BFPhC2XJ5kWnwBPzAqLUPLJeT66AL7qhzRBxW'
+                        script: 'QmcxXKkAQoN9vNBdpm88VUj81fvvWR7ySkjryxdNejBRnY'
                     }],
                     user,
                     node: config.username,
@@ -718,11 +718,11 @@ exports.sets = (req, res, next) => {
                     result:[{
                         set: `dlux`,
                         link: 'disregardfiat/nft-research-creation-and-distribution',
-                        script: 'QmYW6yW84BFPhC2XJ5kWnwBPzAqLUPLJeT66AL7qhzRBxW'
+                        script: 'QmcxXKkAQoN9vNBdpm88VUj81fvvWR7ySkjryxdNejBRnY'
                     },{
                         set: `bees`,
                         link: 'disregardfiat/nft-research-creation-and-distribution',
-                        script: 'QmYW6yW84BFPhC2XJ5kWnwBPzAqLUPLJeT66AL7qhzRBxW'
+                        script: 'QmcxXKkAQoN9vNBdpm88VUj81fvvWR7ySkjryxdNejBRnY'
                     }],
                     node: config.username,
                     VERSION
@@ -751,7 +751,7 @@ exports.auctions = (req, res, next) => {
                         by:'disregardfiat',
                         bids: 12,
                         bidder: 'you',
-                        script: 'QmYW6yW84BFPhC2XJ5kWnwBPzAqLUPLJeT66AL7qhzRBxW'
+                        script: 'QmcxXKkAQoN9vNBdpm88VUj81fvvWR7ySkjryxdNejBRnY'
                     },{
                         uid: 'gg',
                         set: 'dlux',
@@ -764,7 +764,7 @@ exports.auctions = (req, res, next) => {
                         by:'dale',
                         bids: 6,
                         bidder: 'not-you',
-                        script: 'QmYW6yW84BFPhC2XJ5kWnwBPzAqLUPLJeT66AL7qhzRBxW'
+                        script: 'QmcxXKkAQoN9vNBdpm88VUj81fvvWR7ySkjryxdNejBRnY'
                     }],
                     node: config.username,
                     VERSION
@@ -806,7 +806,7 @@ exports.mint_auctions = (req, res, next) => {
                             bids: 1,
                             bidder: 'you'},
                         ],
-                        script: 'QmYW6yW84BFPhC2XJ5kWnwBPzAqLUPLJeT66AL7qhzRBxW'
+                        script: 'QmcxXKkAQoN9vNBdpm88VUj81fvvWR7ySkjryxdNejBRnY'
                         },
                         {
                         set: 'bees',
@@ -826,7 +826,7 @@ exports.mint_auctions = (req, res, next) => {
                             time: auctionTimer.expiryString,
                             by:'dale'},
                         ],
-                        script: 'QmYW6yW84BFPhC2XJ5kWnwBPzAqLUPLJeT66AL7qhzRBxW'
+                        script: 'QmcxXKkAQoN9vNBdpm88VUj81fvvWR7ySkjryxdNejBRnY'
                         } 
                     ],
                     node: config.username,
@@ -854,7 +854,7 @@ exports.sales = (req, res, next) => {
                         }, //starting price
                         time: auctionTimer.expiryString,
                         by:'disregardfiat',
-                        script: 'QmYW6yW84BFPhC2XJ5kWnwBPzAqLUPLJeT66AL7qhzRBxW'
+                        script: 'QmcxXKkAQoN9vNBdpm88VUj81fvvWR7ySkjryxdNejBRnY'
                     },{
                         uid: 'a3',
                         set: 'dlux',
@@ -865,7 +865,7 @@ exports.sales = (req, res, next) => {
                         }, //starting price
                         time: auctionTimer.expiryString,
                         by:'dale',
-                        script: 'QmYW6yW84BFPhC2XJ5kWnwBPzAqLUPLJeT66AL7qhzRBxW'
+                        script: 'QmcxXKkAQoN9vNBdpm88VUj81fvvWR7ySkjryxdNejBRnY'
                     }],
                     mint:[[
                         {
@@ -887,7 +887,7 @@ exports.sales = (req, res, next) => {
                             time: auctionTimer.expiryString,
                             by:'carl'}
                         ],
-                        script: 'QmYW6yW84BFPhC2XJ5kWnwBPzAqLUPLJeT66AL7qhzRBxW'
+                        script: 'QmcxXKkAQoN9vNBdpm88VUj81fvvWR7ySkjryxdNejBRnY'
                         },
                         {
                         set: 'bees',
@@ -907,7 +907,7 @@ exports.sales = (req, res, next) => {
                             time: auctionTimer.expiryString,
                             by:'dale'},
                         ],
-                        script: 'QmYW6yW84BFPhC2XJ5kWnwBPzAqLUPLJeT66AL7qhzRBxW'
+                        script: 'QmcxXKkAQoN9vNBdpm88VUj81fvvWR7ySkjryxdNejBRnY'
                         } 
                     ]],
                     node: config.username,
@@ -925,31 +925,31 @@ exports.set = (req, res, next) => {
                         {uid: 'A6',
                         set: 'dlux',
                         owner: 'disregardfiat',
-                        script: 'QmYW6yW84BFPhC2XJ5kWnwBPzAqLUPLJeT66AL7qhzRBxW'},
+                        script: 'QmcxXKkAQoN9vNBdpm88VUj81fvvWR7ySkjryxdNejBRnY'},
                         {uid: 'A7',
                             set: 'dlux',
                         owner: 'disregardfiat',
-                        script: 'QmYW6yW84BFPhC2XJ5kWnwBPzAqLUPLJeT66AL7qhzRBxW'},
+                        script: 'QmcxXKkAQoN9vNBdpm88VUj81fvvWR7ySkjryxdNejBRnY'},
                         {uid: 'F3',
                             set: 'dlux',
                         owner: 'ls',
-                        script: 'QmYW6yW84BFPhC2XJ5kWnwBPzAqLUPLJeT66AL7qhzRBxW'},
+                        script: 'QmcxXKkAQoN9vNBdpm88VUj81fvvWR7ySkjryxdNejBRnY'},
                         {uid: 'a3',
                             set: 'dlux',
                         owner: 'ls',
-                        script: 'QmYW6yW84BFPhC2XJ5kWnwBPzAqLUPLJeT66AL7qhzRBxW'},
+                        script: 'QmcxXKkAQoN9vNBdpm88VUj81fvvWR7ySkjryxdNejBRnY'},
                         {uid: 'GG',
                             set: 'dlux',
                         owner: 'ah',
-                        script: 'QmYW6yW84BFPhC2XJ5kWnwBPzAqLUPLJeT66AL7qhzRBxW'},
+                        script: 'QmcxXKkAQoN9vNBdpm88VUj81fvvWR7ySkjryxdNejBRnY'},
                         {uid: 'gg',
                             set: 'dlux',
                         owner: 'ah',
-                        script: 'QmYW6yW84BFPhC2XJ5kWnwBPzAqLUPLJeT66AL7qhzRBxW'}
+                        script: 'QmcxXKkAQoN9vNBdpm88VUj81fvvWR7ySkjryxdNejBRnY'}
                         ],
                     set: { //5 plus set name bytes
                             "author":"disregardfiat", //the account that pays the set fee, --23 bytes
-                            "script":"QmYW6yW84BFPhC2XJ5kWnwBPzAqLUPLJeT66AL7qhzRBxW", //build app hash --53bytes
+                            "script":"QmcxXKkAQoN9vNBdpm88VUj81fvvWR7ySkjryxdNejBRnY", //build app hash --53bytes
                             "issued":6, //issued counter for IDs -6bytes
                             "max":4096, //max issue -6-10bytes
                             "min":0,
@@ -985,7 +985,7 @@ exports.item = (req, res, next) => {
                     },
                     set: { //5 plus set name bytes
                             "author":"disregardfiat", //the account that pays the set fee, --23 bytes
-                            "script":"QmYW6yW84BFPhC2XJ5kWnwBPzAqLUPLJeT66AL7qhzRBxW", //build app hash --53bytes
+                            "script":"QmcxXKkAQoN9vNBdpm88VUj81fvvWR7ySkjryxdNejBRnY", //build app hash --53bytes
                             "issued":4000, //issued counter for IDs -6bytes
                             "max":4096, //max issue -6-10bytes
                             "set":"dlux", //name of set, 7+ bytes
