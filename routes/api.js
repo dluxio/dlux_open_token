@@ -359,22 +359,22 @@ exports.dex = (req, res, next) => {
                 for (let key in markets.hive.sellOrders[item]) {
                     order[key] = markets.hive.sellOrders[item][key];
                 }
-                order.hive = {
+                order.hivenai = {
                     amount: order.hive,
                     precision: 3,
                     token: 'HIVE'
                 }
-                order.hbd = {
+                order.hbdnai = {
                     amount: order.hbd,
                     precision: 3,
                     token: 'HBD'
                 }
-                order.amount = {
+                order.amountnai = {
                     amount: order.amount,
                     precision: config.precision,
                     token: config.TOKEN
                 }
-                order.fee = {
+                order.feenai = {
                     amount: order.fee,
                     precision: config.precision,
                     token: config.TOKEN
@@ -387,22 +387,22 @@ exports.dex = (req, res, next) => {
                 for (let key in markets.hive.buyOrders[item]) {
                     order[key] = markets.hive.buyOrders[item][key];
                 }
-                order.hive = {
+                order.hivenai = {
                     amount: order.hive,
                     precision: 3,
                     token: 'HIVE'
                 }
-                order.hbd = {
+                order.hbdnai = {
                     amount: order.hbd,
                     precision: 3,
                     token: 'HBD'
                 }
-                order.amount = {
+                order.amountnai = {
                     amount: order.amount,
                     precision: config.precision,
                     token: config.TOKEN
                 }
-                order.fee = {
+                order.feenai = {
                     amount: order.fee,
                     precision: config.precision,
                     token: config.TOKEN
@@ -415,22 +415,22 @@ exports.dex = (req, res, next) => {
                 for (let key in markets.hbd.sellOrders[item]) {
                     order[key] = markets.hbd.sellOrders[item][key];
                 }
-                order.hive = {
+                order.hivenai = {
                     amount: order.hive,
                     precision: 3,
                     token: 'HIVE'
                 }
-                order.hbd = {
+                order.hbdnai = {
                     amount: order.hbd,
                     precision: 3,
                     token: 'HBD'
                 }
-                order.amount = {
+                order.amountnai = {
                     amount: order.amount,
                     precision: config.precision,
                     token: config.TOKEN
                 }
-                order.fee = {
+                order.feenai = {
                     amount: order.fee,
                     precision: config.precision,
                     token: config.TOKEN
@@ -443,22 +443,22 @@ exports.dex = (req, res, next) => {
                 for (let key in markets.hbd.buyOrders[item]) {
                     order[key] = markets.hbd.buyOrders[item][key];
                 }
-                order.hive = {
+                order.hivenai = {
                     amount: order.hive,
                     precision: 3,
                     token: 'HIVE'
                 }
-                order.hbd = {
+                order.hbdnai = {
                     amount: order.hbd,
                     precision: 3,
                     token: 'HBD'
                 }
-                order.amount = {
+                order.amountnai = {
                     amount: order.amount,
                     precision: config.precision,
                     token: config.TOKEN
                 }
-                order.fee = {
+                order.feenai = {
                     amount: order.fee,
                     precision: config.precision,
                     token: config.TOKEN
