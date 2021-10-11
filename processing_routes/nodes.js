@@ -64,7 +64,7 @@ exports.node_add = function(json, from, active, pc) {
                     ops = [{ type: 'put', path: ['markets', 'node', from], data: b }]
                 }
                 const msg = `@${from}| has bid the hive-state node ${json.domain} at ${json.bidRate}`
-                if (config.hookurl) postToDiscord(msg)
+                if (config.hookurl || config.status) postToDiscord(msg, `${json.block_num}:${json.transaction_id}`)
                 ops.push({ type: 'put', path: ['feed', `${json.block_num}:${json.transaction_id}`], data: msg })
             } else {
                 console.log(e)
@@ -106,7 +106,9 @@ exports.node_delete = function(json, from, active, pc) {
                         delete b.marketingRate
                         ops.push({ type: 'del', path: ['runners', from] })
                         ops.push({ type: 'put', path: ['markets', 'node', from], data: b })
-                        ops.push({ type: 'put', path: ['feed', `${json.block_num}:${json.transaction_id}`], data: `@${from}| has signed off their ${config.TOKEN} node` })
+                        const msg = `@${from}| has signed off their ${config.TOKEN} node`
+                        if (config.hookurl || config.status) postToDiscord(msg, `${json.block_num}:${json.transaction_id}`)
+                        ops.push({ type: 'put', path: ['feed', `${json.block_num}:${json.transaction_id}`], data: msg })
                         store.batch(ops, pc)
                     } else {
                         pc[0](pc[2])

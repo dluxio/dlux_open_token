@@ -6,6 +6,15 @@ const bs58 = require('bs58');
 const hashFunction = Buffer.from('12', 'hex');
 const stringify = require('json-stable-stringify');
 
+const burn = (amount) => {
+    return new Promise((resolve, reject) => {
+        getPathNum(['stats', 'tokenSupply'])
+        .then(sup => {
+            store.batch([{ type: 'put', path: ['stats', 'tokenSupply'], data: sup - amount }], [resolve, reject, 1])
+        })
+    })
+}
+exports.burn = burn
 const forceCancel = (rate, type, block_num) => {
     return new Promise((resolve, reject) => {
         const price = parseFloat(rate)

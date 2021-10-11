@@ -38,7 +38,7 @@ const Base64 = {
         if(display){
             document.getElementById('body').innerHTML = SVG
         } else {
-            return SVG
+            return {HTML:SVG, attributes:[{name:'Color 1', value: uColors[0]},{name:'Color 2', value: uColors[1]},{name:'Color 3', value: uColors[2]}], sealed:''}
         }
         
 }

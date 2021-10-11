@@ -11,7 +11,9 @@ const mirror = ENV.mirror || false //makes identical posts, votes and IPFS pins 
 const port = ENV.PORT || 3000;
 const pintoken = ENV.pintoken || '';
 const pinurl = ENV.pinurl || '';
+const status = ENV.status || true
 const dbcs = ENV.DATABASE_URL || '';
+const history = ENV.history || 3600
 
 // testing configs for replays
 const override = ENV.override || 0 //will use standard restarts after this blocknumber
@@ -42,6 +44,7 @@ const clients = ENV.clients || [
 const starting_block = 49988008; //from what block does your token start
 const prefix = 'dlux_' //Community token name for Custom Json IDs
 const TOKEN = 'DLUX' //Token name
+const precision = 3 //precision of token
 const tag = 'dlux' //the fe.com/<tag>/@<leader>/<permlink>
 const jsonTokenName = 'dlux' //what customJSON in Escrows and sends is looking for
 const leader = 'dlux-io' //Default account to pull state from, will post token 
@@ -63,6 +66,8 @@ let config = {
     memoKey,
     NODEDOMAIN,
     hookurl,
+    status,
+    history,
     dbcs,
     mirror,
     bidRate,
@@ -86,6 +91,7 @@ let config = {
     delegation,
     delegationWeight,
     TOKEN,
+    precision,
     tag,
     mainAPI,
     jsonTokenName,

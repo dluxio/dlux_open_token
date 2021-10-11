@@ -1,5 +1,6 @@
 const { Webhook, MessageBuilder } = require('discord-webhook-node');
 const config = require('./config');
+const { TXID } = require ('./index')
 const hook = new Webhook(config.hookurl);
 const fetch = require('node-fetch')
 
@@ -44,6 +45,7 @@ exports.contentToDiscord = (author, permlink) => {
 
 //exports.contentToDiscord('disregardfiat', 'dlux-development-update-jan-15')
 
-exports.postToDiscord = (msg) => {
-    hook.send(msg)
+exports.postToDiscord = (msg, id) => {
+    if(config.hookurl)hook.send(msg)
+    if(config.status)TXID.store(msg, id)
 }
