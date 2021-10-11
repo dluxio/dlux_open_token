@@ -1,6 +1,6 @@
 let config = require('./../config')
 const { Base64} = require('./../helpers')
-const { store, GetNodeOps, VERSION } = require("./../index");
+const { store, GetNodeOps, VERSION, status } = require("./../index");
 const fetch = require('node-fetch');
 let { getPathNum } = require("./../getPathNum");
 let { getPathObj } = require("./../getPathObj");
@@ -680,325 +680,362 @@ exports.compile = (req, res, next) => {
     
 }
 
+exports.protocol = (req, res, next) => {
+    res.setHeader('Content-Type', 'application/json')
+    store.get(['queue'], function(err, obj) {
+        var feed = obj
+        res.send(JSON.stringify({
+            consensus: obj,
+            prefix: config.prefix,
+            node: config.username,
+            info: '/markets will return node information and published APIs for the consensus nodes, you may check these other APIs to ensure that the information in the API is in consensus.\nThe prefix is used to address this tokens architecture built on Hive.',
+            VERSION
+        }, null, 3))
+    });
+}
+
+exports.status = (req, res, next) => {
+    let txid = req.params.txid
+    res.setHeader('Content-Type', 'application/json')
+    res.send(JSON.stringify({
+            txid,
+            status: status[txid] || `This TransactionID either has not yet been processed, or was missed by the system due to formatting errors. Wait 70 seconds and try again. This API only keeps these records for a maximum of ${(config.history * 3)} seconds`,
+            node: config.username,
+            VERSION
+        }, null, 3))
+}
+
 exports.nfts = (req, res, next) => {
-    let user = req.params.user
-    try {
+    let user = req.params.user,
+        userItems = getPathObj(['nfts', user]),
+        sets = getPathObj(['sets']),
+        mintItems = getPathObj['rnfts']
+    Promise.all([userItems, sets, mintItems])
+    .then(mem => {
+        var result = []
+        for (item in mem[0]){
+            const set = item.split(':')[0]
+            result.push({
+                uid: item.split(':')[1],
+                set,
+                script: mem[1][set].s,
+                type: mem[1][set].t,
+                encoding: mem[1][set].e
+            })
+        }
+        var mint_tokens = []
+        for (item in mem[2]){
+            if(mem[2][item][user]){
+                const set = item
+                mint_tokens.push({
+                    qty: mem[2][item][user],
+                    set, 
+                    script: mem[1][set].s,
+                    type: mem[1][set].t,
+                    encoding: mem[1][set].e
+                })
+            }
+        }
         res.setHeader('Content-Type', 'application/json')
         res.send(JSON.stringify({
-                    result:[{
-                        uid: 'A6',
-                        set: `dlux`,
-                        script: 'QmcxXKkAQoN9vNBdpm88VUj81fvvWR7ySkjryxdNejBRnY'
-                    },{
-                        uid: 'A7',
-                        set: `dlux`,
-                        script: 'QmcxXKkAQoN9vNBdpm88VUj81fvvWR7ySkjryxdNejBRnY'
-                    }],
-                    mint_tokens: [
-                        {set:'dlux', 
-                        qty:4, 
-                        type:1,
-                        script: 'QmcxXKkAQoN9vNBdpm88VUj81fvvWR7ySkjryxdNejBRnY'
-                    },{set:'bees', 
-                        qty:1, 
-                        type:1,
-                        script: 'QmcxXKkAQoN9vNBdpm88VUj81fvvWR7ySkjryxdNejBRnY'
-                    }],
+                    result,
+                    mint_tokens,
                     user,
                     node: config.username,
                     VERSION
                 }, null, 3))
-    } catch (e) { res.send('Something went wrong') }
+    }) 
+    .catch (e => { res.send('Something went wrong') })
 }
 
 exports.sets = (req, res, next) => {
-    try {
+    let sets = getPathObj(['sets'])
+    Promise.all([sets])
+    .then(mem => {
+        let result = []
+        for (set in mem[0]){
+            result.push({
+                set,
+                link: `${mem[0][set].a}/${mem[0][set].p}`,
+                fee: {
+                    amount:mem[0][set].f,
+                    precision: config.precision,
+                    token: config.TOKEN
+                },
+                bond: {
+                    amount:mem[0][set].b,
+                    precision: config.precision,
+                    token: config.TOKEN
+                },
+                permlink: mem[0][set].p,
+                author: mem[0][set].a,
+                script: mem[0][set].s,
+                encoding: mem[0][set].e,
+                type: mem[0][set].t,
+                royalty: mem[0][set].r,
+                name: mem[0][set].n,
+                minted: mem[0][set].i,
+                max: Base64.toNumber(mem[0][set].m) - Base64.toNumber(mem[0][set].o)
+            })
+        }
         res.setHeader('Content-Type', 'application/json')
         res.send(JSON.stringify({
-                    result:[{
-                        set: `dlux`,
-                        link: 'disregardfiat/nft-research-creation-and-distribution',
-                        script: 'QmcxXKkAQoN9vNBdpm88VUj81fvvWR7ySkjryxdNejBRnY'
-                    },{
-                        set: `bees`,
-                        link: 'disregardfiat/nft-research-creation-and-distribution',
-                        script: 'QmcxXKkAQoN9vNBdpm88VUj81fvvWR7ySkjryxdNejBRnY'
-                    }],
+                    result,
                     node: config.username,
                     VERSION
                 }, null, 3))
-    } catch (e) { res.send('Something went wrong') }
+    }) 
+    .catch (e => { res.send('Something went wrong') })
 }
 
 exports.auctions = (req, res, next) => {
-    try {
-        var auctionTimer = {}
-        let now = new Date();
-        auctionTimer.expiryIn = now.setHours(now.getHours() + 4);
-        auctionTimer.expiryUTC = new Date(auctionTimer.expiryIn);
-        auctionTimer.expiryString = auctionTimer.expiryUTC.toISOString().slice(0, -5);
-        res.setHeader('Content-Type', 'application/json')
-        res.send(JSON.stringify({
-                    result:[{
-                        uid: 'GG',
-                        set: 'dlux',
+    let ahp = getPathObj(['ah']),
+        setp = getPathObj(['sets'])
+    Promise.all([ahp, setp])
+    .then(mem => {
+        let now = new Date(),
+            result = []
+        for(item in mem[0]){
+            auctionTimer.expiryIn = now.setHours(now.getSeconds() + ((mem[0][item].e - status.getBlockNum())*3));
+            auctionTimer.expiryUTC = new Date(auctionTimer.expiryIn);
+            auctionTimer.expiryString = auctionTimer.expiryUTC.toISOString().slice(0, -5);
+            result.push({
+                        uid: item.split(':')[1],
+                        set: item.split(':')[0],
                         price: {
-                            amount: 1500,
+                            amount: mem[0][item].b || mem[0][item].p,
                             precision: config.precision,
                             token: config.TOKEN
                         }, //starting price
                         time: auctionTimer.expiryString,
-                        by:'disregardfiat',
-                        bids: 12,
-                        bidder: 'you',
-                        script: 'QmcxXKkAQoN9vNBdpm88VUj81fvvWR7ySkjryxdNejBRnY'
-                    },{
-                        uid: 'gg',
-                        set: 'dlux',
-                        price: {
-                            amount: 500,
-                            precision: 3,
-                            token: 'DLUX'
-                        }, //starting price
-                        time: auctionTimer.expiryString,
-                        by:'dale',
-                        bids: 6,
-                        bidder: 'not-you',
-                        script: 'QmcxXKkAQoN9vNBdpm88VUj81fvvWR7ySkjryxdNejBRnY'
-                    }],
+                        by:mem[0][item].o,
+                        bids: mem[0][item].c,
+                        bidder: mem[0][item].f,
+                        script: mem[1][item.split(':')[0]].s,
+                        days: mem[0][item].t,
+                        buy: mem[0][item].n
+                    })
+        }
+        res.setHeader('Content-Type', 'application/json')
+        res.send(JSON.stringify({
+                    result,
                     node: config.username,
                     VERSION
                 }, null, 3))
-    } catch (e) { res.send(e) }
+    }) 
+    .catch (e => { res.send('Something went wrong') })
 }
 
 
 exports.mint_auctions = (req, res, next) => {
-    try {
-        var auctionTimer = {}
-        let now = new Date();
-        auctionTimer.expiryIn = now.setHours(now.getHours() + 4);
-        auctionTimer.expiryUTC = new Date(auctionTimer.expiryIn);
-        auctionTimer.expiryString = auctionTimer.expiryUTC.toISOString().slice(0, -5);
+    let ahp = getPathObj(['mah']), //needed?
+        setp = getPathObj(['sets'])
+    Promise.all([ahp, setp])
+    .then(mem => {
+        let now = new Date()
+            result = [],
+            sets = {}
+        for (item in mem[0]){
+            var auctionTimer = {}
+                auctionTimer.expiryIn = now.setHours(now.getSeconds() + ((mem[0][item].e - status.getBlockNum())*3));
+                auctionTimer.expiryUTC = new Date(auctionTimer.expiryIn);
+                auctionTimer.expiryString = auctionTimer.expiryUTC.toISOString().slice(0, -5);
+        
+            const listing = {
+                price: {
+                    amount: mem[0][item].b,
+                    precision: config.precision,
+                    token: config.TOKEN
+                },
+                time: auctionTimer.expiryString,
+                by: mem[0][item].o,
+                bids: mem[0][item].c,
+                bidder: mem[0][item].f,
+                }
+            if(sets[mem[0][item].s]) {
+                sets[mem[0][item].s].items.push(listing)
+            } else {
+                sets[mem[0][item].s] = {
+                    set: mem[0][item].s,
+                    items: [listing],
+                    script: mem[1][mem[0][item].s].s
+                }
+            }
+        }
+        for (i in sets){
+            result.push(sets[i])
+        }
         res.setHeader('Content-Type', 'application/json')
         res.send(JSON.stringify({
-                    result: [
-                        {
-                        set: 'dlux',
-                        items:[
-                            {price: {
-                                amount: 75000,
-                                precision: 3,
-                                token: 'DLUX'
-                            },
-                            time: auctionTimer.expiryString,
-                            by:'dale',
-                            bids: 2,
-                            bidder: 'not-you',
-                            },
-                            {price: {
-                                amount: 76000,
-                                precision: 3,
-                                token: 'DLUX'
-                                },
-                            time: auctionTimer.expiryString,
-                            by:'carl',
-                            bids: 1,
-                            bidder: 'you'},
-                        ],
-                        script: 'QmcxXKkAQoN9vNBdpm88VUj81fvvWR7ySkjryxdNejBRnY'
-                        },
-                        {
-                        set: 'bees',
-                        items: [
-                            {price:{
-                                amount: 400,
-                                precision: 3,
-                                token: 'DLUX'
-                            },
-                            time: auctionTimer.expiryString,
-                            by:'dale'},
-                            {price:{
-                                amount: 500,
-                                precision: 3,
-                                token: 'DLUX'
-                            },
-                            time: auctionTimer.expiryString,
-                            by:'dale'},
-                        ],
-                        script: 'QmcxXKkAQoN9vNBdpm88VUj81fvvWR7ySkjryxdNejBRnY'
-                        } 
-                    ],
+                    result,
                     node: config.username,
                     VERSION
                 }, null, 3))
-    } catch (e) { res.send(e) }
+    }) 
+    .catch (e => { res.send('Something went wrong') })
 }
 
 exports.sales = (req, res, next) => {
-    try {
-        var auctionTimer = {}
-        let now = new Date();
-        auctionTimer.expiryIn = now.setHours(now.getHours() + 4);
-        auctionTimer.expiryUTC = new Date(auctionTimer.expiryIn);
-        auctionTimer.expiryString = auctionTimer.expiryUTC.toISOString().slice(0, -5);
+    let lsp = getPathObj(['ls']),
+        mlsp = getPathObj(['mls']),
+        setp = getPathObj(['sets'])
+    Promise.all([lsp, mlsp, setp])
+    .then(mem => {
+        let result = [],
+            mint = [],
+            sets = {}
+        for (item in mem[0]){
+            const listing = {
+                uid: mem[0][item].u,
+                set: mem[0][item].s,
+                price: {
+                    amount: mem[0][item].p,
+                    precision: config.precision,
+                    token: config.TOKEN
+                },
+                by:mem[0][item].o,
+                script: mem[2][mem[0][item].s].s
+            }
+            result.push(listing)
+        }
+        for (item in mem[1]){
+            const listing = {
+                set: mem[1][item].s,
+                price: {
+                    amount: mem[1][item].p,
+                    precision: config.precision,
+                    token: config.TOKEN
+                },
+                by:mem[1][item].o,
+                script: mem[2][mem[1][item].s].s
+            }
+            if(sets[mem[1][item].s]) {
+                sets[mem[1][item].s].items.push(listing)
+            } else {
+                sets[mem[1][item].s] = {
+                    set: mem[1][item].s,
+                    items: [listing],
+                    script: mem[2][mem[1][item].s].s
+                }
+            }
+        }
+        for (i in sets){
+            mint.push(sets[i])
+        }
         res.setHeader('Content-Type', 'application/json')
         res.send(JSON.stringify({
-                    result:[{
-                        uid: 'F3',
-                        set: 'dlux',
-                        price: {
-                            amount: 1000,
-                            precision: 3,
-                            token: 'DLUX'
-                        }, //starting price
-                        time: auctionTimer.expiryString,
-                        by:'disregardfiat',
-                        script: 'QmcxXKkAQoN9vNBdpm88VUj81fvvWR7ySkjryxdNejBRnY'
-                    },{
-                        uid: 'a3',
-                        set: 'dlux',
-                        price: {
-                            amount: 500,
-                            precision: 3,
-                            token: 'DLUX'
-                        }, //starting price
-                        time: auctionTimer.expiryString,
-                        by:'dale',
-                        script: 'QmcxXKkAQoN9vNBdpm88VUj81fvvWR7ySkjryxdNejBRnY'
-                    }],
-                    mint:[[
-                        {
-                        set: 'dlux',
-                        items:[
-                            {
-                                price: {
-                                amount: 75000,
-                                precision: 3,
-                                token: 'DLUX'
-                            },
-                            time: auctionTimer.expiryString,
-                            by:'dale'},
-                            {price: {
-                                amount: 76000,
-                                precision: 3,
-                                token: 'DLUX'
-                                },
-                            time: auctionTimer.expiryString,
-                            by:'carl'}
-                        ],
-                        script: 'QmcxXKkAQoN9vNBdpm88VUj81fvvWR7ySkjryxdNejBRnY'
-                        },
-                        {
-                        set: 'bees',
-                        items: [
-                            {price:{
-                                amount: 400,
-                                precision: 3,
-                                token: 'DLUX'
-                            },
-                            time: auctionTimer.expiryString,
-                            by:'dale'},
-                            {price:{
-                                amount: 500,
-                                precision: 3,
-                                token: 'DLUX'
-                            },
-                            time: auctionTimer.expiryString,
-                            by:'dale'},
-                        ],
-                        script: 'QmcxXKkAQoN9vNBdpm88VUj81fvvWR7ySkjryxdNejBRnY'
-                        } 
-                    ]],
+                    result,
+                    mint,
                     node: config.username,
                     VERSION
                 }, null, 3))
-    } catch (e) { res.send(e) }
+    }) 
+    .catch (e => { res.send('Something went wrong') })
 }
 
 exports.set = (req, res, next) => {
-    try {
-        let set = req.params.set
+    let setname = req.params.set,
+        setp = getPathObj(['sets', setname])
+    Promise.all([setp])
+    .then(mem => {
         res.setHeader('Content-Type', 'application/json')
+        var result = [], set = {
+                set: setname,
+                link: `${mem[0].a}/${mem[0].p}`,
+                fee: {
+                    amount:mem[0].f,
+                    precision: config.precision,
+                    token: config.TOKEN
+                },
+                bond: {
+                    amount:mem[0].b,
+                    precision: config.precision,
+                    token: config.TOKEN
+                },
+                permlink: mem[0].p,
+                author: mem[0].a,
+                script: mem[0].s,
+                encoding: mem[0].e,
+                type: mem[0].t,
+                royalty: mem[0].r,
+                name: mem[0].n,
+                minted: mem[0].i,
+                max: Base64.toNumber(mem[0].m) - Base64.toNumber(mem[0].o)
+            },
+            uids = mem[0].u.split(',')
+        for (var i = 0; i < uids.length; i++){
+            var owner = uids[i].split('_')
+            for (var j = 0; j < owner.length -1; j++){
+                result.push({
+                    uid: owner[j],
+                    set: setname,
+                    script: mem[0].s,
+                    owner: owner[owner.length - 1]
+                })
+            }
+        }
         res.send(JSON.stringify({
-                result:[
-                        {uid: 'A6',
-                        set: 'dlux',
-                        owner: 'disregardfiat',
-                        script: 'QmcxXKkAQoN9vNBdpm88VUj81fvvWR7ySkjryxdNejBRnY'},
-                        {uid: 'A7',
-                            set: 'dlux',
-                        owner: 'disregardfiat',
-                        script: 'QmcxXKkAQoN9vNBdpm88VUj81fvvWR7ySkjryxdNejBRnY'},
-                        {uid: 'F3',
-                            set: 'dlux',
-                        owner: 'ls',
-                        script: 'QmcxXKkAQoN9vNBdpm88VUj81fvvWR7ySkjryxdNejBRnY'},
-                        {uid: 'a3',
-                            set: 'dlux',
-                        owner: 'ls',
-                        script: 'QmcxXKkAQoN9vNBdpm88VUj81fvvWR7ySkjryxdNejBRnY'},
-                        {uid: 'GG',
-                            set: 'dlux',
-                        owner: 'ah',
-                        script: 'QmcxXKkAQoN9vNBdpm88VUj81fvvWR7ySkjryxdNejBRnY'},
-                        {uid: 'gg',
-                            set: 'dlux',
-                        owner: 'ah',
-                        script: 'QmcxXKkAQoN9vNBdpm88VUj81fvvWR7ySkjryxdNejBRnY'}
-                        ],
-                    set: { //5 plus set name bytes
-                            "author":"disregardfiat", //the account that pays the set fee, --23 bytes
-                            "script":"QmcxXKkAQoN9vNBdpm88VUj81fvvWR7ySkjryxdNejBRnY", //build app hash --53bytes
-                            "issued":6, //issued counter for IDs -6bytes
-                            "max":4096, //max issue -6-10bytes
-                            "min":0,
-                            "set":"dlux", //name of set, 7+ bytes
-                            "royalty": 100, // 8 bytes
-                            "type":1, // 5bytes
-                            "encoding":"svg",
-                            "link":"nft-research-creation-and-distribution",
-                            "bond":{
-                                amount: 100000,
-                                precision: 3,
-                                token: 'DLUX'
-                            }
-                        },
+                    result,
+                    set,
                     node: config.username,
                     VERSION
                 }, null, 3))
-    } catch (e) { res.send('Something went wrong') }
+    }) 
+    .catch (e => { res.send('Something went wrong') })
 }
 
 exports.item = (req, res, next) => {
-    try {
-        let item = req.params.item,
-            set = item.split(':')[0]
-            nft = item.split(':')[1]
-        res.setHeader('Content-Type', 'application/json')
-        res.send(JSON.stringify({
-                    item: {
-                        uid: nft,
-                        set: set,
-                        last_modified: Base64.toNumber('4AAAA'),
-
+    let itemname = req.params.item || ':',
+        setname = itemname.split(':')[0]
+        setp = getPathObj(['sets', setname])
+    Promise.all([setp])
+    .then(mem => {
+        const location = mem[0].u.indexOf(`${itemname.split(':')[1]}_`)
+        var owner = ''
+        if(location >= 0){
+            const loc = mem[0].u.slice(location)
+            const own = location.split(',')[0]
+            const items = own.split('_')
+            owner = items[items.length - 1]
+        }
+        store.get(['nfts', owner, itemname.split(':')[1]], function(err, obj) {
+            res.setHeader('Content-Type', 'application/json')
+            res.send(JSON.stringify({
+                item: {
+                    uid: itemname.split(':')[1],
+                    set: setname,
+                    last_modified: Base64.toNumber(obj.s.split(',')[0]),
+                    string: obj.s
+                },
+                set: {
+                    set: setname,
+                    link: `${mem[0].a}/${mem[0].p}`,
+                    fee: {
+                        amount:mem[0].f,
+                        precision: config.precision,
+                        token: config.TOKEN
                     },
-                    set: { //5 plus set name bytes
-                            "author":"disregardfiat", //the account that pays the set fee, --23 bytes
-                            "script":"QmcxXKkAQoN9vNBdpm88VUj81fvvWR7ySkjryxdNejBRnY", //build app hash --53bytes
-                            "issued":4000, //issued counter for IDs -6bytes
-                            "max":4096, //max issue -6-10bytes
-                            "set":"dlux", //name of set, 7+ bytes
-                            "royalty": 100, // 8 bytes
-                            "type":1, // 5bytes
-                            "encoding":"svg",
-                            "link":"nft-research-creation-and-distribution", //count bytes ~50
-                             //characteristics of layers ... count bytes... 
-                        },
-                    node: config.username,
-                    VERSION
-                }, null, 3))
-    } catch (e) { res.send('Something went wrong') }
+                    bond: {
+                        amount:mem[0].b,
+                        precision: config.precision,
+                        token: config.TOKEN
+                    },
+                    permlink: mem[0].p,
+                    author: mem[0].a,
+                    script: mem[0].s,
+                    encoding: mem[0].e,
+                    type: mem[0].t,
+                    royalty: mem[0].r,
+                    name: mem[0].n,
+                    minted: mem[0].i,
+                    max: Base64.toNumber(mem[0].m) - Base64.toNumber(mem[0].o)
+                },
+                node: config.username,
+                VERSION
+            }, null, 3))    
+        });
+    }) 
+    .catch (e => { res.send('Something went wrong') })
 }
 
 exports.report = (req, res, next) => {

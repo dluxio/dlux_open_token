@@ -11,7 +11,9 @@ const mirror = ENV.mirror || false //makes identical posts, votes and IPFS pins 
 const port = ENV.PORT || 3000;
 const pintoken = ENV.pintoken || '';
 const pinurl = ENV.pinurl || '';
+const status = ENV.status || true
 const dbcs = ENV.DATABASE_URL || '';
+const history = ENV.history || 3600
 
 // testing configs for replays
 const override = ENV.override || 0 //will use standard restarts after this blocknumber
@@ -64,6 +66,8 @@ let config = {
     memoKey,
     NODEDOMAIN,
     hookurl,
+    status,
+    history,
     dbcs,
     mirror,
     bidRate,

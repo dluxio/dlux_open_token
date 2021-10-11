@@ -24,7 +24,7 @@ exports.power_up = (json, from, active, pc) => {
                 ops.push({ type: 'put', path: ['pow', from], data: pbal + amount });
                 ops.push({ type: 'put', path: ['pow', 't'], data: tpow + amount });
                 const msg = `@${from}| Powered up ${parseFloat(json.amount / 1000).toFixed(3)} ${config.TOKEN}`
-                if (config.hookurl) postToDiscord(msg)
+                if (config.hookurl || config.status) postToDiscord(msg, `${json.block_num}:${json.transaction_id}`)
                 ops.push({ type: 'put', path: ['feed', `${json.block_num}:${json.transaction_id}`], data: msg });
             } else {
                 ops.push({ type: 'put', path: ['feed', `${json.block_num}:${json.transaction_id}`], data: `@${from}| Invalid power up` });
@@ -94,7 +94,7 @@ exports.power_grant = (json, from, active, pc) => {
                     ops.push({ type: 'put', path: ['up', to], data: up_to });
                     ops.push({ type: 'put', path: ['down', to], data: down_to });
                     const msg = `@${from}| Has granted ${parseFloat(amount/1000).toFixed(3)} to ${to}`
-                    if (config.hookurl) postToDiscord(msg)
+                    if (config.hookurl || config.status) postToDiscord(msg, `${json.block_num}:${json.transaction_id}`)
                     ops.push({ type: 'put', path: ['feed', `${json.block_num}:${json.transaction_id}`], data: msg });
                 } else if (amount < granted_to_from) {
                     let less = granted_to_from - amount
@@ -120,15 +120,17 @@ exports.power_grant = (json, from, active, pc) => {
                     ops.push({ type: 'put', path: ['up', to], data: up_to });
                     ops.push({ type: 'put', path: ['down', to], data: down_to });
                     const msg = `@${from}| Has granted ${parseFloat(amount/1000).toFixed(3)} to ${to}`
-                    if (config.hookurl) postToDiscord(msg)
+                    if (config.hookurl || config.status) postToDiscord(msg, `${json.block_num}:${json.transaction_id}`)
                     ops.push({ type: 'put', path: ['feed', `${json.block_num}:${json.transaction_id}`], data: msg });
                 } else {
                     const msg = `@${from}| Has already granted ${parseFloat(amount/1000).toFixed(3)} to ${to}`
-                    if (config.hookurl) postToDiscord(msg)
+                    if (config.hookurl || config.status) postToDiscord(msg, `${json.block_num}:${json.transaction_id}`)
                     ops.push({ type: 'put', path: ['feed', `${json.block_num}:${json.transaction_id}`], data: msg });
                 }
             } else {
-                ops.push({ type: 'put', path: ['feed', `${json.block_num}:${json.transaction_id}`], data: `@${from}| Invalid delegation` });
+                const msg = `@${from}| Invalid delegation`
+                if (config.hookurl || config.status) postToDiscord(msg, `${json.block_num}:${json.transaction_id}`)
+                ops.push({ type: 'put', path: ['feed', `${json.block_num}:${json.transaction_id}`], data: msg });
             }
             store.batch(ops, pc);
         })
@@ -170,7 +172,7 @@ exports.power_down = (json, from, active, pc) => {
                             ops.push({ type: 'del', path: ['chrono', i] });
                         }
                         const msg = `@${from}| Powered down ${parseFloat(amount / 1000).toFixed(3)} ${config.TOKEN}`
-                        if (config.hookurl) postToDiscord(msg)
+                        if (config.hookurl || config.status) postToDiscord(msg, `${json.block_num}:${json.transaction_id}`)
                         ops.push({ type: 'put', path: ['feed', `${json.block_num}:${json.transaction_id}`], data: msg });
                         store.batch(ops, pc);
                     });
@@ -178,10 +180,14 @@ exports.power_down = (json, from, active, pc) => {
                 for (i in downs) {
                     ops.push({ type: 'del', path: ['chrono', downs[i]] });
                 }
-                ops.push({ type: 'put', path: ['feed', `${json.block_num}:${json.transaction_id}`], data: `@${from}| Canceled Power Down` });
+                const msg = `@${from}| Canceled Power Down`
+                if (config.hookurl || config.status) postToDiscord(msg, `${json.block_num}:${json.transaction_id}`)
+                ops.push({ type: 'put', path: ['feed', `${json.block_num}:${json.transaction_id}`], data: msg });
                 store.batch(ops, pc);
             } else {
-                ops.push({ type: 'put', path: ['feed', `${json.block_num}:${json.transaction_id}`], data: `@${from}| Invalid Power Down` });
+                const msg = `@${from}| Invalid Power Down`
+                if (config.hookurl || config.status) postToDiscord(msg, `${json.block_num}:${json.transaction_id}`)
+                ops.push({ type: 'put', path: ['feed', `${json.block_num}:${json.transaction_id}`], data: msg });
                 store.batch(ops, pc);
             }
 

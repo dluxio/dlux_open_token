@@ -144,7 +144,7 @@ module.exports = function(client, steem, currentBlockNumber = 1, blockComputeSpe
                                 if(Vops.length){
                                     transactional(Vops, 0, v[2], v[3], v[4])
                                 } else {
-                                    onNewBlock(num, v)
+                                    onNewBlock(num, v, v[4].witness_signature)
                                         .then(r => {
                                             pc[0](pc[2])
                                         })
@@ -152,7 +152,7 @@ module.exports = function(client, steem, currentBlockNumber = 1, blockComputeSpe
                                 }
                             })
                         } else {
-                            onNewBlock(num, v)
+                            onNewBlock(num, v, v[4].witness_signature)
                             .then(r => {
                                 pc[0](pc[2])
                             })
@@ -165,7 +165,7 @@ module.exports = function(client, steem, currentBlockNumber = 1, blockComputeSpe
                     pc[1](e)
                 })
         } else {
-            onNewBlock(num, pc)
+            onNewBlock(num, pc, block.witness_signature)
                 .then(r => {
                     r[0]()
                 })

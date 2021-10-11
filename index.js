@@ -52,6 +52,7 @@ const { report } = require("./report");
 const { ipfsSaveState } = require("./ipfsSaveState");
 const { waitup } = require("./waitup");
 const { dao } = require("./dao");
+const { Base64, NFT, Chron } = require('./helpers');
 const { release, recast } = require('./lil_ops')
 const hiveState = require('./processor');
 const { getPathObj } = require('./getPathObj');
@@ -113,6 +114,8 @@ api.get('/posts', API.posts); //votable posts
 api.get('/feed', API.feed); //all side-chain transaction in current day
 api.get('/runners', API.runners); //list of accounts that determine consensus... will also be the multi-sig accounts
 api.get('/queue', API.queue);
+api.get('/api/protocol', API.protocol);
+api.get('/api/status/:txid', API.status);
 api.get('/pending', API.pending); // The transaction signer now can sign multiple actions per block and this is nearly always empty, still good for troubleshooting
 // Some HIVE APi is wrapped here to support a stateless frontend built on the cheap with dreamweaver
 // None of these functions are required for token functionality and should likely be removed from the community version
@@ -134,8 +137,37 @@ var plasma = {
             //pagencz: []
     },
     jwt;
-exports.jwt = jwt;
-
+exports.jwt = jwt
+var status = {
+    cleaner: [],
+}
+exports.status = status
+const TXID = {
+    store: function (msg, txid){
+        status[txid.split(':')[1]] = msg
+        status.cleaner.push(txid)
+    },
+    clean: function (blocknum){
+        TXID.blocknumber = blocknum
+        if(status.cleaner.length){
+            var again = false
+            do {
+                if (parseInt(status.cleaner[0].split(':')[0]) <= blocknum - config.history){
+                    delete status[status.cleaner[0].split(':')[1]]
+                    status.shift()
+                    again = true
+                } else {
+                    again = false
+                }
+            } while (again)
+        }
+    },
+    getBlockNum: function (){
+        return TXID.blocknumber
+    },
+    blocknumber: 0
+}
+exports.TXID = TXID
 //grabs an API token for IPFS pinning of TOKEN posts
 if (config.rta && config.rtp) {
     rtrades.handleLogin(config.rta, config.rtp)
@@ -164,6 +196,28 @@ function startApp() {
     processor.on('report', HR.report);
     processor.on('queueForDaily', HR.q4d)
     processor.on('nomention', HR.nomention)
+    // processor.on('ft_bid', HR.ft_bid)
+    // processor.on('ft_auction', HR.ft_auction)
+    // processor.on('ft_sell_cancel', HR.ft_sell_cancel)
+    // processor.on('ft_buy', HR.ft_buy)
+    // processor.on('ft_escrow_cancel', HR.ft_escrow_cancel)
+    // processor.on('ft_sell', HR.ft_sell)
+    // processor.on('ft_escrow_complete', HR.ft_escrow_complete)
+    // processor.on('ft_escrow', HR.ft_escrow)
+    processor.on('nft_buy', HR.nft_buy)
+    processor.on('nft_sell', HR.nft_sell)
+    processor.on('nft_sell_cancel', HR.nft_sell_cancel)
+    processor.on('ft_transfer', HR.ft_transfer)
+    processor.on('ft_airdrop', HR.ft_airdrop)
+    processor.on('nft_transfer', HR.nft_transfer)
+    processor.on('nft_auction', HR.nft_auction)
+    processor.on('nft_bid', HR.nft_bid)
+    processor.on('nft_transfer_cancel', HR.nft_transfer_cancel)
+    processor.on('nft_reserve_transfer', HR.nft_reserve_transfer)
+    processor.on('nft_reserve_complete', HR.nft_reserve_complete)
+    processor.on('nft_define', HR.nft_define)
+    processor.on('nft_delete', HR.nft_delete)
+    processor.on('nft_mint', HR.nft_mint)
     processor.onOperation('comment_options', HR.comment_options);
     processor.on('cjv', HR.cjv);
     processor.on('sig', HR.sig); //dlux is for putting executable programs into IPFS... this is for additional accounts to sign the code as non-malicious
@@ -176,6 +230,7 @@ function startApp() {
     processor.onBlock(
         function(num, pc) {
             console.log(num)
+            TXID.clean(num)
             return new Promise((resolve, reject) => {
                 //store.batch([{ type: 'put', path: ['stats', 'realtime'], data: num }], )
                 store.someChildren(['chrono'], {
@@ -195,6 +250,18 @@ function startApp() {
                         let delKey = chrops[i]
                         store.get(['chrono', chrops[i]], function(e, b) {
                             switch (b.op) {
+                                case 'mint':
+                                    //{op:"mint", set:json.set, for: from}
+                                    let setp = getPathObj(['sets', b.set]);
+                                    promises.push(NFT.mintOp([setp], delKey, num, b, prand))
+                                    break;
+                                case 'ahe':
+                                    let ahp = getPathObj(['ah', b.item]);
+                                        setp = ''
+                                        if (b.item.split(':')[0] != 'Qm') setp = getPathObj(['sets', b.item.split(':')[0]])
+                                        else setp = getPathObj(['sets', `Qm${b.item.split(':')[1]}`])
+                                    promises.push(NFT.AHEOp([ahp, setp], delKey, num, b))
+                                    break;
                                 case 'del_pend':
                                     store.batch([{ type: 'del', path: ['chrono', delKey] }, { type: 'del', path: ['pend', `${b.author}/${b.permlink}`]}], [function() {}, function() { console.log('failure') }])
                                     break;
@@ -222,120 +289,19 @@ function startApp() {
                                     let plb = getPathNum(['balances', b.by]),
                                         tgovp = getPathNum(['gov', 't']),
                                         govp = getPathNum(['gov', b.by])
-                                    promises.push(govDownOp([plb, tgovp, govp], b.by, delKey, num, delKey.split(':')[1], b))
-
-                                    function govDownOp(promies, from, delkey, num, id, b) {
-                                        return new Promise((resolve, reject) => {
-                                            Promise.all(promies)
-                                                .then(bals => {
-                                                    let lbal = bals[0],
-                                                        tgov = bals[1],
-                                                        gbal = bals[2],
-                                                        ops = []
-                                                    if (gbal - b.amount < 0) {
-                                                        b.amount = gbal
-                                                    }
-                                                    ops.push({ type: 'put', path: ['balances', from], data: lbal + b.amount })
-                                                    ops.push({ type: 'put', path: ['gov', from], data: gbal - b.amount })
-                                                    ops.push({ type: 'put', path: ['gov', 't'], data: tgov - b.amount })
-                                                    ops.push({ type: 'put', path: ['feed', `${num}:vop_${id}`], data: `@${b.by}| ${parseFloat(b.amount/1000).toFixed(3)} ${config.TOKEN} withdrawn from governance.` })
-                                                    ops.push({ type: 'del', path: ['chrono', delkey] })
-                                                    ops.push({ type: 'del', path: ['govd', b.by, delkey] })
-                                                    store.batch(ops, [resolve, reject])
-                                                })
-                                                .catch(e => { console.log(e) })
-                                        })
-                                    }
+                                    promises.push(Chron.govDownOp([plb, tgovp, govp], b.by, delKey, num, delKey.split(':')[1], b))
                                     break;
                                 case 'power_down': //needs work and testing
                                     let lbp = getPathNum(['balances', b.by]),
                                         tpowp = getPathNum(['pow', 't']),
                                         powp = getPathNum(['pow', b.by])
-                                    promises.push(powerDownOp([lbp, tpowp, powp], b.by, delKey, num, delKey.split(':')[1], b))
-
-                                    function powerDownOp(promies, from, delkey, num, id, b) {
-                                        return new Promise((resolve, reject) => {
-                                            Promise.all(promies)
-                                                .then(bals => {
-                                                    let lbal = bals[0],
-                                                        tpow = bals[1],
-                                                        pbal = bals[2],
-                                                        ops = []
-                                                    if (pbal - b.amount < 0) {
-                                                        b.amount = pbal
-                                                    }
-                                                    ops.push({ type: 'put', path: ['balances', from], data: lbal + b.amount })
-                                                    ops.push({ type: 'put', path: ['pow', from], data: pbal - b.amount })
-                                                    ops.push({ type: 'put', path: ['pow', 't'], data: tpow - b.amount })
-                                                    ops.push({ type: 'put', path: ['feed', `${num}:vop_${id}`], data: `@${b.by}| powered down ${parseFloat(b.amount/1000).toFixed(3)} ${config.TOKEN}` })
-                                                    ops.push({ type: 'del', path: ['chrono', delkey] })
-                                                    ops.push({ type: 'del', path: ['powd', b.by, delkey] })
-                                                    store.batch(ops, [resolve, reject])
-                                                })
-                                                .catch(e => { console.log(e) })
-                                        })
-                                    }
+                                    promises.push(Chron.powerDownOp([lbp, tpowp, powp], b.by, delKey, num, delKey.split(':')[1], b))
                                     break;
                                 case 'post_reward':
-                                    promises.push(postRewardOP(b, num, delKey.split(':')[1], delKey))
-
-                                    function postRewardOP(l, num, id, delkey) {
-                                        return new Promise((resolve, reject) => {
-                                            store.get(['posts', `${l.author}/${l.permlink}`], function(e, b) {
-                                                let ops = []
-                                                let totals = {
-                                                    totalWeight: 0,
-                                                    linearWeight: 0
-                                                }
-                                                for (vote in b.votes) {
-                                                    totals.totalWeight += b.votes[vote].v
-                                                    linearWeight = parseInt(b.votes[vote].v * ((201600 - (b.votes[vote].b - b.block)) / 201600))
-                                                    totals.linearWeight += linearWeight
-                                                    b.votes[vote].w = linearWeight
-                                                }
-                                                let half = parseInt(totals.totalWeight / 2)
-                                                totals.curationTotal = half
-                                                totals.authorTotal = totals.totalWeight - half
-                                                b.t = totals
-                                                ops.push({
-                                                    type: 'put',
-                                                    path: ['pendingpayment', `${b.author}/${b.permlink}`],
-                                                    data: b
-                                                })
-                                                ops.push({ type: 'del', path: ['chrono', delkey] })
-                                                ops.push({ type: 'put', path: ['feed', `${num}:vop_${id}`], data: `@${b.author}| Post:${b.permlink} voting expired.` })
-                                                ops.push({ type: 'del', path: ['post', `${b.author}/${b.permlink}`] })
-                                                store.batch(ops, [resolve, reject])
-                                            })
-                                        })
-                                    }
-
+                                    promises.push(Chron.postRewardOP(b, num, delKey.split(':')[1], delKey))
                                     break;
                                 case 'post_vote':
-                                    promises.push(postVoteOP(b, delKey))
-
-                                    function postVoteOP(l, delkey) {
-                                        return new Promise((resolve, reject) => {
-                                            store.get(['posts', `${l.author}/${l.permlink}`], function(e, b) {
-                                                let ops = []
-                                                let totalWeight = 0
-                                                for (vote in b.votes) {
-                                                    totalWeight += b.votes[vote].v
-                                                }
-                                                b.v = totalWeight
-                                                if (b.v > 0) {
-                                                    ops.push({
-                                                        type: 'put',
-                                                        path: ['pendingvote', `${l.author}/${l.permlink}`],
-                                                        data: b
-                                                    })
-                                                }
-                                                ops.push({ type: 'del', path: ['chrono', delkey] })
-                                                store.batch(ops, [resolve, reject])
-                                            })
-                                        })
-                                    }
-
+                                    promises.push(Chron.postVoteOP(b, delKey))
                                     break;
                                 default:
 
