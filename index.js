@@ -40,7 +40,36 @@ exports.newOps = function(array) { NodeOps = array }
 exports.unshiftOp = function(op) { NodeOps.unshift(op) }
 exports.pushOp = function(op) { NodeOps.push(op) }
 exports.spliceOp = function(i) { NodeOps.splice(i, 1) }
-
+var status = {
+    cleaner: [],
+}
+exports.status = status
+const TXID = {
+    store: function (msg, txid){
+        status[txid.split(':')[1]] = msg
+        status.cleaner.push(txid)
+    },
+    clean: function (blocknum){
+        TXID.blocknumber = blocknum
+        if(status.cleaner.length){
+            var again = false
+            do {
+                if (parseInt(status.cleaner[0].split(':')[0]) <= blocknum - config.history){
+                    delete status[status.cleaner[0].split(':')[1]]
+                    status.shift()
+                    again = true
+                } else {
+                    again = false
+                }
+            } while (again)
+        }
+    },
+    getBlockNum: function (){
+        return TXID.blocknumber
+    },
+    blocknumber: 0
+}
+exports.TXID = TXID
 const API = require('./routes/api');
 const { getPathNum } = require("./getPathNum");
 const HR = require('./processing_routes/index')
@@ -138,36 +167,6 @@ var plasma = {
     },
     jwt;
 exports.jwt = jwt
-var status = {
-    cleaner: [],
-}
-exports.status = status
-const TXID = {
-    store: function (msg, txid){
-        status[txid.split(':')[1]] = msg
-        status.cleaner.push(txid)
-    },
-    clean: function (blocknum){
-        TXID.blocknumber = blocknum
-        if(status.cleaner.length){
-            var again = false
-            do {
-                if (parseInt(status.cleaner[0].split(':')[0]) <= blocknum - config.history){
-                    delete status[status.cleaner[0].split(':')[1]]
-                    status.shift()
-                    again = true
-                } else {
-                    again = false
-                }
-            } while (again)
-        }
-    },
-    getBlockNum: function (){
-        return TXID.blocknumber
-    },
-    blocknumber: 0
-}
-exports.TXID = TXID
 //grabs an API token for IPFS pinning of TOKEN posts
 if (config.rta && config.rtp) {
     rtrades.handleLogin(config.rta, config.rtp)
