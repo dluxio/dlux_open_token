@@ -56,7 +56,7 @@ const TXID = {
             do {
                 if (parseInt(status.cleaner[0].split(':')[0]) <= blocknum - config.history){
                     delete status[status.cleaner[0].split(':')[1]]
-                    status.shift()
+                    status.cleaner.shift()
                     again = true
                 } else {
                     again = false
@@ -102,8 +102,8 @@ var recents = []
     //HIVE API CODE
 
 //Start Program Options   
-//startWith('QmVXJieWHpsjRDFUPdfYupMLd7cnsVCdR4FdGA4pL5tNDG') //for testing and replaying
-dynStart(config.leader)
+startWith('Qmaoz8D7PsPvQbE3nBpyFbeMkggKXqxVCDraWgX36cuGwm') //for testing and replaying
+//dynStart(config.leader)
 
 
 // API defs
