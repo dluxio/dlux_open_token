@@ -374,7 +374,7 @@ exports.nft_bid = function(json, from, active, pc) {
                             bal = bal - json.bid_amount
                             var ops = []
                             ops.push({type:'put', path:['ah', `${json.set}:${json.uid}`], data: listing})
-                            ops.push({type:'put', path:['balances', from], data: bal - json.bid_amount})
+                            ops.push({type:'put', path:['balances', from], data: bal})
                             let msg = `@${from} bid ${parseFloat(json.bid_amount/1000).toFixed(3)} ${config.TOKEN} on ${json.set}:${json.uid}'s auction`
                             if (config.hookurl || config.status) postToDiscord(msg, `${json.block_num}:${json.transaction_id}`)
                             ops.push({ type: 'put', path: ['feed', `${json.block_num}:${json.transaction_id}`], data: msg });
@@ -392,7 +392,7 @@ exports.nft_bid = function(json, from, active, pc) {
                     bal = bal - json.bid_amount
                     var ops = []
                     ops.push({type:'put', path:['ah', `${json.set}:${json.uid}`], data: listing})
-                    ops.push({type:'put', path:['balances', from], data: bal - json.bid_amount})
+                    ops.push({type:'put', path:['balances', from], data: bal})
                     let msg = `@${from} bid ${parseFloat(json.bid_amount/1000).toFixed(3)} ${config.TOKEN} on ${json.set}:${json.uid}'s auction`
                     if (config.hookurl || config.status) postToDiscord(msg, `${json.block_num}:${json.transaction_id}`)
                     ops.push({ type: 'put', path: ['feed', `${json.block_num}:${json.transaction_id}`], data: msg });
