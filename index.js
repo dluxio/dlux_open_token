@@ -102,8 +102,8 @@ var recents = []
     //HIVE API CODE
 
 //Start Program Options   
-//startWith('Qmc96KxNh2aSwMp3pwB4bm6cSp6AEQE2pubbCwtT7SZjEr') //for testing and replaying
-dynStart(config.leader)
+startWith('QmcrLqzoUkvPA19FgE85MF7rfH3uSnPVh9A3Q6FziuyGQo') //for testing and replaying
+//dynStart(config.leader)
 
 
 // API defs
@@ -227,7 +227,7 @@ function startApp() {
     processor.onOperation('comment', HR.comment);
     //do things in cycles based on block time
     processor.onBlock(
-        function(num, pc) {
+        function(num, pc, prand) {
             console.log(num)
             TXID.clean(num)
             return new Promise((resolve, reject) => {

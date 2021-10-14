@@ -964,7 +964,7 @@ exports.set = (req, res, next) => {
                 max: Base64.toNumber(mem[0].m) - Base64.toNumber(mem[0].o) + 1
             },
             uids = []
-            if (mem[0].u)uids = mem[0].u.split(',') || []
+            if (mem[0].u)uids = mem[0].u.split(',')
         for (var i = 0; i < uids.length; i++){
             var owner = uids[i].split('_')
             for (var j = 0; j < owner.length -1; j++){
