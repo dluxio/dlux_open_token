@@ -55,7 +55,7 @@ const TXID = {
             var again = false
             do {
                 if (parseInt(status.cleaner[0].split(':')[0]) <= blocknum - config.history){
-                    delete status[status.cleaner[0].split(':')[1]]
+                    delete status[status.cleaner[0]]
                     status.cleaner.shift()
                     again = true
                 } else {
@@ -542,9 +542,6 @@ function startWith(hash) {
                         if (!e) {
                             if (hash) {
                                 var cleanState = data[1]
-                                cleanState.stats.nft_byte_cost = 20
-                                cleanState.stats.nft_fee_1 = 100000
-                                
                                 //stuff to make MS work
                                 store.put([], cleanState, function(err) {
                                     if (err) {
