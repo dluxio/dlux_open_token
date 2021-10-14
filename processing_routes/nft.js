@@ -235,9 +235,9 @@ exports.nft_define = function(json, from, active, pc) {
                                         "f":fee - (total_num * bond) //fee
                                     }
                                     const ops = []
-                                    ops.push([{type:'put', path:['balances', from], data: mem[1] - fee}])
-                                    ops.push([{type:'put', path:['sets', json.name], data: set}])
-                                    ops.push([{type:'put', path:['rnfts', json.name, from], data: total_num}])
+                                    ops.push({type:'put', path:['balances', from], data: mem[1] - fee})
+                                    ops.push({type:'put', path:['sets', json.name], data: set})
+                                    ops.push({type:'put', path:['rnfts', json.name, from], data: total_num})
                                     let msg = `@${from} defined ${json.name} NFT set. ${parseFloat(fee/1000).toFixed(3)} ${config.TOKEN} paid`
                                     if (config.hookurl || config.status) postToDiscord(msg, `${json.block_num}:${json.transaction_id}`)
                                     ops.push({ type: 'put', path: ['feed', `${json.block_num}:${json.transaction_id}`], data: msg });
@@ -273,7 +273,7 @@ exports.nft_mint = function(json, from, active, pc) {
                 if(nfts[0] > 0 && active) {
                     chronAssign(json.block_num + 1, {op:"mint", set:json.set, for: from})
                     let ops = []
-                    ops.push([{type:'put', path:['rnfts', json.set, from], data: nfts[0] - 1}])
+                    ops.push({type:'put', path:['rnfts', json.set, from], data: nfts[0] - 1})
                     let msg = `@${from} Inserted a ${json.set} Mint Token`
                     if (config.hookurl || config.status) postToDiscord(msg, `${json.block_num}:${json.transaction_id}`)
                     ops.push({ type: 'put', path: ['feed', `${json.block_num}:${json.transaction_id}`], data: msg });
@@ -327,10 +327,10 @@ exports.nft_auction = function(json, from, active, pc) {
                     nft.s.replace(last_modified, Base64.fromNumber(json.block_num)) //update the modified block
                     listing.nft = nft //place the nft in the listing
                     ah[`${json.set}:${json.uid}`] = listing //place the listing in the AH
-                    ops.push([{type:'put', path:['ah'], data: ah}])
-                    ops.push([{type:'del', path:['nfts', from, `${json.set}:${json.uid}`]}])
-                    if (json.set == 'Qm') ops.push([{type:'put', path:['sets', `Qm${json.uid}`], data: set}])
-                    else ops.push([{type:'put', path:['sets', json.set], data: set}])
+                    ops.push({type:'put', path:['ah'], data: ah})
+                    ops.push({type:'del', path:['nfts', from, `${json.set}:${json.uid}`]})
+                    if (json.set == 'Qm') ops.push({type:'put', path:['sets', `Qm${json.uid}`], data: set})
+                    else ops.push({type:'put', path:['sets', json.set], data: set})
                     let msg = `@${from} Listed ${json.set}:${json.uid} for auction`
                     if (config.hookurl || config.status) postToDiscord(msg, `${json.block_num}:${json.transaction_id}`)
                     ops.push({ type: 'put', path: ['feed', `${json.block_num}:${json.transaction_id}`], data: msg });
@@ -372,8 +372,8 @@ exports.nft_bid = function(json, from, active, pc) {
                             listing.c++
                             bal = bal - json.bid
                             var ops = []
-                            ops.push([{type:'put', path:['ah', `${json.set}:${json.uid}`], data: listing}])
-                            ops.push([{type:'put', path:['balances', from], data: bal}])
+                            ops.push({type:'put', path:['ah', `${json.set}:${json.uid}`], data: listing})
+                            ops.push({type:'put', path:['balances', from], data: bal})
                             let msg = `@${from} bid ${parseFloat(json.bid/1000).toFixed(3)} ${config.TOKEN} on ${json.set}:${json.uid}'s auction`
                             if (config.hookurl || config.status) postToDiscord(msg, `${json.block_num}:${json.transaction_id}`)
                             ops.push({ type: 'put', path: ['feed', `${json.block_num}:${json.transaction_id}`], data: msg });
@@ -390,8 +390,8 @@ exports.nft_bid = function(json, from, active, pc) {
                     listing.c = 1
                     bal = bal - json.bid
                     var ops = []
-                    ops.push([{type:'put', path:['ah', `${json.set}:${json.uid}`], data: listing}])
-                    ops.push([{type:'put', path:['balances', from], data: bal}])
+                    ops.push({type:'put', path:['ah', `${json.set}:${json.uid}`], data: listing})
+                    ops.push({type:'put', path:['balances', from], data: bal})
                     let msg = `@${from} bid ${parseFloat(json.bid/1000).toFixed(3)} ${config.TOKEN} on ${json.set}:${json.uid}'s auction`
                     if (config.hookurl || config.status) postToDiscord(msg, `${json.block_num}:${json.transaction_id}`)
                     ops.push({ type: 'put', path: ['feed', `${json.block_num}:${json.transaction_id}`], data: msg });
@@ -427,10 +427,10 @@ exports.nft_sell = function(json, from, active, pc) {
                     nft.s.replace(last_modified, Base64.fromNumber(json.block_num)) //update the modified block
                     listing.nft = nft //place the nft in the listing
                     ls[`${json.set}:${json.uid}`] = listing //place the listing in the AH
-                    ops.push([{type:'put', path:['ls'], data: ls}])
-                    ops.push([{type:'del', path:['nfts', from, `${json.set}:${json.uid}`]}])
-                    if (json.set == 'Qm') ops.push([{type:'put', path:['sets', `Qm${json.uid}`], data: set}])
-                    else ops.push([{type:'put', path:['sets', json.set], data: set}])
+                    ops.push({type:'put', path:['ls'], data: ls})
+                    ops.push({type:'del', path:['nfts', from, `${json.set}:${json.uid}`]})
+                    if (json.set == 'Qm') ops.push({type:'put', path:['sets', `Qm${json.uid}`], data: set})
+                    else ops.push({type:'put', path:['sets', json.set], data: set})
                     let msg = `@${from} Listed ${json.set}:${json.uid} for sale`
                     if (config.hookurl || config.status) postToDiscord(msg, `${json.block_num}:${json.transaction_id}`)
                     ops.push({ type: 'put', path: ['feed', `${json.block_num}:${json.transaction_id}`], data: msg });
@@ -464,11 +464,11 @@ exports.nft_buy = function(json, from, active, pc) {
             let royalty = parseInt((set.r / 10000)* listing.p)
             add(set.a, royalty)
             add(listing.o, listing.p - royalty)
-            ops.push([{type:'put', path:['balances', from], data: mem[0] - listing.p}])
-            ops.push([{type:'put', path:['nfts', from, `${json.set}:${json.uid}`], data: nft}])
-            ops.push([{type:'del', path:['ls', `${json.set}:${json.uid}`]}])
-            if (json.set == 'Qm') ops.push([{type:'put', path:['sets', `Qm${json.uid}`], data: set}])
-            else ops.push([{type:'put', path:['sets', json.set], data: set}])
+            ops.push({type:'put', path:['balances', from], data: mem[0] - listing.p})
+            ops.push({type:'put', path:['nfts', from, `${json.set}:${json.uid}`], data: nft})
+            ops.push({type:'del', path:['ls', `${json.set}:${json.uid}`]})
+            if (json.set == 'Qm') ops.push({type:'put', path:['sets', `Qm${json.uid}`], data: set})
+            else ops.push({type:'put', path:['sets', json.set], data: set})
             let msg = `@${from} bought ${json.set}:${json.uid}`
             if (config.hookurl || config.status) postToDiscord(msg, `${json.block_num}:${json.transaction_id}`)
             ops.push({ type: 'put', path: ['feed', `${json.block_num}:${json.transaction_id}`], data: msg });
@@ -494,10 +494,10 @@ exports.nft_sell_cancel = function(json, from, active, pc) {
             nft.s.replace(last_modified, Base64.fromNumber(json.block_num)) //update the modified block
             if(json.uid.split(':')[0] != 'Qm') set.u = NFT.move(json.uid, from, set.u)//update set
             else set.u = from
-            ops.push([{type:'put', path:['nfts', from, `${json.set}:${json.uid}`], data: nft}])
-            ops.push([{type:'del', path:['ls', `${json.set}:${json.uid}`]}])
-            if (json.set == 'Qm') ops.push([{type:'put', path:['sets', `Qm${json.uid}`], data: set}])
-            else ops.push([{type:'put', path:['sets', json.set], data: set}])
+            ops.push({type:'put', path:['nfts', from, `${json.set}:${json.uid}`], data: nft})
+            ops.push({type:'del', path:['ls', `${json.set}:${json.uid}`]})
+            if (json.set == 'Qm') ops.push({type:'put', path:['sets', `Qm${json.uid}`], data: set})
+            else ops.push({type:'put', path:['sets', json.set], data: set})
             let msg = `@${from} canceled sell of ${json.set}:${json.uid}`
             if (config.hookurl || config.status) postToDiscord(msg, `${json.block_num}:${json.transaction_id}`)
             ops.push({ type: 'put', path: ['feed', `${json.block_num}:${json.transaction_id}`], data: msg });
@@ -525,8 +525,8 @@ exports.ft_transfer = function(json, from, active, pc) {
         let mts = mem[0]
         if (mts > 0 && active){
             let ops = []
-            ops.push([{type:'put', path:['rnfts', json.set, json.to], data: mem[1] + 1}])
-            ops.push([{type:'put', path:['rnfts', json.set, from], data: mts - 1}])
+            ops.push({type:'put', path:['rnfts', json.set, json.to], data: mem[1] + 1})
+            ops.push({type:'put', path:['rnfts', json.set, from], data: mts - 1})
             let msg = `@${from} transfered 1 ${json.set} mint token to ${json.to}`
             if (config.hookurl || config.status) postToDiscord(msg, `${json.block_num}:${json.transaction_id}`)
             ops.push({ type: 'put', path: ['feed', `${json.block_num}:${json.transaction_id}`], data: msg });
@@ -558,10 +558,10 @@ exports.ft_airdrop = function(json, from, active, pc) {
             let ops = []
             let string = ``
             for (var i = 1; i <= json.to.length; i++){
-                ops.push([{type:'put', path:['rnfts', json.set, json.to[i-1]], data: mem[i] + 1}])
+                ops.push({type:'put', path:['rnfts', json.set, json.to[i-1]], data: mem[i] + 1})
                 string += `@${json.to[i-1]}, `
             }
-            ops.push([{type:'put', path:['rnfts', json.set, from], data: mts - json.to.length}])
+            ops.push({type:'put', path:['rnfts', json.set, from], data: mts - json.to.length})
             let msg = `@${from} transfered ${json.to.length} ${json.set} mint tokens to ${string}`
             if (config.hookurl || config.status) postToDiscord(msg, `${json.block_num}:${json.transaction_id}`)
             ops.push({ type: 'put', path: ['feed', `${json.block_num}:${json.transaction_id}`], data: msg });
