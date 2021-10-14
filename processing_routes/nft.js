@@ -418,7 +418,7 @@ exports.nft_sell = function(json, from, active, pc) {
         if(json.set == `Qm`) setp = getPathObj(['sets', `Qm${json.uid}`])
     Promise.all([fnftp, ahp, setp])
     .then(mem => {
-        if (mem[0].p && !mem[0].l && active){
+        if (mem[0].s && !mem[0].l && active){
                 var ls = mem[1], nft = mem[0], set = mem[2]
                 var p = json.price || 1000
                     var listing = {
