@@ -29,7 +29,7 @@ exports.nft_transfer = function(json, from, active, pc) {
             ops.push({type:'del', path:['nfts', from, `${json.set}:${json.uid}`]})
             ops.push({type:'put', path:['sets', json.set], data: set})
             // is there anything in the NFT that needs to be modified? owner, renter, 
-            let msg = `@${from}| Sent ${json.set}:${json.nft_id} to @${json.to}`
+            let msg = `@${from}| Sent ${json.set}:${json.uid} to @${json.to}`
             if (config.hookurl || config.status) postToDiscord(msg, `${json.block_num}:${json.transaction_id}`)
             ops.push({ type: 'put', path: ['feed', `${json.block_num}:${json.transaction_id}`], data: msg });
             store.batch(ops, pc)

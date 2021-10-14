@@ -49,7 +49,7 @@ const NFT = {
     },
     last : function(number, string){
         const last = string.split(',')[0]
-        return string.replace('last', Base64.fromNumber(number))
+        return string.replace(last, Base64.fromNumber(number))
     },
     mintOp : function (promies, delkey, num, b, rand) {
         return new Promise((resolve, reject) => {
