@@ -361,21 +361,21 @@ exports.nft_bid = function(json, from, active, pc) {
         ahp = getPathObj(['ah', `${json.set}:${json.uid}`])
     Promise.all([balp, ahp])
         .then(mem => {
-            if(active && mem[1].e && mem[0] >= json.bid){ //check for item and liquid sufficient for bid
+            if(active && mem[1].e && mem[0] >= json.bid_amount){ //check for item and liquid sufficient for bid
                 var listing = mem[1],
                     bal = mem[0]
                 if(listing.b){
-                    if (json.bid > listing.b){
+                    if (json.bid_amount > listing.b){
                         add(listing.f, listing.b) //return the previous high bidders tokens
                         .then(empty => {
                             listing.f = from
-                            listing.b = json.bid
+                            listing.b = json.bid_amount
                             listing.c++
-                            bal = bal - json.bid
+                            bal = bal - json.bid_amount
                             var ops = []
                             ops.push({type:'put', path:['ah', `${json.set}:${json.uid}`], data: listing})
                             ops.push({type:'put', path:['balances', from], data: bal})
-                            let msg = `@${from} bid ${parseFloat(json.bid/1000).toFixed(3)} ${config.TOKEN} on ${json.set}:${json.uid}'s auction`
+                            let msg = `@${from} bid ${parseFloat(json.bid_amount/1000).toFixed(3)} ${config.TOKEN} on ${json.set}:${json.uid}'s auction`
                             if (config.hookurl || config.status) postToDiscord(msg, `${json.block_num}:${json.transaction_id}`)
                             ops.push({ type: 'put', path: ['feed', `${json.block_num}:${json.transaction_id}`], data: msg });
                             store.batch(ops, pc)
@@ -387,13 +387,13 @@ exports.nft_bid = function(json, from, active, pc) {
                     }
                 } else {
                     listing.f = from
-                    listing.b = json.bid
+                    listing.b = json.bid_amount
                     listing.c = 1
-                    bal = bal - json.bid
+                    bal = bal - json.bid_amount
                     var ops = []
                     ops.push({type:'put', path:['ah', `${json.set}:${json.uid}`], data: listing})
                     ops.push({type:'put', path:['balances', from], data: bal})
-                    let msg = `@${from} bid ${parseFloat(json.bid/1000).toFixed(3)} ${config.TOKEN} on ${json.set}:${json.uid}'s auction`
+                    let msg = `@${from} bid ${parseFloat(json.bid_amount/1000).toFixed(3)} ${config.TOKEN} on ${json.set}:${json.uid}'s auction`
                     if (config.hookurl || config.status) postToDiscord(msg, `${json.block_num}:${json.transaction_id}`)
                     ops.push({ type: 'put', path: ['feed', `${json.block_num}:${json.transaction_id}`], data: msg });
                     store.batch(ops, pc)
