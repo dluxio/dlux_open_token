@@ -1,6 +1,6 @@
 let config = require('./../config')
 const { Base64} = require('./../helpers')
-const { store, GetNodeOps, VERSION, status } = require("./../index");
+const { store, GetNodeOps, VERSION, status, TXID } = require("./../index");
 const fetch = require('node-fetch');
 let { getPathNum } = require("./../getPathNum");
 let { getPathObj } = require("./../getPathObj");
@@ -795,9 +795,10 @@ exports.auctions = (req, res, next) => {
     Promise.all([ahp, setp])
     .then(mem => {
         let now = new Date(),
-            result = []
+            result = [],
+            auctionTimer = {}
         for(item in mem[0]){
-            auctionTimer.expiryIn = now.setHours(now.getSeconds() + ((mem[0][item].e - status.getBlockNum())*3));
+            auctionTimer.expiryIn = now.setSeconds(now.getSeconds() + ((mem[0][item].e - TXID.getBlockNum())*3));
             auctionTimer.expiryUTC = new Date(auctionTimer.expiryIn);
             auctionTimer.expiryString = auctionTimer.expiryUTC.toISOString().slice(0, -5);
             result.push({
@@ -810,11 +811,11 @@ exports.auctions = (req, res, next) => {
                         }, //starting price
                         time: auctionTimer.expiryString,
                         by:mem[0][item].o,
-                        bids: mem[0][item].c,
-                        bidder: mem[0][item].f,
+                        bids: mem[0][item].c || 0,
+                        bidder: mem[0][item].f || '',
                         script: mem[1][item.split(':')[0]].s,
                         days: mem[0][item].t,
-                        buy: mem[0][item].n
+                        buy: mem[0][item].n || ''
                     })
         }
         res.setHeader('Content-Type', 'application/json')
