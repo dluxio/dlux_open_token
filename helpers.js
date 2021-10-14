@@ -54,7 +54,7 @@ exports.NFT = {
         return new Promise((resolve, reject) => {
             const seed = parseInt(rand.slice(0, 8), 16)
             Promise.all(promies).then(mem => {
-                set = mem[0]
+                var set = mem[0]
                 if (set.i === "0")NFT.finalizeFee(set.f)
                 switch (set.t) {
                     case 1:
