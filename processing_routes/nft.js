@@ -3,7 +3,7 @@ const { store, unshiftOp } = require('./../index')
 const { chronAssign, add } = require('./../lil_ops')
 const { getPathObj } = require('../getPathObj')
 const { postToDiscord } = require('./../discord')
-const { Base64, primes } = require('./../helpers')
+const { Base64, primes, NFT } = require('./../helpers')
 const { getPathNum } = require('../getPathNum')
 
 /*
