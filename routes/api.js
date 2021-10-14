@@ -709,7 +709,7 @@ exports.nfts = (req, res, next) => {
     let user = req.params.user,
         userItems = getPathObj(['nfts', user]),
         sets = getPathObj(['sets']),
-        mintItems = getPathObj['rnfts']
+        mintItems = getPathObj(['rnfts'])
     Promise.all([userItems, sets, mintItems])
     .then(mem => {
         var result = []
@@ -727,6 +727,7 @@ exports.nfts = (req, res, next) => {
         for (item in mem[2]){
             if(mem[2][item][user]){
                 const set = item
+                console.log({item})
                 mint_tokens.push({
                     qty: mem[2][item][user],
                     set, 
