@@ -1219,6 +1219,7 @@ exports.coin = (req, res, next) => {
                 pow += state.pow[bal]
             }
         }
+        
         let info = {}
         let check = `supply check:state:${state.stats.tokenSupply} vs check: ${supply}: ${state.stats.tokenSupply - supply}`
         if (state.stats.tokenSupply != supply) {
