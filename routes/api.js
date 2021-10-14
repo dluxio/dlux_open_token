@@ -960,10 +960,11 @@ exports.set = (req, res, next) => {
                 type: mem[0].t,
                 royalty: mem[0].r,
                 name: mem[0].n,
-                minted: mem[0].i,
-                max: Base64.toNumber(mem[0].m) - Base64.toNumber(mem[0].o)
+                minted: Base64.toNumber(mem[0].i),
+                max: Base64.toNumber(mem[0].m) - Base64.toNumber(mem[0].o) + 1
             },
-            uids = mem[0].u.split(',')
+            uids = []
+            if (mem[0].u)uids = mem[0].u.split(',') || []
         for (var i = 0; i < uids.length; i++){
             var owner = uids[i].split('_')
             for (var j = 0; j < owner.length -1; j++){
