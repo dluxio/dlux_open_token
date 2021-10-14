@@ -888,18 +888,19 @@ exports.sales = (req, res, next) => {
             sets = {}
         for (item in mem[0]){
             const listing = {
-                uid: mem[0][item].u,
-                set: mem[0][item].s,
+                uid: item.split(':')[1],
+                set: item.split(':')[0],
                 price: {
                     amount: mem[0][item].p,
                     precision: config.precision,
                     token: config.TOKEN
                 },
                 by:mem[0][item].o,
-                script: mem[2][mem[0][item].s].s
+                script: mem[2][item.split(':')[0]].s
             }
             result.push(listing)
         }
+        console.log({result})
         for (item in mem[1]){
             const listing = {
                 set: mem[1][item].s,
@@ -1219,7 +1220,7 @@ exports.coin = (req, res, next) => {
                 pow += state.pow[bal]
             }
         }
-        
+
         let info = {}
         let check = `supply check:state:${state.stats.tokenSupply} vs check: ${supply}: ${state.stats.tokenSupply - supply}`
         if (state.stats.tokenSupply != supply) {
