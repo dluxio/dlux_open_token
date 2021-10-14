@@ -211,7 +211,7 @@ exports.nft_define = function(json, from, active, pc) {
                             byte_count += name_counter.length
                             const start_num = Base64.toNumber(json.start)
                             const end_num = Base64.toNumber(json.end)
-                            const total_num = end_num - start_num
+                            const total_num = end_num - start_num + 1
                             const id_counter = json.end.split('')
                             byte_count += id_counter.length * 2
                             if(total_num){ //checks for error in set size
@@ -221,7 +221,7 @@ exports.nft_define = function(json, from, active, pc) {
                                 const fee = (byte_cost * byte_count * total_num) + mem[0].nft_fee_1 + (total_num * bond)
                                 if(json.max_fee >= fee && mem[1] >= fee){
                                     let set = { //5 plus set name bytes
-                                        "a":json.from, //the account that pays the set fee, --23 bytes
+                                        "a":from, //the account that pays the set fee, --23 bytes
                                         "s":json.script, //build app hash --53bytes
                                         "i":"0", //issued counter for IDs -6bytes
                                         "m":Base64.fromNumber(end_num), //max issue -6-10bytes
