@@ -794,10 +794,10 @@ exports.auctions = (req, res, next) => {
         setp = getPathObj(['sets'])
     Promise.all([ahp, setp])
     .then(mem => {
-        let now = new Date(),
-            result = [],
-            auctionTimer = {}
+        let result = []
         for(item in mem[0]){
+            let auctionTimer = {},
+            now = new Date()
             auctionTimer.expiryIn = now.setSeconds(now.getSeconds() + ((mem[0][item].e - TXID.getBlockNum())*3));
             auctionTimer.expiryUTC = new Date(auctionTimer.expiryIn);
             auctionTimer.expiryString = auctionTimer.expiryUTC.toISOString().slice(0, -5);
@@ -809,6 +809,11 @@ exports.auctions = (req, res, next) => {
                             precision: config.precision,
                             token: config.TOKEN
                         }, //starting price
+                        initial_price: {
+                            amount: mem[0][item].p,
+                            precision: config.precision,
+                            token: config.TOKEN
+                        },
                         time: auctionTimer.expiryString,
                         by:mem[0][item].o,
                         bids: mem[0][item].c || 0,
@@ -836,13 +841,13 @@ exports.mint_auctions = (req, res, next) => {
     .then(mem => {
         let now = new Date()
             result = [],
-            sets = {}
-        for (item in mem[0]){
-            var auctionTimer = {}
-                auctionTimer.expiryIn = now.setHours(now.getSeconds() + ((mem[0][item].e - status.getBlockNum())*3));
-                auctionTimer.expiryUTC = new Date(auctionTimer.expiryIn);
-                auctionTimer.expiryString = auctionTimer.expiryUTC.toISOString().slice(0, -5);
-        
+            sets = {},
+            auctionTimer = {}
+        for(item in mem[0]){
+            auctionTimer.expiryIn = now.setSeconds(now.getSeconds() + ((mem[0][item].e - TXID.getBlockNum())*3));
+            auctionTimer.expiryUTC = new Date(auctionTimer.expiryIn);
+            auctionTimer.expiryString = auctionTimer.expiryUTC.toISOString().slice(0, -5);
+            
             const listing = {
                 price: {
                     amount: mem[0][item].b,
