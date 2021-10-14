@@ -270,18 +270,15 @@ exports.nft_mint = function(json, from, active, pc) {
     let rnftp = getPathNum(['rnfts', json.set, from])
     Promise.all([rnftp])
         .then(nfts => {
-            console.log({nfts})
             if(nfts[0] > 0 && active) {
-                console.log('true')
                 chronAssign(json.block_num + 1, {op:"mint", set:json.set, for: from})
                 let ops = []
                 ops.push({type:'put', path:['rnfts', json.set, from], data: nfts[0] - 1})
-                let msg = `@${from} Inserted a ${json.set} Mint Token`
+                let msg = `@${from} Redeemed a ${json.set} Mint Token`
                 if (config.hookurl || config.status) postToDiscord(msg, `${json.block_num}:${json.transaction_id}`)
                 ops.push({ type: 'put', path: ['feed', `${json.block_num}:${json.transaction_id}`], data: msg });
                 store.batch(ops, pc)
             } else {
-                console.log('false')
                 pc[0](pc[2])
             }
         })
