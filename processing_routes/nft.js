@@ -468,16 +468,18 @@ exports.nft_buy = function(json, from, active, pc) {
             else set.u = from
             let royalty = parseInt((set.r / 10000)* listing.p)
             add(set.a, royalty)
-            add(listing.o, listing.p - royalty)
-            ops.push({type:'put', path:['balances', from], data: mem[0] - listing.p})
-            ops.push({type:'put', path:['nfts', from, `${json.set}:${json.uid}`], data: nft})
-            ops.push({type:'del', path:['ls', `${json.set}:${json.uid}`]})
-            if (json.set == 'Qm') ops.push({type:'put', path:['sets', `Qm${json.uid}`], data: set})
-            else ops.push({type:'put', path:['sets', json.set], data: set})
-            let msg = `@${from} bought ${json.set}:${json.uid}`
-            if (config.hookurl || config.status) postToDiscord(msg, `${json.block_num}:${json.transaction_id}`)
-            ops.push({ type: 'put', path: ['feed', `${json.block_num}:${json.transaction_id}`], data: msg });
-            store.batch(ops, pc)
+            .then(empty =>{
+                add(listing.o, listing.p - royalty)
+                ops.push({type:'put', path:['balances', from], data: mem[0] - listing.p})
+                ops.push({type:'put', path:['nfts', from, `${json.set}:${json.uid}`], data: nft})
+                ops.push({type:'del', path:['ls', `${json.set}:${json.uid}`]})
+                if (json.set == 'Qm') ops.push({type:'put', path:['sets', `Qm${json.uid}`], data: set})
+                else ops.push({type:'put', path:['sets', json.set], data: set})
+                let msg = `@${from} bought ${json.set}:${json.uid}`
+                if (config.hookurl || config.status) postToDiscord(msg, `${json.block_num}:${json.transaction_id}`)
+                ops.push({ type: 'put', path: ['feed', `${json.block_num}:${json.transaction_id}`], data: msg });
+                store.batch(ops, pc)
+            })
         } else {
             let msg = `@${from} can't afford to buy: ${json.set}:${json.uid}, or signed with posting key`
             if (config.hookurl || config.status) postToDiscord(msg, `${json.block_num}:${json.transaction_id}`)
