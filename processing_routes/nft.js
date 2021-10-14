@@ -5,6 +5,7 @@ const { getPathObj } = require('../getPathObj')
 const { postToDiscord } = require('./../discord')
 const { Base64, primes, NFT } = require('./../helpers')
 const { getPathNum } = require('../getPathNum')
+const { set } = require('@hiveio/hive-js/lib/auth/serializer/src/types')
 
 /*
 json:{
@@ -165,6 +166,8 @@ exports.nft_delete  = function(json, from, active, pc) {
                 nft = nfts[0],
                 set = nfts[1]
             set.u = NFT.delete(json.uid, set.u)
+            if(set.d)set.d++
+            else set.d = 1
             add(from, set.b)
             ops.push({type:'put', path:['sets', json.set], data: set})
             ops.push({type:'del', path:['nfts', from, `${json.set}:${json.uid}`]})
@@ -368,6 +371,7 @@ exports.nft_bid = function(json, from, active, pc) {
                     if (json.bid_amount > listing.b){
                         add(listing.f, listing.b) //return the previous high bidders tokens
                         .then(empty => {
+                            if(from == listing.f)bal = bal + listing.b
                             listing.f = from
                             listing.b = json.bid_amount
                             listing.c++
