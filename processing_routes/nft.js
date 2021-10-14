@@ -309,7 +309,7 @@ exports.nft_auction = function(json, from, active, pc) {
                     if(typeof t != "number" || t > 30 || t < 1 )t = 7
                     if(typeof p != "number" || p < 1)p = 1000
                     if(typeof n != "number" || n <= p) n = ''
-                const e = json.block_num + (json.t * 1200 * 24),
+                const e = json.block_num + (t * 1200 * 24),
                     ep = chronAssign(e, {op:"ahe", item:`${json.set}:${json.uid}`, block: e}) //auction house expire vop
                 ep.then(exp => {
                     var listing = {
