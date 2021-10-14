@@ -18,6 +18,7 @@ exports.nft_transfer = function(json, from, active, pc) {
         setp = getPathObj(['sets', json.set]); //to balance promise
     Promise.all([fnftp, setp])
     .then(nfts => {
+        console.log(nfts[0].s !== undefined , !nfts[0].l , active)
         if(nfts[0].s !== undefined && !nfts[0].l && active) {
             let ops = []
                 set = nfts[1]
