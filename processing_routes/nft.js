@@ -361,7 +361,7 @@ exports.nft_bid = function(json, from, active, pc) {
         ahp = getPathObj(['ah', `${json.set}:${json.uid}`])
     Promise.all([balp, ahp])
         .then(mem => {
-            if(active && mem[1].p && mem[0] >= json.bid){ //check for item and liquid sufficient for bid
+            if(active && mem[1].s && mem[0] >= json.bid){ //check for item and liquid sufficient for bid
                 var listing = mem[1],
                     bal = mem[0]
                 if(listing.b){
