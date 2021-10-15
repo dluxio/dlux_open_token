@@ -172,7 +172,7 @@ exports.nft_delete  = function(json, from, active, pc) {
             ops.push({type:'put', path:['sets', json.set], data: set})
             ops.push({type:'del', path:['nfts', from, `${json.set}:${json.uid}`]})
             // is there anything in the NFT that needs to be modified? owner, renter, 
-            let msg = `@${from} deleted NFT: ${json.set}:${json.uid}, recieved ${parseFloat(set.b/1000).toFixed(3)} ${config.TOKEN}}`
+            let msg = `@${from} deleted NFT: ${json.set}:${json.uid}, recieved ${parseFloat(set.b/1000).toFixed(3)} ${config.TOKEN}`
             if (config.hookurl || config.status) postToDiscord(msg, `${json.block_num}:${json.transaction_id}`)
             ops.push({ type: 'put', path: ['feed', `${json.block_num}:${json.transaction_id}`], data: msg });
             store.batch(ops, pc)
