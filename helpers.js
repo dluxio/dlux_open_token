@@ -111,7 +111,8 @@ const NFT = {
                         if (set.r > 0){
                             let royalty = parseInt(listing.b * set.r / 100)
                             add(set.a, royalty) //distribute royalty
-                            add(listing.o, listing.b - royalty) //distribute rest
+                            .then(empty=>add(listing.o, listing.b - royalty))
+                             //distribute rest
                         } else {
                             add(listing.o, listing.b)
                         }
