@@ -1,7 +1,7 @@
 const { set } = require("@hiveio/hive-js/lib/auth/serializer/src/types");
 const { store } = require("./index");
 const { add, burn } = require('./lil_ops')
-const config = require('./../config')
+const config = require('./config')
 
 exports.sortBuyArray = (array, key) => array.sort(function(a, b) {
     return b[key] - a[key];
