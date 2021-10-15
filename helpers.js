@@ -18,7 +18,7 @@ const NFT = {
     },
     move : function(item, to, string){
         const index = string.indexOf(item + '_')
-        const itemsAndOwner = string.slice(string.lastIndexOf(item + '_', index)).split(',')[0].split('_')
+        const itemsAndOwner = string.slice(string.lastIndexOf(',', index)).split(',')[0].split('_')
         var newString = ''
         if(itemsAndOwner.length == 2){
             newString = string.replace(`${item}_${itemsAndOwner[1]},`, '')
@@ -34,7 +34,7 @@ const NFT = {
     },
     delete : function(item, string){
         const index = string.indexOf(item)
-        const itemsAndOwner = string.slice(string.lastIndexOf(item + '_', index)).split(',')[0].split('_')
+        const itemsAndOwner = string.slice(string.lastIndexOf(',', index)).split(',')[0].split('_')
         var newString = ''
         if(itemsAndOwner.length == 2){
             newString = string.replace(`${item}_${itemsAndOwner[1]},`, '')
