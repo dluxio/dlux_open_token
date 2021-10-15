@@ -162,8 +162,8 @@ exports.nft_delete  = function(json, from, active, pc) {
     Promise.all([fnftp, setp])
     .then(nfts => {
         if(nfts[0].s && !nfts[0].l && active) {
-            var ops = []
-                nft = nfts[0],
+            let ops = [],
+                //nft = nfts[0],
                 set = nfts[1]
             set.u = NFT.delete(json.uid, set.u)
             if(set.d)set.d++
