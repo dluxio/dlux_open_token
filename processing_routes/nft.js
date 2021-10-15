@@ -160,7 +160,7 @@ exports.nft_delete  = function(json, from, active, pc) {
     let fnftp = getPathObj(['nfts', from, `${json.set}:${json.uid}`]),
         setp = getPathObj(['sets', json.set]); //to balance promise
     Promise.all([fnftp, setp])
-    .then(nfts => {
+    .then(nft => {
         if(nft[0].s && !nft[0].l && active) {
             let ops = []
                 nft = nfts[0],
