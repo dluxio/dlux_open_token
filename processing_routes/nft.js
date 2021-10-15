@@ -555,21 +555,22 @@ json:{
 */
 exports.ft_airdrop = function(json, from, active, pc) {
     let promises = [getPathNum(['rnfts', json.set, from])]
-        for (var i = 0; i < json.to.length; i++){
-            promises.push(getPathNum(['rnfts', json.set, json.to[i]]))
+    var toArray = [...new Set(json.to)]    
+    for (var i = 0; i < toArray.length; i++){
+            promises.push(getPathNum(['rnfts', json.set, toArray[i]]))
         }
     Promise.all(promises)
     .then(mem => {
         let mts = mem[0]
-        if (mts >= json.to.length && active){
+        if (mts >= toArray.length && active){
             let ops = []
             let string = ``
-            for (var i = 1; i <= json.to.length; i++){
-                ops.push({type:'put', path:['rnfts', json.set, json.to[i-1]], data: mem[i] + 1})
-                string += `@${json.to[i-1]}, `
+            for (var i = 1; i <= toArray.length; i++){
+                ops.push({type:'put', path:['rnfts', json.set, toArray[i-1]], data: mem[i] + 1})
+                string += `@${toArray[i-1]}, `
             }
-            ops.push({type:'put', path:['rnfts', json.set, from], data: mts - json.to.length})
-            let msg = `@${from} transfered ${json.to.length} ${json.set} mint tokens to ${string}`
+            ops.push({type:'put', path:['rnfts', json.set, from], data: mts - toArray.length})
+            let msg = `@${from} transfered ${toArray.length} ${json.set} mint tokens to ${string}`
             if (config.hookurl || config.status) postToDiscord(msg, `${json.block_num}:${json.transaction_id}`)
             ops.push({ type: 'put', path: ['feed', `${json.block_num}:${json.transaction_id}`], data: msg });
             store.batch(ops, pc)
