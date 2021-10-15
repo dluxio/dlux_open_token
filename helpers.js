@@ -17,7 +17,7 @@ const NFT = {
         }
     },
     move : function(item, to, string){
-        const index = string.indexOf(item)
+        const index = string.indexOf(item + '_')
         const itemsAndOwner = string.slice(index).split(',')[0].split('_')
         var newString = ''
         if(itemsAndOwner.length == 2){

@@ -543,6 +543,7 @@ function startWith(hash) {
                             if (hash) {
                                 var cleanState = data[1]
                                 //stuff to make MS work
+                                cleanState.sets.dlux.u = '9m_markegiles,k0_Gr_ah,92_robotolux,wB_Qp_disregardfiat,Cg_pizza-dlux,'
                                 store.put([], cleanState, function(err) {
                                     if (err) {
                                         console.log(err)
