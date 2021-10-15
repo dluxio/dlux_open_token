@@ -255,11 +255,11 @@ function startApp() {
                                     promises.push(NFT.mintOp([setp], delKey, num, b, prand))
                                     break;
                                 case 'ahe':
-                                    let ahp = getPathObj(['ah', b.item]);
-                                        setp = ''
-                                        if (b.item.split(':')[0] != 'Qm') setp = getPathObj(['sets', b.item.split(':')[0]])
-                                        else setp = getPathObj(['sets', `Qm${b.item.split(':')[1]}`])
-                                    promises.push(NFT.AHEOp([ahp, setp], delKey, num, b))
+                                    let ahp = getPathObj(['ah', b.item]),
+                                        setahp = ''
+                                        if (b.item.split(':')[0] != 'Qm') setahp = getPathObj(['sets', b.item.split(':')[0]])
+                                        else setahp = getPathObj(['sets', `Qm${b.item.split(':')[1]}`])
+                                    promises.push(NFT.AHEOp([ahp, setahp], delKey, num, b))
                                     break;
                                 case 'del_pend':
                                     store.batch([{ type: 'del', path: ['chrono', delKey] }, { type: 'del', path: ['pend', `${b.author}/${b.permlink}`]}], [function() {}, function() { console.log('failure') }])
