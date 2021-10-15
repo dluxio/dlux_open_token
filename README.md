@@ -296,7 +296,7 @@ This action defines a new NFT set.
 }`
 
 #### script example:
-`<!DOCTYPE html>
+```<!DOCTYPE html>
 //<html><head><script>
 function compile (message, display) {
 const colors = ['#000000', '#AA0000', '#00AA00', '#AA5500', '#0000AA', '#AA00AA', '#00AAAA', '#AAAAAA', '#555555', '#FF5555', '#55FF55', '#FFFF55', '#5555FF', '#FF55FF', '#55FFFF', '#FFFFFF']
@@ -369,7 +369,7 @@ function onLoad(id){
 */
 //</head>
 //<body id="body">Append ?NFT_UID to the address bar to see that NFT. "...html?A6"<script>const uid = location.href.split('?')[1]; if(uid){compile(uid, true)}else{onLoad(uid)}</script></body></html>
-`
+```
 
 The script should return:
 `{HTML:SVG, attributes:[{name:'Color 1', value: uColors[0]},{name:'Color 2', value: uColors[1]},{name:'Color 3', value: uColors[2]}], sealed:''} HTML, which may include Base64 Imgs, GTLF, etc... plus an array of attributes, and optionally a sealed picture`
