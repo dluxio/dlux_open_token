@@ -215,7 +215,7 @@ function startApp() {
     processor.on('nft_reserve_transfer', HR.nft_reserve_transfer)
     processor.on('nft_reserve_complete', HR.nft_reserve_complete)
     processor.on('nft_define', HR.nft_define)
-    processor.on('nft_delete', HR.nft_delete)
+    processor.on('nft_melt', HR.nft_delete)
     processor.on('nft_mint', HR.nft_mint)
     processor.onOperation('comment_options', HR.comment_options);
     processor.on('cjv', HR.cjv);
@@ -543,7 +543,7 @@ function startWith(hash) {
                             if (hash) {
                                 var cleanState = data[1]
                                 //stuff to make MS work
-                                cleanState.sets.dlux.u = '9m_markegiles,k0_Gr_ah,92_robotolux,wB_Qp_disregardfiat,Cg_pizza-dlux,'
+                                //cleanState.sets.dlux.u = '9m_markegiles,k0_Gr_ah,92_robotolux,wB_Qp_disregardfiat,Cg_pizza-dlux,'
                                 store.put([], cleanState, function(err) {
                                     if (err) {
                                         console.log(err)
