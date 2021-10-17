@@ -51,18 +51,20 @@ const TXID = {
     },
     clean: function (blocknum){
         TXID.blocknumber = blocknum
-        if(status.cleaner.length){
-            var again = false
-            do {
-                if (parseInt(status.cleaner[0].split(':')[0]) <= blocknum - config.history){
-                    delete status[status.cleaner[0]]
-                    status.cleaner.shift()
-                    again = true
-                } else {
-                    again = false
-                }
-            } while (again)
-        }
+        try {
+            if(status.cleaner.length){
+                var again = false
+                do {
+                    if (parseInt(status.cleaner[0].split(':')[0]) <= blocknum - config.history){
+                        delete status[status.cleaner[0].split(':')[1]]
+                        status.cleaner.shift()
+                        again = true
+                    } else {
+                        again = false
+                    }
+                } while (again)
+            }
+        } catch (e){console.log('Try Clean Status failed:', e)}
     },
     getBlockNum: function (){
         return TXID.blocknumber
@@ -102,8 +104,8 @@ var recents = []
     //HIVE API CODE
 
 //Start Program Options   
-startWith('QmeHykL2x8GVDV8zUh4h2oeqdrUmKakujGgLefkg2Hkaad') //for testing and replaying
-//dynStart(config.leader)
+//startWith('QmeHykL2x8GVDV8zUh4h2oeqdrUmKakujGgLefkg2Hkaad') //for testing and replaying
+dynStart(config.leader)
 
 
 // API defs
