@@ -21,8 +21,8 @@ exports.nft_transfer = function(json, from, active, pc) {
     .then(nfts => {
         console.log(nfts[0].s !== undefined , !nfts[0].l , active)
         if(nfts[0].s !== undefined && !nfts[0].l && active) {
-            let ops = []
-                set = nfts[1]
+            let ops = [],
+                set = nfts[1],
                 nft = nfts[0]
             nft.s = NFT.last(json.block_num, nft.s) //change last modified
             set.u = NFT.move(json.uid, json.to, set.u)
