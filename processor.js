@@ -151,6 +151,7 @@ module.exports = function(client, steem, currentBlockNumber = 1, blockComputeSpe
                                         .catch(e => { console.log(e) })
                                 }
                             })
+                            .catch(e=>{console.log(e);cycleapi()})
                         } else {
                             onNewBlock(num, v, v[4].witness_signature)
                             .then(r => {
