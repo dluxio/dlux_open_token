@@ -131,6 +131,7 @@ api.get('/api/set/:set', API.set);
 api.get('/api/auctions', API.auctions);
 api.get('/api/mintauctions', API.mint_auctions);
 api.get('/api/sales', API.sales);
+api.get('/api/mintsales', API.mint_sales);
 api.get('/@:un', API.user);
 api.get('/blog/@:un', API.blog);
 api.get('/dapps/@:author', API.getAuthorPosts);
@@ -197,12 +198,12 @@ function startApp() {
     processor.on('report', HR.report);
     processor.on('queueForDaily', HR.q4d)
     processor.on('nomention', HR.nomention)
-    // processor.on('ft_bid', HR.ft_bid)
-    // processor.on('ft_auction', HR.ft_auction)
-    // processor.on('ft_sell_cancel', HR.ft_sell_cancel)
-    // processor.on('ft_buy', HR.ft_buy)
+    processor.on('ft_bid', HR.ft_bid)
+    processor.on('ft_auction', HR.ft_auction)
+    processor.on('ft_sell_cancel', HR.ft_sell_cancel)
+    processor.on('ft_buy', HR.ft_buy)
+    processor.on('ft_sell', HR.ft_sell)
     // processor.on('ft_escrow_cancel', HR.ft_escrow_cancel)
-    // processor.on('ft_sell', HR.ft_sell)
     // processor.on('ft_escrow_complete', HR.ft_escrow_complete)
     // processor.on('ft_escrow', HR.ft_escrow)
     processor.on('nft_buy', HR.nft_buy)
@@ -262,6 +263,13 @@ function startApp() {
                                         if (b.item.split(':')[0] != 'Qm') setahp = getPathObj(['sets', b.item.split(':')[0]])
                                         else setahp = getPathObj(['sets', `Qm${b.item.split(':')[1]}`])
                                     promises.push(NFT.AHEOp([ahp, setahp], delKey, num, b))
+                                    break;
+                                case 'ame':
+                                    let amp = getPathObj(['am', b.item]),
+                                        setamp = ''
+                                        if (b.item.split(':')[0] != 'Qm') setahp = getPathObj(['sets', b.item.split(':')[0]])
+                                        else setahp = getPathObj(['sets', `Qm${b.item.split(':')[1]}`])
+                                    promises.push(NFT.AMEOp([amp, setamp], delKey, num, b))
                                     break;
                                 case 'del_pend':
                                     store.batch([{ type: 'del', path: ['chrono', delKey] }, { type: 'del', path: ['pend', `${b.author}/${b.permlink}`]}], [function() {}, function() { console.log('failure') }])

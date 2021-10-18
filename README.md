@@ -456,7 +456,7 @@ This lists an NFT for sale on the market.
 }`
 
 
-### NFT Sell Cancel (id: dlux_sell_cancel)
+### NFT Sell Cancel (id: dlux_nft_sell_cancel)
 
 This action cancels an NFT market sale listing
 

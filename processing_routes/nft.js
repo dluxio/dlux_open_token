@@ -1,6 +1,6 @@
 const config = require('./../config')
 const { store, unshiftOp } = require('./../index')
-const { chronAssign, add } = require('./../lil_ops')
+const { chronAssign, add, hashThis, addMT } = require('./../lil_ops')
 const { getPathObj } = require('../getPathObj')
 const { postToDiscord } = require('./../discord')
 const { Base64, primes, NFT } = require('./../helpers')
@@ -466,7 +466,8 @@ exports.nft_buy = function(json, from, active, pc) {
             nft.s.replace(last_modified, Base64.fromNumber(json.block_num)) //update the modified block
             if(json.uid.split(':')[0] != 'Qm') set.u = NFT.move(json.uid, from, set.u)//update set
             else set.u = from
-            let royalty = parseInt((set.r / 10000)* listing.p)
+            let per = set.r || 0
+            let royalty = parseInt((per / 10000)* listing.p)
             add(set.a, royalty)
             .then(empty =>{
                 add(listing.o, listing.p - royalty)
@@ -495,7 +496,7 @@ exports.nft_sell_cancel = function(json, from, active, pc) {
         if(json.set == `Qm`) setp = getPathObj(['sets', `Qm${json.uid}`])
     Promise.all([lsp, setp])
     .then(mem => {
-        if(active){
+        if(active && from == mem[0].o){
             let nft = mem[0].nft, set = mem[1], listing = mem[0]
             var last_modified = nft.s.split(',')[0], ops = []  //last modified is the first item in the string
             nft.s.replace(last_modified, Base64.fromNumber(json.block_num)) //update the modified block
@@ -612,46 +613,183 @@ exports.ft_escrow_cancel = function(json, from, active, pc) {
 }
 
 exports.ft_sell = function(json, from, active, pc) {
-    let rnftp = getPathNum(['rnfts', json.set, from])
-    Promise.all([rnftp])
+    let fnftp = getPathObj(['rnfts', json.set, from]),
+        ltp = getPathObj(['lt'])
+    Promise.all([fnftp, ltp])
     .then(mem => {
-        
+        if (mem[0] && active){
+                var ls = mem[1], nft = mem[0], hash = hashThis(`${from}:${json.set}:${json.block_num}`)
+                var p = json.price || 1000
+                    var listing = {
+                            p, //starting price
+                            i:`${json.set}:${hash}`,
+                            o: from
+                        }
+                    ls[`${json.set}:${hash}`] = listing //place the listing in the AH
+                    ops.push({type:'put', path:['lt'], data: ls})
+                    ops.push({type:'put', path:['rnfts', json.set, from], data: nft - 1})
+                    let msg = `@${from} Listed ${json.set} mint token for sale`
+                    if (config.hookurl || config.status) postToDiscord(msg, `${json.block_num}:${json.transaction_id}`)
+                    ops.push({ type: 'put', path: ['feed', `${json.block_num}:${json.transaction_id}`], data: msg });
+                    store.batch(ops, pc)
+            } else if (!active){
+                let msg = `@${from} tried to sell with out signing ACTIVE`
+                if (config.hookurl || config.status) postToDiscord(msg, `${json.block_num}:${json.transaction_id}`)
+                pc[0](pc[2])
+            } else {
+                let msg = `@${from} doesn't own a ${json.set} mint token`
+                if (config.hookurl || config.status) postToDiscord(msg, `${json.block_num}:${json.transaction_id}`)
+                pc[0](pc[2])
+            }
     })
     .catch(e => { console.log(e); });
 }
 
 exports.ft_buy = function(json, from, active, pc) {
-    let rnftp = getPathNum(['rnfts', json.set, from])
-    Promise.all([rnftp])
+    let fbalp = getPathNum(['balances', from]),
+        lsp = getPathObj(['lt', `${json.set}:${json.uid}`]), //needed?
+        setp = getPathObj(['sets', json.set])
+    Promise.all([fbalp, lsp, setp])
     .then(mem => {
-        
+        if(mem[1].p <= mem[0] && active){
+            let set = mem[2], listing = mem[1],
+                per = set.r || 0
+            let royalty = parseInt((per / 10000)* listing.p)
+            add(set.a, royalty)
+            .then(empty =>{
+                add(listing.o, listing.p - royalty)
+                addMT(['rnfts', json.set, from], 1)
+                ops.push({type:'put', path:['balances', from], data: mem[0] - listing.p})
+                ops.push({type:'del', path:['ls', `${json.set}:${json.uid}`]})
+                let msg = `@${from} bought ${json.set}:${json.uid} mint token`
+                if (config.hookurl || config.status) postToDiscord(msg, `${json.block_num}:${json.transaction_id}`)
+                ops.push({ type: 'put', path: ['feed', `${json.block_num}:${json.transaction_id}`], data: msg });
+                store.batch(ops, pc)
+            })
+        } else {
+            let msg = `@${from} can't afford to buy: ${json.set}:${json.uid}, or signed with posting key`
+            if (config.hookurl || config.status) postToDiscord(msg, `${json.block_num}:${json.transaction_id}`)
+            pc[0](pc[2])
+        }
     })
     .catch(e => { console.log(e); });
 }
 
 exports.ft_sell_cancel = function(json, from, active, pc) {
-    let rnftp = getPathNum(['rnfts', json.set, from])
-    Promise.all([rnftp])
+    let lsp = getPathObj(['lt', `${json.set}:${json.uid}`])
+    Promise.all([lsp])
     .then(mem => {
-        
+        if(active && from == mem[0].o){
+            addMT(['rnfts', json.set, from], 1)
+            ops.push({type:'del', path:['ls', `${json.set}:${json.uid}`]})
+            let msg = `@${from} canceled sell of ${json.set}:${json.uid}`
+            if (config.hookurl || config.status) postToDiscord(msg, `${json.block_num}:${json.transaction_id}`)
+            ops.push({ type: 'put', path: ['feed', `${json.block_num}:${json.transaction_id}`], data: msg });
+            store.batch(ops, pc)
+        } else {
+            let msg = `@${from} can't cancel: ${json.set}:${json.uid} with posting key`
+            if (config.hookurl || config.status) postToDiscord(msg, `${json.block_num}:${json.transaction_id}`)
+            pc[0](pc[2])
+        }
     })
     .catch(e => { console.log(e); });
 }
 
 exports.ft_auction = function(json, from, active, pc) {
-    let rnftp = getPathNum(['rnfts', json.set, from])
-    Promise.all([rnftp])
-    .then(mem => {
-        
-    })
-    .catch(e => { console.log(e); });
+        let fnftp = getPathNum(['rnfts', from, `${json.set}`]), //zoom in?
+        ahp = getPathObj(['am'])
+    Promise.all([fnftp, ahp])
+        .then(mem => {
+            if (mem[0] && active){
+                var ah = mem[1], nft = mem[0], hash = hashThis(`${from}:${json.set}:${json.block_num}`)
+                var p = json.price || 1000,
+                    n = json.now || '',
+                    t = json.time || 7
+                    if(typeof t != "number" || t > 30 || t < 1 )t = 7
+                    if(typeof p != "number" || p < 1)p = 1000
+                    if(typeof n != "number" || n <= p) n = ''
+                const e = json.block_num + (t * 1200 * 24),
+                    ep = chronAssign(e, {op:"ame", item:`${json.set}:${hash}`, block: e}) //auction house expire vop
+                ep.then(exp => {
+                    var listing = {
+                            p, //starting price
+                            n, //buy it now price
+                            t, //time in days
+                            e, //expires
+                            i:`${json.set}:${hash}`, //can this be a name?
+                            q: exp, //expire path / vop
+                            o: from,
+                            c: 0
+                        }
+                    ah[`${json.set}:${hash}`] = listing //place the listing in the AH
+                    ops.push({type:'put', path:['am'], data: ah})
+                    ops.push({type:'put', path:['rnfts', json.set, from], data: nft -1})
+                    let msg = `@${from} Listed a ${json.set} mint token for auction`
+                    if (config.hookurl || config.status) postToDiscord(msg, `${json.block_num}:${json.transaction_id}`)
+                    ops.push({ type: 'put', path: ['feed', `${json.block_num}:${json.transaction_id}`], data: msg });
+                    store.batch(ops, pc)
+                })
+            } else if (!active){
+                let msg = `@${from} tried to auction with out signing ACTIVE`
+                if (config.hookurl || config.status) postToDiscord(msg, `${json.block_num}:${json.transaction_id}`)
+                pc[0](pc[2])
+            } else {
+                let msg = `@${from} doesn't own a ${json.set} mint token`
+                if (config.hookurl || config.status) postToDiscord(msg, `${json.block_num}:${json.transaction_id}`)
+                pc[0](pc[2])
+            }
+        })
+        .catch(e => { console.log(e); });
 }
 
 exports.ft_bid = function(json, from, active, pc) {
-    let rnftp = getPathNum(['rnfts', json.set, from])
-    Promise.all([rnftp])
-    .then(mem => {
-        
-    })
+    let balp = getPathNum(['balances', from]),
+        ahp = getPathObj(['am', `${json.set}:${json.uid}`])
+    Promise.all([balp, ahp])
+        .then(mem => {
+            if(active && mem[1].e && mem[0] >= json.bid_amount){ //check for item and liquid sufficient for bid
+                var listing = mem[1],
+                    bal = mem[0]
+                if(listing.b){
+                    if (json.bid_amount > listing.b){
+                        add(listing.f, listing.b) //return the previous high bidders tokens
+                        .then(empty => {
+                            if(from == listing.f)bal = bal + listing.b
+                            listing.f = from
+                            listing.b = json.bid_amount
+                            listing.c++
+                            bal = bal - json.bid_amount
+                            var ops = []
+                            ops.push({type:'put', path:['am', `${json.set}:${json.uid}`], data: listing})
+                            ops.push({type:'put', path:['balances', from], data: bal})
+                            let msg = `@${from} bid ${parseFloat(json.bid_amount/1000).toFixed(3)} ${config.TOKEN} on ${json.set}:${json.uid}'s mint token auction`
+                            if (config.hookurl || config.status) postToDiscord(msg, `${json.block_num}:${json.transaction_id}`)
+                            ops.push({ type: 'put', path: ['feed', `${json.block_num}:${json.transaction_id}`], data: msg });
+                            store.batch(ops, pc)
+                        })
+                    } else {
+                        let msg = `@${from} hasn't outbid on ${json.set}:${json.uid}`
+                        if (config.hookurl || config.status) postToDiscord(msg, `${json.block_num}:${json.transaction_id}`)
+                        pc[0](pc[2])
+                    }
+                } else {
+                    listing.f = from
+                    listing.b = json.bid_amount
+                    listing.c = 1
+                    bal = bal - json.bid_amount
+                    var ops = []
+                    ops.push({type:'put', path:['am', `${json.set}:${json.uid}`], data: listing})
+                    ops.push({type:'put', path:['balances', from], data: bal})
+                    let msg = `@${from} bid ${parseFloat(json.bid_amount/1000).toFixed(3)} ${config.TOKEN} on ${json.set}:${json.uid}'s mint token auction`
+                    if (config.hookurl || config.status) postToDiscord(msg, `${json.block_num}:${json.transaction_id}`)
+                    ops.push({ type: 'put', path: ['feed', `${json.block_num}:${json.transaction_id}`], data: msg });
+                    store.batch(ops, pc)
+                }
+            } else {
+                let msg = `@${from}'s bid on ${json.set}:${json.uid} didn't go well`
+                if (config.hookurl || config.status) postToDiscord(msg, `${json.block_num}:${json.transaction_id}`)
+                pc[0](pc[2])
+            }
+        })
     .catch(e => { console.log(e); });
 }

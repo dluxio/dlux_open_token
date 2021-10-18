@@ -833,44 +833,65 @@ exports.auctions = (req, res, next) => {
     .catch (e => { res.send('Something went wrong') })
 }
 
+/*
+exports.official = (req, res, next) => {
+    let user = req.params.user,
+        offp = getPathObj(['pfp', user]),
+        userItemsp = getPathObj(['nfts', user]),
+        setsp = getPathObj(['sets'])
+    Promise.all([offp, userItemsp, setsp])
+    .then(mem => {
+        result = [
+            {
+                pfp:mem[0],
+                item:mem[1][mem[0]],
+                set:mem[2][mem[0].split(':')[0]]
+            }
+        ]
+    res.setHeader('Content-Type', 'application/json')
+    res.send(JSON.stringify({
+                    result,
+                    node: config.username,
+                    VERSION
+                }, null, 3))
+    }) 
+    .catch (e => { res.send('Something went wrong') })
+}
+*/
 
 exports.mint_auctions = (req, res, next) => {
-    let ahp = getPathObj(['mah']), //needed?
+    let ahp = getPathObj(['am']),
         setp = getPathObj(['sets'])
     Promise.all([ahp, setp])
     .then(mem => {
-        let now = new Date()
-            result = [],
-            sets = {},
-            auctionTimer = {}
+        let result = []
         for(item in mem[0]){
+            let auctionTimer = {},
+            now = new Date()
             auctionTimer.expiryIn = now.setSeconds(now.getSeconds() + ((mem[0][item].e - TXID.getBlockNum())*3));
             auctionTimer.expiryUTC = new Date(auctionTimer.expiryIn);
             auctionTimer.expiryString = auctionTimer.expiryUTC.toISOString().slice(0, -5);
-            
-            const listing = {
-                price: {
-                    amount: mem[0][item].b,
-                    precision: config.precision,
-                    token: config.TOKEN
-                },
-                time: auctionTimer.expiryString,
-                by: mem[0][item].o,
-                bids: mem[0][item].c,
-                bidder: mem[0][item].f,
-                }
-            if(sets[mem[0][item].s]) {
-                sets[mem[0][item].s].items.push(listing)
-            } else {
-                sets[mem[0][item].s] = {
-                    set: mem[0][item].s,
-                    items: [listing],
-                    script: mem[1][mem[0][item].s].s
-                }
-            }
-        }
-        for (i in sets){
-            result.push(sets[i])
+            result.push({
+                        uid: item.split(':')[1],
+                        set: item.split(':')[0],
+                        price: {
+                            amount: mem[0][item].b || mem[0][item].p,
+                            precision: config.precision,
+                            token: config.TOKEN
+                        }, //starting price
+                        initial_price: {
+                            amount: mem[0][item].p,
+                            precision: config.precision,
+                            token: config.TOKEN
+                        },
+                        time: auctionTimer.expiryString,
+                        by:mem[0][item].o,
+                        bids: mem[0][item].c || 0,
+                        bidder: mem[0][item].f || '',
+                        script: mem[1][item.split(':')[0]].s,
+                        days: mem[0][item].t,
+                        buy: mem[0][item].n || ''
+                    })
         }
         res.setHeader('Content-Type', 'application/json')
         res.send(JSON.stringify({
@@ -905,35 +926,41 @@ exports.sales = (req, res, next) => {
             }
             result.push(listing)
         }
-        console.log({result})
-        for (item in mem[1]){
+        res.setHeader('Content-Type', 'application/json')
+        res.send(JSON.stringify({
+                    result,
+                    node: config.username,
+                    VERSION
+                }, null, 3))
+    }) 
+    .catch (e => { res.send('Something went wrong') })
+}
+
+exports.mint_sales = (req, res, next) => {
+    let lsp = getPathObj(['lt']),
+        setp = getPathObj(['sets'])
+    Promise.all([lsp, mlsp, setp])
+    .then(mem => {
+        let result = [],
+            mint = [],
+            sets = {}
+        for (item in mem[0]){
             const listing = {
-                set: mem[1][item].s,
+                uid: item.split(':')[1],
+                set: item.split(':')[0],
                 price: {
-                    amount: mem[1][item].p,
+                    amount: mem[0][item].p,
                     precision: config.precision,
                     token: config.TOKEN
                 },
-                by:mem[1][item].o,
-                script: mem[2][mem[1][item].s].s
+                by:mem[0][item].o,
+                script: mem[2][item.split(':')[0]].s
             }
-            if(sets[mem[1][item].s]) {
-                sets[mem[1][item].s].items.push(listing)
-            } else {
-                sets[mem[1][item].s] = {
-                    set: mem[1][item].s,
-                    items: [listing],
-                    script: mem[2][mem[1][item].s].s
-                }
-            }
-        }
-        for (i in sets){
-            mint.push(sets[i])
+            result.push(listing)
         }
         res.setHeader('Content-Type', 'application/json')
         res.send(JSON.stringify({
                     result,
-                    mint,
                     node: config.username,
                     VERSION
                 }, null, 3))

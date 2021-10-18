@@ -64,6 +64,22 @@ const add = (node, amount) => {
 }
 exports.add = add
 
+const addMT = (path, amount) => {
+    return new Promise((resolve, reject) => {
+        store.get(path, function(e, a) {
+            if (!e) {
+                console.log(amount)
+                const a2 = typeof a != 'number' ? amount : a + amount
+                console.log(a2)
+                store.batch([{ type: 'put', path, data: a2 }], [resolve, reject, 1])
+            } else {
+                console.log(e)
+            }
+        })
+    })
+}
+exports.addMT = addMT
+
 const addCol = (node, amount) => {
     return new Promise((resolve, reject) => {
         store.get(['col', node], function(e, a) {

@@ -1,6 +1,6 @@
 const { set } = require("@hiveio/hive-js/lib/auth/serializer/src/types");
 const { store } = require("./index");
-const { add, burn } = require('./lil_ops')
+const { add, addMT, burn } = require('./lil_ops')
 const config = require('./config')
 
 exports.sortBuyArray = (array, key) => array.sort(function(a, b) {
@@ -128,6 +128,37 @@ const NFT = {
                     }
                     if (b.item.split(':')[0] != 'Qm') ops.push({ type: 'put', path: ['sets', b.item.split(':')[0]], data: set }) //update set
                     else ops.push({ type: 'put', path: ['sets', `Qm${b.item.split(':')[1]}`], data: set })
+                    ops.push({ type: 'del', path: ['chrono', delkey] })
+                    ops.push({ type: 'del', path: ['ah', b.item] })
+                    store.batch(ops, [resolve, reject])
+                })
+                .catch(e => { console.log(e) })
+        })
+    },
+    AMEOp : function (promies, delkey, num, b) {
+        return new Promise((resolve, reject) => { //NEEDS no bids
+            Promise.all(promies)
+                .then(mem => {
+                    let listing = mem[0],
+                        set = mem[1],
+                        ops = []
+                    // const fee = parseInt(listing.b /100); add('n', fee); listingb = listing.b - fee;
+                    if(listing.b){ //winner
+                        if (set.r > 0){
+                            let royalty = parseInt(listing.b * set.r / 100)
+                            add(set.a, royalty) //distribute royalty
+                            .then(empty=>add(listing.o, listing.b - royalty))
+                             //distribute rest
+                        } else {
+                            add(listing.o, listing.b)
+                        }
+                        addMT(['rnfts', b.item.split(':')[0], listing.f], 1)
+                        ops.push({ type: 'put', path: ['feed', `${num}:vop_${delkey.split(':')[1]}`], data: `Auction of ${b.item} mint token has ended for ${parseFloat(listing.b / 1000).toFixed(3)} ${config.TOKEN}` })
+                    } else { //no bidders
+                        ops.push({ type: 'put', path: ['feed', `${num}:vop_${delkey.split(':')[1]}`], data: `Auction of ${b.item} mint token has ended with no bidders` })
+                        addMT(['rnfts', b.item.split(':')[0], listing.o], 1)
+                        ops.push({ type: 'put', path: ['rnfts', listing.o, b.item], data: nft })
+                    }
                     ops.push({ type: 'del', path: ['chrono', delkey] })
                     ops.push({ type: 'del', path: ['ah', b.item] })
                     store.batch(ops, [resolve, reject])
