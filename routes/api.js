@@ -939,7 +939,7 @@ exports.sales = (req, res, next) => {
 exports.mint_sales = (req, res, next) => {
     let lsp = getPathObj(['lt']),
         setp = getPathObj(['sets'])
-    Promise.all([lsp, mlsp, setp])
+    Promise.all([lsp, setp])
     .then(mem => {
         let result = [],
             mint = [],
