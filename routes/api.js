@@ -833,7 +833,7 @@ exports.auctions = (req, res, next) => {
     .catch (e => { res.send('Something went wrong') })
 }
 
-/*
+
 exports.official = (req, res, next) => {
     let user = req.params.user,
         offp = getPathObj(['pfp', user]),
@@ -844,7 +844,7 @@ exports.official = (req, res, next) => {
         result = [
             {
                 pfp:mem[0],
-                item:mem[1][mem[0]],
+                nft:mem[1][mem[0]],
                 set:mem[2][mem[0].split(':')[0]]
             }
         ]
@@ -857,7 +857,42 @@ exports.official = (req, res, next) => {
     }) 
     .catch (e => { res.send('Something went wrong') })
 }
-*/
+
+exports.limbo = (req, res, next) => {
+    let user = req.params.user,
+        kind = req.params.kind
+    if(kind != 'nft'){kind = 'fts'}
+    let tradesp = getPathObj([kind, 't']),
+        setsp = getPathObj(['sets'])
+    Promise.all([tradesp, setsp])
+    .then(mem => {
+        let trades = mem[0],
+            result = []
+        for(item in trades){
+            const str = trades[item].t.split('_')
+            if (str[0] == user || str[1] == user){
+                result.push({
+                    from: str[0],
+                    to: str[1],
+                    price: parseInt(str[2]),
+                    item,
+                    kind,
+                    set:item.split(':')[0],
+                    uid:item.split(':')[1],
+                    script: mem[1][item.split(':')[0]].s
+                })
+            }
+        }
+    res.setHeader('Content-Type', 'application/json')
+    res.send(JSON.stringify({
+                    result,
+                    kind,
+                    node: config.username,
+                    VERSION
+                }, null, 3))
+    }) 
+    .catch (e => { res.send('Something went wrong') })
+}
 
 exports.mint_auctions = (req, res, next) => {
     let ahp = getPathObj(['am']),

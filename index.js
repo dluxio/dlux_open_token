@@ -106,8 +106,8 @@ var recents = []
     //HIVE API CODE
 
 //Start Program Options   
-startWith('QmPykCLyp2aBQ66dUJy8EZfqbsY4dW44WAkqE2vwgMd3d1') //for testing and replaying
-//dynStart(config.leader)
+//startWith('QmPykCLyp2aBQ66dUJy8EZfqbsY4dW44WAkqE2vwgMd3d1') //for testing and replaying
+dynStart(config.leader)
 
 
 // API defs
@@ -134,6 +134,8 @@ api.get('/api/auctions', API.auctions);
 api.get('/api/mintauctions', API.mint_auctions);
 api.get('/api/sales', API.sales);
 api.get('/api/mintsales', API.mint_sales);
+api.get('/api/pfp/:user', API.official);
+api.get('/api/trades/:kind/:user', API.limbo);
 api.get('/@:un', API.user);
 api.get('/blog/@:un', API.blog);
 api.get('/dapps/@:author', API.getAuthorPosts);

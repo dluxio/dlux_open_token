@@ -8,6 +8,29 @@ const { getPathNum } = require('../getPathNum')
 const { set } = require('@hiveio/hive-js/lib/auth/serializer/src/types')
 
 /*
+json { set, uid}
+*/
+exports.nft_pfp = function(json, from, active, pc) {
+    let fnftp = getPathObj(['nfts', from, `${json.set}:${json.uid}`])
+    Promise.all([fnftp, setp])
+    .then(nfts => {
+        if(nfts[0].s !== undefined) {
+            let ops = [],
+                nft = nfts[0]
+            ops.push({type:'put', path:['pfps', json.to], data: `${json.set}:${json.uid}`}) 
+            let msg = `@${from}| Set ${json.set}:${json.uid} to their pfp`
+            if (config.hookurl || config.status) postToDiscord(msg, `${json.block_num}:${json.transaction_id}`)
+            ops.push({ type: 'put', path: ['feed', `${json.block_num}:${json.transaction_id}`], data: msg });
+            store.batch(ops, pc)
+        } else {
+            if (config.hookurl) postToDiscord(`@${from} doesn't own NFT: ${json.nft_id}`)
+            pc[0](pc[2])
+        }
+    })
+    .catch(e => { console.log(e); });
+}
+
+/*
 json:{
     set: 'dlux',
     uid: 'aa',
@@ -62,7 +85,7 @@ exports.nft_reserve_transfer = function(json, from, active, pc) {
             nft.s = NFT.last(json.block_num, nft.s)
             set.u = NFT.move(json.uid, 't', set.u)
             nft.t = `${from}_${json.to}_${json.price}`
-            ops.push({type:'put', path:['nfts', 't', json.nft_id], data: nft})
+            ops.push({type:'put', path:['nfts', 't', `${json.set}:${json.uid}`], data: nft})
             ops.push({type:'put', path:['sets', json.set], data: set})
             ops.push({type:'del', path:['nfts', from, `${json.set}:${json.uid}`]})
             // is there anything in the NFT that needs to be modified? owner, renter, 
