@@ -46,8 +46,10 @@ var status = {
 exports.status = status
 const TXID = {
     store: function (msg, txid){
-        status[txid.split(':')[1]] = msg
-        status.cleaner.push(txid)
+        try {
+            status[txid.split(':')[1]] = msg
+            status.cleaner.push(txid)
+        } catch (e){console.log(e)}
     },
     clean: function (blocknum){
         TXID.blocknumber = blocknum
@@ -104,8 +106,8 @@ var recents = []
     //HIVE API CODE
 
 //Start Program Options   
-startWith('QmfCuGkzeauSW1YkPmFyJkTVmVXD8nFzymPfAenhxDfCdh') //for testing and replaying
-//dynStart(config.leader)
+//startWith('QmfCuGkzeauSW1YkPmFyJkTVmVXD8nFzymPfAenhxDfCdh') //for testing and replaying
+dynStart(config.leader)
 
 
 // API defs
