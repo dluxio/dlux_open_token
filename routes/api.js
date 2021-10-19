@@ -871,7 +871,7 @@ exports.official = (req, res, next) => {
 exports.limbo = (req, res, next) => {
     let user = req.params.user,
         kind = req.params.kind
-    if(kind != 'nft'){kind = 'fts'}
+    if(kind != 'nfts'){kind = 'fts'}
     let tradesp = getPathObj([kind, 't']),
         setsp = getPathObj(['sets'])
     Promise.all([tradesp, setsp])
