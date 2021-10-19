@@ -14,6 +14,7 @@ exports.nft_pfp = function(json, from, active, pc) {
     let fnftp = getPathObj(['nfts', from, `${json.set}:${json.uid}`])
     Promise.all([fnftp])
     .then(nfts => {
+        console.log(nfts[0])
         if(nfts[0].s !== undefined) {
             let ops = [],
                 nft = nfts[0]
