@@ -843,7 +843,7 @@ exports.official = (req, res, next) => {
     .then(mem => {
         const nft = mem[1][mem[0]]
         var pfp = mem[0]
-        if(!nft.s){pfp = ''}
+        if(!nft.s){pfp = ':'}
         result = [
             {
                 pfp,
