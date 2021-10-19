@@ -841,11 +841,14 @@ exports.official = (req, res, next) => {
         setsp = getPathObj(['sets'])
     Promise.all([offp, userItemsp, setsp])
     .then(mem => {
+        const nft = mem[1][mem[0]]
+        var pfp = mem[0]
+        if(!nft.s){pfp = ''}
         result = [
             {
-                pfp:mem[0],
-                nft:mem[1][mem[0]],
-                set:mem[2][mem[0].split(':')[0]]
+                pfp,
+                nft,
+                set:mem[2][mem[0].split(':')[0]] || ''
             }
         ]
     res.setHeader('Content-Type', 'application/json')
@@ -855,7 +858,14 @@ exports.official = (req, res, next) => {
                     VERSION
                 }, null, 3))
     }) 
-    .catch (e => { res.send('Something went wrong') })
+    .catch (e => { res.setHeader('Content-Type', 'application/json')
+    res.send(JSON.stringify({
+                    result: 'No Profile Picture Set or Owned',
+                    error: e,
+                    node: config.username,
+                    VERSION
+                }, null, 3))
+  })
 }
 
 exports.limbo = (req, res, next) => {
