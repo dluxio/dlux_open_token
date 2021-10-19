@@ -557,6 +557,7 @@ function startWith(hash) {
                         if (!e) {
                             if (hash) {
                                 var cleanState = data[1]
+                                cleanState.sets.dlux.u = cleanState.sets.dlux.u.replace(',a1-shroom-spores', '')
                                 //stuff to make MS work
                                 //cleanState.sets.dlux.u = '9m_markegiles,k0_Gr_ah,92_robotolux,wB_Qp_disregardfiat,Cg_pizza-dlux,'
                                 store.put([], cleanState, function(err) {
