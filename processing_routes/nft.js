@@ -23,7 +23,7 @@ exports.nft_pfp = function(json, from, active, pc) {
             ops.push({ type: 'put', path: ['feed', `${json.block_num}:${json.transaction_id}`], data: msg });
             store.batch(ops, pc)
         } else {
-            if (config.hookurl) postToDiscord(`@${from} doesn't own NFT: ${json.nft_id}`)
+            if (config.hookurl) postToDiscord(`@${from} doesn't own NFT: ${json.uid}`)
             pc[0](pc[2])
         }
     })

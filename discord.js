@@ -47,7 +47,7 @@ exports.renderNFTtoDiscord = (script, uid, owner) => {
     const embed = new MessageBuilder()
                 .setTitle('New NFT minted!')
                 .setAuthor(owner, 'https://cdn.discordapp.com/embed/avatars/0.png', `https://www.dlux.io/@${owner}`)
-                .setURL(`https://www.dlux.io/@${author}#inventory/`)
+                .setURL(`https://www.dlux.io/@${owner}#inventory/`)
                 .addField(uid, 'View this on dlux.io', true)
                 //.addField('Second field', 'this is not inline')
                 .setColor('#00b0f4')
