@@ -23,6 +23,7 @@ const NFT = {
         const index = string.indexOf(item + '_')
         const itemsAndOwner = string.slice(string.lastIndexOf(',', index)).split(',')[0].split('_')
         var newString = ''
+        console.log({itemsAndOwner})
         if(itemsAndOwner.length == 2){
             newString = string.replace(`${item}_${itemsAndOwner[1]},`, '')
         } else {
