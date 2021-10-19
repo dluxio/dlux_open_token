@@ -28,8 +28,8 @@ const NFT = {
         } else {
             newString = string.replace(`${item}_`, '')
         }
-        if (newString.indexOf(`${to},`) >= 0){
-            return newString.slice(0, newString.indexOf(`${to},`)) + item + '_' + newString.slice(newString.indexOf(`${to},`))
+        if (newString.indexOf(`_${to},`) >= 0){
+            return newString.slice(0, newString.indexOf(`_${to},`)) + item + '_' + newString.slice(newString.indexOf(`_${to},`))
         } else {
             return newString + item + '_' + to + ','
         }
@@ -92,7 +92,7 @@ const NFT = {
                 ops.push({type:'put', path:['nfts', b.for, `${b.set}:${selected}`], data: nft})
                 ops.push({type:'put', path:['sets', b.set], data: set})
                 ops.push({type: 'put', path: ['feed', `${num}:vop_${delkey.split(':')[1]}`], data: `${b.for} minted ${selected} from the ${b.set} set.` })
-                if(config.hookurl)renderNFTtoDiscord(set.s, selected, b.for)
+                if(config.hookurl)renderNFTtoDiscord(set.s, selected, b.for, b.set)
                 ops.push({ type: 'del', path: ['chrono', delkey] })
                 store.batch(ops, [resolve, reject])
             })
