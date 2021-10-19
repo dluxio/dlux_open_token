@@ -12,7 +12,7 @@ json { set, uid}
 */
 exports.nft_pfp = function(json, from, active, pc) {
     let fnftp = getPathObj(['nfts', from, `${json.set}:${json.uid}`])
-    Promise.all([fnftp, setp])
+    Promise.all([fnftp])
     .then(nfts => {
         if(nfts[0].s !== undefined) {
             let ops = [],
