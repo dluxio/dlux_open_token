@@ -17,7 +17,7 @@ exports.nft_pfp = function(json, from, active, pc) {
         if(nfts[0].s !== undefined) {
             let ops = [],
                 nft = nfts[0]
-            ops.push({type:'put', path:['pfps', json.to], data: `${json.set}:${json.uid}`}) 
+            ops.push({type:'put', path:['pfps', from], data: `${json.set}:${json.uid}`}) 
             let msg = `@${from}| Set ${json.set}:${json.uid} to their pfp`
             if (config.hookurl || config.status) postToDiscord(msg, `${json.block_num}:${json.transaction_id}`)
             ops.push({ type: 'put', path: ['feed', `${json.block_num}:${json.transaction_id}`], data: msg });

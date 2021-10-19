@@ -836,7 +836,7 @@ exports.auctions = (req, res, next) => {
 
 exports.official = (req, res, next) => {
     let user = req.params.user,
-        offp = getPathObj(['pfp', user]),
+        offp = getPathObj(['pfps', user]),
         userItemsp = getPathObj(['nfts', user]),
         setsp = getPathObj(['sets'])
     Promise.all([offp, userItemsp, setsp])
