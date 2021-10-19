@@ -13,9 +13,10 @@ const { node_add, node_delete } = require('./nodes')
 const { dex_buy, dex_clear, dex_hbd_sell, dex_hive_sell, escrow_approve, escrow_dispute, escrow_release, escrow_transfer, transfer } = require('./dex')
 const { comment, comment_options } = require('./comment')
 const { report } = require('./report')
-const { ft_bid, ft_auction, ft_sell_cancel, ft_buy, nft_sell, nft_sell_cancel, nft_buy, ft_sell, ft_escrow_cancel, ft_escrow_complete, ft_escrow, ft_airdrop, ft_transfer, nft_bid, nft_auction, nft_mint, nft_define, nft_delete, nft_transfer_cancel,nft_reserve_complete, nft_transfer, nft_reserve_transfer } = require('./nft')
+const { nft_pfp, ft_bid, ft_auction, ft_sell_cancel, ft_buy, nft_sell, nft_sell_cancel, nft_buy, ft_sell, ft_escrow_cancel, ft_escrow_complete, ft_escrow, ft_airdrop, ft_transfer, nft_bid, nft_auction, nft_mint, nft_define, nft_delete, nft_transfer_cancel,nft_reserve_complete, nft_transfer, nft_reserve_transfer } = require('./nft')
 
 module.exports = {
+    nft_pfp,
     ft_bid,
     ft_auction,
     ft_sell_cancel,

@@ -224,6 +224,7 @@ function startApp() {
     processor.on('nft_define', HR.nft_define)
     processor.on('nft_melt', HR.nft_delete)
     processor.on('nft_mint', HR.nft_mint)
+    processor.on('nft_pfp', HR.nft_pfp)
     processor.onOperation('comment_options', HR.comment_options);
     processor.on('cjv', HR.cjv);
     processor.on('sig', HR.sig); //dlux is for putting executable programs into IPFS... this is for additional accounts to sign the code as non-malicious

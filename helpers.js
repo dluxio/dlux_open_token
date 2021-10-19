@@ -1,5 +1,6 @@
 const { set } = require("@hiveio/hive-js/lib/auth/serializer/src/types");
 const { store } = require("./index");
+const { renderNFTtoDiscord } = require('./discord')
 const { add, addMT, burn } = require('./lil_ops')
 const config = require('./config')
 
@@ -91,6 +92,7 @@ const NFT = {
                 ops.push({type:'put', path:['nfts', b.for, `${b.set}:${selected}`], data: nft})
                 ops.push({type:'put', path:['sets', b.set], data: set})
                 ops.push({type: 'put', path: ['feed', `${num}:vop_${delkey.split(':')[1]}`], data: `${b.for} minted ${selected} from the ${b.set} set.` })
+                if(config.hookurl)renderNFTtoDiscord(set.s, selected, b.for)
                 ops.push({ type: 'del', path: ['chrono', delkey] })
                 store.batch(ops, [resolve, reject])
             })
