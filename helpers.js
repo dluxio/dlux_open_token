@@ -13,8 +13,8 @@ exports.primes = primes
 
 const NFT = {
     place : function(item, account, string){
-        if (string.indexOf(account) >= 0){
-            return string.slice(0, string.indexOf(account)) + item + '_' + string.slice(string.indexOf(account))
+        if (string.indexOf(`_${account},`) >= 0){
+            return string.slice(0, string.indexOf(`_${account},`)) + item + '_' + string.slice(string.indexOf(`_${account},`))
         } else {
             return string + item + '_' + account + ','
         }
