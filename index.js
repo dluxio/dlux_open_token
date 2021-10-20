@@ -541,6 +541,7 @@ function dynStart(account) {
 
 //pulls state from IPFS, loads it into memory, starts the block processor
 function startWith(hash) {
+    API.start()
     console.log(`${hash} inserted`)
     if (hash) {
         console.log(`Attempting to start from IPFS save state ${hash}`);

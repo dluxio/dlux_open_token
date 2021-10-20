@@ -19,6 +19,8 @@ var RAM = {
     Hive: ''
 }
 
+exports.start = () => {fetchHive()}
+
 exports.root = (req, res, next) => {
     var stats = {};
     res.setHeader('Content-Type', 'application/json');
@@ -26,6 +28,7 @@ exports.root = (req, res, next) => {
         stats = obj,
             res.send(JSON.stringify({
                 stats,
+                behind: RAM.behind,
                 node: config.username,
                 VERSION,
                 realtime: stats.realtime
@@ -207,6 +210,7 @@ exports.orderbook = (req, res, next) => {
                 timestamp: orderbook.timestamp,
                 ticker_id: orderbook.ticker_id,
                 node: config.username,
+                behind: RAM.behind,
                 VERSION
             }, null, 3))
         })
@@ -333,6 +337,7 @@ exports.historical_trades = (req, res, next) => {
                 sell,
                 buy,
                 node: config.username,
+                behind: RAM.behind,
                 VERSION
             }, null, 3))
         })
@@ -469,6 +474,7 @@ exports.dex = (req, res, next) => {
                 markets,
                 queue: v[1],
                 node: config.username,
+                behind: RAM.behind,
                 VERSION
             }, null, 3))
         })
@@ -481,7 +487,7 @@ exports.dex = (req, res, next) => {
 
 function fetchHive(){
     return new Promise((resolve, reject)=>{
-        if (RAM.lastUpdate < Date.now() - 60000){
+        if (RAM.lastUpdate < Date.now() - 59000){
             fetch(config.clientURL, {
                 body: `{"jsonrpc":"2.0", "method":"database_api.get_dynamic_global_properties", "id":1}`,
                 headers: {
@@ -494,6 +500,11 @@ function fetchHive(){
                     console.log(res)
                     RAM.lastUpdate = Date.now()
                     RAM.hiveDyn = res.result
+                    RAM.head = res.result.head_block_number
+                    RAM.behind = res.result.head_block_number = status.getBlockNum()
+                    setTimeout(function(){
+                        fetchHive();
+                    }, 60000);
                     resolve('OK')
                 })
                 .catch(e=>reject(e))
@@ -547,6 +558,7 @@ exports.detail = (req, res, next) => {
             res.send(JSON.stringify({
                 coins: [DLUX,HIVE,HBD],
                 node: config.username,
+                behind: RAM.behind,
                 VERSION
             }, null, 3))
         })
@@ -565,6 +577,7 @@ exports.markets = (req, res, next) => {
                 markets: v[0],
                 stats: v[1],
                 node: config.username,
+                behind: RAM.behind,
                 VERSION
             }, null, 3))
         })
@@ -586,6 +599,7 @@ exports.mirrors = (req, res, next) => {
             res.send(JSON.stringify({
                 apis,
                 node: config.username,
+                behind: RAM.behind,
                 VERSION
             }, null, 3))
         })
@@ -601,6 +615,7 @@ exports.runners = (req, res, next) => {
         res.send(JSON.stringify({
             runners,
             node: config.username,
+            behind: RAM.behind,
             VERSION
         }, null, 3))
     });
@@ -613,6 +628,7 @@ exports.queue = (req, res, next) => {
         res.send(JSON.stringify({
             queue,
             node: config.username,
+            behind: RAM.behind,
             VERSION
         }, null, 3))
     });
@@ -625,6 +641,7 @@ exports.feed = (req, res, next) => {
         res.send(JSON.stringify({
             feed,
             node: config.username,
+            behind: RAM.behind,
             VERSION
         }, null, 3))
     });
@@ -637,6 +654,7 @@ exports.posts = (req, res, next) => {
         res.send(JSON.stringify({
             feed,
             node: config.username,
+            behind: RAM.behind,
             VERSION
         }, null, 3))
     });
@@ -658,6 +676,7 @@ exports.PostAuthorPermlink = (req, res, next) => {
                     now,
                     arch,
                     node: config.username,
+                    behind: RAM.behind,
                     VERSION
                 }, null, 3))
             })
@@ -674,12 +693,6 @@ api.get('/api/auctions', API.auctions);
 api.get('/api/sales', API.sales);
 */
 
-exports.compile = (req, res, next) => {
-    let set = req.params.set,
-        item = req.params.item
-    
-}
-
 exports.protocol = (req, res, next) => {
     res.setHeader('Content-Type', 'application/json')
     store.get(['queue'], function(err, obj) {
@@ -688,6 +701,7 @@ exports.protocol = (req, res, next) => {
             consensus: obj,
             prefix: config.prefix,
             node: config.username,
+            behind: RAM.behind,
             info: '/markets will return node information and published APIs for the consensus nodes, you may check these other APIs to ensure that the information in the API is in consensus.\nThe prefix is used to address this tokens architecture built on Hive.',
             VERSION
         }, null, 3))
@@ -701,6 +715,7 @@ exports.status = (req, res, next) => {
             txid,
             status: status[txid] || `This TransactionID either has not yet been processed, or was missed by the system due to formatting errors. Wait 70 seconds and try again. This API only keeps these records for a maximum of ${(config.history * 3)} seconds`,
             node: config.username,
+            behind: RAM.behind,
             VERSION
         }, null, 3))
 }
@@ -743,6 +758,7 @@ exports.nfts = (req, res, next) => {
                     mint_tokens,
                     user,
                     node: config.username,
+                    behind: RAM.behind,
                     VERSION
                 }, null, 3))
     }) 
@@ -783,6 +799,7 @@ exports.sets = (req, res, next) => {
         res.send(JSON.stringify({
                     result,
                     node: config.username,
+                    behind: RAM.behind,
                     VERSION
                 }, null, 3))
     }) 
@@ -827,6 +844,7 @@ exports.auctions = (req, res, next) => {
         res.send(JSON.stringify({
                     result,
                     node: config.username,
+                    behind: RAM.behind,
                     VERSION
                 }, null, 3))
     }) 
@@ -855,6 +873,7 @@ exports.official = (req, res, next) => {
     res.send(JSON.stringify({
                     result,
                     node: config.username,
+                    behind: RAM.behind,
                     VERSION
                 }, null, 3))
     }) 
@@ -863,6 +882,7 @@ exports.official = (req, res, next) => {
                     result: 'No Profile Picture Set or Owned',
                     error: e,
                     node: config.username,
+                    behind: RAM.behind,
                     VERSION
                 }, null, 3))
   })
@@ -898,6 +918,7 @@ exports.limbo = (req, res, next) => {
                     result,
                     kind,
                     node: config.username,
+                    behind: RAM.behind,
                     VERSION
                 }, null, 3))
     }) 
@@ -942,6 +963,7 @@ exports.mint_auctions = (req, res, next) => {
         res.send(JSON.stringify({
                     result,
                     node: config.username,
+                    behind: RAM.behind,
                     VERSION
                 }, null, 3))
     }) 
@@ -975,6 +997,7 @@ exports.sales = (req, res, next) => {
         res.send(JSON.stringify({
                     result,
                     node: config.username,
+                    behind: RAM.behind,
                     VERSION
                 }, null, 3))
     }) 
@@ -1007,6 +1030,7 @@ exports.mint_sales = (req, res, next) => {
         res.send(JSON.stringify({
                     result,
                     node: config.username,
+                    behind: RAM.behind,
                     VERSION
                 }, null, 3))
     }) 
@@ -1059,6 +1083,7 @@ exports.set = (req, res, next) => {
                     result,
                     set,
                     node: config.username,
+                    behind: RAM.behind,
                     VERSION
                 }, null, 3))
     }) 
@@ -1112,6 +1137,7 @@ exports.item = (req, res, next) => {
                     max: Base64.toNumber(mem[0].m) - Base64.toNumber(mem[0].o)
                 },
                 node: config.username,
+                behind: RAM.behind,
                 VERSION
             }, null, 3))    
         });
@@ -1127,6 +1153,7 @@ exports.report = (req, res, next) => {
         res.send(JSON.stringify({
             [un]: report,
             node: config.username,
+            behind: RAM.behind,
             VERSION
         }, null, 3))
     });
@@ -1149,6 +1176,7 @@ exports.getPromotedPosts = (req, res, next) => {
             res.send(JSON.stringify({
                         result: r,
                         node: config.username,
+                        behind: RAM.behind,
                         VERSION
                     }, null, 3))
         })
@@ -1173,10 +1201,11 @@ exports.getTrendingPosts = (req, res, next) => {
     getTrendingPosts(amt, off)
         .then(r =>{
             res.send(JSON.stringify({
-                        result: r,
-                        node: config.username,
-                        VERSION
-                    }, null, 3))
+                result: r,
+                node: config.username,
+                behind: RAM.behind,
+                VERSION
+            }, null, 3))
         })
         .catch(e=>{
             console.log(e)
@@ -1199,10 +1228,11 @@ exports.getNewPosts = (req, res, next) => {
     getNewPosts(amt, off)
         .then(r =>{
             res.send(JSON.stringify({
-                        result: r,
-                        node: config.username,
-                        VERSION
-                    }, null, 3))
+                result: r,
+                node: config.username,
+                behind: RAM.behind,
+                VERSION
+            }, null, 3))
         })
         .catch(e=>{
             console.log(e)
@@ -1226,10 +1256,11 @@ exports.getAuthorPosts = (req, res, next) => {
     getAuthorPosts(author, amt, off)
         .then(r =>{
             res.send(JSON.stringify({
-                        result: r,
-                        node: config.username,
-                        VERSION
-                    }, null, 3))
+                result: r,
+                node: config.username,
+                behind: RAM.behind,
+                VERSION
+            }, null, 3))
         })
         .catch(e=>{
             console.log(e)
@@ -1244,10 +1275,11 @@ exports.getPost = (req, res, next) => {
     getPost(author, permlink)
         .then(r =>{
             res.send(JSON.stringify({
-                        result: r,
-                        node: config.username,
-                        VERSION
-                    }, null, 3))
+                result: r,
+                node: config.username,
+                behind: RAM.behind,
+                VERSION
+            }, null, 3))
         })
         .catch(e=>{
             console.log(e)
@@ -1307,6 +1339,7 @@ exports.coin = (req, res, next) => {
             check,
             info,
             node: config.username,
+            behind: RAM.behind,
             VERSION
         }, null, 3))
     });
@@ -1338,6 +1371,7 @@ exports.user = (req, res, next) => {
                 down: v[7],
                 gov: v[5],
                 node: config.username,
+                behind: RAM.behind,
                 VERSION
             }, null, 3))
         })
@@ -1370,6 +1404,7 @@ exports.blog = (req, res, next) => {
         res.send(JSON.stringify({
             blog: arr,
             node: config.username,
+            behind: RAM.behind,
             VERSION
         }, null, 3))
     })
@@ -1380,11 +1415,12 @@ exports.state = (req, res, next) => {
     res.setHeader('Content-Type', 'application/json')
     store.get([], function(err, obj) {
         state = obj,
-            res.send(JSON.stringify({
-                state,
-                node: config.username,
-                VERSION
-            }, null, 3))
+        res.send(JSON.stringify({
+            state,
+            node: config.username,
+            behind: RAM.behind,
+            VERSION
+        }, null, 3))
     });
 }
 
