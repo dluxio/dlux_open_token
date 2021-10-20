@@ -497,11 +497,10 @@ function fetchHive(){
                 })
                 .then(r => r.json())
                 .then(res => {
-                    console.log(res)
                     RAM.lastUpdate = Date.now()
                     RAM.hiveDyn = res.result
                     RAM.head = res.result.head_block_number
-                    RAM.behind = res.result.head_block_number = status.getBlockNum()
+                    RAM.behind = res.result.head_block_number - TXID.getBlockNum()
                     setTimeout(function(){
                         fetchHive();
                     }, 60000);
