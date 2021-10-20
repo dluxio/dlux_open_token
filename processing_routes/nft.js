@@ -153,14 +153,14 @@ exports.nft_transfer_cancel  = function(json, from, active, pc) {
         setp = getPathObj(['sets', json.set]); //to balance promise
     Promise.all([fnftp, setp])
     .then(nfts => {
-        if((nft[0].t.split('_')[1] == from || nft[0].t.split('_')[0] == from) && active) {
-            let ops = []
+        if((nfts[0].t.split('_')[1] == from || nfts[0].t.split('_')[0] == from) && active) {
+            let ops = [],
                 nft = nfts[0],
                 set = nfts[1]
             nft.s = NFT.last(json.block_num, nft.s)
-            set.u = NFT.move(json.uid, nft[0].t.split('_')[0], set.u)
+            set.u = NFT.move(json.uid, nft.t.split('_')[0], set.u)
             delete nft.t
-            ops.push({type:'put', path:['nfts', nft[0].t.split('_')[0],`${json.set}:${json.uid}`], data: nft})
+            ops.push({type:'put', path:['nfts', nft.t.split('_')[0],`${json.set}:${json.uid}`], data: nft})
             ops.push({type:'put', path:['sets', json.set], data: set})
             ops.push({type:'del', path:['nfts', 't', `${json.set}:${json.uid}`]})
             // is there anything in the NFT that needs to be modified? owner, renter, 
