@@ -1021,7 +1021,7 @@ exports.mint_sales = (req, res, next) => {
                     token: config.TOKEN
                 },
                 by:mem[0][item].o,
-                script: mem[2][item.split(':')[0]].s
+                script: mem[1][item.split(':')[0]].s
             }
             result.push(listing)
         }
