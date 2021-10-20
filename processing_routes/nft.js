@@ -153,7 +153,7 @@ exports.nft_transfer_cancel  = function(json, from, active, pc) {
         setp = getPathObj(['sets', json.set]); //to balance promise
     Promise.all([fnftp, setp])
     .then(nfts => {
-        if((nfts[0].t.split('_')[1] == from || nfts[0].t.split('_')[0] == from) && active) {
+        if(nfts[0].s && (nfts[0].t.split('_')[1] == from || nfts[0].t.split('_')[0] == from) && active) {
             let ops = [],
                 nft = nfts[0],
                 set = nfts[1]
