@@ -668,6 +668,7 @@ exports.ft_sell = function(json, from, active, pc) {
                             o: from
                         }
                     ls[`${json.set}:${hash}`] = listing //place the listing in the AH
+                    var ops = []
                     ops.push({type:'put', path:['lt'], data: ls})
                     ops.push({type:'put', path:['rnfts', json.set, from], data: nft - 1})
                     let msg = `@${from} Listed ${json.set} mint token for sale`

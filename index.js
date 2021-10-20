@@ -106,8 +106,8 @@ var recents = []
     //HIVE API CODE
 
 //Start Program Options   
-//startWith('QmPfc3ziP3XEgmi9LAfCJUuDPgaNh1odMQegGKqLk1Jg1W') //for testing and replaying
-dynStart(config.leader)
+startWith('QmULeYqVBCG954dwh39WrbLzKL4T9RP1u37yrRDvkU3XJe') //for testing and replaying
+//dynStart(config.leader)
 
 
 // API defs
@@ -207,9 +207,9 @@ function startApp() {
     processor.on('ft_sell_cancel', HR.ft_sell_cancel)
     processor.on('ft_buy', HR.ft_buy)
     processor.on('ft_sell', HR.ft_sell)
-    // processor.on('ft_escrow_cancel', HR.ft_escrow_cancel)
-    // processor.on('ft_escrow_complete', HR.ft_escrow_complete)
-    // processor.on('ft_escrow', HR.ft_escrow)
+    processor.on('ft_escrow_cancel', HR.ft_escrow_cancel)
+    processor.on('ft_escrow_complete', HR.ft_escrow_complete)
+    processor.on('ft_escrow', HR.ft_escrow)
     processor.on('nft_buy', HR.nft_buy)
     processor.on('nft_sell', HR.nft_sell)
     processor.on('nft_sell_cancel', HR.nft_sell_cancel)
@@ -239,7 +239,6 @@ function startApp() {
             console.log(num)
             TXID.clean(num)
             return new Promise((resolve, reject) => {
-                //store.batch([{ type: 'put', path: ['stats', 'realtime'], data: num }], )
                 store.someChildren(['chrono'], {
                     gte: "" + num,
                     lte: "" + (num + 1)
@@ -250,10 +249,7 @@ function startApp() {
                     for (var i in a) {
                         chrops[a[i]] = a[i]
                     }
-                    let totalPromises = chrops.length
-
-
-                    for (var i in chrops) {
+                   for (var i in chrops) {
                         let delKey = chrops[i]
                         store.get(['chrono', chrops[i]], function(e, b) {
                             switch (b.op) {
@@ -362,18 +358,6 @@ function startApp() {
 
                         })
                     }
-                    /*
-                //rest is out of consensus
-                for (var p = 0; p < pa.length; p++) { //automate some tasks... nearly positive this doesn't work
-                    var r = eval(pa[p][1])
-                    if (r) {
-                        NodeOps.push([
-                            [0, 0],
-                            [pa[p][2], pa[p][3]]
-                        ])
-                    }
-                }
-                */
                     if (config.active && processor.isStreaming()) {
                         store.get(['escrow', config.username], function(e, a) {
                             if (!e) {
@@ -569,7 +553,7 @@ function startWith(hash) {
                                                 console.log(`State Check:  ${returns}\nAccount: ${config.username}\nKey: ${config.active.substr(0,3)}...`)
                                                 let info = API.coincheck(cleanState)
                                                 console.log(info.check)
-                                                if (cleanState.stats.tokenSupply != supply) {
+                                                if (cleanState.stats.tokenSupply != info.supply) {
                                                     console.log(info.info)
                                                 }
                                             }
