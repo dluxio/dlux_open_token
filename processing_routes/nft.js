@@ -116,7 +116,7 @@ exports.nft_reserve_complete  = function(json, from, active, pc) {
     .then(nfts => {
         const price = parseInt(nfts[0].t.split('_')[2])
         if(nfts[0].s !== undefined && nfts[0].t.split('_')[1] == from && active && nfts[2] >= price) {
-            let ops = []
+            let ops = [],
                 nft = nfts[0],
                 set = nfts[1]
             nft.s = NFT.last(json.block_num, nft.s)
