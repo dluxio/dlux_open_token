@@ -29,7 +29,7 @@ const NFT = {
             newString = string.replace(`${item}_`, '')
         }
         if (newString.indexOf(`_${to},`) >= 0){
-            return newString.slice(0, newString.indexOf(`_${to},`)) + item + '_' + newString.slice(newString.indexOf(`_${to},`))
+            return newString.slice(0, newString.indexOf(`_${to},`)) + '_' + item + newString.slice(newString.indexOf(`_${to},`))
         } else {
             return newString + item + '_' + to + ','
         }
