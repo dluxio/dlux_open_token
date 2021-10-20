@@ -631,25 +631,85 @@ exports.ft_escrow = function(json, from, active, pc) {
     let rnftp = getPathNum(['rnfts', json.set, from])
     Promise.all([rnftp])
     .then(mem => {
-        
+        var rnft = mem[0], uid = hashThis(`${from}:${json.set}:${json.block_num}`)
+        if(rnft && active) {
+            let ops = [],
+                listing = {
+                    i: `${json.set}:${uid}`,
+                    t: `${from}_${json.to}_${json.price}`
+                }
+            nft.t = `${from}_${json.to}_${json.price}`
+            ops.push({type:'put', path:['fts', 't', `${json.set}:${uid}`], data: listing})
+            ops.push({type:'put', path:['rnfts', json.set, from], data: rnft - 1})
+            let msg = `@${from}| Reserved Mint Token: ${json.set}:${json.uid} for @${json.to}`
+            if (config.hookurl || config.status) postToDiscord(msg, `${json.block_num}:${json.transaction_id}`)
+            ops.push({ type: 'put', path: ['feed', `${json.block_num}:${json.transaction_id}`], data: msg });
+            store.batch(ops, pc)
+        } else {
+            if (config.hookurl) postToDiscord(`@${json.to} doesn't own a ${json.set} Mint Token`)
+            pc[0](pc[2])
+        }
     })
     .catch(e => { console.log(e); });
 }
 
 exports.ft_escrow_complete = function(json, from, active, pc) {
-    let rnftp = getPathNum(['rnfts', json.set, from])
-    Promise.all([rnftp])
-    .then(mem => {
-        
+    let fnftp = getPathObj(['fts', 't', `${json.set}:${json.uid}`]),
+        setp = getPathObj(['sets', json.set]), //to balance promise
+        balp = getPathNum(['balances', from])
+    Promise.all([fnftp, setp, balp])
+    .then(nfts => {
+        var to, price
+        try{ to = nfts[0].t.split('_')[1];price = parseInt(nfts[0].t.split('_')[2])} catch (e){console.log(nfts[0])}
+        if(nfts[0].t !== undefined && to == from && active && nfts[2] >= price) {
+            let ops = [],
+                nft = nfts[0],
+                set = nfts[1]
+            let per = set.r || 0
+            let royalty = parseInt((per / 10000) * price)
+            if(set.a == nft.t.split('_')[0]){
+                add(nft.t.split('_')[0], price)
+            }
+            else {
+                add(nft.t.split('_')[0], price - royalty)
+                add(set.a, royalty)
+            }
+            add(from, -price)
+            addMT(['rnfts', json.set, from],1)
+            ops.push({type:'del', path:['fts', 't', `${json.set}:${json.uid}`]})
+            // is there anything in the NFT that needs to be modified? owner, renter, 
+            let msg = `@${from} completed ${json.set} mint token transfer`
+            if (config.hookurl || config.status) postToDiscord(msg, `${json.block_num}:${json.transaction_id}`)
+            ops.push({ type: 'put', path: ['feed', `${json.block_num}:${json.transaction_id}`], data: msg });
+            store.batch(ops, pc)
+        } else {
+            if (config.hookurl) postToDiscord(`Can't find Mint Token: ${json.set}:${json.uid} in pending transfers`)
+            pc[0](pc[2])
+        }
     })
     .catch(e => { console.log(e); });
 }
 
 exports.ft_escrow_cancel = function(json, from, active, pc) {
-    let rnftp = getPathNum(['rnfts', json.set, from])
-    Promise.all([rnftp])
-    .then(mem => {
-        
+    let fnftp = getPathObj(['fts', 't', `${json.set}:${json.uid}`]),
+        setp = getPathObj(['sets', json.set]); //to balance promise
+    Promise.all([fnftp, setp])
+    .then(nfts => {
+        var to, by
+        try{to=nfts[0].t.split('_')[1];by=nfts[0].t.split('_')[0]}catch(e){}
+        if((to == from || by == from) && active) {
+            let ops = []
+            addMT(['rnfts', json.set, by], 1)
+            ops.push({type:'del', path:['nfts', 't', `${json.set}:${json.uid}`]})
+            // is there anything in the NFT that needs to be modified? owner, renter, 
+            let msg = `@${from} canceled mint token transfer`
+            if (config.hookurl || config.status) postToDiscord(msg, `${json.block_num}:${json.transaction_id}`)
+            ops.push({ type: 'put', path: ['feed', `${json.block_num}:${json.transaction_id}`], data: msg });
+            store.batch(ops, pc)
+        } else {
+            if (config.hookurl) postToDiscord(`Can't find Mint Token: ${json.set}:${json.uid} in pending transfers`)
+            pc[0](pc[2])
+        }
     })
     .catch(e => { console.log(e); });
 }
