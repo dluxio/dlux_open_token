@@ -123,7 +123,7 @@ exports.nft_reserve_complete  = function(json, from, active, pc) {
             set.u = NFT.move(json.uid, from, set.u)
             const royalty = parseInt((price * 10000)/set.r)
             add(set.a, royalty)
-            add(nft[0].t.split('_')[0], price - royalty)
+            add(nft.t.split('_')[0], price - royalty)
             add(from, -price)
             delete nft.t
             ops.push({type:'put', path:['nfts', from,`${json.set}:${json.uid}`], data: nft})
