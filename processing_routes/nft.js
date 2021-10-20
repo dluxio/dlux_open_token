@@ -413,7 +413,7 @@ exports.nft_bid = function(json, from, active, pc) {
                         if (config.hookurl || config.status) postToDiscord(msg, `${json.block_num}:${json.transaction_id}`)
                         pc[0](pc[2])
                     }
-                } else {
+                } else if (json.bid_amount >= listing.p){
                     listing.f = from
                     listing.b = json.bid_amount
                     listing.c = 1
