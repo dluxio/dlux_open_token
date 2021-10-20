@@ -1286,12 +1286,8 @@ exports.getPost = (req, res, next) => {
         })
 }
 
-exports.coin = (req, res, next) => {
-    var state = {}
-    res.setHeader('Content-Type', 'application/json')
-    store.get([], function(err, obj) {
-        state = obj,
-            supply = 0
+exports.coincheck = (state) => {
+        supply = 0
         lbal = 0
         for (bal in state.balances) {
             supply += state.balances[bal]
@@ -1328,15 +1324,34 @@ exports.coin = (req, res, next) => {
                 pow += state.pow[bal]
             }
         }
+        var ah = 0
+        for (item in state.ah){
+            ah += state.ah[item].b || 0
+            supply += state.ah[item].b || 0
+        }
+        var bond = 0
+        for (item in state.sets){
+            const it = (state.sets[item].b * (Base64.toNumber(state.sets[item].m) - Base64.toNumber(state.sets[item].o) - state.sets[item].d + 1))
+            bond += it
+            supply += it
+        }
 
         let info = {}
         let check = `supply check:state:${state.stats.tokenSupply} vs check: ${supply}: ${state.stats.tokenSupply - supply}`
         if (state.stats.tokenSupply != supply) {
-            info = { lbal, gov, govt, pow, powt, con }
+            info = { lbal, gov, govt, pow, powt, con, ah, bond }
         }
+        return {check, info, supply}
+}
+
+exports.coin = (req, res, next) => {
+    var state = {}
+    res.setHeader('Content-Type', 'application/json')
+    store.get([], function(err, obj) {
+        let info = exports.coincheck(obj)
         res.send(JSON.stringify({
-            check,
-            info,
+            check: info.check,
+            info: info.info,
             node: config.username,
             behind: RAM.behind,
             VERSION

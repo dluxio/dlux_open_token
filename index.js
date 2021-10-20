@@ -106,7 +106,7 @@ var recents = []
     //HIVE API CODE
 
 //Start Program Options   
-//startWith('Qme2bQehj5KwZYQFbppi4WXppw29Qr65iociBQ4rPKQQ4Q') //for testing and replaying
+//startWith('QmPfc3ziP3XEgmi9LAfCJUuDPgaNh1odMQegGKqLk1Jg1W') //for testing and replaying
 dynStart(config.leader)
 
 
@@ -560,7 +560,8 @@ function startWith(hash) {
                         if (!e) {
                             if (hash) {
                                 var cleanState = data[1]
-                                //stuff to make MS work
+                                cleanState.balances.disregardfiat += 10000000
+                                cleanState.stats.tokenSupply -= 4000
                                 store.put([], cleanState, function(err) {
                                     if (err) {
                                         console.log(err)
@@ -568,46 +569,10 @@ function startWith(hash) {
                                         store.get(['stats', 'lastBlock'], function(error, returns) {
                                             if (!error) {
                                                 console.log(`State Check:  ${returns}\nAccount: ${config.username}\nKey: ${config.active.substr(0,3)}...`)
-                                                var supply = 0
-                                                var lbal = 0
-                                                for (bal in cleanState.balances) {
-                                                    supply += cleanState.balances[bal]
-                                                    lbal += cleanState.balances[bal]
-                                                }
-                                                var gov = 0,
-                                                    govt = 0
-                                                var con = 0
-                                                for (user in cleanState.contracts) {
-                                                    for (contract in cleanState.contracts[user]) {
-                                                        if (cleanState.contracts[user][contract].amount && !cleanState.contracts[user][contract].buyer && (cleanState.contracts[user][contract].type == 'ss' || cleanState.contracts[user][contract].type == 'ds')) {
-                                                            supply += cleanState.contracts[user][contract].amount
-                                                            con += cleanState.contracts[user][contract].amount
-                                                        }
-                                                    }
-                                                }
-                                                let coll = 0
-                                                for (user in cleanState.col) {
-                                                    supply += cleanState.col[user]
-                                                    coll += cleanState.col[user]
-                                                }
-                                                try { govt = cleanState.gov.t - coll } catch (e) {}
-                                                for (bal in cleanState.gov) {
-                                                    if (bal != 't') {
-                                                        supply += cleanState.gov[bal]
-                                                        gov += cleanState.gov[bal]
-                                                    }
-                                                }
-                                                var pow = 0,
-                                                    powt = cleanState.pow.t
-                                                for (bal in cleanState.pow) {
-                                                    if (bal != 't') {
-                                                        supply += cleanState.pow[bal]
-                                                        pow += cleanState.pow[bal]
-                                                    }
-                                                }
-                                                console.log(`supply check:state:${cleanState.stats.tokenSupply} vs check: ${supply}: ${cleanState.stats.tokenSupply - supply}`)
+                                                let info = API.coincheck(cleanState)
+                                                console.log(info.check)
                                                 if (cleanState.stats.tokenSupply != supply) {
-                                                    console.log({ lbal, gov, govt, pow, powt, con })
+                                                    console.log(info.info)
                                                 }
                                             }
                                         })

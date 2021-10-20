@@ -122,9 +122,15 @@ exports.nft_reserve_complete  = function(json, from, active, pc) {
                 set = nfts[1]
             nft.s = NFT.last(json.block_num, nft.s)
             set.u = NFT.move(json.uid, from, set.u)
-            const royalty = parseInt((price * 10000)/set.r)
-            add(set.a, royalty)
-            add(nft.t.split('_')[0], price - royalty)
+            let per = set.r || 0
+            let royalty = parseInt((per / 10000) * price)
+            if(set.a == nft.t.split('_')[0]){
+                add(nft.t.split('_')[0], price)
+            }
+            else {
+                add(nft.t.split('_')[0], price - royalty)
+                add(set.a, royalty)
+            }
             add(from, -price)
             delete nft.t
             ops.push({type:'put', path:['nfts', from,`${json.set}:${json.uid}`], data: nft})
@@ -396,7 +402,7 @@ exports.nft_bid = function(json, from, active, pc) {
                 var listing = mem[1],
                     bal = mem[0]
                 if(listing.b){
-                    if (json.bid_amount > listing.b){
+                    if (json.bid_amount > listing.b && from != listing.f){
                         add(listing.f, listing.b) //return the previous high bidders tokens
                         .then(empty => {
                             if(from == listing.f)bal = bal + listing.b
@@ -494,7 +500,7 @@ exports.nft_buy = function(json, from, active, pc) {
         if(json.set == `Qm`) setp = getPathObj(['sets', `Qm${json.uid}`])
     Promise.all([fbalp, lsp, setp])
     .then(mem => {
-        if(mem[1].p <= mem[0] && active){
+        if(mem[1].p <= mem[0] && active && from != listing.o){
             let nft = mem[1].nft, set = mem[2], listing = mem[1]
             var last_modified = nft.s.split(',')[0], ops = []  //last modified is the first item in the string
             nft.s.replace(last_modified, Base64.fromNumber(json.block_num)) //update the modified block
@@ -505,7 +511,9 @@ exports.nft_buy = function(json, from, active, pc) {
             add(set.a, royalty)
             .then(empty =>{
                 add(listing.o, listing.p - royalty)
-                ops.push({type:'put', path:['balances', from], data: mem[0] - listing.p})
+                var newBal = mem[0] - listing.p
+                if (from == set.a) newBal += royalty
+                ops.push({type:'put', path:['balances', from], data: newBal})
                 ops.push({type:'put', path:['nfts', from, `${json.set}:${json.uid}`], data: nft})
                 ops.push({type:'del', path:['ls', `${json.set}:${json.uid}`]})
                 if (json.set == 'Qm') ops.push({type:'put', path:['sets', `Qm${json.uid}`], data: set})
@@ -685,15 +693,21 @@ exports.ft_buy = function(json, from, active, pc) {
         setp = getPathObj(['sets', json.set])
     Promise.all([fbalp, lsp, setp])
     .then(mem => {
-        if(mem[1].p <= mem[0] && active){
+        var price = 'high'
+        try {price = mem[1].p}catch(e){}
+        if(price <= mem[0] && active && listing.o != from){
             let set = mem[2], listing = mem[1],
                 per = set.r || 0
             let royalty = parseInt((per / 10000)* listing.p)
             add(set.a, royalty)
             .then(empty =>{
+                var newBal = mem[0] - listing.p
+                if (set.a == from){
+                    newBal += royalty
+                }
                 add(listing.o, listing.p - royalty)
                 addMT(['rnfts', json.set, from], 1)
-                ops.push({type:'put', path:['balances', from], data: mem[0] - listing.p})
+                ops.push({type:'put', path:['balances', from], data: newBal})
                 ops.push({type:'del', path:['ls', `${json.set}:${json.uid}`]})
                 let msg = `@${from} bought ${json.set}:${json.uid} mint token`
                 if (config.hookurl || config.status) postToDiscord(msg, `${json.block_num}:${json.transaction_id}`)
@@ -785,7 +799,7 @@ exports.ft_bid = function(json, from, active, pc) {
                 var listing = mem[1],
                     bal = mem[0]
                 if(listing.b){
-                    if (json.bid_amount > listing.b){
+                    if (json.bid_amount > listing.b && listing.f != from){
                         add(listing.f, listing.b) //return the previous high bidders tokens
                         .then(empty => {
                             if(from == listing.f)bal = bal + listing.b
