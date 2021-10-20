@@ -115,7 +115,9 @@ exports.nft_reserve_complete  = function(json, from, active, pc) {
     Promise.all([fnftp, setp, balp])
     .then(nfts => {
         const price = parseInt(nfts[0].t.split('_')[2])
-        if(nfts[0].s !== undefined && nfts[0].t.split('_')[1] == from && active && nfts[2] >= price) {
+        var to
+        try{ to = nfts[0].t.split('_')[1]} catch (e){console.log(nfts[0])}
+        if(nfts[0].s !== undefined && to == from && active && nfts[2] >= price) {
             let ops = [],
                 nft = nfts[0],
                 set = nfts[1]
