@@ -110,8 +110,9 @@ json:{
 //fulfil nft transfer via complete payment
 exports.nft_reserve_complete  = function(json, from, active, pc) {
     let fnftp = getPathObj(['nfts', 't', `${json.set}:${json.uid}`]),
-        setp = getPathObj(['sets', json.set]); //to balance promise
-    Promise.all([fnftp, setp])
+        setp = getPathObj(['sets', json.set]), //to balance promise
+        balp = getPathNum(['balances', from])
+    Promise.all([fnftp, setp, balp])
     .then(nfts => {
         const price = parseInt(nfts[0].t.split('_')[2])
         if(nfts[0].s !== undefined && nfts[0].t.split('_')[1] == from && active && nfts[2] >= price) {
