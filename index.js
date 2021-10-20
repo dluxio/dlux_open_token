@@ -560,8 +560,6 @@ function startWith(hash) {
                         if (!e) {
                             if (hash) {
                                 var cleanState = data[1]
-                                cleanState.balances.disregardfiat += 10000000
-                                cleanState.stats.tokenSupply -= 4000
                                 store.put([], cleanState, function(err) {
                                     if (err) {
                                         console.log(err)
