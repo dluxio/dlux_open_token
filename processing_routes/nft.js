@@ -425,6 +425,12 @@ exports.nft_bid = function(json, from, active, pc) {
                     if (config.hookurl || config.status) postToDiscord(msg, `${json.block_num}:${json.transaction_id}`)
                     ops.push({ type: 'put', path: ['feed', `${json.block_num}:${json.transaction_id}`], data: msg });
                     store.batch(ops, pc)
+                } else {
+                    var ops = []
+                    let msg = `@${from} hasn't outbid on ${json.set}:${json.uid}`
+                    if (config.hookurl || config.status) postToDiscord(msg, `${json.block_num}:${json.transaction_id}`)
+                    ops.push({ type: 'put', path: ['feed', `${json.block_num}:${json.transaction_id}`], data: msg });
+                    store.batch(ops, pc)
                 }
             } else {
                 let msg = `@${from}'s bid on ${json.set}:${json.uid} didn't go well`
