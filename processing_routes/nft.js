@@ -829,7 +829,8 @@ exports.ft_auction = function(json, from, active, pc) {
                             q: exp, //expire path / vop
                             o: from,
                             c: 0
-                        }
+                        },
+                        ops = []
                     ah[`${json.set}:${hash}`] = listing //place the listing in the AH
                     ops.push({type:'put', path:['am'], data: ah})
                     ops.push({type:'put', path:['rnfts', json.set, from], data: nft -1})
