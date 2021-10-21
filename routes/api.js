@@ -816,7 +816,7 @@ exports.auctions = (req, res, next) => {
             now = new Date()
             auctionTimer.expiryIn = now.setSeconds(now.getSeconds() + ((mem[0][item].e - TXID.getBlockNum())*3));
             auctionTimer.expiryUTC = new Date(auctionTimer.expiryIn);
-            auctionTimer.expiryString = auctionTimer.expiryUTC.toISOString().slice(0, -5);
+            auctionTimer.expiryString = auctionTimer.expiryUTC.toISOString();
             result.push({
                         uid: item.split(':')[1],
                         set: item.split(':')[0],
@@ -935,7 +935,7 @@ exports.mint_auctions = (req, res, next) => {
             now = new Date()
             auctionTimer.expiryIn = now.setSeconds(now.getSeconds() + ((mem[0][item].e - TXID.getBlockNum())*3));
             auctionTimer.expiryUTC = new Date(auctionTimer.expiryIn);
-            auctionTimer.expiryString = auctionTimer.expiryUTC.toISOString().slice(0, -5).replace('T', 'Z');
+            auctionTimer.expiryString = auctionTimer.expiryUTC.toISOString();
             result.push({
                         uid: item.split(':')[1],
                         set: item.split(':')[0],
