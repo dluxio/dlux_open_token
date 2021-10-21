@@ -805,7 +805,7 @@ exports.ft_sell_cancel = function(json, from, active, pc) {
 }
 
 exports.ft_auction = function(json, from, active, pc) {
-        let fnftp = getPathNum(['rnfts', from, `${json.set}`]), //zoom in?
+        let fnftp = getPathNum(['rnfts', `${json.set}`, from]), //zoom in?
         ahp = getPathObj(['am'])
     Promise.all([fnftp, ahp])
         .then(mem => {
