@@ -268,8 +268,8 @@ function startApp() {
                                 case 'ame':
                                     let amp = getPathObj(['am', b.item]),
                                         setamp = ''
-                                        if (b.item.split(':')[0] != 'Qm') setahp = getPathObj(['sets', b.item.split(':')[0]])
-                                        else setahp = getPathObj(['sets', `Qm${b.item.split(':')[1]}`])
+                                        if (b.item.split(':')[0] != 'Qm') setamp = getPathObj(['sets', b.item.split(':')[0]])
+                                        else setamp = getPathObj(['sets', `Qm${b.item.split(':')[1]}`])
                                     promises.push(NFT.AMEOp([amp, setamp], delKey, num, b))
                                     break;
                                 case 'del_pend':
