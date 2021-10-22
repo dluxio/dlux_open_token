@@ -638,7 +638,6 @@ exports.ft_escrow = function(json, from, active, pc) {
                     i: `${json.set}:${uid}`,
                     t: `${from}_${json.to}_${json.price}`
                 }
-            nft.t = `${from}_${json.to}_${json.price}`
             ops.push({type:'put', path:['fts', 't', `${json.set}:${uid}`], data: listing})
             ops.push({type:'put', path:['rnfts', json.set, from], data: rnft - 1})
             let msg = `@${from}| Reserved Mint Token: ${json.set}:${json.uid} for @${json.to}`
