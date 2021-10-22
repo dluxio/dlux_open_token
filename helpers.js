@@ -62,6 +62,7 @@ const NFT = {
                 switch (set.t) {
                     case 1:
                         const max = Base64.toNumber(set.m)
+                        const len = set.m.split('').length
                         const min = Base64.toNumber(set.o)
                         const total = max - min
                         var select = seed % total
@@ -69,6 +70,7 @@ const NFT = {
                         var inserted = false
                         if(set.u){
                             while (!inserted) {
+                                while (selected.split().length < len) {selected = '0' + selected}
                                 if (set.u.indexOf(`${selected}_`) == -1) {
                                     set.u = NFT.place(selected, b.for, set.u)
                                     inserted = true
