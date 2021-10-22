@@ -1013,8 +1013,6 @@ exports.mint_supply = (req, res, next) => {
                         buy: mem[0][item].n || ''
                     })
         }
-            mint = [],
-            sets = {}
         for (item in mem[2]){
             if(sets[item.split(':')[0]] == undefined){
                 sets[item.split(':')[0]] = {
@@ -1033,7 +1031,7 @@ exports.mint_supply = (req, res, next) => {
                     token: config.TOKEN
                 },
                 by:mem[2][item].o,
-                script: mem[2][item.split(':')[0]].s
+                script: mem[1][item.split(':')[0]].s
             }
             sets[item.split(':')[0]].sales.push(listing)
         }
@@ -1048,7 +1046,7 @@ exports.mint_supply = (req, res, next) => {
                     VERSION
                 }, null, 3))
     }) 
-    .catch (e => { res.send('Something went wrong') })
+    .catch (e => { res.send(console.log(e) + 'Something went wrong') })
 }
 
 exports.sales = (req, res, next) => {
