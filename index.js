@@ -134,6 +134,7 @@ api.get('/api/auctions', API.auctions);
 api.get('/api/mintauctions', API.mint_auctions);
 api.get('/api/sales', API.sales);
 api.get('/api/mintsales', API.mint_sales);
+api.get('/api/mintsupply', API.mint_supply);
 api.get('/api/pfp/:user', API.official);
 api.get('/api/trades/:kind/:user', API.limbo);
 api.get('/@:un', API.user);

@@ -969,6 +969,88 @@ exports.mint_auctions = (req, res, next) => {
     .catch (e => { res.send('Something went wrong') })
 }
 
+exports.mint_supply = (req, res, next) => {
+    let ahp = getPathObj(['am']),
+        setp = getPathObj(['sets']),
+        lsp = getPathObj(['lt'])
+    Promise.all([ahp, setp, lsp])
+    .then(mem => {
+        let result = []
+        let sets = {}
+        for(item in mem[0]){
+            if(sets[item.split(':')[0]] == undefined){
+                sets[item.split(':')[0]] = {
+                    set: item.split(':')[0],
+                    script: mem[1][item.split(':')[0]].s,
+                    auctions: [],
+                    sales: []
+                }
+            }
+            let auctionTimer = {},
+            now = new Date()
+            auctionTimer.expiryIn = now.setSeconds(now.getSeconds() + ((mem[0][item].e - TXID.getBlockNum())*3));
+            auctionTimer.expiryUTC = new Date(auctionTimer.expiryIn);
+            auctionTimer.expiryString = auctionTimer.expiryUTC.toISOString();
+            sets[item.split(':')[0]].auctions.push({
+                        uid: item.split(':')[1],
+                        set: item.split(':')[0],
+                        price: {
+                            amount: mem[0][item].b || mem[0][item].p,
+                            precision: config.precision,
+                            token: config.TOKEN
+                        }, //starting price
+                        initial_price: {
+                            amount: mem[0][item].p,
+                            precision: config.precision,
+                            token: config.TOKEN
+                        },
+                        time: auctionTimer.expiryString,
+                        by:mem[0][item].o,
+                        bids: mem[0][item].c || 0,
+                        bidder: mem[0][item].f || '',
+                        script: mem[1][item.split(':')[0]].s,
+                        days: mem[0][item].t,
+                        buy: mem[0][item].n || ''
+                    })
+        }
+            mint = [],
+            sets = {}
+        for (item in mem[2]){
+            if(sets[item.split(':')[0]] == undefined){
+                sets[item.split(':')[0]] = {
+                    set: item.split(':')[0],
+                    script: mem[1][item.split(':')[0]].s,
+                    auctions: [],
+                    sales: []
+                }
+            }
+            const listing = {
+                uid: item.split(':')[1],
+                set: item.split(':')[0],
+                price: {
+                    amount: mem[2][item].p,
+                    precision: config.precision,
+                    token: config.TOKEN
+                },
+                by:mem[2][item].o,
+                script: mem[2][item.split(':')[0]].s
+            }
+            sets[item.split(':')[0]].sales.push(listing)
+        }
+        for (item in sets){
+            result.push(sets[item])
+        }
+        res.setHeader('Content-Type', 'application/json')
+        res.send(JSON.stringify({
+                    result,
+                    node: config.username,
+                    behind: RAM.behind,
+                    VERSION
+                }, null, 3))
+    }) 
+    .catch (e => { res.send('Something went wrong') })
+}
+
 exports.sales = (req, res, next) => {
     let lsp = getPathObj(['ls']),
         mlsp = getPathObj(['mls']),
