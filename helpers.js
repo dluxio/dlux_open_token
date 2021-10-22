@@ -162,7 +162,7 @@ const NFT = {
                         addMT(['rnfts', b.item.split(':')[0], listing.o], 1)
                     }
                     ops.push({ type: 'del', path: ['chrono', delkey] })
-                    ops.push({ type: 'del', path: ['ah', b.item] })
+                    ops.push({ type: 'del', path: ['am', b.item] })
                     store.batch(ops, [resolve, reject])
                 })
                 .catch(e => { console.log(e) })

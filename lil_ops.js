@@ -68,7 +68,7 @@ const addMT = (path, amount) => {
     return new Promise((resolve, reject) => {
         store.get(path, function(e, a) {
             if (!e) {
-                console.log(amount)
+                console.log(amount, a)
                 const a2 = typeof a != 'number' ? amount : a + amount
                 console.log(a2)
                 store.batch([{ type: 'put', path, data: a2 }], [resolve, reject, 1])
