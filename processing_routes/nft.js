@@ -640,7 +640,7 @@ exports.ft_escrow = function(json, from, active, pc) {
                 }
             ops.push({type:'put', path:['fts', 't', `${json.set}:${uid}`], data: listing})
             ops.push({type:'put', path:['rnfts', json.set, from], data: rnft - 1})
-            let msg = `@${from}| Reserved Mint Token: ${json.set}:${json.uid} for @${json.to}`
+            let msg = `@${from}| Reserved Mint Token: ${json.set}:${uid} for @${json.to}`
             if (config.hookurl || config.status) postToDiscord(msg, `${json.block_num}:${json.transaction_id}`)
             ops.push({ type: 'put', path: ['feed', `${json.block_num}:${json.transaction_id}`], data: msg });
             store.batch(ops, pc)
