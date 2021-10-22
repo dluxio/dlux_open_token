@@ -976,7 +976,47 @@ exports.mint_supply = (req, res, next) => {
     Promise.all([ahp, setp, lsp])
     .then(mem => {
         let result = []
-        let sets = {}
+        let sets = {
+                BZ : {
+                    set: 'BZ',
+                    script: 'QmcdvCEd4UUvEKXmxeQXhPBwyrppCJyEuWztLJbhgYHADj',
+                    auctions: [{
+                        uid: 'fake',
+                        set: 'BZ',
+                        price: {
+                            amount: 100000000000,
+                            precision: config.precision,
+                            token: config.TOKEN
+                        }, //starting price
+                        initial_price: {
+                            amount: 100000000000,
+                            precision: config.precision,
+                            token: config.TOKEN
+                        },
+                        time: '2021-10-31T21:18:57.955Z',
+                        by: 'disregardfiat',
+                        bids: 0,
+                        bidder: '',
+                        script: 'QmcdvCEd4UUvEKXmxeQXhPBwyrppCJyEuWztLJbhgYHADj',
+                        days: 10,
+                        buy: ''
+                    }],
+                    sales: [{
+                uid: 'FAKE',
+                set: 'BZ',
+                price: {
+                    amount: 100000000000,
+                    precision: config.precision,
+                    token: config.TOKEN
+                },
+                by: 'null',
+                script: 'QmcdvCEd4UUvEKXmxeQXhPBwyrppCJyEuWztLJbhgYHADj'
+            }],
+                    qty_sales: 1,
+                    qty_auctions: 1,
+                    qty: 2
+                } //QmcdvCEd4UUvEKXmxeQXhPBwyrppCJyEuWztLJbhgYHADj
+            }
         for(item in mem[0]){
             if(sets[item.split(':')[0]] == undefined){
                 sets[item.split(':')[0]] = {
