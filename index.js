@@ -106,7 +106,7 @@ var recents = []
     //HIVE API CODE
 
 //Start Program Options   
-//startWith('QmULeYqVBCG954dwh39WrbLzKL4T9RP1u37yrRDvkU3XJe') //for testing and replaying
+//startWith('QmdNGpUguK2UfsTw3GukpwHDpP7dT8xPiRz9o91iAWr3rz') //for testing and replaying
 dynStart(config.leader)
 
 
@@ -544,7 +544,7 @@ function startWith(hash) {
                         if (!e) {
                             if (hash) {
                                 var cleanState = data[1]
-                                cleanState.sets.dlux.u = "lG_nR_IU_uR_Yf_1S_R+_markegiles,Gr_+B_2S_D3_uY_v4_Qp_X3_ah,92_robotolux,wB_Q=_9m_90_lH_eL_disregardfiat,Cg_UO_k0_pizza-dlux,8W_D,wj_Yt_V1_56_in_oC_ls,7k_sunlakeslady,lg_thebeardflex,EU_crimsonclad,c1_BV_psorigins,nw_whatsup,Zv_elgeko,U3_basilmarples,Bi_ats-david,1J_shmoogleosukami,6A_heyhey,Sd_r0nd0n,nU_dlux-io,YK_threespeak,GX_eddiespino,Ju_marki99,nW_theb0red1,"
+                                cleanState.sets.dlux.u = 'lG_nR_IU_uR_Yf_1S_R+_markegiles,+B_2S_D3_uY_v4_Qp_X3_Gr_ah,92_robotolux,wB_Q=_9m_90_lH_eL_disregardfiat,Cg_UO_k0_pizza-dlux,8W_D,wj_Yt_V1_56_in_oC_ls,7k_sunlakeslady,lg_thebeardflex,EU_crimsonclad,c1_BV_psorigins,nw_whatsup,Zv_elgeko,U3_basilmarples,Bi_ats-david,1J_shmoogleosukami,6A_heyhey,Sd_r0nd0n,nU_dlux-io,YK_threespeak,GX_eddiespino,Ju_marki99,nW_theb0red1,tq_ohmyohmy,v0_kenny-crane,'
                                 store.put([], cleanState, function(err) {
                                     if (err) {
                                         console.log(err)

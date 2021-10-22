@@ -1,4 +1,3 @@
-const { set } = require("@hiveio/hive-js/lib/auth/serializer/src/types");
 const { store } = require("./index");
 const { renderNFTtoDiscord } = require('./discord')
 const { add, addMT, burn } = require('./lil_ops')

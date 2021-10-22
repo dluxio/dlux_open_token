@@ -1047,6 +1047,9 @@ exports.escrow_transfer = (json, pc) => {
                 Promise.all(lil_ops)
                     .then(expire_paths => {
                         contract.expire_path = expire_paths[2]
+                        const msg = `@${json.from} is placing a ${parseFloat(dextxamount / 1000).toFixed(3)} buy order.`
+                        if (config.hookurl || config.status) postToDiscord(msg, `${json.block_num}:${json.transaction_id}`)
+                        ops.push({ type: 'put', path: ['feed', `${json.block_num}:${json.transaction_id}`], data: msg })
                         ops.push({ type: 'put', path: ['gov', json.to], data: toBal - (dextxamount * 2) })
                         ops.push({ type: 'put', path: ['gov', json.agent], data: agentBal - (dextxamount * 2) })
                         ops.push({ type: 'put', path: ['col', json.to], data: toCol + (dextxamount * 2) })
