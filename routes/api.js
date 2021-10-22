@@ -984,7 +984,9 @@ exports.mint_supply = (req, res, next) => {
                     script: mem[1][item.split(':')[0]].s,
                     auctions: [],
                     sales: [],
-                    qty
+                    qty_sales: 0,
+                    qty_auctions: 0,
+                    qty: 0
                 }
             }
             let auctionTimer = {},
@@ -992,7 +994,8 @@ exports.mint_supply = (req, res, next) => {
             auctionTimer.expiryIn = now.setSeconds(now.getSeconds() + ((mem[0][item].e - TXID.getBlockNum())*3));
             auctionTimer.expiryUTC = new Date(auctionTimer.expiryIn);
             auctionTimer.expiryString = auctionTimer.expiryUTC.toISOString();
-            sets[item.split(':')[0]].qty += mem[0][item].q || 1
+            sets[item.split(':')[0]].qty_auctions += (mem[0][item].a || 1)
+            sets[item.split(':')[0]].qty += (mem[0][item].a || 1)
             sets[item.split(':')[0]].auctions.push({
                         uid: item.split(':')[1],
                         set: item.split(':')[0],
@@ -1035,7 +1038,8 @@ exports.mint_supply = (req, res, next) => {
                 by:mem[2][item].o,
                 script: mem[1][item.split(':')[0]].s
             }
-            sets[item.split(':')[0]].qty += mem[2][item].q || 1
+            sets[item.split(':')[0]].qty += (mem[2][item].a || 1)
+            sets[item.split(':')[0]].qty_sales += (mem[2][item].a || 1)
             sets[item.split(':')[0]].sales.push(listing)
         }
         for (item in sets){
