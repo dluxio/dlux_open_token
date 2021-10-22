@@ -160,7 +160,6 @@ const NFT = {
                     } else { //no bidders
                         ops.push({ type: 'put', path: ['feed', `${num}:vop_${delkey.split(':')[1]}`], data: `Auction of ${b.item} mint token has ended with no bidders` })
                         addMT(['rnfts', b.item.split(':')[0], listing.o], 1)
-                        ops.push({ type: 'put', path: ['rnfts', listing.o, b.item], data: nft })
                     }
                     ops.push({ type: 'del', path: ['chrono', delkey] })
                     ops.push({ type: 'del', path: ['ah', b.item] })
