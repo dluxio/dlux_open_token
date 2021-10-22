@@ -70,7 +70,7 @@ const NFT = {
                         var inserted = false
                         if(set.u){
                             while (!inserted) {
-                                while (selected.split().length < len) {selected = '0' + selected}
+                                while (selected.split('').length < len) {selected = '0' + selected}
                                 if (set.u.indexOf(`${selected}_`) == -1) {
                                     set.u = NFT.place(selected, b.for, set.u)
                                     inserted = true
