@@ -44,7 +44,7 @@ exports.nft_transfer = function(json, from, active, pc) {
     Promise.all([fnftp, setp])
     .then(nfts => {
         console.log(nfts[0].s !== undefined , !nfts[0].l , active)
-        if(nfts[0].s !== undefined && !nfts[0].l && active) {
+        if(nfts[0].s !== undefined && !nfts[0].l && active && json.to != from) {
             let ops = [],
                 set = nfts[1],
                 nft = nfts[0]
