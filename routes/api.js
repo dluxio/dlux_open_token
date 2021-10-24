@@ -983,7 +983,8 @@ exports.mint_supply = (req, res, next) => {
                     auctions: [{
                         uid: 'fake',
                         set: 'BZ',
-                        price: {
+                        price: 100000000000,
+                        pricenai: {
                             amount: 100000000000,
                             precision: config.precision,
                             token: config.TOKEN
@@ -1004,7 +1005,8 @@ exports.mint_supply = (req, res, next) => {
                     sales: [{
                 uid: 'FAKE',
                 set: 'BZ',
-                price: {
+                price: 100000000000,
+                pricenai: {
                     amount: 100000000000,
                     precision: config.precision,
                     token: config.TOKEN
@@ -1039,7 +1041,8 @@ exports.mint_supply = (req, res, next) => {
             sets[item.split(':')[0]].auctions.push({
                         uid: item.split(':')[1],
                         set: item.split(':')[0],
-                        price: {
+                        price: mem[0][item].b || mem[0][item].p,
+                        pricenai: {
                             amount: mem[0][item].b || mem[0][item].p,
                             precision: config.precision,
                             token: config.TOKEN
@@ -1070,7 +1073,8 @@ exports.mint_supply = (req, res, next) => {
             const listing = {
                 uid: item.split(':')[1],
                 set: item.split(':')[0],
-                price: {
+                price: mem[2][item].p,
+                pricenai: {
                     amount: mem[2][item].p,
                     precision: config.precision,
                     token: config.TOKEN
