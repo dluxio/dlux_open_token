@@ -25,7 +25,7 @@ exports.root = (req, res, next) => {
     var stats = {};
     res.setHeader('Content-Type', 'application/json');
     store.get(['stats'], function(err, obj) {
-        stats = obj
+        var stats = obj
         hiveVWMA = stats.hiveVWMA
         hbdVWMA = stats.hbdVWMA
         delete stats.hiveVWMA
