@@ -689,15 +689,6 @@ exports.PostAuthorPermlink = (req, res, next) => {
     } catch (e) { res.send('Something went wrong') }
 }
 
-/*
-api.get('/api/nfts/:user', API.nfts);
-api.get('/api/nft/:item', API.item);
-api.get('/api/sets', API.sets);
-api.get('/api/set/:set', API.set);
-api.get('/api/auctions', API.auctions);
-api.get('/api/sales', API.sales);
-*/
-
 exports.protocol = (req, res, next) => {
     res.setHeader('Content-Type', 'application/json')
     store.get(['queue'], function(err, obj) {
@@ -983,6 +974,7 @@ exports.mint_supply = (req, res, next) => {
     .then(mem => {
         let result = []
         let sets = {
+            /*
                 BZ : {
                     set: 'BZ',
                     script: 'QmcdvCEd4UUvEKXmxeQXhPBwyrppCJyEuWztLJbhgYHADj',
@@ -1024,6 +1016,7 @@ exports.mint_supply = (req, res, next) => {
                     qty_auctions: 1,
                     qty: 2
                 } //QmcdvCEd4UUvEKXmxeQXhPBwyrppCJyEuWztLJbhgYHADj
+                */
             }
         for(item in mem[0]){
             if(sets[item.split(':')[0]] == undefined){
