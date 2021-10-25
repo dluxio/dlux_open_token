@@ -25,9 +25,15 @@ exports.root = (req, res, next) => {
     var stats = {};
     res.setHeader('Content-Type', 'application/json');
     store.get(['stats'], function(err, obj) {
-        stats = obj,
+        stats = obj
+        hiveVWMA = stats.hiveVWMA
+        hbdVWMA = stats.hbdVWMA
+        delete stats.hiveVWMA
+        delete stats.hbdVWMA
             res.send(JSON.stringify({
                 result: stats,
+                hiveVWMA,
+                hbdVWMA,
                 behind: RAM.behind,
                 node: config.username,
                 VERSION,
