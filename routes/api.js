@@ -27,7 +27,7 @@ exports.root = (req, res, next) => {
     store.get(['stats'], function(err, obj) {
         stats = obj,
             res.send(JSON.stringify({
-                stats,
+                result: stats,
                 behind: RAM.behind,
                 node: config.username,
                 VERSION,
