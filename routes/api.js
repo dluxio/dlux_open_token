@@ -26,10 +26,10 @@ exports.root = (req, res, next) => {
     res.setHeader('Content-Type', 'application/json');
     store.get(['stats'], function(err, obj) {
         var stats = obj
-        hiveVWMA = stats.hiveVWMA
-        hbdVWMA = stats.hbdVWMA
-        delete stats.hiveVWMA
-        delete stats.hbdVWMA
+        hiveVWMA = stats.HiveVWMA
+        hbdVWMA = stats.HbdVWMA
+        delete stats.HiveVWMA
+        delete stats.HbdVWMA
             res.send(JSON.stringify({
                 result: stats,
                 hiveVWMA,
