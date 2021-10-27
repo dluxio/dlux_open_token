@@ -1,5 +1,5 @@
 const { store } = require("./index");
-const { renderNFTtoDiscord } = require('./discord')
+const { renderNFTtoDiscord, postToDiscord } = require('./discord')
 const { add, addMT, burn } = require('./lil_ops')
 const config = require('./config')
 
@@ -112,7 +112,7 @@ const NFT = {
                     nft.s.replace(last_modified, Base64.fromNumber(num)) //update last modified
                     if(listing.b){ //winner
                         if (set.r > 0){
-                            let royalty = parseInt(listing.b * set.r / 100)
+                            let royalty = parseInt(listing.b * (set.r / 10000))
                             add(set.a, royalty) //distribute royalty
                             .then(empty=>add(listing.o, listing.b - royalty))
                              //distribute rest
@@ -122,9 +122,13 @@ const NFT = {
                         if(b.item.split(':')[0] != 'Qm') set.u = NFT.move(b.item.split(':')[1], listing.f, set.u)//update set
                         else set.u = listing.f
                         ops.push({ type: 'put', path: ['nfts', listing.f, b.item], data: nft }) //update nft
-                        ops.push({ type: 'put', path: ['feed', `${num}:vop_${delkey.split(':')[1]}`], data: `Auction of ${b.item} has ended for ${parseFloat(listing.b / 1000).toFixed(3)} ${config.TOKEN}` })
+                        const msg = `Auction of ${listing.o}'s ${b.item} has ended for ${parseFloat(listing.b / 1000).toFixed(3)} ${config.TOKEN} to ${listing.f}`
+                        ops.push({ type: 'put', path: ['feed', `${num}:vop_${delkey.split(':')[1]}`], data: msg })
+                        if(config.hookurl)postToDiscord(msg, `${num}:vop_${delkey.split(':')[1]}`)
                     } else { //no bidders
-                        ops.push({ type: 'put', path: ['feed', `${num}:vop_${delkey.split(':')[1]}`], data: `Auction of ${b.item} has ended with no bidders` })
+                        const msg = `Auction of ${listing.o}'s ${b.item} has ended with no bidders`
+                        ops.push({ type: 'put', path: ['feed', `${num}:vop_${delkey.split(':')[1]}`], data: msg })
+                        if(config.hookurl)postToDiscord(msg, `${num}:vop_${delkey.split(':')[1]}`)
                         if(b.item.split(':')[0] != 'Qm') set.u = NFT.move(b.item.split(':')[1], listing.o, set.u)//update set
                         else set.u = listing.o
                         ops.push({ type: 'put', path: ['nfts', listing.o, b.item], data: nft })
@@ -148,7 +152,7 @@ const NFT = {
                     // const fee = parseInt(listing.b /100); add('n', fee); listingb = listing.b - fee;
                     if(listing.b){ //winner
                         if (set.r > 0){
-                            let royalty = parseInt(listing.b * set.r / 100)
+                            let royalty = parseInt(listing.b * (set.r / 10000))
                             add(set.a, royalty) //distribute royalty
                             .then(empty=>add(listing.o, listing.b - royalty))
                              //distribute rest
@@ -156,9 +160,13 @@ const NFT = {
                             add(listing.o, listing.b)
                         }
                         addMT(['rnfts', b.item.split(':')[0], listing.f], 1)
-                        ops.push({ type: 'put', path: ['feed', `${num}:vop_${delkey.split(':')[1]}`], data: `Auction of ${b.item} mint token has ended for ${parseFloat(listing.b / 1000).toFixed(3)} ${config.TOKEN}` })
+                        const msg = `Auction of ${listing.o}'s ${b.item} mint token has ended for ${parseFloat(listing.b / 1000).toFixed(3)} ${config.TOKEN} to ${listing.f}`
+                        ops.push({ type: 'put', path: ['feed', `${num}:vop_${delkey.split(':')[1]}`], data: msg })
+                        if(config.hookurl)postToDiscord(msg, `${num}:vop_${delkey.split(':')[1]}`)
                     } else { //no bidders
-                        ops.push({ type: 'put', path: ['feed', `${num}:vop_${delkey.split(':')[1]}`], data: `Auction of ${b.item} mint token has ended with no bidders` })
+                        const msg = `Auction of ${b.item} mint token has ended with no bidders`
+                        ops.push({ type: 'put', path: ['feed', `${num}:vop_${delkey.split(':')[1]}`], data: msg })
+                        if(config.hookurl)postToDiscord(msg, `${num}:vop_${delkey.split(':')[1]}`)
                         addMT(['rnfts', b.item.split(':')[0], listing.o], 1)
                     }
                     ops.push({ type: 'del', path: ['chrono', delkey] })
