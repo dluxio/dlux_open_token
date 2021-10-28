@@ -295,8 +295,9 @@ exports.nft_define = function(json, from, active, pc) {
             default:
                 pc[0](pc[2])
         }
+    } else {
+        pc[0](pc[2])
     }
-
 }
 
 /*
@@ -304,6 +305,39 @@ json:{
     set: "dlux"
 }
 */
+// only useful until first mint
+exports.nft_define_delete = function(json, from, active, pc) {
+let statsp = getPathObj(['stats']),
+    balp = getPathNum(['balances', from]),
+    setp = getPathObj(['sets', json.set])
+Promise.all([statsp, balp, setp])
+    .then(mem => {
+    if (active){
+        switch (mem[2].t){
+            case 1:
+                if(Object.keys(mem[2]).length && mem[2].a == from && mem[2].i === "0"){ //set exists?
+                    ops.push({type:'put', path:['balances', from], data: mem[1] + mem[2].f})
+                    ops.push({type:'del', path:['sets', json.set]})
+                    ops.push({type:'del', path:['rnfts', json.set]})
+                    let msg = `@${from} undefined ${json.set} NFT set. ${parseFloat(mem[2].f/1000).toFixed(3)} ${config.TOKEN} refunded`
+                    if (config.hookurl || config.status) postToDiscord(msg, `${json.block_num}:${json.transaction_id}`)
+                    ops.push({ type: 'put', path: ['feed', `${json.block_num}:${json.transaction_id}`], data: msg });
+                    store.batch(ops, pc)
+                }else {
+                    console.log('set size 0')
+                    pc[0](pc[2])
+                }
+                break;
+            default:
+                pc[0](pc[2])
+        }
+    } else {
+        pc[0](pc[2])
+    }
+})
+.catch(e => { console.log(e); });
+}
+
 exports.nft_mint = function(json, from, active, pc) {
     let rnftp = getPathNum(['rnfts', json.set, from])
     Promise.all([rnftp])
