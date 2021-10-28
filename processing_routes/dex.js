@@ -620,12 +620,12 @@ exports.transfer = (json, pc) => {
                 ops = []
             if (!stats.outOnBlock) {
                 purchase = parseInt(amount / stats.icoPrice * 1000)
-                var hiveTimeWeight = 1 - ((json.block_num - stats.hiveVWMA.block) * 0.000033)
+                var hiveTimeWeight = 1 - ((json.block_num - stats.HiveVWMA.block) * 0.000033)
                 if (hiveTimeWeight < 0) { hiveTimeWeight = 0 }
                 hiveVWMA = {
-                    rate: parseFloat((purchase + (parseFloat(stats.hiveVWMA.rate) * stats.hiveVWMA.vol * hiveTimeWeight)) / (purchase + (stats.hiveVWMA.vol * hiveTimeWeight))).toFixed(6),
+                    rate: parseFloat((purchase + (parseFloat(stats.HiveVWMA.rate) * stats.HiveVWMA.vol * hiveTimeWeight)) / (purchase + (stats.HiveVWMA.vol * hiveTimeWeight))).toFixed(6),
                     block: json.block_num,
-                    vol: parseInt(amount + (stats.hiveVWMA.vol * hiveTimeWeight))
+                    vol: parseInt(amount + (stats.HiveVWMA.vol * hiveTimeWeight))
                 }
                 forceCancel(hiveVWMA.rate, 'hive', json.block_num)
                 .then(empty => {
