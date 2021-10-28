@@ -1,4 +1,4 @@
-const { store } = require("./index");
+const { store, TXID } = require("./index");
 const { renderNFTtoDiscord, postToDiscord } = require('./discord')
 const { add, addMT, burn } = require('./lil_ops')
 const config = require('./config')
@@ -94,6 +94,7 @@ const NFT = {
                 ops.push({type:'put', path:['sets', b.set], data: set})
                 ops.push({type: 'put', path: ['feed', `${num}:vop_${delkey.split(':')[1]}`], data: `${b.for} minted ${selected} from the ${b.set} set.` })
                 if(config.hookurl)renderNFTtoDiscord(set.s, selected, b.for, b.set)
+                TXID.store(`${b.for} minted ${selected} from the ${b.set} set.`, `${num}:${b.txid}`)
                 ops.push({ type: 'del', path: ['chrono', delkey] })
                 store.batch(ops, [resolve, reject])
             })

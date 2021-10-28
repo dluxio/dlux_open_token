@@ -223,6 +223,7 @@ function startApp() {
     processor.on('nft_reserve_transfer', HR.nft_reserve_transfer)
     processor.on('nft_reserve_complete', HR.nft_reserve_complete)
     processor.on('nft_define', HR.nft_define)
+    processor.on('nft_define_delete', HR.nft_define_delete)
     processor.on('nft_melt', HR.nft_delete)
     processor.on('nft_mint', HR.nft_mint)
     processor.on('nft_pfp', HR.nft_pfp)
