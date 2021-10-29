@@ -5,6 +5,8 @@ const crypto = require('crypto');
 const bs58 = require('bs58');
 const hashFunction = Buffer.from('12', 'hex');
 const stringify = require('json-stable-stringify');
+const { postToDiscord } = require('./discord');
+const config = require('./config');
 
 const burn = (amount) => {
     return new Promise((resolve, reject) => {
@@ -209,7 +211,7 @@ const chronAssign = (block, op) => {
 }
 exports.chronAssign = chronAssign
 
-const release = (from, txid, bn) => {
+const release = (from, txid, bn, tx_id) => {
     return new Promise((resolve, reject) => {
         store.get(['contracts', from, txid], function(er, a) {
             if (er) { console.log(er); } else {
@@ -222,6 +224,7 @@ const release = (from, txid, bn) => {
                                     ops.push({ type: 'del', path: ['contracts', from, txid] });
                                     ops.push({ type: 'del', path: ['chrono', a.expire_path] });
                                     ops.push({ type: 'del', path: ['dex', 'hive', 'sellOrders', `${a.rate}:${a.txid}`] });
+                                    if(tx_id && config.hookurl){postToDiscord(`${from} has canceled ${txid}`, `${bn}:${tx_id}`)}
                                     store.batch(ops, [resolve, reject]);
                                 }).catch(e => { reject(e); });
                             }
@@ -234,6 +237,7 @@ const release = (from, txid, bn) => {
                                     ops.push({ type: 'del', path: ['contracts', from, txid] });
                                     ops.push({ type: 'del', path: ['chrono', a.expire_path] });
                                     ops.push({ type: 'del', path: ['dex', 'hbd', 'sellOrders', `${a.rate}:${a.txid}`] });
+                                    if(tx_id && config.hookurl){postToDiscord(`${from} has canceled ${txid}`, `${bn}:${tx_id}`)}
                                     store.batch(ops, [resolve, reject]);
                                 }).catch(e => { reject(e); });
 
@@ -249,6 +253,7 @@ const release = (from, txid, bn) => {
                                         ops.push({ type: 'put', path: ['escrow', r.reject[0], r.txid + ':cancel'], data: r.reject[1] });
                                         ops.push({ type: 'put', path: ['contracts', from, r.txid], data: a });
                                         ops.push({ type: 'del', path: ['dex', 'hive', 'buyOrders', `${a.rate}:${a.txid}`] });
+                                        if(tx_id && config.hookurl){postToDiscord(`${from} has canceled ${txid}`, `${bn}:${tx_id}`)}
                                         store.batch(ops, [resolve, reject]);
                                     }).catch(e => { reject(e); });
                             }
@@ -267,6 +272,7 @@ const release = (from, txid, bn) => {
                                         ops.push({ type: 'put', path: ['contracts', from, r.txid], data: a });
                                         ops.push({ type: 'put', path: ['escrow', r.reject[0], r.txid + ':cancel'], data: r.reject[1] });
                                         ops.push({ type: 'del', path: ['dex', 'hbd', 'buyOrders', `${a.rate}:${a.txid}`] });
+                                        if(tx_id && config.hookurl){postToDiscord(`${from} has canceled ${txid}`, `${bn}:${tx_id}`)}
                                         store.batch(ops, [resolve, reject]);
                                     }).catch(e => { reject(e); });
                             }
