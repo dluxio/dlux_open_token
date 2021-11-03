@@ -106,8 +106,8 @@ var recents = []
     //HIVE API CODE
 
 //Start Program Options   
-startWith('QmdiREQ9wpE9mxGoiLXPr3YHBCtHVbHRXXtAMheQk6ff3M') //for testing and replaying
-//dynStart(config.leader)
+//startWith('QmdiREQ9wpE9mxGoiLXPr3YHBCtHVbHRXXtAMheQk6ff3M') //for testing and replaying
+dynStart(config.leader)
 
 
 // API defs
@@ -546,6 +546,7 @@ function startWith(hash) {
                         if (!e) {
                             if (hash) {
                                 var cleanState = data[1]
+                                delete cleanState.lt['dlux:QmaA7NT3XXivKSE4E3h1ActyPRmfVjHTbhxqYdTfS7Uo7q']
                                 store.put([], cleanState, function(err) {
                                     if (err) {
                                         console.log(err)
