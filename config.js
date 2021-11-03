@@ -33,7 +33,7 @@ var startURL = ENV.STARTURL || "https://hived.emre.sh/"
 var clientURL = ENV.APIURL || startURL
 const clients = ENV.clients || [
     "https://api.deathwing.me/",
-        "https://rpc.ecency.com/",
+        //"https://rpc.ecency.com/",
         "https://hived.emre.sh/",
         "https://rpc.ausbit.dev/",
         "https://api.hive.blog/"
