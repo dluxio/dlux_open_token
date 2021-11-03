@@ -106,7 +106,7 @@ var recents = []
     //HIVE API CODE
 
 //Start Program Options   
-startWith('QmahJpyGC9hGggh4bMau8KjyxpBExMVm8CR5xckrJXSk9T') //for testing and replaying 58855000
+startWith('QmWkLGnHMZVqxmDztqwxBiNof2mKLrTDdKTDeWDTiYDrhU') //for testing and replaying 58857300
 //dynStart(config.leader)
 
 
@@ -327,11 +327,11 @@ function startApp() {
                                 console.log('At block', num, 'with', result.head_block_number - num, `left until real-time. DAO @ ${(num - 20000) % 30240}`)
                             });
                     }
-                    if (num % 100 === 5 && processor.isStreaming()) {
-                        //check(num) //not promised, read only
-                    }
-                    if (num % 100 === 50 && processor.isStreaming()) {
+                    if (num % 100 === 50) { //&& processor.isStreaming()
                         plasma.bh = processor.getBlockHeader()
+                        setTimeout(function(a) {
+                            if(plasma.hashLastIBlock == a)exit(plasma.hashLastIBlock)
+                        }, 1060000, plasma.hashLastIBlock)
                         report(plasma)
                             .then(nodeOp => {
                                 //console.log(nodeOp)
@@ -496,6 +496,7 @@ function cycleAPI() {
 //pulls the latest activity of an account to find the last state put in by an account to dynamically start the node. 
 //this will include other accounts that are in the node network and the consensus state will be found if this is the wrong chain
 function dynStart(account) {
+    API.start()
     let accountToQuery = account || config.username
     hiveClient.api.setOptions({ url: config.startURL });
     console.log('Starting URL: ', config.startURL)
@@ -529,7 +530,7 @@ function dynStart(account) {
 
 
 //pulls state from IPFS, loads it into memory, starts the block processor
-function startWith(hash) {
+function startWith(hash, second) {
     console.log(`${hash} inserted`)
     if (hash) {
         console.log(`Attempting to start from IPFS save state ${hash}`);
@@ -543,10 +544,9 @@ function startWith(hash) {
                     plasma.hashBlock = data[0]
                     plasma.hashLastIBlock = hash
                     store.del([], function(e) {
-                        if (!e) {
+                        if (!e && !second && data[0] > RAM.head - 325) {
                             if (hash) {
                                 var cleanState = data[1]
-                                delete cleanState.lt['dlux:QmaA7NT3XXivKSE4E3h1ActyPRmfVjHTbhxqYdTfS7Uo7q']
                                 store.put([], cleanState, function(err) {
                                     if (err) {
                                         console.log(err)
@@ -576,7 +576,43 @@ function startWith(hash) {
                                     }
                                 })
                             }
-                        } else { console.log(e) }
+                        } else {
+                            var promises = []
+                            for( var runner in data[1].runners) {
+                                    promises.push(new Promise((resolve, reject) => {
+                                        hiveClient.api.getAccountHistory(runner, -1, 100, ...walletOperationsBitmask, function(err, result) {
+                                            if (err) {
+                                                resolve({hash:null,block:null})
+                                            } else {
+                                                hiveClient.api.setOptions({ url: config.clientURL });
+                                                let ebus = result.filter(tx => tx[1].op[1].id === `${config.prefix}report`)
+                                                for (i = ebus.length - 1; i >= 0; i--) {
+                                                    if (JSON.parse(ebus[i][1].op[1].json).hash && parseInt(JSON.parse(ebus[i][1].op[1].json).block) > parseInt(config.override)) {
+                                                        recents.push({hash:JSON.parse(ebus[i][1].op[1].json).hash,block:parseInt(JSON.parse(ebus[i][1].op[1].json).block)})
+                                                    }
+                                                }
+                                                if (recents.length) {
+                                                    resolve(recents.shift())
+                                                } else {
+                                                    resolve({hash:null,block:null})
+                                                }
+                                            }
+                                        });
+                                    }))
+                                }
+                            Promise.all(promises).then(function(values) {
+                                var newest = 0, newestHash = null
+                                for(var acc in values){
+                                    if(values[acc].block > newest){
+                                        newest = values[acc].block
+                                        newestHash = values[acc].hash
+                                    }
+                                }
+                                if(newestHash){
+                                    startWith(newestHash, true)
+                                }
+                            })
+                            console.log(e) }
                     })
                 }
             } else {
