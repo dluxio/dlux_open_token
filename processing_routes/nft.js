@@ -870,7 +870,7 @@ exports.ft_buy = function(json, from, active, pc) {
                 add(listing.o, listing.p - royalty)
                 addMT(['rnfts', json.set, from], 1)
                 ops.push({type:'put', path:['balances', from], data: newBal})
-                ops.push({type:'del', path:['ls', `${json.set}:${json.uid}`]})
+                ops.push({type:'del', path:['lt', `${json.set}:${json.uid}`]})
                 let msg = `@${from} bought ${json.set}:${json.uid} mint token`
                 if (config.hookurl || config.status) postToDiscord(msg, `${json.block_num}:${json.transaction_id}`)
                 ops.push({ type: 'put', path: ['feed', `${json.block_num}:${json.transaction_id}`], data: msg });
@@ -891,7 +891,7 @@ exports.ft_sell_cancel = function(json, from, active, pc) {
     .then(mem => {
         if(active && from == mem[0].o){
             addMT(['rnfts', json.set, from], 1)
-            ops.push({type:'del', path:['ls', `${json.set}:${json.uid}`]})
+            ops.push({type:'del', path:['lt', `${json.set}:${json.uid}`]})
             let msg = `@${from} canceled sell of ${json.set}:${json.uid}`
             if (config.hookurl || config.status) postToDiscord(msg, `${json.block_num}:${json.transaction_id}`)
             ops.push({ type: 'put', path: ['feed', `${json.block_num}:${json.transaction_id}`], data: msg });

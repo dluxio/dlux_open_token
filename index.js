@@ -546,6 +546,7 @@ function startWith(hash) {
                         if (!e) {
                             if (hash) {
                                 var cleanState = data[1]
+                                delete cleanState.lt['dlux:QmaA7NT3XXivKSE4E3h1ActyPRmfVjHTbhxqYdTfS7Uo7q']
                                 store.put([], cleanState, function(err) {
                                     if (err) {
                                         console.log(err)
