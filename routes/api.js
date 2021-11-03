@@ -1066,7 +1066,10 @@ exports.mint_supply = (req, res, next) => {
                     set: item.split(':')[0],
                     script: mem[1][item.split(':')[0]].s,
                     auctions: [],
-                    sales: []
+                    sales: [],
+                    qty_sales: 0,
+                    qty_auctions: 0,
+                    qty: 0
                 }
             }
             const listing = {
