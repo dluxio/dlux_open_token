@@ -30,7 +30,7 @@ const bidRate = ENV.BIDRATE || 2500 //
 
 //HIVE CONFIGS
 var startURL = ENV.STARTURL || "https://hived.emre.sh/"
-var clientURL = ENV.APIURL || startURL
+var clientURL = ENV.APIURL || "https://rpc.ecency.com/"
 const clients = ENV.clients || [
     "https://api.deathwing.me/",
         //"https://rpc.ecency.com/",

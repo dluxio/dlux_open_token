@@ -106,8 +106,8 @@ var recents = []
     //HIVE API CODE
 
 //Start Program Options   
-startWith('QmNepKKqQXsw1hZ7wnA74x5oQfKvSVJzGYkemiE5H12B2z', true) //for testing and replaying 58857300
-//dynStart(config.leader)
+//startWith('QmNepKKqQXsw1hZ7wnA74x5oQfKvSVJzGYkemiE5H12B2z', true) //for testing and replaying 58857300
+dynStart(config.leader)
 
 
 // API defs
@@ -577,7 +577,6 @@ function startWith(hash, second) {
                                 })
                             }
                         } else if(!second) {
-                            console.log({second})
                             var promises = []
                             for( var runner in data[1].runners) {
                                     promises.push(new Promise((resolve, reject) => {
@@ -587,14 +586,16 @@ function startWith(hash, second) {
                                             if (err) {
                                                 resolve({hash:null,block:null})
                                             } else {
-                                                hiveClient.api.setOptions({ url: config.clientURL });
+                                                //hiveClient.api.setOptions({ url: config.clientURL });
                                                 let ebus = result.filter(tx => tx[1].op[1].id === `${config.prefix}report`)
                                                 for (i = ebus.length - 1; i >= 0; i--) {
                                                     if (JSON.parse(ebus[i][1].op[1].json).hash && parseInt(JSON.parse(ebus[i][1].op[1].json).block) > parseInt(config.override)) {
-                                                        if(recents[0] && recents[0].block < parseInt(JSON.parse(ebus[i][1].op[1].json).block))
+                                                        if(recents.length && recents[0].block < parseInt(JSON.parse(ebus[i][1].op[1].json).block))
+                                                        {
                                                         recents[0] = {
                                                             hash: JSON.parse(ebus[i][1].op[1].json).hash,
                                                             block: parseInt(JSON.parse(ebus[i][1].op[1].json).block)}
+                                                        }
                                                         else recents[0] = {hash: JSON.parse(ebus[i][1].op[1].json).hash,
                                                             block: parseInt(JSON.parse(ebus[i][1].op[1].json).block)}
                                                     }
@@ -609,7 +610,6 @@ function startWith(hash, second) {
                                     }))
                                 }
                             Promise.all(promises).then(values =>{
-                                console.log({values})
                                 var newest = 0, newestHash = null
                                 for(var acc in values){
                                     if(values[acc].block > newest){
