@@ -106,7 +106,7 @@ var recents = []
     //HIVE API CODE
 
 //Start Program Options   
-startWith('QmWkLGnHMZVqxmDztqwxBiNof2mKLrTDdKTDeWDTiYDrhU') //for testing and replaying 58857300
+startWith('QmWkLGnHMZVqxmDztqwxBiNof2mKLrTDdKTDeWDTiYDrhU', true) //for testing and replaying 58857300
 //dynStart(config.leader)
 
 
@@ -502,7 +502,7 @@ function dynStart(account) {
     console.log('Starting URL: ', config.startURL)
     hiveClient.api.getAccountHistory(accountToQuery, -1, 100, ...walletOperationsBitmask, function(err, result) {
         if (err) {
-            console.log(err)
+            console.log('errr', err)
             dynStart(config.leader)
         } else {
             hiveClient.api.setOptions({ url: config.clientURL });
@@ -514,7 +514,7 @@ function dynStart(account) {
             }
             if (recents.length) {
                 const mostRecent = recents.shift()
-                console.log(mostRecent)
+                console.log({mostRecent})
                 if (recents.length === 0) {
                     startWith(config.engineCrank)
                 } else {
@@ -544,20 +544,20 @@ function startWith(hash, second) {
                     plasma.hashBlock = data[0]
                     plasma.hashLastIBlock = hash
                     store.del([], function(e) {
-                        if (!e && !second && data[0] > RAM.head - 325) {
+                        if (!e && (second || data[0] > API.RAM.head - 325)) {
                             if (hash) {
                                 var cleanState = data[1]
                                 store.put([], cleanState, function(err) {
                                     if (err) {
-                                        console.log(err)
+                                        console.log('errr',err)
                                     } else {
                                         store.get(['stats', 'lastBlock'], function(error, returns) {
                                             if (!error) {
                                                 console.log(`State Check:  ${returns}\nAccount: ${config.username}\nKey: ${config.active.substr(0,3)}...`)
                                                 let info = API.coincheck(cleanState)
-                                                console.log(info.check)
+                                                console.log('check', info.check)
                                                 if (cleanState.stats.tokenSupply != info.supply) {
-                                                    console.log(info.info)
+                                                    console.log('check',info.info)
                                                 }
                                             }
                                         })
@@ -576,7 +576,8 @@ function startWith(hash, second) {
                                     }
                                 })
                             }
-                        } else {
+                        } else if(!second) {
+                            console.log({second})
                             var promises = []
                             for( var runner in data[1].runners) {
                                     promises.push(new Promise((resolve, reject) => {
@@ -600,7 +601,8 @@ function startWith(hash, second) {
                                         });
                                     }))
                                 }
-                            Promise.all(promises).then(function(values) {
+                            Promise.all(promises).then(values =>{
+                                console.log(values)
                                 var newest = 0, newestHash = null
                                 for(var acc in values){
                                     if(values[acc].block > newest){
@@ -612,7 +614,7 @@ function startWith(hash, second) {
                                     startWith(newestHash, true)
                                 }
                             })
-                            console.log(e) }
+                        }
                     })
                 }
             } else {
@@ -623,10 +625,10 @@ function startWith(hash, second) {
     } else {
         startingBlock = config.starting_block
         store.del([], function(e) {
-            if (e) { console.log(e) }
+            if (e) { console.log({e}) }
             store.put([], statestart, function(err) {
                 if (err) {
-                    console.log(err)
+                    console.log({err})
                 } else {
                     store.get(['stats', 'hashLastIBlock'], function(error, returns) {
                         if (!error) {

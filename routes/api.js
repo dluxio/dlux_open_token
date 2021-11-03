@@ -18,6 +18,7 @@ var RAM = {
     lastUpdate: 0,
     Hive: ''
 }
+exports.RAM = RAM 
 
 exports.start = () => {fetchHive()}
 
