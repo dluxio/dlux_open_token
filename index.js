@@ -106,7 +106,7 @@ var recents = []
     //HIVE API CODE
 
 //Start Program Options   
-startWith('QmWkLGnHMZVqxmDztqwxBiNof2mKLrTDdKTDeWDTiYDrhU', true) //for testing and replaying 58857300
+startWith('QmUWAou1Bc83kp9JUL7kXthub1TaeQ1PFeTww842oZDWjc', true) //for testing and replaying 58857300
 //dynStart(config.leader)
 
 
@@ -360,7 +360,7 @@ function startApp() {
 
                         })
                     }
-                    if (config.active && processor.isStreaming()) {
+                    if (config.active) { //&& processor.isStreaming()
                         store.get(['escrow', config.username], function(e, a) {
                             if (!e) {
                                 for (b in a) {
