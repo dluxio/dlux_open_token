@@ -452,7 +452,7 @@ function exit(consensus) {
     console.log(`Restarting with ${consensus}...`);
     processor.stop(function() {});
         if (consensus) {
-            startWith(consensus)
+            startWith(consensus, true)
         } else {
             startWith(config.leader)
         }
