@@ -106,8 +106,8 @@ var recents = []
     //HIVE API CODE
 
 //Start Program Options   
-startWith('QmNepKKqQXsw1hZ7wnA74x5oQfKvSVJzGYkemiE5H12B2z', true) //for testing and replaying 58857300
-//dynStart(config.leader)
+startWith('QmSs47SNro19yHKYzheVkmStC5L6JqRTBDHxS2JdKYyVgh', true) //for testing and replaying 58859101
+dynStart(config.leader)
 
 
 // API defs
@@ -331,7 +331,7 @@ function startApp() {
                         plasma.bh = processor.getBlockHeader()
                         setTimeout(function(a) {
                             if(plasma.hashLastIBlock == a)exit(plasma.hashLastIBlock)
-                        }, 1060000, plasma.hashLastIBlock)
+                        }, 520000, plasma.hashLastIBlock)
                         report(plasma)
                             .then(nodeOp => {
                                 //console.log(nodeOp)
