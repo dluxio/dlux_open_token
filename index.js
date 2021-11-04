@@ -106,8 +106,8 @@ var recents = []
     //HIVE API CODE
 
 //Start Program Options   
-startWith('QmQC5HThXTTEVjj4V8opWBZFKwWNpKZm5umP85DGVWNb8J', true) //for testing and replaying 58859101
-//dynStart(config.leader)
+//startWith('QmQC5HThXTTEVjj4V8opWBZFKwWNpKZm5umP85DGVWNb8J', true) //for testing and replaying 58859101
+dynStart(config.leader)
 
 
 // API defs
@@ -585,25 +585,30 @@ function startWith(hash, second) {
                                         hiveClient.api.getAccountHistory(runner, -1, 100, ...walletOperationsBitmask, function(err, result) {
                                             var recents = {block:0}
                                             if (err) {
+                                                console.log('error in retrieval')
                                                 resolve({hash:null,block:null})
                                             } else {
                                                 //hiveClient.api.setOptions({ url: config.clientURL });
                                                 let ebus = result.filter(tx => tx[1].op[1].id === `${config.prefix}report`)
                                                 for (i = ebus.length - 1; i >= 0; i--) {
-                                                    if (JSON.parse(ebus[i][1].op[1].json).hash && parseInt(JSON.parse(ebus[i][1].op[1].json).block) > parseInt(config.override)) {
-                                                        if(recents.block < parseInt(JSON.parse(ebus[i][1].op[1].json).block))
-                                                        {
-                                                        recents = {
-                                                            hash: JSON.parse(ebus[i][1].op[1].json).hash,
-                                                            block: parseInt(JSON.parse(ebus[i][1].op[1].json).block)}
+                                                    if (JSON.parse(ebus[i][1].op[1].json).hash) {
+                                                        console.log(JSON.parse(ebus[i][1].op[1].json).block, JSON.parse(ebus[i][1].op[1].json).hash)
+                                                        if(recents.block < JSON.parse(ebus[i][1].op[1].json).block){
+                                                            recents = {
+                                                                hash: JSON.parse(ebus[i][1].op[1].json).hash,
+                                                                block: parseInt(JSON.parse(ebus[i][1].op[1].json).block)}
                                                         }
-                                                        else recents[0] = {hash: JSON.parse(ebus[i][1].op[1].json).hash,
-                                                            block: parseInt(JSON.parse(ebus[i][1].op[1].json).block)}
+                                                        else {
+                                                            recents[0] = {hash: JSON.parse(ebus[i][1].op[1].json).hash,
+                                                            block: parseInt(JSON.parse(ebus[i][1].op[1].json).block)
+                                                            }
+                                                        }
                                                     }
                                                 }
-                                                if (recents.length) {
-                                                    resolve(recents.shift())
+                                                if (recents.block) {
+                                                    resolve(recents)
                                                 } else {
+                                                    console.log('error in processing')
                                                     resolve({hash:null,block:null})
                                                 }
                                             }
@@ -611,6 +616,7 @@ function startWith(hash, second) {
                                     }))
                                 }
                             Promise.all(promises).then(values =>{
+                                console.log('values', values)
                                 var newest = 0, newestHash = null
                                 for(var acc in values){
                                     if(values[acc].block > newest){
