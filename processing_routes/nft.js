@@ -891,6 +891,7 @@ exports.ft_sell_cancel = function(json, from, active, pc) {
     Promise.all([lsp])
     .then(mem => {
         if(active && from == mem[0].o){
+            let ops = []
             addMT(['rnfts', json.set, from], 1)
             ops.push({type:'del', path:['lt', `${json.set}:${json.uid}`]})
             let msg = `@${from} canceled sell of ${json.set}:${json.uid}`
