@@ -856,10 +856,11 @@ exports.ft_buy = function(json, from, active, pc) {
         setp = getPathObj(['sets', json.set])
     Promise.all([fbalp, lsp, setp])
     .then(mem => {
-        var price = 'high'
+        var price = 'high',
+        listing = mem[1]
         try {price = mem[1].p}catch(e){}
-        if(price <= mem[0] && active && listing.o != from){
-            let set = mem[2], listing = mem[1],
+        if(price <= mem[0] && active && mem[1].o != from){
+            let set = mem[2],
                 per = set.r || 0
             let royalty = parseInt((per / 10000)* listing.p)
             add(set.a, royalty)
