@@ -107,7 +107,7 @@ var recents = []
 
 //Start Program Options   
 startWith('QmQC5HThXTTEVjj4V8opWBZFKwWNpKZm5umP85DGVWNb8J', true) //for testing and replaying 58859101
-dynStart(config.leader)
+//dynStart(config.leader)
 
 
 // API defs
@@ -583,7 +583,7 @@ function startWith(hash, second) {
                                     promises.push(new Promise((resolve, reject) => {
                                         console.log('runner', runner)
                                         hiveClient.api.getAccountHistory(runner, -1, 100, ...walletOperationsBitmask, function(err, result) {
-                                            var recents = []
+                                            var recents = {block:0}
                                             if (err) {
                                                 resolve({hash:null,block:null})
                                             } else {
@@ -591,9 +591,9 @@ function startWith(hash, second) {
                                                 let ebus = result.filter(tx => tx[1].op[1].id === `${config.prefix}report`)
                                                 for (i = ebus.length - 1; i >= 0; i--) {
                                                     if (JSON.parse(ebus[i][1].op[1].json).hash && parseInt(JSON.parse(ebus[i][1].op[1].json).block) > parseInt(config.override)) {
-                                                        if(recents.length && recents[0].block < parseInt(JSON.parse(ebus[i][1].op[1].json).block))
+                                                        if(recents.block < parseInt(JSON.parse(ebus[i][1].op[1].json).block))
                                                         {
-                                                        recents[0] = {
+                                                        recents = {
                                                             hash: JSON.parse(ebus[i][1].op[1].json).hash,
                                                             block: parseInt(JSON.parse(ebus[i][1].op[1].json).block)}
                                                         }
