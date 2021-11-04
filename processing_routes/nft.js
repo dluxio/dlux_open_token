@@ -850,6 +850,7 @@ exports.ft_sell = function(json, from, active, pc) {
 }
 
 exports.ft_buy = function(json, from, active, pc) {
+    console.log('ft_buy', {json})
     let fbalp = getPathNum(['balances', from]),
         lsp = getPathObj(['lt', `${json.set}:${json.uid}`]), //needed?
         setp = getPathObj(['sets', json.set])
