@@ -868,6 +868,7 @@ exports.ft_buy = function(json, from, active, pc) {
                 if (set.a == from){
                     newBal += royalty
                 }
+                let ops = []
                 add(listing.o, listing.p - royalty)
                 addMT(['rnfts', json.set, from], 1)
                 ops.push({type:'put', path:['balances', from], data: newBal})
