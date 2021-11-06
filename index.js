@@ -170,7 +170,8 @@ var plasma = {
         consensus: '',
         pending: {},
         page: [],
-        hashLastIBlock: 0
+        hashLastIBlock: 0,
+        hashSecIBlock: 0
             //pagencz: []
     },
     jwt;
@@ -330,8 +331,9 @@ function startApp() {
                     if (num % 100 === 50) { //&& processor.isStreaming()
                         plasma.bh = processor.getBlockHeader()
                         setTimeout(function(a) {
-                            console.log('timeout:',{a})
-                            if(plasma.hashLastIBlock == a)exit(plasma.hashLastIBlock)
+                            if(plasma.hashLastIBlock == a || plasma.hashSecIBlock == a){
+                                exit(plasma.hashLastIBlock)
+                            }
                         }, 320000, plasma.hashLastIBlock)
                         report(plasma)
                             .then(nodeOp => {
@@ -354,6 +356,7 @@ function startApp() {
                             const blockState = Buffer.from(stringify([num, obj]))
                             ipfsSaveState(num, blockState)
                                 .then(pla => {
+                                    plasma.hashSecIBlock = plasma.hashLastIBlock
                                     plasma.hashLastIBlock = pla.hashLastIBlock
                                     plasma.hashBlock = pla.hashBlock
                                 })
