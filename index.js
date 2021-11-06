@@ -334,7 +334,7 @@ function startApp() {
                             if(plasma.hashLastIBlock == a || plasma.hashSecIBlock == a){
                                 exit(plasma.hashLastIBlock)
                             }
-                        }, 320000, plasma.hashLastIBlock)
+                        }, 620000, plasma.hashLastIBlock)
                         report(plasma)
                             .then(nodeOp => {
                                 //console.log(nodeOp)
