@@ -266,7 +266,8 @@ if (active && from == 'disregardfiat'){
                     byte_count += name_counter.length
                     const start_num = Base64.toNumber(json.start)
                     const end_num = Base64.toNumber(json.end)
-                    const total_num = json.total || (end_num - start_num + 1)
+                    var total_num = json.total || (end_num - start_num + 1)
+                    if (json.total && json.total > (end_num - start_num + 1)){total_num = (end_num - start_num + 1)}
                     const id_counter = json.end.split('')
                     byte_count += id_counter.length * 2
                     if(total_num){ //checks for error in set size
@@ -298,7 +299,8 @@ if (active && from == 'disregardfiat'){
                             ops.push({ type: 'put', path: ['feed', `${json.block_num}:${json.transaction_id}`], data: msg });
                             store.batch(ops, pc)
                         } else {
-                            console.log('fee exceeded')
+                            let msg = `Cost ${parseFloat(fee/1000).toFixed(3)}. Exceeded Max Fee of(${parseFloat(json.max_fee/1000).toFixed(3)})`
+                            if (config.hookurl || config.status) postToDiscord(msg, `${json.block_num}:${json.transaction_id}`)
                             pc[0](pc[2])
                         }
                     } else {
