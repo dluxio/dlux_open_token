@@ -29,11 +29,11 @@ var ipfshost = ENV.ipfshost || 'ipfs.infura.io' //IPFS upload/download provider 
 const bidRate = ENV.BIDRATE || 2500 //
 
 //HIVE CONFIGS
-var startURL = ENV.STARTURL || "https://rpc.ecency.com/"
-var clientURL = ENV.APIURL || "https://rpc.ecency.com/"
+var startURL = ENV.STARTURL || "https://rpc.ausbit.dev/"
+var clientURL = ENV.APIURL || "https://rpc.ausbit.dev/"
 const clients = ENV.clients || [
     "https://api.deathwing.me/",
-        "https://rpc.ecency.com/",
+        //"https://rpc.ecency.com/",
         "https://hived.emre.sh/",
         "https://rpc.ausbit.dev/",
         "https://api.hive.blog/"
