@@ -551,7 +551,7 @@ function startWith(hash, second) {
                         if (!e && (second || data[0] > API.RAM.head - 325)) {
                             if (hash) {
                                 var cleanState = data[1]
-                                cleanState.sets.dlux.s = 'QmZkfbyLkhYtYXXtVhFj3NPqek13fHHb8EKoLUXqF4AvVx'
+                                cleanState.sets.dlux.s = 'QmWXEZQvnByvdKwBp4n2FMy2eHup5ZnLNKGGr8CXzLN939'
                                 store.put([], cleanState, function(err) {
                                     if (err) {
                                         console.log('errr',err)
