@@ -680,11 +680,12 @@ exports.ft_transfer = function(json, from, active, pc) {
     Promise.all([fnftp, tnftp])
     .then(mem => {
         let mts = mem[0]
-        if (mts > 0 && active){
+        let qty = parseInt(json.qty) || 1
+        if (mts >= qty && active){
             let ops = []
-            ops.push({type:'put', path:['rnfts', json.set, json.to], data: mem[1] + 1})
-            ops.push({type:'put', path:['rnfts', json.set, from], data: mts - 1})
-            let msg = `@${from} transfered 1 ${json.set} mint token to ${json.to}`
+            ops.push({type:'put', path:['rnfts', json.set, json.to], data: mem[1] + qty})
+            ops.push({type:'put', path:['rnfts', json.set, from], data: mts - qty})
+            let msg = `@${from} transfered ${qty} ${json.set} mint token to ${json.to}`
             if (config.hookurl || config.status) postToDiscord(msg, `${json.block_num}:${json.transaction_id}`)
             ops.push({ type: 'put', path: ['feed', `${json.block_num}:${json.transaction_id}`], data: msg });
             store.batch(ops, pc)
