@@ -80,6 +80,7 @@ const NFT = {
                                 }
                             }
                         } else {
+                            while (selected.split('').length < len) {selected = '0' + selected}
                             set.u = `${selected}_${b.for},`
                         }
                     break;
