@@ -551,7 +551,7 @@ function startWith(hash, second) {
                         if (!e && (second || data[0] > API.RAM.head - 325)) {
                             if (hash) {
                                 var cleanState = data[1]
-                                cleanState.sets.bz.s = 'QmaLNSVemuQgfBqr4PVawnQE6vqranGQoU4L2GXp9pKnDy'
+                                cleanState.sets.bz.s = 'QmbfDvFQZyNEXx8DAzW6gcKo23bY3CibTZ1KdiBcgjrH7s'
                                 store.put([], cleanState, function(err) {
                                     if (err) {
                                         console.log('errr',err)
