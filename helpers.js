@@ -55,7 +55,7 @@ const NFT = {
     },
     mintOp : function (promies, delkey, num, b, rand) {
         return new Promise((resolve, reject) => {
-            const seed = parseInt(rand.slice(0, 8), 16)
+            const seed = parseInt(rand.slice(0, 12), 16)
             Promise.all(promies).then(mem => {
                 var set = mem[0]
                 if (set.i === "0")NFT.finalizeFee(set.f)
