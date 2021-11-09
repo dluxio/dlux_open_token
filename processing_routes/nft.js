@@ -325,7 +325,7 @@ if (active && from == 'disregardfiat'){
                     byte_count += id_counter.length * 2
                     if(total_num){ //checks for error in set size
                         const byte_cost = mem[0].nft_byte_cost
-                        var bond = json.bond || 0
+                        var bond = parseInt(json.bond) || 0
                         if(typeof bond !== 'number') bond = 0
                         const fee = (byte_cost * byte_count * total_num) + mem[0].nft_fee_1 + (total_num * bond)
                         if(json.max_fee >= fee && mem[1] >= fee){

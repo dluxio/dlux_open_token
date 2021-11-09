@@ -16,7 +16,7 @@ const dbcs = ENV.DATABASE_URL || '';
 const history = ENV.history || 3600
 
 // testing configs for replays
-const override = ENV.override || 0 //will use standard restarts after this blocknumber
+const override = ENV.override || 59021400 //will use standard restarts after this blocknumber
 const engineCrank = ENV.startingHash || '' //but this state will be inserted before
 
 // third party configs
