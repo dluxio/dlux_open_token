@@ -1463,6 +1463,11 @@ exports.coincheck = (state) => {
             ah += state.ah[item].b || 0
             supply += state.ah[item].b || 0
         }
+        var am = 0
+        for (item in state.am){
+            am += state.am[item].b || 0
+            supply += state.am[item].b || 0
+        }
         var bond = 0
         for (item in state.sets){
             const it = (state.sets[item].b * (Base64.toNumber(state.sets[item].m) - Base64.toNumber(state.sets[item].o) - state.sets[item].d + 1))
@@ -1473,7 +1478,7 @@ exports.coincheck = (state) => {
         let info = {}
         let check = `supply check:state:${state.stats.tokenSupply} vs check: ${supply}: ${state.stats.tokenSupply - supply}`
         if (state.stats.tokenSupply != supply) {
-            info = { lbal, gov, govt, pow, powt, con, ah, bond }
+            info = { lbal, gov, govt, pow, powt, con, ah, am, bond }
         }
         return {check, info, supply}
 }
