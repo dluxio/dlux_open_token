@@ -146,7 +146,8 @@ exports.power_down = (json, from, active, pc) => {
             let p = typeof o[0] != 'number' ? 0 : o[0],
                 downs = 0[1] || {},
                 ops = [],
-                assigns = [];
+                assigns = [],
+                amount = parseInt(json.amount)
             if (typeof amount == 'number' && amount >= 0 && p >= amount && active) {
                 var odd = parseInt(amount % 4),
                     weekly = parseInt(amount / 4);
