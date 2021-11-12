@@ -106,7 +106,7 @@ var recents = []
     //HIVE API CODE
 
 //Start Program Options   
-startWith('QmPSrm9D5wJptfTpDrw3Ui5qCWu55uw7FfX7hvU6bVLQVh', true) //for testing and replaying 58859101
+startWith('QmcGQePSQVbmp9owEBV2yzfrrG1aV2pAwhs3dtyoAwp8En', true) //for testing and replaying 58859101
 //dynStart(config.leader)
 
 
@@ -256,67 +256,67 @@ function startApp() {
                    for (var i in chrops) {
                        ints++
                         let delKey = chrops[i]
-                        store.get(['chrono', chrops[i]], function(e, b) {
+                        store.getWith(['chrono', chrops[i]], {delKey, ints}, function(e, b, passed) {
                             switch (b.op) {
                                 case 'mint':
                                     //{op:"mint", set:json.set, for: from}
                                     let setp = getPathObj(['sets', b.set]);
-                                    promises.push(NFT.mintOp([setp], delKey, num, b, `${ints}${prand}`))
+                                    promises.push(NFT.mintOp([setp], passed.delKey, num, b, `${passed.ints}${prand}`))
                                     break;
                                 case 'ahe':
                                     let ahp = getPathObj(['ah', b.item]),
                                         setahp = ''
                                         if (b.item.split(':')[0] != 'Qm') setahp = getPathObj(['sets', b.item.split(':')[0]])
                                         else setahp = getPathObj(['sets', `Qm${b.item.split(':')[1]}`])
-                                    promises.push(NFT.AHEOp([ahp, setahp], delKey, num, b))
+                                    promises.push(NFT.AHEOp([ahp, setahp], passed.delKey, num, b))
                                     break;
                                 case 'ame':
                                     let amp = getPathObj(['am', b.item]),
                                         setamp = ''
                                         if (b.item.split(':')[0] != 'Qm') setamp = getPathObj(['sets', b.item.split(':')[0]])
                                         else setamp = getPathObj(['sets', `Qm${b.item.split(':')[1]}`])
-                                    promises.push(NFT.AMEOp([amp, setamp], delKey, num, b))
+                                    promises.push(NFT.AMEOp([amp, setamp], passed.delKey, num, b))
                                     break;
                                 case 'del_pend':
-                                    store.batch([{ type: 'del', path: ['chrono', delKey] }, { type: 'del', path: ['pend', `${b.author}/${b.permlink}`]}], [function() {}, function() { console.log('failure') }])
+                                    store.batch([{ type: 'del', path: ['chrono', passed.delKey] }, { type: 'del', path: ['pend', `${b.author}/${b.permlink}`]}], [function() {}, function() { console.log('failure') }])
                                     break;
                                 case 'ms_send':
                                     promises.push(recast(b.attempts, b.txid, num))
-                                    store.batch([{ type: 'del', path: ['chrono', delKey] }], [function() {}, function() { console.log('failure') }])
+                                    store.batch([{ type: 'del', path: ['chrono', passed.delKey] }], [function() {}, function() { console.log('failure') }])
                                     break;
                                 case 'expire':
                                     promises.push(release(b.from, b.txid, num))
-                                    store.batch([{ type: 'del', path: ['chrono', delKey] }], [function() {}, function() { console.log('failure') }])
+                                    store.batch([{ type: 'del', path: ['chrono', passed.delKey] }], [function() {}, function() { console.log('failure') }])
                                     break;
                                 case 'check':
                                     promises.push(enforce(b.agent, b.txid, { id: b.id, acc: b.acc }, num))
-                                    store.batch([{ type: 'del', path: ['chrono', delKey] }], [function() {}, function() { console.log('failure') }])
+                                    store.batch([{ type: 'del', path: ['chrono', passed.delKey] }], [function() {}, function() { console.log('failure') }])
                                     break;
                                 case 'denyA':
                                     promises.push(enforce(b.agent, b.txid, { id: b.id, acc: b.acc }, num))
-                                    store.batch([{ type: 'del', path: ['chrono', delKey] }], [function() {}, function() { console.log('failure') }])
+                                    store.batch([{ type: 'del', path: ['chrono', passed.delKey] }], [function() {}, function() { console.log('failure') }])
                                     break;
                                 case 'denyT':
                                     promises.push(enforce(b.agent, b.txid, { id: b.id, acc: b.acc }, num))
-                                    store.batch([{ type: 'del', path: ['chrono', delKey] }], [function() {}, function() { console.log('failure') }])
+                                    store.batch([{ type: 'del', path: ['chrono', passed.delKey] }], [function() {}, function() { console.log('failure') }])
                                     break;
                                 case 'gov_down': //needs work and testing
                                     let plb = getPathNum(['balances', b.by]),
                                         tgovp = getPathNum(['gov', 't']),
                                         govp = getPathNum(['gov', b.by])
-                                    promises.push(Chron.govDownOp([plb, tgovp, govp], b.by, delKey, num, delKey.split(':')[1], b))
+                                    promises.push(Chron.govDownOp([plb, tgovp, govp], b.by, passed.delKey, num, passed.delKey.split(':')[1], b))
                                     break;
                                 case 'power_down': //needs work and testing
                                     let lbp = getPathNum(['balances', b.by]),
                                         tpowp = getPathNum(['pow', 't']),
                                         powp = getPathNum(['pow', b.by])
-                                    promises.push(Chron.powerDownOp([lbp, tpowp, powp], b.by, delKey, num, delKey.split(':')[1], b))
+                                    promises.push(Chron.powerDownOp([lbp, tpowp, powp], b.by, passed.delKey, num, passed.delKey.split(':')[1], b))
                                     break;
                                 case 'post_reward':
-                                    promises.push(Chron.postRewardOP(b, num, delKey.split(':')[1], delKey))
+                                    promises.push(Chron.postRewardOP(b, num, passed.delKey.split(':')[1], passed.delKey))
                                     break;
                                 case 'post_vote':
-                                    promises.push(Chron.postVoteOP(b, delKey))
+                                    promises.push(Chron.postVoteOP(b, passed.delKey))
                                     break;
                                 default:
 

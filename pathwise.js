@@ -98,6 +98,40 @@ Pathwise.prototype.get = function(path, fn) {
     });
 };
 
+Pathwise.prototype.getWith = function(path, obj, fn) {
+    var ret = {};
+    var el = ret;
+
+    streamToArray(this._db.createReadStream({
+        start: path,
+        end: path.concat(undefined)
+    }), function(err, data) {
+        if (err) return fn(err);
+        let er = null
+        try {
+            data.forEach(function(kv) {
+                var segs = kv.key.slice(path.length);
+                if (segs.length) {
+                    segs.forEach(function(seg, idx) {
+                        if (!el[seg]) {
+                            if (idx == segs.length - 1) {
+                                el[seg] = kv.value;
+                            } else {
+                                el[seg] = {};
+                            }
+                        }
+                        el = el[seg];
+                    });
+                    el = ret;
+                } else {
+                    ret = kv.value;
+                }
+            });
+        } catch (err) { er = err }
+        fn(er, ret, obj);
+    });
+};
+
 Pathwise.prototype.del = function(path, opts, fn) {
     if (typeof opts == 'function') {
         fn = opts;
