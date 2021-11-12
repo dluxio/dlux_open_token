@@ -259,7 +259,7 @@ function startApp() {
                                 case 'mint':
                                     //{op:"mint", set:json.set, for: from}
                                     let setp = getPathObj(['sets', b.set]);
-                                    promises.push(NFT.mintOp([setp], delKey, num, b, prand))
+                                    promises.push(NFT.mintOp([setp], delKey, num, b, `${i}${prand}`))
                                     break;
                                 case 'ahe':
                                     let ahp = getPathObj(['ah', b.item]),
