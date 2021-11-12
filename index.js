@@ -252,14 +252,16 @@ function startApp() {
                     for (var i in a) {
                         chrops[a[i]] = a[i]
                     }
+                    var ints = 0
                    for (var i in chrops) {
+                       ints++
                         let delKey = chrops[i]
                         store.get(['chrono', chrops[i]], function(e, b) {
                             switch (b.op) {
                                 case 'mint':
                                     //{op:"mint", set:json.set, for: from}
                                     let setp = getPathObj(['sets', b.set]);
-                                    promises.push(NFT.mintOp([setp], delKey, num, b, `${i}${prand}`))
+                                    promises.push(NFT.mintOp([setp], delKey, num, b, `${ints}${prand}`))
                                     break;
                                 case 'ahe':
                                     let ahp = getPathObj(['ah', b.item]),
