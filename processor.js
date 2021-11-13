@@ -59,7 +59,25 @@ module.exports = function(client, steem, currentBlockNumber = 1, blockComputeSpe
             var blockNum = currentBlockNumber; // Helper variable to prevent race condition
             // in getBlock()
             var vops = getVops(blockNum)
-            client.database.getBlock(blockNum)
+            function getBlock(bn){
+                return new Promise ((resolve, reject)=>{
+                    gb(bn, 0)
+                    function gb (bln, at){
+                        client.database.getBlock(blockNum)
+                    .then((result) => {
+                        resolve(result)
+                    })
+                    .catch((err) => {
+                        if (attempt < 3){
+                                bn(bn, at+1)
+                        } else {
+                            reject(err)
+                        }
+                    })
+                    }
+                })
+            }
+            getBlock(blockNum)
                 .then((result) => {
                     /*
                     block_header = {
