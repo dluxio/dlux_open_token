@@ -243,7 +243,7 @@ function startApp() {
             TXID.clean(num)
             return new Promise((resolve, reject) => {
                 store.someChildren(['chrono'], {
-                    gte: "" + num - 28800,
+                    gte: "" + num - 1,
                     lte: "" + (num + 1)
                 }, function(e, a) {
                     if (e) { console.log('chrono err: ' + e) }
@@ -366,7 +366,7 @@ function startApp() {
 
                         })
                     }
-                    if (config.active) { //&& processor.isStreaming()
+                    if (config.active && processor.isStreaming() ) {
                         store.get(['escrow', config.username], function(e, a) {
                             if (!e) {
                                 for (b in a) {
