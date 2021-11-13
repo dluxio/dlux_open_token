@@ -243,7 +243,7 @@ function startApp() {
             TXID.clean(num)
             return new Promise((resolve, reject) => {
                 store.someChildren(['chrono'], {
-                    gte: "" + num,
+                    gte: "" + num - 28800,
                     lte: "" + (num + 1)
                 }, function(e, a) {
                     if (e) { console.log('chrono err: ' + e) }
