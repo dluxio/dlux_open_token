@@ -63,12 +63,12 @@ module.exports = function(client, steem, currentBlockNumber = 1, blockComputeSpe
                 return new Promise ((resolve, reject)=>{
                     gb(bn, 0)
                     function gb (bln, at){
-                        client.database.getBlock(blockNum)
+                        client.database.getBlock(bln)
                     .then((result) => {
                         resolve(result)
                     })
                     .catch((err) => {
-                        if (attempt < 3){
+                        if (at < 3){
                                 bn(bn, at+1)
                         } else {
                             reject(err)
