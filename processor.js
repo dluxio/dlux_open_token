@@ -37,7 +37,11 @@ module.exports = function(client, steem, currentBlockNumber = 1, blockComputeSpe
             })
             .then(res => res.json())
             .then(json => {
-                resolve(json.result)
+                if (!json.result) {
+                    resolve([])
+                } else {
+                    resolve(json.result)
+                }
             })
             .catch(err => {reject(err)})
         });
@@ -69,7 +73,7 @@ module.exports = function(client, steem, currentBlockNumber = 1, blockComputeSpe
                     })
                     .catch((err) => {
                         if (at < 3){
-                                bn(bn, at+1)
+                                gb(bn, at+1)
                         } else {
                             reject(err)
                         }
