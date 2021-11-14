@@ -144,7 +144,7 @@ exports.power_down = (json, from, active, pc) => {
     Promise.all([powp, powd])
         .then(o => {
             let p = typeof o[0] != 'number' ? 0 : o[0],
-                downs = 0[1] || {},
+                downs = o[1] || {},
                 ops = [],
                 assigns = [],
                 amount = parseInt(json.amount)

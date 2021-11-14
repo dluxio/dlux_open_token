@@ -538,75 +538,6 @@ exports.escrow_release = (json, pc) => {
 }
 
 exports.transfer = (json, pc) => {
-    store.get(['escrow', json.from, json.memo.split(' ')[0] + ':transfer'], function(e, a) {
-        var ops = []
-        if (!e && !isEmpty(a)) {
-            let auth = true,
-                terms = Object.keys(a[1])
-            for (i = 0; i < terms.length; i++) {
-                if (json[terms[i]] !== a[1][terms[i]]) {
-                    auth = false
-                }
-            }
-            console.log('authed ' + auth)
-            if (auth) {
-                const msg = `@${json.from}| sent @${json.to} ${json.amount} for ${json.memo.split(' ')[0]}`
-                if (config.hookurl || config.status) postToDiscord(msg, `${json.block_num}:${json.transaction_id}`)
-                ops.push({
-                    type: 'put',
-                    path: ['feed', `${json.block_num}:${json.transaction_id}`],
-                    data: msg
-                })
-                let addr = json.memo.split(' ')[0],
-                    co = json.memo.split(' ')[2],
-                    cp = getPathObj(['contracts', co, addr]),
-                    sp = getPathObj(['contracts', json.to, addr]),
-                    gp = getPathNum(['gov', json.from])
-                Promise.all([cp, gp, sp])
-                    .then(ret => {
-                        let d = ret[1],
-                            c = ret[0]
-                        if (!c.escrow_id) {
-                            c = ret[2]
-                            co = c.co
-                        }
-                        eo = c.buyer,
-                            g = c.escrow
-                        if (c.type === 'sb' || c.type === 'db')
-                            eo = c.from
-                        console.log(c)
-                        let lil_ops = [
-                            addGov(json.from, parseInt(c.escrow)),
-                            addCol(json.from, -parseInt(c.escrow)),
-                            add(json.from, parseInt(c.fee / 3)),
-                            deletePointer(c.escrow_id, eo),
-                            credit(json.from)
-                        ]
-                        console.log(json.from, parseInt(c.fee / 3))
-                        ops.push({ type: 'del', path: ['escrow', json.from, addr + ':transfer'] })
-                        ops.push({ type: 'del', path: ['contracts', co, addr] })
-                        ops.push({ type: 'del', path: ['chrono', c.expire_path] })
-                        if (json.from == config.username) {
-                            //delete plasma.pending[i + ':transfer']
-                            let NodeOps = GetNodeOps()
-                            for (var i = 0; i < NodeOps.length; i++) {
-                                if (NodeOps[i][1][1].from == json.from && NodeOps[i][1][1].to == json.to && NodeOps[i][1][0] == 'transfer' && NodeOps[i][1][1].hive_amount == json.hive_amount && NodeOps[i][1][1].hbd_amount == json.hbd_amount) {
-                                    spliceOp(i)
-                                }
-                            }
-                        }
-                        Promise.all(lil_ops).then(empty => {
-                                if (process.env.npm_lifecycle_event == 'test') pc[2] = ops
-                                store.batch(ops, pc)
-                            })
-                            .catch(e => { reject(e) })
-                    })
-                    .catch(e => { console.log(e) })
-            } else {
-                pc[0](pc[2])
-            }
-        }
-    })
     if (json.to == config.mainICO && json.amount.split(' ')[1] == 'HIVE') { //the ICO disribution... should be in multi sig account
         const amount = parseInt(parseFloat(json.amount) * 1000)
         var purchase,
@@ -671,8 +602,120 @@ exports.transfer = (json, pc) => {
                 store.batch(ops, pc)
             }
         })
-    } else {
-        pc[0](pc[2])
+    } 
+    /* 
+    else if (json.to == config.msaccount) {
+        let order = {}
+        try {order = JSON.parse(json.memo)} catch (e) {}
+        order.pair = 'hive'
+        if (json.amount.split(' ')[1] != 'HIVE')order.pair = hbd
+        if (order.type == 'MARKET'){
+            let pDEX = getPathObj(['dex', order.pair]),
+                pBal = getPathNum(['balances', json.from]),
+                pInv = getPathNum(['balances', 'ri']),
+                pStats = getPathObj(['stats']);
+            Promise.all([pDEX, pBal, pInv, pStats]).then(mem => {
+                let dex = mem[0],
+                    bal = mem[1],
+                    inv = mem[2],
+                    stats = mem[3],
+                    list = [],
+                    sellorders = {}
+                    filled = 0,
+                    remaining = 0,
+                    price = []
+                for (var sellOrder in dex){
+                    list.push(parseFloat(dex[sellOrder].rate.split(':')[0]))
+                    
+                }
+                let ops = [
+                    { type: 'put', path: ['feed', `${json.block_num}:${json.transaction_id}`], data: `@${json.from}| bought ${parseFloat(order.amount / 1000).toFixed(3)} ${config.TOKEN} with ${parseFloat(order.price / 1000).toFixed(3)} HIVE` },
+                    { type: 'put', path: ['balances', json.from], data: parseInt(order.amount) },
+                    { type: 'put', path: ['balances', 'ri'], data: parseInt(order.price) },
+                    { type: 'put', path: ['stats', 'HiveVWMA'], data: { rate: order.price, block: json.block_num, vol: parseInt(order.amount) } }
+                ]
+                if (process.env.npm_lifecycle_event == 'test') pc[2] = ops
+                store.batch(ops, pc)  
+            })
+        } else if (order.type == 'LIMIT'){
+
+        } else {
+            //refund
+        }
+    } else if (json.from == config.msaccount){
+
+    } 
+    */
+    else {
+        store.get(['escrow', json.from, json.memo.split(' ')[0] + ':transfer'], function(e, a) {
+            var ops = []
+            if (!e && !isEmpty(a)) {
+                let auth = true,
+                    terms = Object.keys(a[1])
+                for (i = 0; i < terms.length; i++) {
+                    if (json[terms[i]] !== a[1][terms[i]]) {
+                        auth = false
+                    }
+                }
+                console.log('authed ' + auth)
+                if (auth) {
+                    const msg = `@${json.from}| sent @${json.to} ${json.amount} for ${json.memo.split(' ')[0]}`
+                    if (config.hookurl || config.status) postToDiscord(msg, `${json.block_num}:${json.transaction_id}`)
+                    ops.push({
+                        type: 'put',
+                        path: ['feed', `${json.block_num}:${json.transaction_id}`],
+                        data: msg
+                    })
+                    let addr = json.memo.split(' ')[0],
+                        co = json.memo.split(' ')[2],
+                        cp = getPathObj(['contracts', co, addr]),
+                        sp = getPathObj(['contracts', json.to, addr]),
+                        gp = getPathNum(['gov', json.from])
+                    Promise.all([cp, gp, sp])
+                        .then(ret => {
+                            let d = ret[1],
+                                c = ret[0]
+                            if (!c.escrow_id) {
+                                c = ret[2]
+                                co = c.co
+                            }
+                            eo = c.buyer,
+                                g = c.escrow
+                            if (c.type === 'sb' || c.type === 'db')
+                                eo = c.from
+                            console.log(c)
+                            let lil_ops = [
+                                addGov(json.from, parseInt(c.escrow)),
+                                addCol(json.from, -parseInt(c.escrow)),
+                                add(json.from, parseInt(c.fee / 3)),
+                                deletePointer(c.escrow_id, eo),
+                                credit(json.from)
+                            ]
+                            console.log(json.from, parseInt(c.fee / 3))
+                            ops.push({ type: 'del', path: ['escrow', json.from, addr + ':transfer'] })
+                            ops.push({ type: 'del', path: ['contracts', co, addr] })
+                            ops.push({ type: 'del', path: ['chrono', c.expire_path] })
+                            if (json.from == config.username) {
+                                //delete plasma.pending[i + ':transfer']
+                                let NodeOps = GetNodeOps()
+                                for (var i = 0; i < NodeOps.length; i++) {
+                                    if (NodeOps[i][1][1].from == json.from && NodeOps[i][1][1].to == json.to && NodeOps[i][1][0] == 'transfer' && NodeOps[i][1][1].hive_amount == json.hive_amount && NodeOps[i][1][1].hbd_amount == json.hbd_amount) {
+                                        spliceOp(i)
+                                    }
+                                }
+                            }
+                            Promise.all(lil_ops).then(empty => {
+                                    if (process.env.npm_lifecycle_event == 'test') pc[2] = ops
+                                    store.batch(ops, pc)
+                                })
+                                .catch(e => { reject(e) })
+                        })
+                        .catch(e => { console.log(e) })
+                } else {
+                    pc[0](pc[2])
+                }
+            }
+        })
     }
 }
 

@@ -37,8 +37,9 @@ function dao(num) {
                     Pnomen = getPathObj(['nomention']),
                     Pposts = getPathObj(['posts']),
                     Pfeed = getPathObj(['feed']),
-                    Ppaid = getPathObj(['paid']);
-                Promise.all([Pnews, Pbals, Prunners, Pnodes, Pstats, Pdelegations, Pico, Pdex, Pbr, Ppbal, Pnomen, Pposts, Pfeed, Ppaid]).then(function(v) {
+                    Ppaid = getPathObj(['paid']),
+                    Prnfts = getPathObj(['rnfts']);
+                Promise.all([Pnews, Pbals, Prunners, Pnodes, Pstats, Pdelegations, Pico, Pdex, Pbr, Ppbal, Pnomen, Pposts, Pfeed, Ppaid, Prnfts]).then(function(v) {
                             daops.push({ type: 'del', path: ['postQueue'] });
                             daops.push({ type: 'del', path: ['br'] });
                             daops.push({ type: 'del', path: ['rolling'] });
@@ -57,9 +58,23 @@ function dao(num) {
                                 nomention = v[10],
                                 cpost = v[11],
                                 feedCleaner = v[12],
-                                paidCleaner = v[12]
+                                paidCleaner = v[12],
+                                rnftsCleaner = v[13];
                             feedKeys = Object.keys(feedCleaner);
                             paidKeys = Object.keys(paidCleaner);
+                            for(var set in rnftsCleaner){
+                                rnftKeys = Object.keys(rnftsCleaner[set]);
+                                for (rnfti = 0; rnfti < rnftsKeys.length; rnfti++) {
+                                    if (rnftsCleaner[set][rnftKeys[rnfti]] == 0) {
+                                        daops.push({ type: 'del', path: ['rnfts', set, rnftKeys[rnfti]] });
+                                    }
+                                }
+                            }
+                            for (var bali in bals) {
+                                if(bals[bali] == 0){
+                                    daops.push({ type: 'del', path: ['balances', bali] });
+                                }
+                            }
                             for (feedi = 0; feedi < feedKeys.length; feedi++) {
                                 if (feedKeys[feedi].split(':')[0] < num - 30240) {
                                     daops.push({ type: 'del', path: ['feed', feedKeys[feedi]] });

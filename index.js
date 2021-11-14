@@ -190,8 +190,8 @@ function startApp() {
     processor.on('power_grant', HR.power_grant);
     processor.on('vote_content', HR.vote_content);
     processor.on('dex_buy', HR.dex_buy);
-    processor.on('dex_hive_sell', HR.dex_hive_sell);
-    processor.on('dex_hbd_sell', HR.dex_hbd_sell);
+    //processor.on('dex_hive_sell', HR.dex_hive_sell);
+    //processor.on('dex_hbd_sell', HR.dex_hbd_sell);
     processor.on('dex_clear', HR.dex_clear)
     processor.onOperation('escrow_transfer', HR.escrow_transfer);
     processor.onOperation('escrow_approve', HR.escrow_approve);

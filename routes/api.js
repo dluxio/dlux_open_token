@@ -1233,7 +1233,7 @@ exports.item = (req, res, next) => {
         var owner = ''
         if(location >= 0){
             const loc = mem[0].u.slice(location)
-            const own = location.split(',')[0]
+            const own = loc.split(',')[0]
             const items = own.split('_')
             owner = items[items.length - 1]
         }
