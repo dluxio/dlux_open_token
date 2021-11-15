@@ -1470,7 +1470,7 @@ exports.coincheck = (state) => {
         }
         var bond = 0
         for (item in state.sets){
-            const it = (state.sets[item].b * (Base64.toNumber(state.sets[item].m) - Base64.toNumber(state.sets[item].o) - state.sets[item].d + 1))
+            const it = (state.sets[item].b * (Base64.toNumber(state.sets[item].m) - Base64.toNumber(state.sets[item].o) - (state.sets[item].d || 0) + 1))
             bond += it
             supply += it
         }
