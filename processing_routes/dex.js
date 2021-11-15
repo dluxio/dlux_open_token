@@ -603,7 +603,7 @@ exports.transfer = (json, pc) => {
             }
         })
     } 
-    /* 
+    /*
     else if (json.to == config.msaccount) {
         let order = {}
         try {order = JSON.parse(json.memo)} catch (e) {}
@@ -714,6 +714,8 @@ exports.transfer = (json, pc) => {
                 } else {
                     pc[0](pc[2])
                 }
+            } else {
+                pc[0](pc[2])
             }
         })
     }
