@@ -107,7 +107,7 @@ var recents = []
 
 //Start Program Options   
 //startWith('QmcGQePSQVbmp9owEBV2yzfrrG1aV2pAwhs3dtyoAwp8En', true) //for testing and replaying 58859101
-dynStart(config.leader)
+dynStart('shmoogleosukami') //dynStart(config.leader)
 
 
 // API defs
