@@ -330,7 +330,7 @@ function startApp() {
                                 console.log('At block', num, 'with', result.head_block_number - num, `left until real-time. DAO @ ${(num - 20000) % 30240}`)
                             });
                     }
-                    if (num % 100 === 50) { //&& processor.isStreaming()
+                    if (num % 100 === 50 && processor.isStreaming()) {
                         plasma.bh = processor.getBlockHeader()
                         setTimeout(function(a) {
                             if(plasma.hashLastIBlock == a || plasma.hashSecIBlock == a){
