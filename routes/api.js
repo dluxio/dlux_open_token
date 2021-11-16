@@ -1225,11 +1225,11 @@ exports.set = (req, res, next) => {
 
 exports.item = (req, res, next) => {
     let itemname = req.params.item || ':',
-        setname = itemname.split(':')[0]
+        setname = req.params.set || ':'
         setp = getPathObj(['sets', setname])
     Promise.all([setp])
     .then(mem => {
-        const location = mem[0].u.indexOf(`${itemname.split(':')[1]}_`)
+        const location = mem[0].u.indexOf(`${itemname}_`)
         var owner = ''
         if(location >= 0){
             const loc = mem[0].u.slice(location)
@@ -1237,42 +1237,54 @@ exports.item = (req, res, next) => {
             const items = own.split('_')
             owner = items[items.length - 1]
         }
-        store.get(['nfts', owner, itemname.split(':')[1]], function(err, obj) {
-            res.setHeader('Content-Type', 'application/json')
-            res.send(JSON.stringify({
-                item: {
-                    uid: itemname.split(':')[1],
-                    set: setname,
-                    last_modified: Base64.toNumber(obj.s.split(',')[0]),
-                    string: obj.s
-                },
-                set: {
-                    set: setname,
-                    link: `${mem[0].a}/${mem[0].p}`,
-                    fee: {
-                        amount:mem[0].f,
-                        precision: config.precision,
-                        token: config.TOKEN
+        store.get(['nfts', owner, `${setname}:${itemname}`], function(err, obj) {
+            if (obj.s){
+                res.setHeader('Content-Type', 'application/json')
+                res.send(JSON.stringify({
+                    item: {
+                        uid: itemname,
+                        set: setname,
+                        last_modified: Base64.toNumber(obj.s.split(',')[0]),
+                        string: obj.s || '',
+                        owner,
+                        lien: obj.l || 'No Lien',
                     },
-                    bond: {
-                        amount:mem[0].b,
-                        precision: config.precision,
-                        token: config.TOKEN
+                    set: {
+                        set: setname,
+                        link: `${mem[0].a}/${mem[0].p}`,
+                        fee: {
+                            amount:mem[0].f,
+                            precision: config.precision,
+                            token: config.TOKEN
+                        },
+                        bond: {
+                            amount:mem[0].b,
+                            precision: config.precision,
+                            token: config.TOKEN
+                        },
+                        permlink: mem[0].p,
+                        author: mem[0].a,
+                        script: mem[0].s,
+                        encoding: mem[0].e,
+                        type: mem[0].t,
+                        royalty: mem[0].r,
+                        name: mem[0].n,
+                        minted: mem[0].i,
+                        max: Base64.toNumber(mem[0].m) - Base64.toNumber(mem[0].o)
                     },
-                    permlink: mem[0].p,
-                    author: mem[0].a,
-                    script: mem[0].s,
-                    encoding: mem[0].e,
-                    type: mem[0].t,
-                    royalty: mem[0].r,
-                    name: mem[0].n,
-                    minted: mem[0].i,
-                    max: Base64.toNumber(mem[0].m) - Base64.toNumber(mem[0].o)
-                },
-                node: config.username,
-                behind: RAM.behind,
-                VERSION
-            }, null, 3))    
+                    node: config.username,
+                    behind: RAM.behind,
+                    VERSION
+                }, null, 3))
+            } else {
+                res.setHeader('Content-Type', 'application/json')
+                res.send(JSON.stringify({
+                    item: 'Not Found',
+                    node: config.username,
+                    behind: RAM.behind,
+                    VERSION
+                }, null, 3))
+            }
         });
     }) 
     .catch (e => { res.send('Something went wrong') })

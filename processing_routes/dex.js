@@ -4,6 +4,8 @@ const { getPathNum } = require('./../getPathNum')
 const { getPathObj } = require('./../getPathObj')
 const { add, addCol, addGov, release, deletePointer, credit, chronAssign, forceCancel, hashThis, isEmpty } = require('./../lil_ops')
 const { postToDiscord } = require('./../discord')
+const { DEX } = require('./../helpers')
+const { ops } = require('@hiveio/hive-js/lib/auth/serializer')
 
 exports.dex_buy = (json, from, active, pc) => {
     let Pbal = getPathNum(['balances', from]),
@@ -608,6 +610,7 @@ exports.transfer = (json, pc) => {
         let order = {}
         try {order = JSON.parse(json.memo)} catch (e) {}
         order.pair = 'hive'
+        order.amount = parseInt(parseFloat(json.amount.split(' ')[0]) * 1000)
         if (json.amount.split(' ')[1] != 'HIVE')order.pair = hbd
         if (order.type == 'MARKET'){
             let pDEX = getPathObj(['dex', order.pair]),
@@ -622,18 +625,54 @@ exports.transfer = (json, pc) => {
                     list = [],
                     sellorders = {}
                     filled = 0,
-                    remaining = 0,
-                    price = []
-                for (var sellOrder in dex){
-                    list.push(parseFloat(dex[sellOrder].rate.split(':')[0]))
+                    remaining = true,
+                    price = [],
+                    ops = [],
+                    fee = 0
+                while (remaining){
+                    /*
+                    {
+                  "amount": 1000000,
+                  "block": 59170883,
+                  "co": "acidyo",
+                  "expire_path": "59314883:Qmbim4exV4bK54swJ1pk8NgWCVPXK6B7wjRxtmz2mzynW7",
+                  "fee": 2503,
+                  "from": "acidyo",
+                  "hbd": 0,
+                  "hive": 319000,
+                  "rate": "0.319000",
+                  "txid": "DLUXQmWNF5jTtCxUuF9cv3MZwnxsVZg6gRL33PGsGMg8n6P9Cx",
+                  "type": "ss"
+               }
                     
+                    const item = dex[order.pair].sellBook.split('_')[1]
+                    const price = dex[order.pair].sellBook.split('_')[0]
+
+                    if (item){
+                        var next = dex[order.pair].sellOrders[`${price}:${item}`]
+                        if (next[order.pair] <= order.amount){
+                            bal += next.amount - next.fee //update the balance
+                            fee += next.fee //add the fees
+                            remaining = order.amount - next[order.pair]
+                            dex[order.pair].sellBook = DEX.remove(item, dex[order.pair].sellBook) //adjust the orderbook
+                            price.push({[next.rate]:next.amount})
+                            const transfer = [
+                                    "transfer",
+                                    {
+                                        "from": config.msaccount,
+                                        "to": next.from,
+                                        "amount": parseFloat(order.amount/1000).toFixed(3) + ' ' + order.pair.toUpperCase(),
+                                        "memo": `${next.txid} filled`
+                                    }
+                                ]
+                            ops.push({type: 'put', path: ['', order.pair], data: dex}) //send HIVE out via MS
+                        } else {
+
+                        }
+                    } else {
+                        //fill with ICO
+                    }
                 }
-                let ops = [
-                    { type: 'put', path: ['feed', `${json.block_num}:${json.transaction_id}`], data: `@${json.from}| bought ${parseFloat(order.amount / 1000).toFixed(3)} ${config.TOKEN} with ${parseFloat(order.price / 1000).toFixed(3)} HIVE` },
-                    { type: 'put', path: ['balances', json.from], data: parseInt(order.amount) },
-                    { type: 'put', path: ['balances', 'ri'], data: parseInt(order.price) },
-                    { type: 'put', path: ['stats', 'HiveVWMA'], data: { rate: order.price, block: json.block_num, vol: parseInt(order.amount) } }
-                ]
                 if (process.env.npm_lifecycle_event == 'test') pc[2] = ops
                 store.batch(ops, pc)  
             })

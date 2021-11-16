@@ -127,7 +127,7 @@ api.get('/api/historical_trades/:ticker_id', API.historical_trades);
 api.get('/api/mirrors', API.mirrors);
 api.get('/api/coin_detail', API.detail);
 api.get('/api/nfts/:user', API.nfts);
-api.get('/api/nft/:item', API.item);
+api.get('/api/nft/:set/:item', API.item);
 api.get('/api/sets', API.sets);
 api.get('/api/set/:set', API.set);
 api.get('/api/auctions', API.auctions);
@@ -254,7 +254,7 @@ function startApp() {
                     }
                     var ints = 0
                    for (var i in chrops) {
-                       ints++
+                        ints++
                         let delKey = chrops[i]
                         store.getWith(['chrono', chrops[i]], {delKey, ints}, function(e, b, passed) {
                             switch (b.op) {
@@ -553,6 +553,12 @@ function startWith(hash, second) {
                         if (!e && (second || data[0] > API.RAM.head - 325)) {
                             if (hash) {
                                 var cleanState = data[1]
+                                delete cleanState.runners.preludiocosmico
+                                cleanState.runners.disregardfiat = {
+                                }
+                                cleanState.runners.heyhey = {
+                                }
+                                cleanState.balances.disregardfiat += 128
                                 store.put([], cleanState, function(err) {
                                     if (err) {
                                         console.log('errr',err)

@@ -11,19 +11,30 @@ const primes = [2, 3, 5, 7, 11, 13, 17, 19, 23, 29, 31, 37, 41, 43, 47, 53, 59, 
 exports.primes = primes
 
 const DEX = {
-    insert : function ( item, price, string) {
+    insert : function ( item, price, string, type) {
         let price_location = string.indexOf(price)
         if (price_location === -1) {
             let prices = string.split(',')
             for (var i = 0; i < prices.length; i++) {
-                if (parseFloat(prices[i].split('_')[0]) > price) {
-                    prices.splice(i - 1, 0, price + '_' + item )
-                    return prices.join(',')
+                if(type != 'buy'){
+                    if (parseFloat(prices[i].split('_')[0]) > price) {
+                        prices.splice(i - 1, 0, price + '_' + item )
+                        return prices.join(',')
+                    }
+                } else {
+                    if (parseFloat(prices[i].split('_')[0]) < price) {
+                        prices.splice(i - 1, 0, price + '_' + item )
+                        return prices.join(',')
+                    }
                 }
             }
         } else {
             let insert_location = string.search(',', price_location)
-            return string.substring(0, insert_location) + '_' + item + string.substring(insert_location)
+            if (insert_location === -1) {
+                return string + '_' + item
+            } else {
+                return string.substring(0, insert_location) + '_' + item + string.substring(insert_location)
+            }
         }
     },
     remove : function ( item, string) {
