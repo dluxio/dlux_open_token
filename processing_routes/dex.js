@@ -628,22 +628,24 @@ exports.transfer = (json, pc) => {
                     remaining = true,
                     price = [],
                     ops = [],
-                    fee = 0
+                    fee = 0,
+                    i = 0
                 while (remaining){
+                    i++
                     /*
                     {
-                  "amount": 1000000,
-                  "block": 59170883,
-                  "co": "acidyo",
-                  "expire_path": "59314883:Qmbim4exV4bK54swJ1pk8NgWCVPXK6B7wjRxtmz2mzynW7",
-                  "fee": 2503,
-                  "from": "acidyo",
-                  "hbd": 0,
-                  "hive": 319000,
-                  "rate": "0.319000",
-                  "txid": "DLUXQmWNF5jTtCxUuF9cv3MZwnxsVZg6gRL33PGsGMg8n6P9Cx",
-                  "type": "ss"
-               }
+                        "amount": 1000000,
+                        "block": 59170883,
+                        "co": "acidyo",
+                        "expire_path": "59314883:Qmbim4exV4bK54swJ1pk8NgWCVPXK6B7wjRxtmz2mzynW7",
+                        "fee": 2503,
+                        "from": "acidyo",
+                        "hbd": 0,
+                        "hive": 319000,
+                        "rate": "0.319000",
+                        "txid": "DLUXQmWNF5jTtCxUuF9cv3MZwnxsVZg6gRL33PGsGMg8n6P9Cx",
+                        "type": "ss"
+                    }
                     
                     const item = dex[order.pair].sellBook.split('_')[1]
                     const price = dex[order.pair].sellBook.split('_')[0]
@@ -661,11 +663,16 @@ exports.transfer = (json, pc) => {
                                     {
                                         "from": config.msaccount,
                                         "to": next.from,
-                                        "amount": parseFloat(order.amount/1000).toFixed(3) + ' ' + order.pair.toUpperCase(),
+                                        "amount": parseFloat(next[order.pair]/1000).toFixed(3) + ' ' + order.pair.toUpperCase(),
                                         "memo": `${next.txid} filled`
                                     }
                                 ]
-                            ops.push({type: 'put', path: ['', order.pair], data: dex}) //send HIVE out via MS
+                            let msg = `@${json.from} bought ${parseFloat(parseInt(next.amount)/1000).toFixed(3)} ${config.TOKEN} with ${parseFloat(parseInt(next[order.pair])/1000).toFixed(3)} ${order.pair.toUpperCase()} from ${next.from} (${item})`
+                            ops.push({type: 'put', path: ['feed', `${json.block_num}:${json.transaction_id}.${i}`], data: msg})
+                            ops.push({type: 'put', path: ['msa', item], data: transfer}) //send HIVE out via MS
+                            ops.push({type: 'del', path: ['dex', order.pair, 'sellOrders', `${price}:${item}`]}) //remove the order
+                            ops.push({type: 'del', path: ['contracts', next.from , item]}) //remove the contract
+
                         } else {
 
                         }
@@ -673,6 +680,9 @@ exports.transfer = (json, pc) => {
                         //fill with ICO
                     }
                 }
+                //deal with price average
+                //deal with memory
+                ops.push({type: 'put', path: ['dex', order.pair], data: DEX})
                 if (process.env.npm_lifecycle_event == 'test') pc[2] = ops
                 store.batch(ops, pc)  
             })

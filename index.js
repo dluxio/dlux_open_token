@@ -622,16 +622,25 @@ function startWith(hash, second) {
                                 }
                             Promise.all(promises).then(values =>{
                                 console.log('values', values)
-                                var newest = 0, newestHash = null
+                                var newest = 0, votes = {}, blocks = {}
                                 for(var acc in values){
-                                    if(values[acc].block > newest){
+                                    if(values[acc].block >= newest && !votes[values[acc].hash]){
                                         newest = values[acc].block
-                                        newestHash = values[acc].hash
+                                        votes[values[acc].hash] = 1
+                                        blocks[values[acc].hash] = values[acc].block
+                                    } else if(values[acc].block >= newest && votes[values[acc].hash]){
+                                        votes[values[acc].hash]++
                                     }
                                 }
-                                if(newestHash){
-                                    startWith(newestHash, true)
+                                var tally = 0, winner = null
+                                for(hash in votes){
+                                    if(votes[hash] > tally && blocks[values[acc].hash] == newest){
+                                        tally = votes[hash]
+                                        var winner = hash
+                                    }
                                 }
+                                startWith(winner, true)
+                                        return
                             })
                         }
                     })

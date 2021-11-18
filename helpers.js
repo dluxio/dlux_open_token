@@ -38,7 +38,7 @@ const DEX = {
         }
     },
     remove : function ( item, string) {
-        if (string.indexOf(item + '_') === -1) {
+        if (string.indexOf(item + '_') > -1) {
             return string.replace(`${item}_`, '')
         } else {
             let item_location = string.indexOf('_' + item)
