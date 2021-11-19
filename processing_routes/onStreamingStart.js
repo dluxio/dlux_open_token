@@ -1,8 +1,9 @@
 const config = require('./../config')
-const { store, unshiftOp } = require("./../index");
+const { store, unshiftOp, TXID } = require("./../index");
 
 exports.onStreamingStart = () => {
     console.log("At real time.");
+    TXID.current()
     store.get(['markets', 'node', config.username], function(e, a) {
         if (!a.domain && config.NODEDOMAIN) {
             var op = ["custom_json", {

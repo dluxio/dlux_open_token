@@ -1,6 +1,6 @@
 let config = require('./../config')
 const { Base64} = require('./../helpers')
-const { store, GetNodeOps, VERSION, status, TXID } = require("./../index");
+const { store, GetNodeOps, VERSION, status, TXID, exit, processor} = require("./../index");
 const fetch = require('node-fetch');
 let { getPathNum } = require("./../getPathNum");
 let { getPathObj } = require("./../getPathObj");
@@ -508,6 +508,8 @@ function fetchHive(){
                     RAM.hiveDyn = res.result
                     RAM.head = res.result.head_block_number
                     RAM.behind = res.result.head_block_number - (TXID.getBlockNum() || 0)
+                    //console.log({behind: RAM.behind, isStreaming: TXID.streaming})
+                    if (RAM.behind > 100 && TXID.streaming){exit()}
                     setTimeout(function(){
                         fetchHive();
                     }, 60000);

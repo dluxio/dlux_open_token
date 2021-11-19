@@ -44,7 +44,7 @@ var status = {
     cleaner: [],
 }
 exports.status = status
-const TXID = {
+let TXID = {
     store: function (msg, txid){
         try {
             status[txid.split(':')[1]] = msg
@@ -71,7 +71,12 @@ const TXID = {
     getBlockNum: function (){
         return TXID.blocknumber
     },
-    blocknumber: 0
+    blocknumber: 0,
+    streaming: false,
+    current: function(){TXID.streaming = true},
+    reset: function(){TXID.streaming = false, TXID.blocknumber = 0, status = {
+    cleaner: [],
+}},
 }
 exports.TXID = TXID
 const API = require('./routes/api');
@@ -451,16 +456,17 @@ function startApp() {
     setTimeout(function(){
         API.start();
     }, 3000);
-    exports.processor = processor;
 }
+exports.processor = processor;
 
 function exit(consensus) {
     console.log(`Restarting with ${consensus}...`);
+
     processor.stop(function() {});
         if (consensus) {
             startWith(consensus, true)
         } else {
-            startWith(config.leader)
+            dynStart(config.leader)
         }
 }
 
