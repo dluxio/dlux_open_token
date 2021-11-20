@@ -58,13 +58,14 @@ function dao(num) {
                                 nomention = v[10],
                                 cpost = v[11],
                                 feedCleaner = v[12],
-                                paidCleaner = v[12],
-                                rnftsCleaner = v[13];
+                                paidCleaner = v[13],
+                                rnftsCleaner = v[14];
                             feedKeys = Object.keys(feedCleaner);
                             paidKeys = Object.keys(paidCleaner);
                             for(var set in rnftsCleaner){
                                 rnftKeys = Object.keys(rnftsCleaner[set]);
-                                for (rnfti = 0; rnfti < rnftsKeys.length; rnfti++) {
+                                console.log(set, rnftKeys)
+                                for (var rnfti = 0; rnfti < rnftKeys.length; rnfti++) {
                                     if (rnftsCleaner[set][rnftKeys[rnfti]] == 0) {
                                         daops.push({ type: 'del', path: ['rnfts', set, rnftKeys[rnfti]] });
                                     }

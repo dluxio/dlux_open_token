@@ -83,7 +83,6 @@ const API = require('./routes/api');
 const { getPathNum } = require("./getPathNum");
 const HR = require('./processing_routes/index')
 const { enforce } = require("./enforce");
-exports.exit = exit;
 const { tally } = require("./tally");
 const { voter } = require("./voter");
 const { report } = require("./report");
@@ -111,7 +110,7 @@ var recents = []
     //HIVE API CODE
 
 //Start Program Options   
-//startWith('Qmb9CvYyCBBu4wmKqjBQLMkBuDfaKV75uvUs8VdFVRUZSU', true) //for testing and replaying 58859101
+//startWith('QmUakzPnPxCDSAgQs3P1zQRdneeXW7jGMEhdSwgReajyXX', true) //for testing and replaying 58859101
 dynStart(config.leader)
 
 
@@ -194,14 +193,14 @@ function startApp() {
     processor.on('power_down', HR.power_down);
     processor.on('power_grant', HR.power_grant);
     processor.on('vote_content', HR.vote_content);
-    processor.on('dex_buy', HR.dex_buy);
-    processor.on('dex_hive_sell', HR.dex_hive_sell);
-    processor.on('dex_hbd_sell', HR.dex_hbd_sell);
+    //processor.on('dex_buy', HR.dex_buy);
+    processor.on('dex_sell', HR.dex_sell);
+    //processor.on('dex_hbd_sell', HR.dex_hbd_sell);
     processor.on('dex_clear', HR.dex_clear)
-    processor.onOperation('escrow_transfer', HR.escrow_transfer);
-    processor.onOperation('escrow_approve', HR.escrow_approve);
-    processor.onOperation('escrow_dispute', HR.escrow_dispute);
-    processor.onOperation('escrow_release', HR.escrow_release);
+    //processor.onOperation('escrow_transfer', HR.escrow_transfer);
+    //processor.onOperation('escrow_approve', HR.escrow_approve);
+    //processor.onOperation('escrow_dispute', HR.escrow_dispute);
+    //processor.onOperation('escrow_release', HR.escrow_release);
     processor.on('gov_down', HR.gov_down);
     processor.on('gov_up', HR.gov_up);
     processor.on('node_add', HR.node_add); //node add and update
@@ -469,6 +468,7 @@ function exit(consensus) {
             dynStart(config.leader)
         }
 }
+exports.exit = exit;
 
 function waitfor(promises_array) {
     return new Promise((resolve, reject) => {
@@ -559,6 +559,7 @@ function startWith(hash, second) {
                         if (!e && (second || data[0] > API.RAM.head - 325)) {
                             if (hash) {
                                 var cleanState = data[1]
+                                cleanState.stats.dex_fee = "0.001"
                                 store.put([], cleanState, function(err) {
                                     if (err) {
                                         console.log('errr',err)
