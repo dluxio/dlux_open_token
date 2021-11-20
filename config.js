@@ -16,7 +16,7 @@ const dbcs = ENV.DATABASE_URL || '';
 const history = ENV.history || 3600
 
 // testing configs for replays
-const override = ENV.override || 59116600 //will use standard restarts after this blocknumber
+const override = ENV.override || 0 //69116600 //will use standard restarts after this blocknumber
 const engineCrank = ENV.startingHash || '' //but this state will be inserted before
 
 // third party configs
@@ -52,7 +52,7 @@ const leader = 'dlux-io' //Default account to pull state from, will post token
 const ben = 'dlux-io' //Account where comment benifits trigger token action
 const delegation = 'dlux-io' //account people can delegate to for rewards
 const delegationWeight = 1000 //when to trigger community rewards with bens
-const msaccount = 'dac.escrow' //account controlled by community leaders
+const msaccount = 'inconceivable' //account controlled by community leaders
 const mainAPI = 'token.dlux.io' //leaders API probably
 const mainFE = 'dlux.io' //frontend for content
 const mainIPFS = 'a.ipfs.dlux.io' //IPFS service

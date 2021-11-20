@@ -15,18 +15,22 @@ const DEX = {
         let price_location = string.indexOf(price)
         if (price_location === -1) {
             let prices = string.split(',')
-            for (var i = 0; i < prices.length; i++) {
-                if(type != 'buy'){
-                    if (parseFloat(prices[i].split('_')[0]) > price) {
-                        prices.splice(i - 1, 0, price + '_' + item )
-                        return prices.join(',')
-                    }
-                } else {
-                    if (parseFloat(prices[i].split('_')[0]) < price) {
-                        prices.splice(i - 1, 0, price + '_' + item )
-                        return prices.join(',')
+            if (string !== ''){
+                for (var i = 0; i < prices.length; i++) {
+                    if(type != 'buy'){
+                        if (parseFloat(prices[i].split('_')[0]) > parseFloat(price)) {
+                            prices.splice(i, 0, price + '_' + item )
+                            return prices.join(',')
+                        }
+                    } else {
+                        if (parseFloat(prices[i].split('_')[0]) < parseFloat(price)) {
+                            prices.splice(i, 0, price + '_' + item )
+                            return prices.join(',')
+                        }
                     }
                 }
+            } else {
+                return price + '_' + item
             }
         } else {
             let insert_location = string.search(',', price_location)

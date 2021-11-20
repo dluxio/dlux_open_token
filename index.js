@@ -111,7 +111,7 @@ var recents = []
     //HIVE API CODE
 
 //Start Program Options   
-//startWith('QmcGQePSQVbmp9owEBV2yzfrrG1aV2pAwhs3dtyoAwp8En', true) //for testing and replaying 58859101
+//startWith('Qmb9CvYyCBBu4wmKqjBQLMkBuDfaKV75uvUs8VdFVRUZSU', true) //for testing and replaying 58859101
 dynStart(config.leader)
 
 
@@ -195,8 +195,8 @@ function startApp() {
     processor.on('power_grant', HR.power_grant);
     processor.on('vote_content', HR.vote_content);
     processor.on('dex_buy', HR.dex_buy);
-    //processor.on('dex_hive_sell', HR.dex_hive_sell);
-    //processor.on('dex_hbd_sell', HR.dex_hbd_sell);
+    processor.on('dex_hive_sell', HR.dex_hive_sell);
+    processor.on('dex_hbd_sell', HR.dex_hbd_sell);
     processor.on('dex_clear', HR.dex_clear)
     processor.onOperation('escrow_transfer', HR.escrow_transfer);
     processor.onOperation('escrow_approve', HR.escrow_approve);
@@ -559,6 +559,10 @@ function startWith(hash, second) {
                         if (!e && (second || data[0] > API.RAM.head - 325)) {
                             if (hash) {
                                 var cleanState = data[1]
+                                cleanState.dex.hive.sellBook = ''
+                                cleanState.dex.hive.buyBook = ''
+                                cleanState.dex.hbd.sellBook = ''
+                                cleanState.dex.hbd.buyBook = ''
                                 store.put([], cleanState, function(err) {
                                     if (err) {
                                         console.log('errr',err)
