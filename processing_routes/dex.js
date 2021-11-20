@@ -471,7 +471,7 @@ exports.escrow_dispute = (json, pc) => {
                             .then(empty => {
                                 const msg = `@${json.who}| authorized ${json.agent} for ${c.txid}`
                                 if (config.hookurl || config.status) postToDiscord(msg, `${json.block_num}:${json.transaction_id}`)
-                                ops = [
+                                var ops = [
                                     { type: 'put', path: ['escrow', c.auths[1][0], c.txid + ':release'], data: c.auths[1][1] },
                                     { type: 'put', path: ['contracts', a.for, a.contract], data: c },
                                     { type: 'put', path: ['feed', `${json.block_num}:${json.transaction_id}`], data: msg },
