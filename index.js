@@ -559,8 +559,6 @@ function startWith(hash, second) {
                         if (!e && (second || data[0] > API.RAM.head - 325)) {
                             if (hash) {
                                 var cleanState = data[1]
-                                cleanState.balances['rishi556-dlux'] = 106375
-                                delete cleanState.escrow
                                 store.put([], cleanState, function(err) {
                                     if (err) {
                                         console.log('errr',err)
