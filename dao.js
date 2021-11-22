@@ -71,11 +71,6 @@ function dao(num) {
                                     }
                                 }
                             }
-                            for (var bali in bals) {
-                                if(bals[bali] == 0){
-                                    daops.push({ type: 'del', path: ['balances', bali] });
-                                }
-                            }
                             for (feedi = 0; feedi < feedKeys.length; feedi++) {
                                 if (feedKeys[feedi].split(':')[0] < num - 30240) {
                                     daops.push({ type: 'del', path: ['feed', feedKeys[feedi]] });
@@ -406,6 +401,11 @@ function dao(num) {
             for (var i = daops.length - 1; i >= 0; i--) {
                 if (daops[i].type == 'put' && Object.keys(daops[i].data).length == 0 && typeof daops[i].data != 'number' && typeof daops[i].data != 'string') {
                     daops.splice(i, 1);
+                }
+            }
+            for (var bali in bals) {
+                if(bals[bali] == 0){
+                    daops.push({ type: 'del', path: ['balances', bali] });
                 }
             }
             store.batch(daops, [resolve, reject]);

@@ -160,13 +160,17 @@ exports.tally = (num, plasma, isStreaming) => {
                         new_queue = v[6]
                         still_running = runners
                     }
+                    console.log(plasma)
                     let newPlasma = {
                         consensus: consensus || 0,
                         new_queue,
                         still_running,
-                        stats
+                        stats,
+                        bh: plasma.bh
                     };
-                    
+                    if(!consensus) {
+                        newPlasma.potential = tally
+                    }
                     let weights = 0
                     for (post in pending) {
                         weights += pending[post].t.totalWeight

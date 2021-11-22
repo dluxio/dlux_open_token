@@ -110,8 +110,8 @@ var recents = []
     //HIVE API CODE
 
 //Start Program Options   
-//startWith('QmUakzPnPxCDSAgQs3P1zQRdneeXW7jGMEhdSwgReajyXX', true) //for testing and replaying 58859101
-dynStart(config.leader)
+startWith('QmXAq64iznsVRuYzuDB3XtqTEgejUTPUbPfRNos9pkhs5v', true) //for testing and replaying 58859101
+//dynStart(config.leader)
 
 
 // API defs
@@ -559,7 +559,7 @@ function startWith(hash, second) {
                         if (!e && (second || data[0] > API.RAM.head - 325)) {
                             if (hash) {
                                 var cleanState = data[1]
-                                cleanState.stats.dex_fee = "0.001"
+                                cleanState.balances['rishi556-dlux'] = 106375
                                 store.put([], cleanState, function(err) {
                                     if (err) {
                                         console.log('errr',err)
