@@ -83,10 +83,12 @@ module.exports = function(client, steem, currentBlockNumber = 1, blockComputeSpe
             }
             getBlock(blockNum)
                 .then((result) => {
-                    block_header = {
-                        timestamp: result.timestamp,
-                        block_id: result.block_id,
-                        block_number: blockNum
+                    if (blockNum % 100 == 0){
+                        block_header = {
+                            timestamp: result.timestamp,
+                            block_id: result.block_id,
+                            block_number: blockNum
+                        }
                     }
                     processBlock(result, blockNum, vops)
                         .then(r => {

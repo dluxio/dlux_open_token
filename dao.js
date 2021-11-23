@@ -64,7 +64,6 @@ function dao(num) {
                             paidKeys = Object.keys(paidCleaner);
                             for(var set in rnftsCleaner){
                                 rnftKeys = Object.keys(rnftsCleaner[set]);
-                                console.log(set, rnftKeys)
                                 for (var rnfti = 0; rnfti < rnftKeys.length; rnfti++) {
                                     if (rnftsCleaner[set][rnftKeys[rnfti]] == 0) {
                                         daops.push({ type: 'del', path: ['rnfts', set, rnftKeys[rnfti]] });
@@ -103,9 +102,9 @@ function dao(num) {
                             stats.marketingRate = parseInt(b / i);
                             stats.nodeRate = parseInt(j / i);
                             post = `![${config.TOKEN} Advert](https://camo.githubusercontent.com/954558e3ca2d68e0034cae13663d9807dcce3fcf/68747470733a2f2f697066732e627573792e6f72672f697066732f516d64354b78395548366a666e5a6748724a583339744172474e6b514253376359465032357a3467467132576f50)\n#### Daily Accounting\n`;
-                            post = post + `Total Supply: ${parseFloat(parseInt(stats.tokenSupply) / 1000).toFixed(3)} ${config.TOKEN}\n* ${parseFloat(parseInt(stats.tokenSupply - powBal - (bals.ra + bals.rb + bals.rc + bals.rd + bals.re + bals.ri + bals.rr + bals.rn + bals.rm)) / 1000).toFixed(3)} ${config.TOKEN} liquid\n`;
+                            post = post + `Total Supply: ${parseFloat(parseInt(stats.tokenSupply) / 1000).toFixed(3)} ${config.TOKEN}\n* ${parseFloat(parseInt(stats.tokenSupply - powBal - (bals.ra + bals.rc + bals.rd + bals.ri + bals.rn + bals.rm)) / 1000).toFixed(3)} ${config.TOKEN} liquid\n`;
                             post = post + `* ${parseFloat(parseInt(powBal) / 1000).toFixed(3)} ${config.TOKEN} Powered up for Voting\n`;
-                            post = post + `* ${parseFloat(parseInt(bals.ra + bals.rb + bals.rc + bals.rd + bals.re + bals.ri + bals.rr + bals.rn + bals.rm) / 1000).toFixed(3)} ${config.TOKEN} in distribution accounts\n`;
+                            post = post + `* ${parseFloat(parseInt(bals.ra + bals.rc + bals.rd + bals.ri + bals.rn + bals.rm) / 1000).toFixed(3)} ${config.TOKEN} in distribution accounts\n`;
                             post = post + `${parseFloat(parseInt(t) / 1000).toFixed(3)} ${config.TOKEN} has been generated today. 5% APY.\n${parseFloat(stats.marketingRate / 10000).toFixed(4)} is the marketing rate.\n${parseFloat(stats.nodeRate / 10000).toFixed(4)} is the node rate.\n`;
                             console.log(`DAO Accounting In Progress:\n${t} has been generated today\n${stats.marketingRate} is the marketing rate.\n${stats.nodeRate} is the node rate.`);
                             bals.rn += parseInt(t * parseInt(stats.nodeRate) / 10000);
@@ -306,7 +305,6 @@ function dao(num) {
                                     dex.hbd.days = {};
                                 dex.hbd.days[num] = hib;
                             }
-                            console.log(stats);
                             post = post + `*****\n### DEX Report\n#### Volume Weighted Prices:\n* ${parseFloat(stats.HiveVWMA.rate).toFixed(3)} HIVE per ${config.TOKEN}\n* ${parseFloat(stats.HbdVWMA.rate).toFixed(3)} HBD per ${config.TOKEN}\n#### Daily Volume:\n* ${parseFloat(vol / 1000).toFixed(3)} ${config.TOKEN}\n* ${parseFloat(vols / 1000).toFixed(3)} HIVE\n* ${parseFloat(parseInt(volhbd) / 1000).toFixed(3)} HBD\n*****\n`;
                             stats.movingWeight.dailyPool = bals.ra
                             bals.rc = bals.rc + bals.ra;
@@ -390,7 +388,6 @@ function dao(num) {
                     })
                 }
             ];
-            //console.log(op);
             daops.push({ type: 'put', path: ['dex'], data: dex });
             daops.push({ type: 'put', path: ['stats'], data: stats });
             daops.push({ type: 'put', path: ['balances'], data: bals });
@@ -404,7 +401,7 @@ function dao(num) {
                 }
             }
             for (var bali in bals) {
-                if(bals[bali] == 0){
+                if(bals[bali] == 0 && bali.length > 2) {
                     daops.push({ type: 'del', path: ['balances', bali] });
                 }
             }
