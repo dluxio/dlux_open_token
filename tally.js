@@ -2,7 +2,7 @@ const config = require('./config');
 const { getPathNum } = require("./getPathNum");
 const { getPathObj } = require("./getPathObj");
 const { deleteObjs } = require('./deleteObjs')
-const { store, exit } = require("./index");
+const { store, exit, hiveClient } = require("./index");
 const { updatePost } = require('./edb');
 
 //determine consensus... needs some work with memory management
@@ -15,8 +15,9 @@ exports.tally = (num, plasma, isStreaming) => {
             Prcol = getPathObj(['col']),
             Prpow = getPathObj(['gov']),
             Prqueue = getPathObj(['queue']),
-            Ppending = getPathObj(['pendingpayment'])
-        Promise.all([Prunners, Pnode, Pstats, Prb, Prcol, Prpow, Prqueue, Ppending]).then(function(v) {
+            Ppending = getPathObj(['pendingpayment']),
+            Pmss = getPathObj(['mss'])
+        Promise.all([Prunners, Pnode, Pstats, Prb, Prcol, Prpow, Prqueue, Ppending, Pmss]).then(function(v) {
             deleteObjs([
                     ['runners'],
                     ['queue'],
@@ -30,6 +31,9 @@ exports.tally = (num, plasma, isStreaming) => {
                         rcol = v[4],
                         rgov = v[5],
                         pending = v[7],
+                        mss = v[8],
+                        sigs = [],
+                        toVerify = [],
                         tally = {
                             agreements: {
                                 hashes: {},
@@ -43,6 +47,11 @@ exports.tally = (num, plasma, isStreaming) => {
                         var hash = '',
                             when = 0,
                             online = 0
+                        try { 
+                            var mssv = mss
+                            mssv.signatures = [nodes[node].report.sig]
+                            toVerify.push(verify(mssv))
+                        } catch (e) { console.log({ node }) }
                         try { hash = nodes[node].report.hash } catch (e) { console.log({ node }) }
                         try { when = nodes[node].report.block_num } catch { console.log({ node }) }
                         try { online = hash && nodes[node].escrow } catch { console.log({ node }) }
@@ -160,7 +169,17 @@ exports.tally = (num, plasma, isStreaming) => {
                         new_queue = v[6]
                         still_running = runners
                     }
-                    console.log(plasma)
+                    Promise.all(toVerify).then(sigs => {
+                        mss.signatures = []
+                        for (var i = 0; i < sigs.length; i++) {
+                            if (sigs[i]) {
+                                mss.signatures.push(sigs[i])
+                            }
+                        }
+                        hiveClient.api.broadcastTransactionSynchronous(mss, function(err, result) {
+                            console.log(result);
+                        });
+                    })
                     let newPlasma = {
                         consensus: consensus || 0,
                         new_queue,
@@ -267,6 +286,18 @@ function payout(this_payout, weights, pending, num) {
                 store.batch(ops, [resolve, reject, change]) //return the paid ammount so millitokens aren't lost
             } else {
                 resolve(this_payout)
+            }
+        })
+    })
+}
+
+function verify(trx){
+    return new Promise((resolve, reject) => {
+        hiveClient.api.verifyAuthority(trx, function(err, result) {
+            if (err) {
+                resolve('')
+            } else {
+                resolve(trx.signatures[0])
             }
         })
     })

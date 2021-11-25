@@ -10,7 +10,8 @@ function report(plasma) {
             json: JSON.stringify({
                 hash: plasma.hashLastIBlock,
                 block: plasma.hashBlock,
-                stash: plasma.privHash
+                stash: plasma.privHash,
+                sig: plasma.sig.sig
             })
         }];
         resolve([

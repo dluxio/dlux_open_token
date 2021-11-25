@@ -1,8 +1,9 @@
 require('dotenv').config();
 const ENV = process.env;
 
-const username = ENV.account || 'disregardfiat';
+const username = ENV.account || 'dlux-io';
 const active = ENV.active || '';
+const msowner = ENV.msowner || '';
 const memoKey = ENV.memo || '';
 const hookurl = ENV.discordwebhook || '';
 const NODEDOMAIN = ENV.domain || 'http://dlux-token.herokuapp.com' //where your API lives
@@ -52,7 +53,7 @@ const leader = 'dlux-io' //Default account to pull state from, will post token
 const ben = 'dlux-io' //Account where comment benifits trigger token action
 const delegation = 'dlux-io' //account people can delegate to for rewards
 const delegationWeight = 1000 //when to trigger community rewards with bens
-const msaccount = 'inconceivable' //account controlled by community leaders
+const msaccount = 'dlux-cc' //account controlled by community leaders
 const mainAPI = 'token.dlux.io' //leaders API probably
 const mainFE = 'dlux.io' //frontend for content
 const mainIPFS = 'a.ipfs.dlux.io' //IPFS service
@@ -64,6 +65,7 @@ const footer = `\n[Find us on Discord](https://discord.gg/Beeb38j)`
 let config = {
     username,
     active,
+    msowner,
     memoKey,
     NODEDOMAIN,
     hookurl,

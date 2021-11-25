@@ -1,7 +1,8 @@
 const config = require('./config');
-const VERSION = 'v1.0.0b2'
+const VERSION = 'v1.1.0b'
 exports.VERSION = VERSION
-
+exports.exit = exit;
+exports.processor = processor;
 const hive = require('@hiveio/dhive');
 var client = new hive.Client(config.clientURL);
 exports.client = client
@@ -35,6 +36,7 @@ console.log('Using APIURL: ', config.clientURL)
 exports.hiveClient = hiveClient
 
 var NodeOps = [];
+//aare these used still?
 exports.GetNodeOps = function() { return NodeOps }
 exports.newOps = function(array) { NodeOps = array }
 exports.unshiftOp = function(op) { NodeOps.unshift(op) }
@@ -87,12 +89,12 @@ const { tally } = require("./tally");
 const { voter } = require("./voter");
 const { report } = require("./report");
 const { ipfsSaveState } = require("./ipfsSaveState");
-const { waitup } = require("./waitup");
 const { dao } = require("./dao");
 const { Base64, NFT, Chron } = require('./helpers');
 const { release, recast } = require('./lil_ops')
 const hiveState = require('./processor');
 const { getPathObj } = require('./getPathObj');
+const { consolidate, createAccount, updateAccount } = require('./msa')
 const api = express()
 var http = require('http').Server(api);
 var escrow = false;
@@ -110,7 +112,7 @@ var recents = []
     //HIVE API CODE
 
 //Start Program Options   
-//startWith('QmXzHGpFxY3TAYRSxaJ8aHkJRfBH3q27j6jhBStZomtGXv', true) //for testing and replaying 58859101
+//startWith('Qmdri6skCnZ2dgPNsnWFzghSNvjg8aHuQ7Z13CqD2MyP8P', true) //for testing and replaying 58859101
 dynStart(config.leader)
 
 
@@ -331,11 +333,10 @@ function startApp() {
                     if (num % 100 === 0 && processor.isStreaming()) {
                         client.database.getDynamicGlobalProperties()
                             .then(function(result) {
-                                console.log('At block', num, 'with', result.head_block_number - num, `left until real-time. DAO @ ${(num - 20000) % 30240}`)
+                                console.log('At block', num, 'with', result.head_block_number - num, `left until real-time. DAO in ${30240 - ((num - 20000) % 30240)} blocks`)
                             });
                     }
                     if (num % 100 === 50 && processor.isStreaming()) {
-                        plasma.bh = processor.getBlockHeader()
                         setTimeout(function(a) {
                             if(plasma.hashLastIBlock == a || plasma.hashSecIBlock == a){
                                 exit(plasma.hashLastIBlock)
@@ -358,6 +359,7 @@ function startApp() {
                         promises.push(voter());
                     }
                     if (num % 100 === 1) {
+                        plasma.bh = processor.getBlockHeader()
                         store.get([], function(err, obj) {
                             const blockState = Buffer.from(stringify([num, obj]))
                             ipfsSaveState(num, blockState)
@@ -369,6 +371,9 @@ function startApp() {
                                 .catch(e => { console.log(e) })
 
                         })
+                    }
+                    if (num % 100 === 2) {
+                        promises.push(consolidate(num, plasma))
                     }
                     if (config.active && processor.isStreaming() ) {
                         store.get(['escrow', config.username], function(e, a) {
@@ -456,7 +461,6 @@ function startApp() {
         API.start();
     }, 3000);
 }
-exports.processor = processor;
 
 function exit(consensus) {
     console.log(`Restarting with ${consensus}...`);
@@ -468,7 +472,6 @@ function exit(consensus) {
             dynStart(config.leader)
         }
 }
-exports.exit = exit;
 
 function waitfor(promises_array) {
     return new Promise((resolve, reject) => {
@@ -559,6 +562,30 @@ function startWith(hash, second) {
                         if (!e && (second || data[0] > API.RAM.head - 325)) {
                             if (hash) {
                                 var cleanState = data[1]
+                                    cleanState.sets.bz.m = '====='
+                                    cleanState.sets.bz.s = 'QmUM2sBkUtuzUUj2kUJzSTD7Wz2S4hCqVoeBKzSBDjTb3L'
+                                    cleanState.sets.dlux.s = 'QmYSRLiGaEmucSXoNiq9RqazmDuEZmCELRDg4wyE7Fo8kX'
+                                    for (item in cleanState.chrono) {
+                                        if (cleanState.chrono[item].op == 'expire') {
+                                            delete cleanState.chrono[item]
+                                        }
+                                    }
+                                    for (account in cleanState.col) {
+                                        cleanState.balances[account] += cleanState.col[account]
+                                    }
+                                    delete cleanState.col
+                                    for (account in cleanState.contracts){
+                                        for(item in cleanState.contracts[account]){
+                                            if(!cleanState.contracts[account][item].auths)cleanState.balances[account] += cleanState.contracts[account][item].amount
+                                        }
+                                    }
+                                    delete cleanState.contracts
+                                    for (type in cleanState.dex) {
+                                        delete cleanState.dex[type].buyOrders
+                                        delete cleanState.dex[type].sellOrders
+                                        cleanState.dex[type].sellBook = ''
+                                        cleanState.dex[type].buyBook = ''
+                                    }
                                 store.put([], cleanState, function(err) {
                                     if (err) {
                                         console.log('errr',err)
@@ -674,4 +701,18 @@ function startWith(hash, second) {
             })
         })
     }
+}
+
+function waitup(promises_array, promise_chain_array, resolve_reject) {
+    Promise.all(promises_array)
+        .then(r => {
+            for(var i = 0; i < r.length; i++) {
+                if(r[i].sig){plasma.sig ={
+                    sig: r[i].sig,
+                    block: r[i].block
+                }}
+            }
+            resolve_reject[0](promise_chain_array);
+        })
+        .catch(e => { resolve_reject[1](e); });
 }

@@ -61,12 +61,12 @@ exports.dex_sell = (json, from, active, pc) => {
                                         "from": config.msaccount,
                                         "to": from,
                                         "amount": parseFloat(next[order.pair]/1000).toFixed(3) + ' ' + order.pair.toUpperCase(),
-                                        "memo": `Filled ${item}:${json.transaction_id}`
+                                        "memo": `Filled ${item}:${json.transaction_id}:${json.block_num}`
                                     }
                                 ]
                             let msg = `@${from} sold ${parseFloat(parseInt(next.amount)/1000).toFixed(3)} ${config.TOKEN} with ${parseFloat(parseInt(next[order.pair])/1000).toFixed(3)} ${order.pair.toUpperCase()} to ${next.from} (${item})`
                             ops.push({type: 'put', path: ['feed', `${json.block_num}:${json.transaction_id}.${i}`], data: msg})
-                            ops.push({type: 'put', path: ['msa', `${item}:${json.transaction_id}`], data: transfer}) //send HIVE out via MS
+                            ops.push({type: 'put', path: ['msa', `${item}:${json.transaction_id}:${json.block_num}`], data: transfer}) //send HIVE out via MS
                             ops.push({type: 'del', path: ['dex', order.pair, 'buyOrders', `${price}:${item}`]}) //remove the order
                             ops.push({type: 'del', path: ['contracts', next.from , item]}) //remove the contract
                             ops.push({type: 'del', path: ['chrono', next.expire_path]}) //remove the chrono
@@ -86,12 +86,12 @@ exports.dex_sell = (json, from, active, pc) => {
                                         "from": config.msaccount,
                                         "to": from,
                                         "amount": parseFloat(remaining/1000).toFixed(3) + ' ' + order.pair.toUpperCase(),
-                                        "memo": `Partial Filled ${item}:${json.transaction_id}`
+                                        "memo": `Partial Filled ${item}:${json.transaction_id}:${json.block_num}`
                                     }
                                 ]
                             let msg = `@${from} sold ${parseFloat(parseInt(remaining)/1000).toFixed(3)} ${config.TOKEN} with ${parseFloat(parseInt(next[order.pair])/1000).toFixed(3)} ${order.pair.toUpperCase()} to ${next.from} (${item})`
                             ops.push({type: 'put', path: ['feed', `${json.block_num}:${json.transaction_id}.${i}`], data: msg})
-                            ops.push({type: 'put', path: ['msa', `${item}:${json.transaction_id}`], data: transfer}) //send HIVE out via MS
+                            ops.push({type: 'put', path: ['msa', `${item}:${json.transaction_id}:${json.block_num}`], data: transfer}) //send HIVE out via MS
                             ops.push({type: 'put', path: ['contracts', next.from , item], data: next}) //remove the contract
                             dex[order.pair].buyOrders[`${price}:${item}`] = next
                         }
@@ -109,7 +109,8 @@ exports.dex_sell = (json, from, active, pc) => {
                         fee: cfee,
                         amount: remaining,
                         rate: crate,
-                        block: json.block_num
+                        block: json.block_num,
+                        type: `${order.pair}:sell`
                     }
                     contract[order.pair] = parseInt(remaining/crate)
                     dex[order.pair].sellBook = DEX.insert(txid, crate, dex[order.pair].sellBook, 'sell')
@@ -185,7 +186,7 @@ exports.dex_sell = (json, from, active, pc) => {
 }
 
 exports.transfer = (json, pc) => {
-    if (json.to == config.mainICO && json.amount.split(' ')[1] == 'HIVE') { //the ICO disribution... should be in multi sig account
+    if (json.to == config.mainICO && json.amount.split(' ')[1] == 'HIVE' && json.from != config.msaccount) { //the ICO disribution... should be in multi sig account
         const amount = parseInt(parseFloat(json.amount) * 1000)
         var purchase,
             Pstats = getPathObj(['stats']),
@@ -249,18 +250,23 @@ exports.transfer = (json, pc) => {
                 store.batch(ops, pc)
             }
         })
-    }
-    /* 
-    else if (json.to == config.msaccount) {
+    } else if (json.to == config.msaccount) {
         console.log('here')
         let order = {
-            type: 'MARKET'
-        }
+            type: 'MARKET',
+            pair: 'hive'
+        },
+            path = '',
+            contract = ''
         try {order = JSON.parse(json.memo)} catch (e) {}
-        order.pair = 'hive'
+        if (order.type !== 'LIMIT') {
+            order.type = 'MARKET'
+            order.rate = parseFloat(order.rate) || 0
+        }
+        if (order.pair != 'hbd') {order.pair = 'hive'}
         order.amount = parseInt(parseFloat(json.amount.split(' ')[0]) * 1000)
         if (json.amount.split(' ')[1] != 'HIVE')order.pair = hbd
-        if (order.type == 'MARKET'){
+        if (order.type == 'MARKET' || order.type == 'LIMIT') {
             let pDEX = getPathObj(['dex', order.pair]),
                 pBal = getPathNum(['balances', json.from]),
                 pInv = getPathNum(['balances', 'ri']),
@@ -275,12 +281,14 @@ exports.transfer = (json, pc) => {
                     ops = [],
                     fee = 0,
                     i = 0
+                if (order.type == 'LIMIT' && order.rate == 0) {
+                    order.rate = stats[`${order.pair}VWMA`].rate
+                }
                 while (remaining){
                     i++
                     const item = dex.sellBook.split('_')[1]
                     const price = dex.sellBook.split('_')[0]
-                    console.log({item})
-                    if (item){
+                    if (item && (price <= stats.icoPrice/1000) && ( order.type == 'MARKET' || (order.type == 'LIMIT' && order.rate <= price))) {
                         var next = dex.sellOrders[`${price}:${item}`]
                         if (next[order.pair] <= remaining){
                             filled += next.amount - next.fee
@@ -295,12 +303,12 @@ exports.transfer = (json, pc) => {
                                         "from": config.msaccount,
                                         "to": next.from,
                                         "amount": parseFloat(next[order.pair]/1000).toFixed(3) + ' ' + order.pair.toUpperCase(),
-                                        "memo": `Filled ${item}:${json.transaction_id}`
+                                        "memo": `Filled ${item}:${json.transaction_id}:${json.block_num}`
                                     }
                                 ]
                             let msg = `@${json.from} bought ${parseFloat(parseInt(next.amount)/1000).toFixed(3)} ${config.TOKEN} with ${parseFloat(parseInt(next[order.pair])/1000).toFixed(3)} ${order.pair.toUpperCase()} from ${next.from} (${item})`
                             ops.push({type: 'put', path: ['feed', `${json.block_num}:${json.transaction_id}.${i}`], data: msg})
-                            ops.push({type: 'put', path: ['msa', `${item}:${json.transaction_id}`], data: transfer}) //send HIVE out via MS
+                            ops.push({type: 'put', path: ['msa', `${item}:${json.transaction_id}:${json.block_num}`], data: transfer}) //send HIVE out via MS
                             ops.push({type: 'del', path: ['dex', order.pair, 'sellOrders', `${price}:${item}`]}) //remove the order
                             ops.push({type: 'del', path: ['contracts', next.from , item]}) //remove the contract
                             ops.push({type: 'del', path: ['chrono', next.expire_path]}) //remove the chrono
@@ -326,20 +334,31 @@ exports.transfer = (json, pc) => {
                                         "from": config.msaccount,
                                         "to": next.from,
                                         "amount": parseFloat(remaining/1000).toFixed(3) + ' ' + order.pair.toUpperCase(),
-                                        "memo": `Partial Filled ${item}:${json.transaction_id}`
+                                        "memo": `Partial Filled ${item}:${json.transaction_id}:${json.block_num}`
                                     }
                                 ]
                             let msg = `@${json.from} bought ${parseFloat(parseInt(tokenAmount)/1000).toFixed(3)} ${config.TOKEN} with ${parseFloat(parseInt(remaining)/1000).toFixed(3)} ${order.pair.toUpperCase()} from ${next.from} (${item})`
                             remaining = 0
                             ops.push({type: 'put', path: ['feed', `${json.block_num}:${json.transaction_id}.${i}`], data: msg})
                             ops.push({type: 'put', path: ['balances', json.from], data: bal})
-                            ops.push({type: 'put', path: ['msa', `${item}:${json.transaction_id}`], data: transfer}) //send HIVE out via MS
+                            ops.push({type: 'put', path: ['msa', `${item}:${json.transaction_id}:${json.block_num}`], data: transfer}) //send HIVE out via MS
                             ops.push({type: 'put', path: ['dex', order.pair, 'sellOrders', `${price}:${item}`], data: next}) //update the order
                             ops.push({type: 'put', path: ['contracts', next.from , item], data: next}) //update the contract
                         }
                     } else {
-                        if (order.pair == 'hive'){
+                        if (order.pair == 'hive' && ( order.type == 'MARKET' || (order.type == 'LIMIT' && order.rate <= stats.icoPrice/1000 ))){
                             let purchase
+                            const transfer = [
+                                    "transfer",
+                                    {
+                                        "from": config.msaccount,
+                                        "to": config.mainICO,
+                                        "amount": parseFloat(remaining/1000).toFixed(3) + ' ' + order.pair.toUpperCase(),
+                                        "memo": `ICO Buy from ${json.from}`
+                                    }
+                                ]
+                            
+                            ops.push({type: 'put', path: ['msa', `ICO@${json.from}:${json.transaction_id}:${json.block_num}`], data: transfer}) //send HIVE out via MS
                             if (!stats.outOnBlock) {
                                 purchase = parseInt(remaining / stats.icoPrice * 1000)
                                 filled += purchase
@@ -361,15 +380,46 @@ exports.transfer = (json, pc) => {
                                 }
                                 remaining = 0
                             } else {
-
+                                const msg = `@${json.from}| bought ALL ${parseFloat(parseInt(purchase - left)).toFixed(3)} ${config.TOKEN} with ${parseFloat(parseInt(amount) / 1000).toFixed(3)} HIVE. And bid in the over-auction`
+                                if (config.hookurl || config.status) postToDiscord(msg, `${json.block_num}:${json.transaction_id}`)
+                                ops = [
+                                    { type: 'put', path: ['ico', `${json.block_num}`, json.from], data: parseInt(amount) },
+                                    { type: 'put', path: ['feed', `${json.block_num}:${json.transaction_id}`], data: msg }
+                                ]
+                                if (process.env.npm_lifecycle_event == 'test') pc[2] = ops
+                                store.batch(ops, pc)
                             }
                         } else {
-
+                            const txid = config.TOKEN + hashThis(json.from + json.transaction_id),
+                                cfee = parseInt(remaining * parseFloat(stats.dex_fee)),
+                                crate = order.rate || stats[`${order.pair}VWMA`].rate,
+                                hours = 720,
+                                expBlock = json.block_num + (hours * 1200)
+                            contract = {
+                                txid,
+                                from: json.from,
+                                hive: 0,
+                                hbd: 0,
+                                fee: cfee,
+                                amount: 0,
+                                rate: crate,
+                                block: json.block_num,
+                                type: `${order.pair}:buy`
+                            }
+                            contract.amount = parseInt(remaining * crate)
+                            contract[order.pair] = remaining
+                            dex.buyBook = DEX.insert(txid, crate, dex.buyBook, 'buy')
+                            path = chronAssign(expBlock, {
+                                block: expBlock,
+                                op: 'expire',
+                                from,
+                                txid
+                            })
+                            remaining = 0
                         }
-                        //fill with ICO
-                        // generate a new contract
                     }
                 }
+                
                 var hiveTimeWeight = 1 - ((json.block_num - stats.HiveVWMA.block) * 0.000033)
                 if (hiveTimeWeight < 0) { hiveTimeWeight = 0 }
                 stats.hiveVWMA = {
@@ -382,26 +432,52 @@ exports.transfer = (json, pc) => {
                 if (config.hookurl || config.status) postToDiscord(msg, `${json.block_num}:${json.transaction_id}`)
                 ops.push({type: 'put', path: ['balances', json.from], data: bal})
                 ops.push({type: 'put', path: ['feed', `${json.block_num}:${json.transaction_id}.${i++}`], data: msg})
-                ops.push({type: 'put', path: ['dex', order.pair], data: dex})
-                if (process.env.npm_lifecycle_event == 'test') pc[2] = ops
-                store.batch(ops, pc)  
+                if(!path){
+                    ops.push({type: 'put', path: ['dex', order.pair], data: dex})
+                    if (process.env.npm_lifecycle_event == 'test') pc[2] = ops
+                    store.batch(ops, pc) 
+                } else {
+                    Promise.all([path]).then(expPath => {
+                        contract.expire_path = expPath[0]
+                        ops.push({type: 'put', path: ['contracts', json.from , contract.txid], data: contract})
+                        dex.buyOrders[`${contract.rate}:${contract.txid}`] = contract
+                        let msg = `@${json.from} is buying ${parseFloat(parseInt(contract.amount)/1000).toFixed(3)} ${config.TOKEN} for ${parseFloat(parseInt(contract[order.pair])/1000).toFixed(3)} ${order.pair.toUpperCase()}(${contract.rate}:${contract.txid})`
+                        ops.push({type: 'put', path: ['dex', order.pair], data: dex})
+                        ops.push({type: 'put', path: ['feed', `${json.block_num}:${json.transaction_id}.${i}`], data: msg})
+                        if (process.env.npm_lifecycle_event == 'test') pc[2] = ops
+                        store.batch(ops, pc)
+                    })
+                }
             })
-        } 
-        /*
-        else if (order.type == 'LIMIT'){
-
         } else {
-            //refund
+            const transfer = [
+                    "transfer",
+                    {
+                        "from": config.msaccount,
+                        "to": json.from,
+                        "amount": json.amount,
+                        "memo": `This doesn't appear to be formatted correctly to buy ${config.TOKEN}`
+                    }
+                ]
+            let msg = `@${json.from} sent a weird transaction to ${config.msaccount}: refunding`
+            ops.push({type: 'put', path: ['feed', `${json.block_num}:${json.transaction_id}.${i}`], data: msg})
+            ops.push({type: 'put', path: ['msa', `refund@${json.from}:${json.transaction_id}:${json.block_num}`], data: transfer})
+            store.batch(ops, pc)
         }
-        
-    }
-    */
-    /*
-    else if (json.from == config.msaccount){
-
-    } 
-*/
-    else {
+    } else if (json.from == config.msaccount){
+        getPathObj(['mss']).then(mss => {
+            var done = false
+            for (var block in mss){
+                if(json.memo == mss[block].operations[0][1].memo){
+                    store.batch([{type:'del', path:['mss', `${block}`]}],pc)
+                    done = true
+                }
+            }
+            if (!done) {
+                pc[0](pc[2])
+            }
+        })
+    } else {
         store.get(['escrow', json.from, json.memo.split(' ')[0] + ':transfer'], function(e, a) {
             var ops = []
             if (!e && !isEmpty(a)) {
@@ -489,28 +565,28 @@ exports.dex_clear = (json, from, active, pc) => {
                 if (!e) {
                     var b = a
                     switch (b.type) {
-                        case 'ss':
+                        case 'hive:sell':
                             store.get(['dex', 'hive', 'sellOrders', `${b.rate}:${b.txid}`], function(e, a) {
                                 if (e) { console.log(e) } else if (isEmpty(a)) { console.log('Nothing here' + b.txid) } else {
                                     release(from, b.txid, json.block_num, json.transaction_id)
                                 }
                             })
                             break
-                        case 'ds':
+                        case 'hbd:sell':
                             store.get(['dex', 'hbd', 'sellOrders', `${b.rate}:${b.txid}`], function(e, a) {
                                 if (e) { console.log(e) } else if (isEmpty(a)) { console.log('Nothing here' + b.txid) } else {
                                     release(from, b.txid, json.block_num, json.transaction_id)
                                 }
                             })
                             break
-                        case 'sb':
+                        case 'hive:buy':
                             store.get(['dex', 'hive', 'buyOrders', `${b.rate}:${b.txid}`], function(e, a) {
                                 if (e) { console.log(e) } else if (isEmpty(a)) { console.log('Nothing here' + b.txid) } else {
                                     release(from, b.txid, json.block_num, json.transaction_id)
                                 }
                             })
                             break
-                        case 'db':
+                        case 'hbd:buy':
                             store.get(['dex', 'hbd', 'buyOrders', `${b.rate}:${b.txid}`], function(e, a) {
                                 if (e) { console.log(e) } else if (isEmpty(a)) { console.log('Nothing here' + b.txid) } else {
                                     release(from, b.txid, json.block_num, json.transaction_id)
