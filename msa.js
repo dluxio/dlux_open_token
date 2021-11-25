@@ -92,6 +92,7 @@ exports.consolidate = (num, plasma) => {
                     console.log(stx.signatures[0])
                     sig.sig = stx.signatures[0]
                 }
+                delete op.signatures
                 store.batch(ops, [resolve, reject, sig])
             }
         })
