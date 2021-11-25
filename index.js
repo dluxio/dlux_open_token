@@ -2,6 +2,7 @@ const config = require('./config');
 const VERSION = 'v1.0.0b2'
 exports.VERSION = VERSION
 
+exports.exit = exit;
 const hive = require('@hiveio/dhive');
 var client = new hive.Client(config.clientURL);
 exports.client = client
@@ -468,7 +469,6 @@ function exit(consensus) {
             dynStart(config.leader)
         }
 }
-exports.exit = exit;
 
 function waitfor(promises_array) {
     return new Promise((resolve, reject) => {
