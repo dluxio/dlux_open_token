@@ -562,30 +562,7 @@ function startWith(hash, second) {
                         if (!e && (second || data[0] > API.RAM.head - 325)) {
                             if (hash) {
                                 var cleanState = data[1]
-                                    cleanState.sets.bz.m = '====='
-                                    cleanState.sets.bz.s = 'QmUM2sBkUtuzUUj2kUJzSTD7Wz2S4hCqVoeBKzSBDjTb3L'
-                                    cleanState.sets.dlux.s = 'QmYSRLiGaEmucSXoNiq9RqazmDuEZmCELRDg4wyE7Fo8kX'
-                                    for (item in cleanState.chrono) {
-                                        if (cleanState.chrono[item].op == 'expire') {
-                                            delete cleanState.chrono[item]
-                                        }
-                                    }
-                                    for (account in cleanState.col) {
-                                        cleanState.balances[account] += cleanState.col[account]
-                                    }
-                                    delete cleanState.col
-                                    for (account in cleanState.contracts){
-                                        for(item in cleanState.contracts[account]){
-                                            if(!cleanState.contracts[account][item].auths)cleanState.balances[account] += cleanState.contracts[account][item].amount
-                                        }
-                                    }
-                                    delete cleanState.contracts
-                                    for (type in cleanState.dex) {
-                                        delete cleanState.dex[type].buyOrders
-                                        delete cleanState.dex[type].sellOrders
-                                        cleanState.dex[type].sellBook = ''
-                                        cleanState.dex[type].buyBook = ''
-                                    }
+
                                 store.put([], cleanState, function(err) {
                                     if (err) {
                                         console.log('errr',err)
