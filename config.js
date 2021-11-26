@@ -1,7 +1,7 @@
 require('dotenv').config();
 const ENV = process.env;
 
-const username = ENV.account || 'dlux-io';
+const username = ENV.account || 'disregardfiat';
 const active = ENV.active || '';
 const msowner = ENV.msowner || '';
 const memoKey = ENV.memo || '';

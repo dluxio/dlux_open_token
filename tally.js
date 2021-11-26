@@ -303,129 +303,48 @@ function verify(trx, sig, at){
             tx.signatures = []
             for(var i = 0; i < t; i++){
                 if(sg[perm[t][j][i]]){
-                    console.log(perm[t][j][i],sg[perm[t][j][i]] )
                     tx.signatures.push(sg[perm[t][j][i]])
                 }
             }
             if(tx.signatures.length >= t && tx.operations.length){
-                hiveClient.api.broadcastTransactionSynchronous(tx, function(err, result) {
+                hiveClient.api.verifyAuthority(tx, function(err, result) {
                     if(err){
                         if(err.data.code == 4030100){
+                            console.log('EXPIRED')
                             resolve('EXPIRED')
                         } else if (err.data.code == 3010000) { //missing authority
+                            console.log('MISSING AUTHORITY')
                             sendit(tx, sg, t, j+1)
                         } else {
                             console.log(err.data)
                             sendit(tx, sg, t, j+1)
                         }
                     } else {
-                        console.log(result)
-                        resolve(result)
+                        hiveClient.api.broadcastTransactionSynchronous(tx, function(err, result) {
+                            console.log(err, result)
+                })
                     }
                 });
+
+                // hiveClient.api.broadcastTransactionSynchronous(tx, function(err, result) {
+                //     if(err){
+                //         if(err.data.code == 4030100){
+                //             console.log('EXPIRED')
+                //             resolve('EXPIRED')
+                //         } else if (err.data.code == 3010000) { //missing authority
+                //             console.log('MISSING AUTHORITY')
+                //             sendit(tx, sg, t, j+1)
+                //         } else {
+                //             console.log(err.data)
+                //             sendit(tx, sg, t, j+1)
+                //         }
+                //     } else {
+                //         console.log(result)
+                //         resolve(result)
+                //     }
+                // });
             }
             } else {resolve('FAIL');console.log('oops')}
         }
     })
 }
-
-const deepCopy = (arr) => {
-  let copy = [];
-  arr.forEach(elem => {
-    if(Array.isArray(elem)){
-      copy.push(deepCopy(elem))
-    }else{
-      if (typeof elem === 'object') {
-        copy.push(deepCopyObject(elem))
-    } else {
-        copy.push(elem)
-      }
-    }
-  })
-  return copy;
-}// Helper function to deal with Objects
-const deepCopyObject = (obj) => {
-  let tempObj = {};
-  for (let [key, value] of Object.entries(obj)) {
-    if (Array.isArray(value)) {
-      tempObj[key] = deepCopy(value);
-    } else {
-      if (typeof value === 'object') {
-        tempObj[key] = deepCopyObject(value);
-      } else {
-        tempObj[key] = value
-      }
-    }
-  }
-  return tempObj;
-}
-
-/*
-function check() { //is this needed at all? -not until doing oracle checks i think
-    plasma.markets = {
-        nodes: {},
-        ipfss: {},
-        relays: {}
-    }
-    let sp = getPathObj(['stats']),
-        ap = getPathObj(['markets', 'node'])
-    Promise.all([sp, ap])
-        .then(ps => {
-            let s = ps[0],
-                b = ps[1]
-            for (var account in b) {
-                var self = b[account].self
-                plasma.markets.nodes[self] = {
-                    self: self,
-                    agreement: false,
-                }
-                var domain = b[self] ? b[self].domain : 0
-                if (domain && domain != config.NODEDOMAIN) {
-                    var domain = b[self].domain
-                    if (domain.slice(-1) == '/') {
-                        domain = domain.substring(0, domain.length - 1)
-                    }
-                    fetch(`${domain}/stats`)
-                        .then(function(response) {
-                            return response.json();
-                        })
-                        .then(function(myJson) {
-                            if (s.hashLastIBlock === myJson.stats.hashLastIBlock) {
-                                plasma.markets.nodes[myJson.node].agreement = true
-                            }
-                        }).catch(e => {})
-                }
-            }
-        })
-        .catch(e => { console.log(e) })
-    store.get(['stats'], function(e, s) {
-        store.get(['markets', 'node'], function(e, a) {
-            var b = a
-            for (var account in b) {
-                var self = b[account].self
-                plasma.markets.nodes[self] = {
-                    self: self,
-                    agreement: false,
-                }
-                var domain = b[self] ? b[self].domain : 0
-                if (domain && domain != config.NODEDOMAIN) {
-                    var domain = b[self].domain
-                    if (domain.slice(-1) == '/') {
-                        domain = domain.substring(0, domain.length - 1)
-                    }
-                    fetch(`${domain}/stats`)
-                        .then(function(response) {
-                            //console.log(response)
-                            return response.json();
-                        })
-                        .then(function(myJson) {
-                            if (s.hashLastIBlock === myJson.stats.hashLastIBlock) {
-                                plasma.markets.nodes[myJson.node].agreement = true
-                            }
-                        }).catch(e => {})
-                }
-            }
-        })
-    })
-}
-*/

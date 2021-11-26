@@ -78,11 +78,10 @@ exports.consolidate = (num, plasma) => {
                 op = {
                     ref_block_num: plasma.bh.block_number & 0xffff,
                     ref_block_prefix: Buffer.from(plasma.bh.block_id, 'hex').readUInt32LE(4),
-                    expiration: new Date(now + 36000000).toISOString().slice(0, -5),
+                    expiration: new Date(now + 3660000).toISOString().slice(0, -5),
                     operations: txs,
                     extensions: [],
                 }
-                console.log(plasma.bh.timestamp, op.expiration)
                 ops.push({type: 'put', path: ['mss', `${num}`], data: JSON.stringify(op)})
                 if(config.msowner && config.active && txs.length){
                     const stx = hiveClient.auth.signTransaction(op, [config.active])
