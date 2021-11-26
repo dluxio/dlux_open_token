@@ -112,7 +112,7 @@ var recents = []
     //HIVE API CODE
 
 //Start Program Options   
-//startWith('QmXQMapK86xuepwh1rqzqSzX6GdqjZo3k88rZLQfvN9NWW', true) //for testing and replaying 58859101
+//startWith('QmUs6dLyyRUx14GqEVr2WTweCUwrGU59YJKJ7fSpDVVBto', true) //for testing and replaying 58859101
 dynStart(config.leader)
 
 
@@ -561,8 +561,6 @@ function startWith(hash, second) {
                         if (!e && (second || data[0] > API.RAM.head - 325)) {
                             if (hash) {
                                 var cleanState = data[1]
-                                delete cleanState.msa 
-                                delete cleanState.mss
                                 store.put([], cleanState, function(err) {
                                     if (err) {
                                         console.log('errr',err)

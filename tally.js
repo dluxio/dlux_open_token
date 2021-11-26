@@ -301,25 +301,29 @@ function verify(trx, sig, at){
         ]
         if(perm[t][j]){
             tx.signatures = []
-            let signed = 0
             for(var i = 0; i < t; i++){
-                if(sg[perm[j][i]]){
-                    tx.signatures.push(sg[perm[j][i]])
-                    signed++
+                if(sg[perm[t][j][i]]){
+                    console.log(perm[t][j][i],sg[perm[t][j][i]] )
+                    tx.signatures.push(sg[perm[t][j][i]])
                 }
             }
-            if(signed == t && tx.operations.length){
+            if(tx.signatures.length >= t && tx.operations.length){
+                console.log('hey')
                 hiveClient.api.broadcastTransactionSynchronous(tx, function(err, result) {
                     if(err){
-                        sendit(tx, sg, t, j+1)
-                        console.log(err)
+                        if(err.data.code == 4030100){
+                            resolve('EXPIRED')
+                        } else {
+                            console.log(err.data)
+                            sendit(tx, sg, t, j+1)
+                        }
                     } else {
                         console.log(result)
                         resolve(result)
                     }
                 });
             }
-            } else {resolve('FAIL')}
+            } else {resolve('FAIL');console.log('oops')}
         }
     })
 }
