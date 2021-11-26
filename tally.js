@@ -32,8 +32,8 @@ exports.tally = (num, plasma, isStreaming) => {
                         rgov = v[5],
                         pending = v[7],
                         mssp = v[8],
-                        sigs = [],
-                        toVerify = [],
+                        ms = [9],
+                        signatures = [],
                         tally = {
                             agreements: {
                                 hashes: {},
@@ -47,16 +47,8 @@ exports.tally = (num, plasma, isStreaming) => {
                             mssb = 0
                         for(var block in mssp){
                             if (block > num - 100){
-                                mss.expiration = mssp[block].expiration
-                                mss.ref_block_num = mssp[block].ref_block_num
-                                mss.ref_block_prefix = mssp[block].ref_block_prefix
-                                mss.operations = []
+                                mss = JSON.parse(msp[block])
                                 mssb = block
-                            }
-                        }
-                        if(mssb){
-                            for (var i in mssp[mssb].operations){
-                                mss.operations.push([mssp[mssb].operations[i][0], mssp[mssb].operations[i][1]])
                             }
                         }
                     for (node in nodes) {
@@ -64,12 +56,9 @@ exports.tally = (num, plasma, isStreaming) => {
                             when = 0,
                             online = 0
                         try { 
-                            var mssv = mss
-                            if(nodes[node].report.sig){
-                                toVerify.push(verify(mss,nodes[node].report.sig))
+                            if(stats.ms.active_account_auths[node] && nodes[node].report.sig && nodes[node].report.sig_block == mssb){
+                                signatures.push(nodes[node].report.sig)
                             }
-                            mssv.signatures = [nodes[node].report.sig]
-                            toVerify.push(verify(mssv))
                         } catch (e) { console.log({ node }) }
                         try { hash = nodes[node].report.hash } catch (e) { console.log({ node }) }
                         try { when = nodes[node].report.block_num } catch { console.log({ node }) }
@@ -79,6 +68,7 @@ exports.tally = (num, plasma, isStreaming) => {
                             tally.agreements.tally[hash] = 0
                         } //recent and signing
                     }
+                    verify(mss, signatures, stats.ms)
                     for (runner in runners) {
                         tally.agreements.votes++
                             if (tally.agreements.hashes[runner]) {
@@ -187,20 +177,6 @@ exports.tally = (num, plasma, isStreaming) => {
                     } else {
                         new_queue = v[6]
                         still_running = runners
-                    }
-                    if(config.msowner && mssb){
-                        Promise.all(toVerify).then(sigs => {
-                            mss.signatures = []
-                            for (var i = 0; i < sigs.length; i++) {
-                                if (sigs[i]) {
-                                    mss.signatures.push(sigs[i])
-                                }
-                            }
-                            console.log({mss})
-                            hiveClient.api.broadcastTransactionSynchronous(mss, function(err, result) {
-                                console.log(err,result);
-                            });
-                        })
                     }
                     let newPlasma = {
                         consensus: consensus || 0,
@@ -313,21 +289,16 @@ function payout(this_payout, weights, pending, num) {
     })
 }
 
-function verify(trx, sig){
+function verify(trx, sig, ms){
     return new Promise((resolve, reject) => {
-        if(sig && trx.expiration){
-            trx.signatures = [sig]
-            hiveClient.api.verifyAuthority(trx, function(err, result) {
-                console.log(trx, sig, err, result)
-                if (err) {
-                    resolve('')
-                } else {
-                    resolve(sig)
-                }
-            })
-        } else {
-            resolve('')
+        trx.signatures = sig
+        signed = sig.length
+        if(signed >= ms.active_threshold){
+            hiveClient.api.broadcastTransactionSynchronous(trx, function(err, result) {
+                console.log(err,result);
+            });
         }
+        // probably do this in a verify loop... remove signatures one by one until verify, then try to broadcast... know what an identical transaction looks like
     })
 }
 

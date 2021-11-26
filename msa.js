@@ -6,7 +6,7 @@ const config = require('./config')
 exports.consolidate = (num, plasma) => {
     return new Promise((resolve, reject) => {
         store.get(['msa'], (err, result) => {
-            if (err || Object.keys(result).length === 0) {
+            if (err || Object.keys(result).length !== 0) {
                 resolve('NONE')
             } else {
                 let join = {},
@@ -79,20 +79,15 @@ exports.consolidate = (num, plasma) => {
                 op = {
                     ref_block_num: plasma.bh.block_number & 0xffff,
                     ref_block_prefix: Buffer.from(plasma.bh.block_id, 'hex').readUInt32LE(4),
-                    expiration: new Date(now + 36000000).toISOString().slice(0, -5),
+                    expiration: new Date(now + 3600000).toISOString().slice(0, -5),
                     operations: txs,
                     extensions: [],
                 }
-                ops.push({type: 'put', path: ['mss', `${num}`], data: op})
+                ops.push({type: 'put', path: ['mss', `${num}`], data: JSON.stringify(op)})
                 if(config.msowner && config.active){
                     const stx = hiveClient.auth.signTransaction(op, [config.active])
-                    // hiveClient.api.broadcastTransactionSynchronous(stx, function(err, result) {
-                    //     console.log(err, result);
-                    // });
-                    console.log(stx.signatures)
                     sig.sig = stx.signatures[0]
                 }
-                delete op.signatures
                 store.batch(ops, [resolve, reject, sig])
             }
         })
