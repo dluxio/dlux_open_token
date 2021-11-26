@@ -292,6 +292,7 @@ function payout(this_payout, weights, pending, num) {
 
 function verify(trx, sig, at){
     return new Promise((resolve, reject) => {
+        console.log(trx, trx.operations[0])
         sendit(trx, sig, at, 0)
         function sendit(tx, sg, t, j){
         const perm = [
@@ -322,7 +323,7 @@ function verify(trx, sig, at){
                     } else {
                         hiveClient.api.broadcastTransactionSynchronous(tx, function(err, result) {
                             console.log(err, result)
-                })
+                        })
                     }
                 });
 
@@ -344,7 +345,7 @@ function verify(trx, sig, at){
                 //     }
                 // });
             }
-            } else {resolve('FAIL');console.log('oops')}
+            } else {resolve('FAIL');console.log('FAIL')}
         }
     })
 }
