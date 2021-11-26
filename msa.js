@@ -78,7 +78,7 @@ exports.consolidate = (num, plasma) => {
                 op = {
                     ref_block_num: plasma.bh.block_number & 0xffff,
                     ref_block_prefix: Buffer.from(plasma.bh.block_id, 'hex').readUInt32LE(4),
-                    expiration: new Date(now + 3600000).toISOString().slice(0, -5),
+                    expiration: new Date(now + 36000000).toISOString().slice(0, -5),
                     operations: txs,
                     extensions: [],
                 }

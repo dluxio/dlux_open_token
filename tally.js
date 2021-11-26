@@ -293,15 +293,31 @@ function payout(this_payout, weights, pending, num) {
 
 function verify(trx, sig, ms){
     return new Promise((resolve, reject) => {
-        trx.signatures = [sig[2],sig[1]]
-        signed = sig.length
-        console.log(trx, trx.operations)
-        if(signed >= ms.active_threshold && trx.operations.length){
-            hiveClient.api.broadcastTransactionSynchronous(trx, function(err, result) {
-                console.log(err,result);
-            });
+        sendit(trx, sig, ms.active_threshold, 0)
+        function sendit(tx, sg, t, j){
+        const perm = [2[[1,2],[1,3],[2,3]]]
+        if(perm[t][j]){
+            tx.signatures = []
+            let signed = 0
+            for(var i = 0; i < t; i++){
+                if(sg[perm[j][i]]){
+                    tx.signatures.push(sg[perm[j][i]])
+                    signed++
+                }
+            }
+            if(signed == t && tx.operations.length){
+                hiveClient.api.broadcastTransactionSynchronous(tx, function(err, result) {
+                    if(err){
+                        sendit(tx, sg, t, j+1)
+                        console.log(err)
+                    } else {
+                        console.log(result)
+                        resolve(result)
+                    }
+                });
+            }
+            } else {resolve('FAIL')}
         }
-        // probably do this in a verify loop... remove signatures one by one until verify, then try to broadcast... know what an identical transaction looks like
     })
 }
 
