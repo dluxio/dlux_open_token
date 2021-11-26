@@ -61,7 +61,7 @@ exports.dex_sell = (json, from, active, pc) => {
                                         "from": config.msaccount,
                                         "to": from,
                                         "amount": parseFloat(next[order.pair]/1000).toFixed(3) + ' ' + order.pair.toUpperCase(),
-                                        "memo": `Filled ${item}:${json.transaction_id}:${json.block_num}`
+                                        "memo": `Filled ${item}:${json.transaction_id}`
                                     }
                                 ]
                             let msg = `@${from} sold ${parseFloat(parseInt(next.amount)/1000).toFixed(3)} ${config.TOKEN} with ${parseFloat(parseInt(next[order.pair])/1000).toFixed(3)} ${order.pair.toUpperCase()} to ${next.from} (${item})`
@@ -86,7 +86,7 @@ exports.dex_sell = (json, from, active, pc) => {
                                         "from": config.msaccount,
                                         "to": from,
                                         "amount": parseFloat(remaining/1000).toFixed(3) + ' ' + order.pair.toUpperCase(),
-                                        "memo": `Partial Filled ${item}:${json.transaction_id}:${json.block_num}`
+                                        "memo": `Partial Filled ${item}:${json.transaction_id}`
                                     }
                                 ]
                             let msg = `@${from} sold ${parseFloat(parseInt(remaining)/1000).toFixed(3)} ${config.TOKEN} with ${parseFloat(parseInt(next[order.pair])/1000).toFixed(3)} ${order.pair.toUpperCase()} to ${next.from} (${item})`
@@ -303,7 +303,7 @@ exports.transfer = (json, pc) => {
                                         "from": config.msaccount,
                                         "to": next.from,
                                         "amount": parseFloat(next[order.pair]/1000).toFixed(3) + ' ' + order.pair.toUpperCase(),
-                                        "memo": `Filled ${item}:${json.transaction_id}:${json.block_num}`
+                                        "memo": `Filled ${item}:${json.transaction_id}`
                                     }
                                 ]
                             let msg = `@${json.from} bought ${parseFloat(parseInt(next.amount)/1000).toFixed(3)} ${config.TOKEN} with ${parseFloat(parseInt(next[order.pair])/1000).toFixed(3)} ${order.pair.toUpperCase()} from ${next.from} (${item})`
@@ -334,7 +334,7 @@ exports.transfer = (json, pc) => {
                                         "from": config.msaccount,
                                         "to": next.from,
                                         "amount": parseFloat(remaining/1000).toFixed(3) + ' ' + order.pair.toUpperCase(),
-                                        "memo": `Partial Filled ${item}:${json.transaction_id}:${json.block_num}`
+                                        "memo": `Partial Filled ${item}:${json.transaction_id}`
                                     }
                                 ]
                             let msg = `@${json.from} bought ${parseFloat(parseInt(tokenAmount)/1000).toFixed(3)} ${config.TOKEN} with ${parseFloat(parseInt(remaining)/1000).toFixed(3)} ${order.pair.toUpperCase()} from ${next.from} (${item})`
@@ -468,8 +468,8 @@ exports.transfer = (json, pc) => {
         getPathObj(['mss']).then(mss => {
             var done = false
             for (var block in mss){
-                if(mss[block].indexOf(json.memo) > 0){
-                    store.batch([{type:'del', path:['mss', `${block}`]}],pc)
+                if(block.split(':').length < 2 && mss[block].indexOf(json.memo) > 0){
+                    store.batch([{type:'del', path:['mss', `${block}`]}, {type:'del', path:['mss', `${block}:sigs`]}],pc)
                     done = true
                 }
             }

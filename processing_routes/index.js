@@ -5,7 +5,7 @@ const { power_up, power_down, power_grant } = require('./power')
 const { delegate_vesting_shares } = require('./delegate_vesting_shares')
 const { vote } = require('./vote')
 const { cert } = require('./cert')
-const { sig } = require('./sig')
+const { sig_submit } = require('./sig')
 const { cjv } = require('./cjv')
 const { nomention } = require('./nomention')
 const { q4d } = require('./q4d')
@@ -65,7 +65,7 @@ module.exports = {
     q4d,
     report,
     send,
-    sig,
+    sig_submit,
     transfer,
     vote
 }

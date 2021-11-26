@@ -336,18 +336,20 @@ function startApp() {
                                 console.log('At block', num, 'with', result.head_block_number - num, `left until real-time. DAO in ${30240 - ((num - 20000) % 30240)} blocks`)
                             });
                     }
-                    if (num % 100 === 50 && processor.isStreaming()) {
+                    if (num % 100 === 50) {
                         setTimeout(function(a) {
                             if(plasma.hashLastIBlock == a || plasma.hashSecIBlock == a){
                                 exit(plasma.hashLastIBlock)
                             }
                         }, 620000, plasma.hashLastIBlock)
-                        report(plasma)
+                        promises.push(new Promise((res,rej)=>{
+                            report(plasma, consolidate(num, plasma))
                             .then(nodeOp => {
-                                //console.log(nodeOp)
-                                NodeOps.unshift(nodeOp)
+                                res('SAT')
+                                if(processor.isStreaming())NodeOps.unshift(nodeOp)
                             })
-                            .catch(e => { console.log(e) })
+                            .catch(e => { rej(e) })
+                        }))
                     }
                     if ((num - 20003) % 30240 === 0) { //time for daily magic
                         promises.push(dao(num))
@@ -371,9 +373,6 @@ function startApp() {
                                 .catch(e => { console.log(e) })
 
                         })
-                    }
-                    if (num % 100 === 2) {
-                        promises.push(consolidate(num, plasma))
                     }
                     if (config.active && processor.isStreaming() ) {
                         store.get(['escrow', config.username], function(e, a) {
@@ -562,6 +561,8 @@ function startWith(hash, second) {
                         if (!e && (second || data[0] > API.RAM.head - 325)) {
                             if (hash) {
                                 var cleanState = data[1]
+                                delete cleanState.msa 
+                                delete cleanState.mss
                                 store.put([], cleanState, function(err) {
                                     if (err) {
                                         console.log('errr',err)

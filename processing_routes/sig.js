@@ -34,28 +34,20 @@ exports.account_update = (json, pc) => {
 }
 
 exports.sig_submit = (json, from, active, pc) => {
-    var Pop = getPathObj(['ms', 'ops', json.op]),
+    var Pop = getPathObj(['mss', `${json.sig_block}`]),
+        psigs = getPathObj(['mss', `${json.sig_block}:sigs`]),
         Pstats = getPathObj(['stats'])
     Promise.all([Pop, Pstats])
         .then(got => {
             let msop = got[0],
                 stats = got[1],
+                sigs = got[2]
                 ops = []
-                //verify sig
-            if (active && Object.keys(msop).length && stats.ms_auths[from]) {
-                let next = 0
-                for (sig in msop.pend) {
-                    if (parseInt(sig) > next)
-                        next = parseInt(sig)
-                }
-                next++
-                msop.pend[next.toString()] = {
-                    sig: json.sig,
-                    by: from
-                }
-
-                ops.push({ type: 'put', path: ['ms', 'ops', json.op], data: msop })
+            if (active && stats.ms.active_account_auths[from]) {
+                sigs[from] = json.sig
+                ops.push({ type: 'put', path: ['mss', `${json.sig_block}:sigs`], data: sigs })
                 store.batch(ops, pc);
+                //try to sign
             } else {
                 pc[0](pc[2])
             }
