@@ -70,7 +70,7 @@ exports.tally = (num, plasma, isStreaming) => {
                         } //recent and signing
                     }
                     console.log(signatures)
-                    verify(mss, signatures, stats.ms)
+                    if(runners[config.username])verify(mss, signatures, stats.ms.active_threshold)
                     for (runner in runners) {
                         tally.agreements.votes++
                             if (tally.agreements.hashes[runner]) {
@@ -291,9 +291,9 @@ function payout(this_payout, weights, pending, num) {
     })
 }
 
-function verify(trx, sig, ms){
+function verify(trx, sig, at){
     return new Promise((resolve, reject) => {
-        sendit(trx, sig, ms.active_threshold, 0)
+        sendit(trx, sig, at, 0)
         function sendit(tx, sg, t, j){
         const perm = [2[[1,2],[1,3],[2,3]]]
         if(perm[t][j]){
