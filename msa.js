@@ -6,7 +6,7 @@ const config = require('./config')
 exports.consolidate = (num, plasma) => {
     return new Promise((resolve, reject) => {
         store.get(['msa'], (err, result) => {
-            if (err || Object.keys(result).length !== 0) {
+            if (err || Object.keys(result).length === 0) {
                 resolve('NONE')
             } else {
                 let join = {},
