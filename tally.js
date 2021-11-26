@@ -315,7 +315,7 @@ function payout(this_payout, weights, pending, num) {
 
 function verify(trx, sig){
     return new Promise((resolve, reject) => {
-        if(sig){
+        if(sig && trx.expiration){
             trx.signatures = [sig]
             hiveClient.api.verifyAuthority(trx, function(err, result) {
                 console.log(trx, sig, err, result)

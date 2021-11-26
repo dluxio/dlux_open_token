@@ -89,7 +89,7 @@ exports.consolidate = (num, plasma) => {
                     // hiveClient.api.broadcastTransactionSynchronous(stx, function(err, result) {
                     //     console.log(err, result);
                     // });
-                    console.log(stx.signatures[0])
+                    console.log(stx.signatures)
                     sig.sig = stx.signatures[0]
                 }
                 delete op.signatures
