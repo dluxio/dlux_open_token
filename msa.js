@@ -68,9 +68,7 @@ exports.consolidate = (num, plasma) => {
                 ops.push({type: 'del', path: ['msa']})
                 let txs = []
                 for (var tx in result){
-                    if(tx.split(':')[tx.split(':').length-1] > num - 100){
-                        txs.push(result[tx])
-                    }
+                    txs.push(result[tx])
                 }
                 let sig = {
                     block: num,
@@ -84,9 +82,8 @@ exports.consolidate = (num, plasma) => {
                     operations: txs,
                     extensions: [],
                 }
-                if(txs.length){
-                    ops.push({type: 'put', path: ['mss', `${num}`], data: JSON.stringify(op)})
-                }
+                console.log(txs)
+                ops.push({type: 'put', path: ['mss', `${num}`], data: JSON.stringify(op)})
                 if(config.msowner && config.active && txs.length){
                     const stx = hiveClient.auth.signTransaction(op, [config.active])
                     sig.sig = stx.signatures[0]
