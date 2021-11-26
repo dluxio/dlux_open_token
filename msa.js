@@ -82,7 +82,7 @@ exports.consolidate = (num, plasma) => {
                     operations: txs,
                     extensions: [],
                 }
-                console.log(txs)
+                console.log(plasma.bh.timestamp, op.expiration)
                 ops.push({type: 'put', path: ['mss', `${num}`], data: JSON.stringify(op)})
                 if(config.msowner && config.active && txs.length){
                     const stx = hiveClient.auth.signTransaction(op, [config.active])

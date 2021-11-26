@@ -308,11 +308,12 @@ function verify(trx, sig, at){
                 }
             }
             if(tx.signatures.length >= t && tx.operations.length){
-                console.log('hey')
                 hiveClient.api.broadcastTransactionSynchronous(tx, function(err, result) {
                     if(err){
                         if(err.data.code == 4030100){
                             resolve('EXPIRED')
+                        } else if (err.data.code == 3010000) { //missing authority
+                            sendit(tx, sg, t, j+1)
                         } else {
                             console.log(err.data)
                             sendit(tx, sg, t, j+1)
