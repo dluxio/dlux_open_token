@@ -12,6 +12,7 @@ exports.consolidate = (num, plasma) => {
                 let join = {},
                     ops = []
                 for (var item in result) {
+                    result[item] = JSON.parse(result[item])
                     if (join[result[item][1].to]){
                         join[result[item][1].to] = join[result[item][1].to] + ',' + item
                     } else {
@@ -83,8 +84,10 @@ exports.consolidate = (num, plasma) => {
                     operations: txs,
                     extensions: [],
                 }
-                ops.push({type: 'put', path: ['mss', `${num}`], data: JSON.stringify(op)})
-                if(config.msowner && config.active){
+                if(txs.length){
+                    ops.push({type: 'put', path: ['mss', `${num}`], data: JSON.stringify(op)})
+                }
+                if(config.msowner && config.active && txs.length){
                     const stx = hiveClient.auth.signTransaction(op, [config.active])
                     sig.sig = stx.signatures[0]
                 }

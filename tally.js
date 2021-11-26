@@ -4,6 +4,7 @@ const { getPathObj } = require("./getPathObj");
 const { deleteObjs } = require('./deleteObjs')
 const { store, exit, hiveClient } = require("./index");
 const { updatePost } = require('./edb');
+const { truncateSync } = require('fs');
 
 //determine consensus... needs some work with memory management
 exports.tally = (num, plasma, isStreaming) => {
@@ -68,6 +69,7 @@ exports.tally = (num, plasma, isStreaming) => {
                             tally.agreements.tally[hash] = 0
                         } //recent and signing
                     }
+                    console.log(signatures)
                     verify(mss, signatures, stats.ms)
                     for (runner in runners) {
                         tally.agreements.votes++
@@ -293,7 +295,7 @@ function verify(trx, sig, ms){
     return new Promise((resolve, reject) => {
         trx.signatures = sig
         signed = sig.length
-        if(signed >= ms.active_threshold){
+        if(signed >= ms.active_threshold && trx.operations.length){
             hiveClient.api.broadcastTransactionSynchronous(trx, function(err, result) {
                 console.log(err,result);
             });

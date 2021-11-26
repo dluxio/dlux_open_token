@@ -112,7 +112,7 @@ var recents = []
     //HIVE API CODE
 
 //Start Program Options   
-//startWith('QmdvXMUHn9XAPnnZtY1JfvKJUYVkWwFzLnEAb3NrZVr2xV', true) //for testing and replaying 58859101
+//startWith('QmRcm5fxmKuuaEqMhzNJdXc2KdL6TAfVRBxvyTatT4XbQL', true) //for testing and replaying 58859101
 dynStart(config.leader)
 
 
@@ -562,32 +562,9 @@ function startWith(hash, second) {
                         if (!e && (second || data[0] > API.RAM.head - 325)) {
                             if (hash) {
                                 var cleanState = data[1]
+                                delete cleanState.msa
                                 delete cleanState.mss
-                                cleanState.stats.ms = {
-                                    account: 'dlux-cc',
-                                    active_account_auths:{
-                                        markegiles: 1,
-                                        "dlux-io": 1,
-                                        disregardfiat: 1,
-                                        },
-                                    active_threshold: 2,
-                                    owner_threshold: 2,
-                                    owner_key_auths:{
-                                        STM8TPTJXiCbGaEhAheXxQqbX4isq3UWiPuQBnHLmCKpmmNXhu31m: 1,
-                                        STM7Hgi4pjf5e7u6oKLdhWfgForEVikzvpkK5ejdaMzAzH6dWAtAD: 1,
-                                        STM5Rp1fWQMS7tAPVqatg8B22faeJGcKkfsez3mgUwGZPE9aqWd6X: 1
-                                    },
-                                    posting_account_auths:{
-                                        markegiles: 1,
-                                        "dlux-io": 1,
-                                        disregardfiat: 1,
-                                    },
-                                    posting_threshold: 1,
-                                    memo_key: "STM5se9o2oZwY7ztpo2scyvf12RR41zaYa6rozBtetwfr1DmH1J5k",
-                                }
-                                cleanState.markets.node['dlux-io'].mskey = "STM5Rp1fWQMS7tAPVqatg8B22faeJGcKkfsez3mgUwGZPE9aqWd6X"
-                                cleanState.markets.node.markegiles.mskey = "STM8TPTJXiCbGaEhAheXxQqbX4isq3UWiPuQBnHLmCKpmmNXhu31m"
-                                cleanState.markets.node.disregardfiat.mskey = "STM7Hgi4pjf5e7u6oKLdhWfgForEVikzvpkK5ejdaMzAzH6dWAtAD"
+                                cleanState.msa.rando = JSON.stringify(['transfer',{to:'robotolux',from:'dlux-cc',amount:'0.005 HIVE',memo:'testing'}])
                                 store.put([], cleanState, function(err) {
                                     if (err) {
                                         console.log('errr',err)
