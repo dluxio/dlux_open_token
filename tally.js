@@ -31,7 +31,7 @@ exports.tally = (num, plasma, isStreaming) => {
                         rcol = v[4],
                         rgov = v[5],
                         pending = v[7],
-                        mss = v[8],
+                        mssp = v[8],
                         sigs = [],
                         toVerify = [],
                         tally = {
@@ -42,13 +42,30 @@ exports.tally = (num, plasma, isStreaming) => {
                                 votes: 0
                             }
                         },
-                        consensus = undefined
+                        consensus = undefined,
+                            mss = {},
+                            mssb = 0
+                        for(var block in mssp){
+                            if (block > num - 100){
+                                mss.expiration = mssp[block].expiration
+                                mss.ref_block_num = mssp[block].ref_block_num
+                                mss.ref_block_prefix = mssp[block].ref_block_prefix
+                                mss.operations = []
+                                mssb = block
+                            }
+                        }
+                        for (var i in mssp[mssb].operations){
+                            mss.operations.push([mssp[mssb].operations[i][0], mssp[mssb].operations[i][1]])
+                        }
                     for (node in nodes) {
                         var hash = '',
                             when = 0,
                             online = 0
                         try { 
                             var mssv = mss
+                            if(nodes[node].report.sig){
+                                toVerify.push(verify(mss,nodes[node].report.sig))
+                            }
                             mssv.signatures = [nodes[node].report.sig]
                             toVerify.push(verify(mssv))
                         } catch (e) { console.log({ node }) }
@@ -176,8 +193,9 @@ exports.tally = (num, plasma, isStreaming) => {
                                 mss.signatures.push(sigs[i])
                             }
                         }
+                        console.log({mss})
                         hiveClient.api.broadcastTransactionSynchronous(mss, function(err, result) {
-                            console.log(result);
+                            console.log(err,result);
                         });
                     })
                     let newPlasma = {
@@ -291,16 +309,54 @@ function payout(this_payout, weights, pending, num) {
     })
 }
 
-function verify(trx){
+function verify(trx, sig){
     return new Promise((resolve, reject) => {
-        hiveClient.api.verifyAuthority(trx, function(err, result) {
-            if (err) {
-                resolve('')
-            } else {
-                resolve(trx.signatures[0])
-            }
-        })
+        if(sig){
+            resolve(sig)
+            // trx.signatures = [sig]
+            // hiveClient.api.verifyAuthority(trx, function(err, result) {
+            //     console.log(trx, sig, err, result)
+            //     if (err) {
+            //         resolve('')
+            //     } else {
+            //         resolve(sig)
+            //     }
+            // })
+        } else {
+            resolve('')
+        }
     })
+}
+
+const deepCopy = (arr) => {
+  let copy = [];
+  arr.forEach(elem => {
+    if(Array.isArray(elem)){
+      copy.push(deepCopy(elem))
+    }else{
+      if (typeof elem === 'object') {
+        copy.push(deepCopyObject(elem))
+    } else {
+        copy.push(elem)
+      }
+    }
+  })
+  return copy;
+}// Helper function to deal with Objects
+const deepCopyObject = (obj) => {
+  let tempObj = {};
+  for (let [key, value] of Object.entries(obj)) {
+    if (Array.isArray(value)) {
+      tempObj[key] = deepCopy(value);
+    } else {
+      if (typeof value === 'object') {
+        tempObj[key] = deepCopyObject(value);
+      } else {
+        tempObj[key] = value
+      }
+    }
+  }
+  return tempObj;
 }
 
 /*
