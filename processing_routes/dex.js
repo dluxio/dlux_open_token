@@ -251,7 +251,6 @@ exports.transfer = (json, pc) => {
             }
         })
     } else if (json.to == config.msaccount) {
-        console.log('here')
         let order = {
             type: 'MARKET',
             pair: 'hive'
@@ -259,11 +258,14 @@ exports.transfer = (json, pc) => {
             path = '',
             contract = ''
         try {order = JSON.parse(json.memo)} catch (e) {}
-        if (order.type !== 'LIMIT') {
+        if (order.type !== 'LIMIT' || !order.rate) {
             order.type = 'MARKET'
             order.rate = parseFloat(order.rate) || 0
+        } else {
+            order.type = 'LIMIT'
+            order.rate = parseFloat(order.rate) || 0
         }
-        if (order.pair != 'hbd') {order.pair = 'hive'}
+        order.pair = json.amount.split(' ')[1].toLowerCase()
         order.amount = parseInt(parseFloat(json.amount.split(' ')[0]) * 1000)
         if (json.amount.split(' ')[1] != 'HIVE')order.pair = hbd
         if (order.type == 'MARKET' || order.type == 'LIMIT') {

@@ -311,10 +311,8 @@ function verify(trx, sig, at){
                 hiveClient.api.verifyAuthority(tx, function(err, result) {
                     if(err){
                         if(err.data.code == 4030100){
-                            console.log('EXPIRED')
                             resolve('EXPIRED')
                         } else if (err.data.code == 3010000) { //missing authority
-                            console.log('MISSING AUTHORITY')
                             sendit(tx, sg, t, j+1)
                         } else {
                             console.log(err.data)
