@@ -188,7 +188,7 @@ exports.tally = (num, plasma, isStreaming) => {
                         new_queue = v[6]
                         still_running = runners
                     }
-                    if(config.msowner){
+                    if(config.msowner && mssb){
                         Promise.all(toVerify).then(sigs => {
                             mss.signatures = []
                             for (var i = 0; i < sigs.length; i++) {
@@ -316,16 +316,15 @@ function payout(this_payout, weights, pending, num) {
 function verify(trx, sig){
     return new Promise((resolve, reject) => {
         if(sig){
-            resolve(sig)
-            // trx.signatures = [sig]
-            // hiveClient.api.verifyAuthority(trx, function(err, result) {
-            //     console.log(trx, sig, err, result)
-            //     if (err) {
-            //         resolve('')
-            //     } else {
-            //         resolve(sig)
-            //     }
-            // })
+            trx.signatures = [sig]
+            hiveClient.api.verifyAuthority(trx, function(err, result) {
+                console.log(trx, sig, err, result)
+                if (err) {
+                    resolve('')
+                } else {
+                    resolve(sig)
+                }
+            })
         } else {
             resolve('')
         }
