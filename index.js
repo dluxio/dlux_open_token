@@ -562,7 +562,7 @@ function startWith(hash, second) {
                         if (!e && (second || data[0] > API.RAM.head - 325)) {
                             if (hash) {
                                 var cleanState = data[1]
-                                delete cleanState.mss
+                                //delete cleanState.mss
                                 store.put([], cleanState, function(err) {
                                     if (err) {
                                         console.log('errr',err)

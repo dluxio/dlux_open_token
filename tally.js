@@ -54,8 +54,10 @@ exports.tally = (num, plasma, isStreaming) => {
                                 mssb = block
                             }
                         }
-                        for (var i in mssp[mssb].operations){
-                            mss.operations.push([mssp[mssb].operations[i][0], mssp[mssb].operations[i][1]])
+                        if(mssb){
+                            for (var i in mssp[mssb].operations){
+                                mss.operations.push([mssp[mssb].operations[i][0], mssp[mssb].operations[i][1]])
+                            }
                         }
                     for (node in nodes) {
                         var hash = '',
@@ -186,18 +188,20 @@ exports.tally = (num, plasma, isStreaming) => {
                         new_queue = v[6]
                         still_running = runners
                     }
-                    Promise.all(toVerify).then(sigs => {
-                        mss.signatures = []
-                        for (var i = 0; i < sigs.length; i++) {
-                            if (sigs[i]) {
-                                mss.signatures.push(sigs[i])
+                    if(config.msowner){
+                        Promise.all(toVerify).then(sigs => {
+                            mss.signatures = []
+                            for (var i = 0; i < sigs.length; i++) {
+                                if (sigs[i]) {
+                                    mss.signatures.push(sigs[i])
+                                }
                             }
-                        }
-                        console.log({mss})
-                        hiveClient.api.broadcastTransactionSynchronous(mss, function(err, result) {
-                            console.log(err,result);
-                        });
-                    })
+                            console.log({mss})
+                            hiveClient.api.broadcastTransactionSynchronous(mss, function(err, result) {
+                                console.log(err,result);
+                            });
+                        })
+                    }
                     let newPlasma = {
                         consensus: consensus || 0,
                         new_queue,
