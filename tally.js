@@ -52,6 +52,7 @@ exports.tally = (num, plasma, isStreaming) => {
                                 mssb = block
                             }
                         }
+                        console.log(block, num - 98)
                     for (node in nodes) {
                         var hash = '',
                             when = 0,
@@ -69,7 +70,7 @@ exports.tally = (num, plasma, isStreaming) => {
                             tally.agreements.tally[hash] = 0
                         } //recent and signing
                     }
-                    if(runners[config.username])verify(mss, signatures, stats.ms.active_threshold)
+                    if(runners[config.username] && mss.length)verify(mss, signatures, stats.ms.active_threshold)
                     for (runner in runners) {
                         tally.agreements.votes++
                             if (tally.agreements.hashes[runner]) {
@@ -292,7 +293,7 @@ function payout(this_payout, weights, pending, num) {
 
 function verify(trx, sig, at){
     return new Promise((resolve, reject) => {
-        console.log(trx, trx.operations[0])
+        
         sendit(trx, sig, at, 0)
         function sendit(tx, sg, t, j){
         const perm = [
@@ -314,6 +315,8 @@ function verify(trx, sig, at){
                             resolve('EXPIRED')
                         } else if (err.data.code == 3010000) { //missing authority
                             sendit(tx, sg, t, j+1)
+                        } else if (err.data.code == 10) { //duplicate transaction
+                            resolve('SENT')
                         } else {
                             console.log(err.data)
                             sendit(tx, sg, t, j+1)
