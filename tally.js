@@ -47,7 +47,7 @@ exports.tally = (num, plasma, isStreaming) => {
                             mssb = 0
                         for(var block in mssp){
                             if (block > num - 100){
-                                mss = JSON.parse(msp[block])
+                                mss = JSON.parse(mssp[block])
                                 mssb = block
                             }
                         }

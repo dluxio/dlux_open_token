@@ -468,7 +468,7 @@ exports.transfer = (json, pc) => {
         getPathObj(['mss']).then(mss => {
             var done = false
             for (var block in mss){
-                if(json.memo == mss[block].operations[0][1].memo){
+                if(mss[block].indexOf(json.memo) > 0){
                     store.batch([{type:'del', path:['mss', `${block}`]}],pc)
                     done = true
                 }
