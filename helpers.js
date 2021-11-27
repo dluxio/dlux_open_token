@@ -29,6 +29,7 @@ const DEX = {
                         }
                     }
                 }
+                return string + ',' + price + '_' + item
             } else {
                 return price + '_' + item
             }

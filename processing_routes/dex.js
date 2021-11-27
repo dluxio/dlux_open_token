@@ -284,8 +284,8 @@ exports.transfer = (json, pc) => {
                 if (order.type == 'LIMIT' && order.rate == 0) {
                     order.rate = stats[`H${order.pair.substr(1)}VWMA`].rate
                 }
+                order.rate = parseFloat(order.rate).toFixed(6)
                 while (remaining){
-                    console.log({order, remaining})
                     i++
                     const item = dex.sellBook.split('_')[1]
                     const price = dex.sellBook.split('_')[0]
@@ -296,6 +296,7 @@ exports.transfer = (json, pc) => {
                             bal += next.amount - next.fee //update the balance
                             fee += next.fee //add the fees
                             remaining -= next[order.pair]
+                            dex.tick = order.rate
                             dex.sellBook = DEX.remove(item, dex.sellBook) //adjust the orderbook
                             delete dex.sellOrders[`${price}:${item}`]
                             const transfer = [
@@ -328,6 +329,7 @@ exports.transfer = (json, pc) => {
                             } else {
                                 next.partial[json.transaction_id] = {token: tokenAmount, coin: remaining}
                             }
+                            dex.tick = order.rate
                             dex.sellOrders[`${price}:${item}`] = next
                             const transfer = [
                                     "transfer",

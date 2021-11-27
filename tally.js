@@ -295,57 +295,41 @@ function verify(trx, sig, at){
     return new Promise((resolve, reject) => {
         
         sendit(trx, sig, at, 0)
-        function sendit(tx, sg, t, j){
-        const perm = [
-            [[0]],
-            [[0],[1]],//sigs 0 then 1
-            [[0,1],[0,2],[1,2]] //sigs, 2 /3 ... a three out of 4 and also a 3 / 5 >cry<
-        ]
-        if(perm[t][j]){
-            tx.signatures = []
-            for(var i = 0; i < t; i++){
-                if(sg[perm[t][j][i]]){
-                    tx.signatures.push(sg[perm[t][j][i]])
-                }
-            }
-            if(tx.signatures.length >= t && tx.operations.length){
-                hiveClient.api.verifyAuthority(tx, function(err, result) {
-                    if(err){
-                        if(err.data.code == 4030100){
-                            resolve('EXPIRED')
-                        } else if (err.data.code == 3010000) { //missing authority
-                            sendit(tx, sg, t, j+1)
-                        } else if (err.data.code == 10) { //duplicate transaction
-                            resolve('SENT')
-                        } else {
-                            console.log(err.data)
-                            sendit(tx, sg, t, j+1)
-                        }
-                    } else {
-                        hiveClient.api.broadcastTransactionSynchronous(tx, function(err, result) {
-                            console.log(err, result)
-                        })
-                    }
-                });
 
-                // hiveClient.api.broadcastTransactionSynchronous(tx, function(err, result) {
-                //     if(err){
-                //         if(err.data.code == 4030100){
-                //             console.log('EXPIRED')
-                //             resolve('EXPIRED')
-                //         } else if (err.data.code == 3010000) { //missing authority
-                //             console.log('MISSING AUTHORITY')
-                //             sendit(tx, sg, t, j+1)
-                //         } else {
-                //             console.log(err.data)
-                //             sendit(tx, sg, t, j+1)
-                //         }
-                //     } else {
-                //         console.log(result)
-                //         resolve(result)
-                //     }
-                // });
-            }
+        function sendit(tx, sg, t, j){
+            const perm = [
+                [[0]],
+                [[0],[1]],//sigs 0 then 1
+                [[0,1],[0,2],[1,2]] //sigs, 2 /3 ... a three out of 4 and also a 3 / 5 >cry<
+            ]
+            if(perm[t][j]){
+                tx.signatures = []
+                for(var i = 0; i < t; i++){
+                    if(sg[perm[t][j][i]]){
+                        tx.signatures.push(sg[perm[t][j][i]])
+                    }
+                }
+                if(tx.signatures.length >= t && tx.operations.length){
+                    hiveClient.api.verifyAuthority(tx, function(err, result) {
+                        if(err){
+                            if(err.data.code == 4030100){
+                                resolve('EXPIRED')
+                            } else if (err.data.code == 3010000) { //missing authority
+                                sendit(tx, sg, t, j+1)
+                            } else if (err.data.code == 10) { //duplicate transaction
+                                resolve('SENT')
+                            } else {
+                                console.log(err.data)
+                                sendit(tx, sg, t, j+1)
+                            }
+                        } else {
+                            hiveClient.api.broadcastTransactionSynchronous(tx, function(err, result) {
+                                console.log(err, result)
+                            })
+                        }
+                    });
+
+                }
             } else {resolve('FAIL');console.log('FAIL')}
         }
     })
