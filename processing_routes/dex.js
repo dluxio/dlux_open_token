@@ -82,6 +82,7 @@ exports.dex_sell = (json, from, active, pc) => {
                             const thistarget = parseInt((remaining/next.amount)*next[order.pair])
                             next.fee -= thisfee
                             next[order.pair] -= thistarget
+                            next.amount -= remaining
                             filled += remaining
                             pair += thistarget
                             adds.push([next.from, remaining - thisfee])

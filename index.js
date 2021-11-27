@@ -234,7 +234,7 @@ function startApp() {
     processor.on('nft_pfp', HR.nft_pfp)
     processor.onOperation('comment_options', HR.comment_options);
     processor.on('cjv', HR.cjv);
-    processor.on('sig', HR.sig); //dlux is for putting executable programs into IPFS... this is for additional accounts to sign the code as non-malicious
+    processor.on('sig_submit', HR.sig_submit); //dlux is for putting executable programs into IPFS... this is for additional accounts to sign the code as non-malicious
     processor.on('cert', HR.cert); // json.cert is an open ended hope to interact with executable posts... unexplored
     processor.onOperation('vote', HR.vote) //layer 2 voting
     processor.onOperation('transfer', HR.transfer);
