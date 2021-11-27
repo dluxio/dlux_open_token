@@ -116,7 +116,7 @@ exports.sign = (num, plasma, missed) => {
                     ops.push({type:'del', path:['mss', `${missed}`]})
                     ops.push({type:'del', path:['mss', `${missed}:sigs`]})
                     ops.push({type: 'put', path: ['mss', `${num}`], data: JSON.stringify(op)})
-                    if(mem[1].ms.active_account_auths[config.username]  && config.active && txs.length){
+                    if(mem[1].ms.active_account_auths[config.username]  && config.active){
                         const stx = hiveClient.auth.signTransaction(op, [config.active])
                         sig.sig = stx.signatures[0]
                     }
