@@ -34,7 +34,7 @@ const DEX = {
                 return price + '_' + item
             }
         } else {
-            let insert_location = string.search(',', price_location)
+            let insert_location = string.indexOf(',', price_location)
             if (insert_location === -1) {
                 return string + '_' + item
             } else {
