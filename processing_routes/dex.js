@@ -144,7 +144,7 @@ exports.dex_sell = (json, from, active, pc) => {
             for(var to in addops){
                 waitfor.push(add(to, addops[to]))
             }
-            ops.push({type: 'put', path: ['dex'], data: dex})
+            ops.push({type: 'put', path: ['dex', order.pair], data: dex})
 
             for (var j = 0; j < his.length; j++){
                 ops.push({type: 'put', path: ['history', order.pair, `${json.block_num}:${his[j].id}`], data: his[j]})

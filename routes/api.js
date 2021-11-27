@@ -1448,7 +1448,7 @@ exports.coincheck = (state) => {
         var con = 0
         for (user in state.contracts) {
             for (contract in state.contracts[user]) {
-                if (state.contracts[user][contract].amount && !state.contracts[user][contract].buyer && (state.contracts[user][contract].type == 'ss' || state.contracts[user][contract].type == 'ds')) {
+                if (state.contracts[user][contract].amount && !state.contracts[user][contract].buyer && (state.contracts[user][contract].type == 'hive:sell' || state.contracts[user][contract].type == 'hbd:sell')) {
                     supply += state.contracts[user][contract].amount
                     con += state.contracts[user][contract].amount
                 }
