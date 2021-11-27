@@ -1,6 +1,5 @@
 const config = require('./config');
-const { getPathNum } = require("./getPathNum");
-const { getPathObj } = require("./getPathObj");
+const { getPathObj, getPathNum } = require("./getPathObj");
 const { store } = require("./index");
 const { isEmpty } = require('./lil_ops')
 const { sortBuyArray } = require('./helpers')

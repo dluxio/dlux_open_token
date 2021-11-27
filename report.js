@@ -28,3 +28,24 @@ function report(plasma, con) {
     })
 }
 exports.report = report;
+
+function sig_submit(sign) {
+    return new Promise((resolve, reject) => {
+        sign.then(r =>{
+            let report = {
+                sig: r.sig,
+                sig_block: r.block
+            }
+        var op = ["custom_json", {
+            required_auths: [config.username],
+            required_posting_auths: [],
+            id: `${config.prefix}sig_submit`,
+            json: JSON.stringify(report)
+        }];
+        resolve([
+            [0, 0], op
+        ])
+        })
+    })
+}
+exports.sig_submit = sig_submit;

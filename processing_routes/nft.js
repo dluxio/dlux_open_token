@@ -1,10 +1,9 @@
 const config = require('./../config')
 const { store, unshiftOp } = require('./../index')
 const { chronAssign, add, hashThis, addMT } = require('./../lil_ops')
-const { getPathObj } = require('../getPathObj')
+const { getPathObj, getPathNum } = require('../getPathObj')
 const { postToDiscord } = require('./../discord')
 const { Base64, primes, NFT } = require('./../helpers')
-const { getPathNum } = require('../getPathNum')
 const { set } = require('@hiveio/hive-js/lib/auth/serializer/src/types')
 
 /*

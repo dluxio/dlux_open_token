@@ -2,8 +2,7 @@ let config = require('./../config')
 const { Base64} = require('./../helpers')
 const { store, GetNodeOps, VERSION, status, TXID, exit, processor} = require("./../index");
 const fetch = require('node-fetch');
-let { getPathNum } = require("./../getPathNum");
-let { getPathObj } = require("./../getPathObj");
+let { getPathObj, getPathNum } = require("./../getPathObj");
 const decodeURIcomponent = require('decode-uri-component');
 const { 
     getPromotedPosts,

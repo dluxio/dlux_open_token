@@ -82,19 +82,18 @@ let TXID = {
 }
 exports.TXID = TXID
 const API = require('./routes/api');
-const { getPathNum } = require("./getPathNum");
 const HR = require('./processing_routes/index')
 const { enforce } = require("./enforce");
 const { tally } = require("./tally");
 const { voter } = require("./voter");
-const { report } = require("./report");
+const { report, sig_submit } = require("./report");
 const { ipfsSaveState } = require("./ipfsSaveState");
 const { dao } = require("./dao");
 const { Base64, NFT, Chron } = require('./helpers');
 const { release, recast } = require('./lil_ops')
 const hiveState = require('./processor');
-const { getPathObj } = require('./getPathObj');
-const { consolidate, createAccount, updateAccount } = require('./msa')
+const { getPathObj, getPathNum, getPathSome } = require('./getPathObj');
+const { consolidate, sign, createAccount, updateAccount } = require('./msa')
 const api = express()
 var http = require('http').Server(api);
 var escrow = false;
@@ -112,7 +111,7 @@ var recents = []
     //HIVE API CODE
 
 //Start Program Options   
-//startWith('QmZ5GeXb9SHiShLqserXBV8HEPMBPeAzYVfWPGCpdjhAx6', true) //for testing and replaying 58859101
+//startWith('Qma7ddYumXy8ZwmRHm1bhz518yw3S6nujrKQWvuX3HntPd', true) //for testing and replaying 58859101
 dynStart(config.leader)
 
 // API defs
@@ -247,13 +246,51 @@ function startApp() {
             console.log(num)
             TXID.clean(num)
             return new Promise((resolve, reject) => {
-                store.someChildren(['chrono'], {
+                let Pchron = getPathSome(['chrono'],{
                     gte: "" + num - 1,
                     lte: "" + (num + 1)
-                }, function(e, a) {
-                    if (e) { console.log('chrono err: ' + e) }
+                })
+                let Pmss = getPathSome(['mss'],{
+                    gte: "" + (num - 1000000),
+                    lte: "" + (num - 100)
+                }) //resign mss
+                let Pmsa = getPathObj(['msa'])
+                Promise.all([Pchron, Pmss, Pmsa]).then(mem => {
+                    var a = mem[0],
+                        mss = mem[1], //resign mss
+                        msa = mem[2] //if length > 80... sign these
                     let chrops = {},
-                        promises = []
+                        promises = [],
+                        msa_keys = Object.keys(msa)
+                        if(num % 100 !== 50){
+                            if(msa_keys.length > 80){
+                                promises.push(new Promise((res,rej)=>{
+                                    sig_submit(consolidate(num, plasma))
+                                    .then(nodeOp => {
+                                        res('SAT')
+                                        NodeOps.unshift(nodeOp)
+                                    })
+                                    .catch(e => { rej(e) })
+                                }))
+                            }
+                            let memkill = []
+                            for(var missed = 0; missed < mss.length; missed++){
+                                if(mss[missed].split(':').length == 1){
+                                    missed_num = mss[missed]
+                                    promises.push(new Promise((res,rej)=>{
+                                        sig_submit(sign(num, plasma, missed_num))
+                                        .then(nodeOp => {
+                                            res('SAT')
+                                            if(JSON.parse(nodeOp[1][1].json).sig){
+                                                NodeOps.unshift(nodeOp)
+                                            }
+                                        })
+                                        .catch(e => { rej(e) })
+                                    })) 
+                                    break;
+                                }
+                            }
+                        }
                     for (var i in a) {
                         chrops[a[i]] = a[i]
                     }
@@ -560,7 +597,6 @@ function startWith(hash, second) {
                         if (!e && (second || data[0] > API.RAM.head - 325)) {
                             if (hash) {
                                 var cleanState = data[1]
-                                cleanState.stats.HiveVWMA.vol = 0
                                 store.put([], cleanState, function(err) {
                                     if (err) {
                                         console.log('errr',err)

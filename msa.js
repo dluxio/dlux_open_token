@@ -1,4 +1,5 @@
 const { store, hiveClient } = require('./index')
+const { getPathObj } = require('./getPathObj')
 const config = require('./config')
 //const privateKey = hiveClient.PrivateKey.fromString(config.msprivatekey);
 
@@ -90,6 +91,39 @@ exports.consolidate = (num, plasma) => {
                 store.batch(ops, [resolve, reject, sig])
             }
         })
+    })
+}
+
+exports.sign = (num, plasma, missed) => {
+    return new Promise((resolve, reject) => {
+        let Pmissed = getPathObj(['mss', `${missed}`]),
+            Pstats = getPathObj(['stats'])
+        Promise.all([Pmissed, Pstats]).then(mem => {
+                let sig = {
+                        block: num,
+                        sig: ''
+                    },
+                    obj = JSON.parse(mem[0]),
+                    ops = [],
+                    now = Date.parse(plasma.bh.timestamp + '.000Z'),
+                    op = {
+                        ref_block_num: plasma.bh.block_number & 0xffff,
+                        ref_block_prefix: Buffer.from(plasma.bh.block_id, 'hex').readUInt32LE(4),
+                        expiration: new Date(now + 3660000).toISOString().slice(0, -5),
+                        operations: obj.txs,
+                        extensions: [],
+                    }
+                    ops.push({type:'del', path:['mss', `${missed}`]})
+                    ops.push({type:'del', path:['mss', `${missed}:sigs`]})
+                    ops.push({type: 'put', path: ['mss', `${num}`], data: JSON.stringify(op)})
+                    if(mem[1].ms.active_account_auths[config.username]  && config.active && txs.length){
+                        const stx = hiveClient.auth.signTransaction(op, [config.active])
+                        sig.sig = stx.signatures[0]
+                    }
+                    store.batch(ops, [resolve, reject, sig])
+                
+            })
+        
     })
 }
 

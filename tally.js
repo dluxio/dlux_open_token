@@ -1,6 +1,5 @@
 const config = require('./config');
-const { getPathNum } = require("./getPathNum");
-const { getPathObj } = require("./getPathObj");
+const { getPathObj, getPathNum } = require("./getPathObj");
 const { deleteObjs } = require('./deleteObjs')
 const { store, exit, hiveClient } = require("./index");
 const { updatePost } = require('./edb');
@@ -47,12 +46,11 @@ exports.tally = (num, plasma, isStreaming) => {
                             mss = {},
                             mssb = 0
                         for(var block in mssp){
-                            if (block > num - 100){
+                            if (block == num - 50){
                                 mss = JSON.parse(mssp[block])
                                 mssb = block
                             }
                         }
-                        console.log(block, num - 98)
                     for (node in nodes) {
                         var hash = '',
                             when = 0,
@@ -70,7 +68,7 @@ exports.tally = (num, plasma, isStreaming) => {
                             tally.agreements.tally[hash] = 0
                         } //recent and signing
                     }
-                    if(runners[config.username] && mss.length)verify(mss, signatures, stats.ms.active_threshold)
+                    if(runners[config.username] && mss.expiration)verify(mss, signatures, stats.ms.active_threshold)
                     for (runner in runners) {
                         tally.agreements.votes++
                             if (tally.agreements.hashes[runner]) {
@@ -292,6 +290,7 @@ function payout(this_payout, weights, pending, num) {
 }
 
 function verify(trx, sig, at){
+    console.log(sig,at)
     return new Promise((resolve, reject) => {
         
         sendit(trx, sig, at, 0)
@@ -313,10 +312,13 @@ function verify(trx, sig, at){
                     hiveClient.api.verifyAuthority(tx, function(err, result) {
                         if(err){
                             if(err.data.code == 4030100){
+                                console.log('EXPIRED')
                                 resolve('EXPIRED')
                             } else if (err.data.code == 3010000) { //missing authority
+                                console.log('MISSING')
                                 sendit(tx, sg, t, j+1)
                             } else if (err.data.code == 10) { //duplicate transaction
+                                console.log('SENT')
                                 resolve('SENT')
                             } else {
                                 console.log(err.data)
@@ -334,3 +336,4 @@ function verify(trx, sig, at){
         }
     })
 }
+exports.verify_broadcast = verify

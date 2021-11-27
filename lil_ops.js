@@ -1,6 +1,5 @@
 const { store } = require('./index')
-const { getPathNum } = require('./getPathNum')
-const { getPathObj } = require('./getPathObj')
+const { getPathObj, getPathNum } = require('./getPathObj')
 const crypto = require('crypto');
 const bs58 = require('bs58');
 const hashFunction = Buffer.from('12', 'hex');

@@ -1,6 +1,6 @@
 const config = require('./../config')
 const { store } = require("./../index");
-const { getPathNum } = require("./../getPathNum");
+const { getPathNum } = require("./../getPathObj");
 const { postToDiscord } = require('./../discord');
 const { updatePromote } = require('./../edb');
 

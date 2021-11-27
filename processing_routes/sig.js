@@ -5,6 +5,7 @@ const { getPathObj } = require("./../getPathObj");
 const { postToDiscord } = require('./../discord')
 const { deleteObjs } = require('./../deleteObjs')
 const { chronAssign } = require('./../lil_ops')
+const { verify_broadcast } = require('./../tally')
 
 exports.account_update = (json, pc) => {
     Pnode = getPathObj(['makerts', 'node', json.account])
@@ -39,12 +40,19 @@ exports.sig_submit = (json, from, active, pc) => {
         Pstats = getPathObj(['stats'])
     Promise.all([Pop, Pstats])
         .then(got => {
-            let msop = got[0],
+            let msop = JSON.parse(got[0]),
                 stats = got[1],
                 sigs = got[2]
                 ops = []
-            if (active && stats.ms.active_account_auths[from]) {
+            if (active && stats.ms.active_account_auths[from] && msop.expiration) {
                 sigs[from] = json.sig
+                if(Object.keys(sigs).length >= stats.ms.active_threshold){
+                    let sigarr = []
+                    for(var i in sigs){
+                        sigarr.push(sigs[i])
+                    }
+                    verify_broadcast(msop, sigs, stats.ms.active_threshold)
+                }
                 ops.push({ type: 'put', path: ['mss', `${json.sig_block}:sigs`], data: sigs })
                 store.batch(ops, pc);
                 //try to sign
