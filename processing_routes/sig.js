@@ -36,9 +36,9 @@ exports.account_update = (json, pc) => {
 
 exports.sig_submit = (json, from, active, pc) => {
     var Pop = getPathObj(['mss', `${json.sig_block}`]),
-        psigs = getPathObj(['mss', `${json.sig_block}:sigs`]),
+        Psigs = getPathObj(['mss', `${json.sig_block}:sigs`]),
         Pstats = getPathObj(['stats'])
-    Promise.all([Pop, Pstats])
+    Promise.all([Pop, Pstats, Psigs])
         .then(got => {
             let msop = JSON.parse(got[0]),
                 stats = got[1],
