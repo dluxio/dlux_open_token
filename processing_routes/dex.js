@@ -9,7 +9,7 @@ const { DEX } = require('./../helpers')
 exports.dex_sell = (json, from, active, pc) => {
     let PfromBal = getPathNum(['balances', from]),
         PStats = getPathObj(['stats']),
-        PSB = getPathObj(['dex']),
+        PSB = getPathObj(['dex', 'hive']),
         order = {
             type: 'MARKET',
             pair: 'hive',
@@ -17,14 +17,15 @@ exports.dex_sell = (json, from, active, pc) => {
         }
         if(json.hive){
             order.type = 'LIMIT'
-            order.rate = parseFloat((json.hive) / parseInt(json[config.jsonTokenName])).toFixed(6)
-        }
-        if(json.hbd){
+            order.rate = parseFloat(parseInt(json[config.jsonTokenName]) / parseInt(json.hive) ).toFixed(6)
+        } else if(json.hbd){
             PSB = getPathObj(['dex', 'hbd'])
             order.type = 'LIMIT'
             order.pair = 'hbd'
-            order.rate = parseFloat((json.hbd) / parseInt(json[config.jsonTokenName])).toFixed(6)
+            order.rate = parseFloat( parseInt(json[config.jsonTokenName]) / parseInt(json.hbd)).toFixed(6)
         }
+        order[config.jsonTokenName] = json[config.jsonTokenName]
+        console.log(order)
     Promise.all([PfromBal, PStats, PSB]).then(a => {
         let bal = a[0],
             stats = a[1],
@@ -43,19 +44,19 @@ exports.dex_sell = (json, from, active, pc) => {
                 path = 0,
                 contract = ''
             while(remaining){
-                const price = dex[order.pair].buyBook.split('_')[0]
-                const item = dex[order.pair].buyBook.split('_')[1]
+                const price = dex.buyBook.split('_')[0]
+                const item = dex.buyBook.split('_')[1]
                 if (item && (order.type == 'MARKET' || parseFloat(price) >= order.rate)){
-                    let next = dex[order.type].buyOrders[`${price}:${item}`]
+                    let next = dex.buyOrders[`${price}:${item}`]
                     if (next.amount <= remaining){
                             filled += next.amount
                             adds.push([next.from, next.amount - next.fee])
                             his.push({type: 'sell', block: json.block_num, base_vol: next.amount, target_vol: next[order.pair], target: order.pair, price: next.rate, id: json.transaction_id + i})
                             fee += next.fee //add the fees
                             remaining -= next.amount
-                            dex[order.pair].tick = price
-                            dex[order.pair].buyBook = DEX.remove(item, dex[order.pair].buyBook) //adjust the orderbook
-                            delete dex[order.pair].buyOrders[`${price}:${item}`]
+                            dex.tick = price
+                            dex.buyBook = DEX.remove(item, dex.buyBook) //adjust the orderbook
+                            delete dex.buyOrders[`${price}:${item}`]
                             const transfer = [
                                     "transfer",
                                     {
@@ -79,7 +80,7 @@ exports.dex_sell = (json, from, active, pc) => {
                             next[order.pair] -= thistarget
                             filled += remaining
                             adds.push([next.from, remaining - thisfee])
-                            dex[order.pair].tick = price
+                            dex.tick = price
                             his.push({type: 'sell', block: json.block_num, base_vol: remaining, target_vol: thistarget + thisfee, target: order.pair, price: next.rate, id: json.transaction_id + i})
                             fee += thisfee
                             const transfer = [
@@ -95,14 +96,13 @@ exports.dex_sell = (json, from, active, pc) => {
                             ops.push({type: 'put', path: ['feed', `${json.block_num}:${json.transaction_id}.${i}`], data: msg})
                             ops.push({type: 'put', path: ['msa', `${item}:${json.transaction_id}:${json.block_num}`], data: JSON.stringify(transfer)}) //send HIVE out via MS
                             ops.push({type: 'put', path: ['contracts', next.from , item], data: next}) //remove the contract
-                            dex[order.pair].buyOrders[`${price}:${item}`] = next
+                            dex.buyOrders[`${price}:${item}`] = next
                         }
                 } else {
                     const txid = config.TOKEN + hashThis(from + json.transaction_id),
                         cfee = parseInt(remaining * parseFloat(stats.dex_fee)),
                         crate = order.rate || stats[`H${order.pair.substr(1)}VWMA`].rate,
-                        hours = 720,
-                        expBlock = json.block_num + (hours * 1200)
+                        hours = 720
                     contract = {
                         txid,
                         from: from,
@@ -115,7 +115,7 @@ exports.dex_sell = (json, from, active, pc) => {
                         type: `${order.pair}:sell`
                     }
                     contract[order.pair] = parseInt(remaining/crate)
-                    dex[order.pair].sellBook = DEX.insert(txid, crate, dex[order.pair].sellBook, 'sell')
+                    dex.sellBook = DEX.insert(txid, crate, dex.sellBook, 'sell')
                     path = chronAssign(expBlock, {
                         block: expBlock,
                         op: 'expire',
@@ -161,7 +161,11 @@ exports.dex_sell = (json, from, active, pc) => {
                 .then(expPath =>{
                     contract.expire_path = expPath[0]
                     ops.push({type: 'put', path: ['contracts', from , contract.txid], data: contract})
-                    dex[order.pair].sellOrders[`${contract.rate}:${contract.txid}`] = contract
+                    if(dex.sellOrders){
+                        dex.sellOrders[`${contract.rate}:${contract.txid}`] = contract
+                    } else {
+                        dex.sellOrders = {[`${contract.rate}:${contract.txid}`]: contract}
+                    }
                     let msg = `@${from} is selling ${parseFloat(parseInt(contract.amount)/1000).toFixed(3)} ${config.TOKEN} for ${parseFloat(parseInt(contract[order.pair])/1000).toFixed(3)} ${order.pair.toUpperCase()}(${contract.rate}:${contract.txid})`
                     ops.push({type: 'put', path: ['feed', `${json.block_num}:${json.transaction_id}.${i}`], data: msg})
                     if (process.env.npm_lifecycle_event == 'test') pc[2] = ops
