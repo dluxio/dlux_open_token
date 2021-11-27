@@ -42,8 +42,9 @@ exports.sig_submit = (json, from, active, pc) => {
         .then(got => {
             let msop = JSON.parse(got[0]),
                 stats = got[1],
-                sigs = got[2]
+                sigs = got[2] || {}
                 ops = []
+                console.log(sigs)
             if (active && stats.ms.active_account_auths[from] && msop.expiration) {
                 sigs[from] = json.sig
 
