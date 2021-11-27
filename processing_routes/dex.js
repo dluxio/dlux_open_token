@@ -53,6 +53,7 @@ exports.dex_sell = (json, from, active, pc) => {
                             his.push({type: 'sell', block: json.block_num, base_vol: next.amount, target_vol: next[order.pair], target: order.pair, price: next.rate, id: json.transaction_id + i})
                             fee += next.fee //add the fees
                             remaining -= next.amount
+                            dex[order.pair].tick = price
                             dex[order.pair].buyBook = DEX.remove(item, dex[order.pair].buyBook) //adjust the orderbook
                             delete dex[order.pair].buyOrders[`${price}:${item}`]
                             const transfer = [
@@ -78,6 +79,7 @@ exports.dex_sell = (json, from, active, pc) => {
                             next[order.pair] -= thistarget
                             filled += remaining
                             adds.push([next.from, remaining - thisfee])
+                            dex[order.pair].tick = price
                             his.push({type: 'sell', block: json.block_num, base_vol: remaining, target_vol: thistarget + thisfee, target: order.pair, price: next.rate, id: json.transaction_id + i})
                             fee += thisfee
                             const transfer = [
@@ -265,7 +267,7 @@ exports.transfer = (json, pc) => {
             order.rate = parseFloat(order.rate) || 0
         }
         order.pair = json.amount.split(' ')[1].toLowerCase()
-        order.amount = parseInt(parseFloat(json.amount.split(' ')[0]) * 1000)
+        order.amount = parseInt(parseFloat(json.amount.split(' ')[0] * 1000))
         if (order.type == 'MARKET' || order.type == 'LIMIT') {
             let pDEX = getPathObj(['dex', order.pair]),
                 pBal = getPathNum(['balances', json.from]),

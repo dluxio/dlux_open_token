@@ -112,8 +112,8 @@ var recents = []
     //HIVE API CODE
 
 //Start Program Options   
-startWith('QmR6CvA2hemu7E7T4wp3kMLTUvQvoPw2XnKHvjshxGGqme', true) //for testing and replaying 58859101
-//dynStart(config.leader)
+//startWith('QmR6CvA2hemu7E7T4wp3kMLTUvQvoPw2XnKHvjshxGGqme', true) //for testing and replaying 58859101
+dynStart(config.leader)
 
 // API defs
 api.use(API.https_redirect);
@@ -560,6 +560,10 @@ function startWith(hash, second) {
                         if (!e && (second || data[0] > API.RAM.head - 325)) {
                             if (hash) {
                                 var cleanState = data[1]
+                                try{
+                                    cleanState.contracts.disregardfiat.DLUXQmb5aV5dBqusUrJpUqRdeHBJ5PZpRC5B1NGuYnYDrjsQPQ.hive = 1001
+                                    cleanState.dex.hive.buyOrders['0.999001:DLUXQmb5aV5dBqusUrJpUqRdeHBJ5PZpRC5B1NGuYnYDrjsQPQ'].hive = 1001
+                                } catch(e){}
                                 store.put([], cleanState, function(err) {
                                     if (err) {
                                         console.log('errr',err)
