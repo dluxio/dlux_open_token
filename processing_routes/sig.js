@@ -40,11 +40,15 @@ exports.sig_submit = (json, from, active, pc) => {
         Pstats = getPathObj(['stats'])
     Promise.all([Pop, Pstats, Psigs])
         .then(got => {
-            let msop = JSON.parse(got[0]),
+            let msop = got[0],
                 stats = got[1],
-                sigs = got[2] || {}
+                sigs = got[2]
                 ops = []
-                console.log(sigs)
+                try{
+                    msop = JSON.parse(msop)
+                } catch (e){
+                    console.log(msop, e)
+                }
             if (active && stats.ms.active_account_auths[from] && msop.expiration) {
                 sigs[from] = json.sig
 
