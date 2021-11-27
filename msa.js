@@ -110,7 +110,7 @@ exports.sign = (num, plasma, missed) => {
                         ref_block_num: plasma.bh.block_number & 0xffff,
                         ref_block_prefix: Buffer.from(plasma.bh.block_id, 'hex').readUInt32LE(4),
                         expiration: new Date(now + 3660000).toISOString().slice(0, -5),
-                        operations: obj.txs,
+                        operations: obj.transactions,
                         extensions: [],
                     }
                     ops.push({type:'del', path:['mss', `${missed}`]})
