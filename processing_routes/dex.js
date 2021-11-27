@@ -44,10 +44,12 @@ exports.dex_sell = (json, from, active, pc) => {
                 path = 0,
                 contract = ''
             while(remaining){
-                const price = dex.buyBook.split('_')[0]
-                const item = dex.buyBook.split('_')[1]
+                let price = dex.buyBook.split('_')[0]
+                let item
+                if(price)item = dex.buyBook.split('_')[1].split(',')[0]
                 if (item && (order.type == 'MARKET' || parseFloat(price) >= order.rate)){
                     let next = dex.buyOrders[`${price}:${item}`]
+                    console.log({price, item, next})
                     if (next.amount <= remaining){
                             filled += next.amount
                             adds.push([next.from, next.amount - next.fee])
@@ -56,6 +58,7 @@ exports.dex_sell = (json, from, active, pc) => {
                             remaining -= next.amount
                             dex.tick = price
                             dex.buyBook = DEX.remove(item, dex.buyBook) //adjust the orderbook
+                            console.log(dex.buyBook)
                             delete dex.buyOrders[`${price}:${item}`]
                             const transfer = [
                                     "transfer",
@@ -97,6 +100,7 @@ exports.dex_sell = (json, from, active, pc) => {
                             ops.push({type: 'put', path: ['msa', `${item}:${json.transaction_id}:${json.block_num}`], data: JSON.stringify(transfer)}) //send HIVE out via MS
                             ops.push({type: 'put', path: ['contracts', next.from , item], data: next}) //remove the contract
                             dex.buyOrders[`${price}:${item}`] = next
+                            remaining = 0
                         }
                 } else {
                     const txid = config.TOKEN + hashThis(from + json.transaction_id),
@@ -140,7 +144,7 @@ exports.dex_sell = (json, from, active, pc) => {
                 delete addops[from]
             }
             ops.push({type: 'put', path: ['balances', from], data: bal})
-            var waitfor = []
+            var waitfor = [add('rn', fee)]
             for(var to in addops){
                 waitfor.push(add(to, addops[to]))
             }
@@ -187,7 +191,6 @@ exports.dex_sell = (json, from, active, pc) => {
         }
     }).catch(e => {
         console.log(e)
-        pc[0]()
     })
 }
 
@@ -294,7 +297,7 @@ exports.transfer = (json, pc) => {
                 while (remaining){
                     i++
                     const item = dex.sellBook.split('_')[1]
-                    const price = dex.sellBook.split('_')[0]
+                    const price = dex.sellBook.split('_')[0].split(',')[0]
                     if (item && (price <= stats.icoPrice/1000) && ( order.type == 'MARKET' || (order.type == 'LIMIT' && order.rate <= price))) {
                         var next = dex.sellOrders[`${price}:${item}`]
                         if (next[order.pair] <= remaining){

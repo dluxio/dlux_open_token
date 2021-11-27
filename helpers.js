@@ -48,7 +48,7 @@ const DEX = {
         } else {
             let item_location = string.indexOf('_' + item)
             let lowerThan = string.substring(0, item_location)
-            let greaterThan = string.substring(item_location + item.length )
+            let greaterThan = string.substring(item_location + item.length + 2 )
             let prices = lowerThan.split(',')
             if(prices[prices.length - 1].split('_').length > 2){
                 return string.replace(`_${item}`, '')
