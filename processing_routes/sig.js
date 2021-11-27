@@ -55,7 +55,7 @@ exports.sig_submit = (json, from, active, pc) => {
                     for(var i in sigs){
                         sigarr.push(sigs[i])
                     }
-                    verify_broadcast(msop, sigs, stats.ms.active_threshold)
+                    verify_broadcast(msop, sigarr, stats.ms.active_threshold)
                 }
                 ops.push({ type: 'put', path: ['mss', `${json.sig_block}:sigs`], data: sigs })
                 store.batch(ops, pc);
