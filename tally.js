@@ -326,7 +326,17 @@ function verify(trx, sig, at){
                             }
                         } else {
                             hiveClient.api.broadcastTransactionSynchronous(tx, function(err, result) {
-                                console.log(err, result)
+                                if(err.data.code == 4030100){
+                                console.log('EXPIRED')
+                                resolve('EXPIRED')
+                            } else if (err.data.code == 3010000) { //missing authority
+                                console.log('MISSING')
+                            } else if (err.data.code == 10) { //duplicate transaction
+                                console.log('SENT')
+                                resolve('SENT')
+                            } else {
+                                console.log(err.data)
+                            }
                             })
                         }
                     });

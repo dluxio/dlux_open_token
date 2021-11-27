@@ -49,7 +49,6 @@ exports.sig_submit = (json, from, active, pc) => {
                 } catch (e){}
             if (active && stats.ms.active_account_auths[from] && msop.expiration) {
                 sigs[from] = json.sig
-                console.log(Object.keys(sigs).length , stats.ms.active_threshold)
                 if(Object.keys(sigs).length >= stats.ms.active_threshold){
                     let sigarr = []
                     for(var i in sigs){
