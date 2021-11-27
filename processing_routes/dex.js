@@ -40,6 +40,7 @@ exports.dex_sell = (json, from, active, pc) => {
         if (json[config.jsonTokenName] <= bal && json[config.jsonTokenName] >= 4 && typeof order.amount == 'number' && active) {
             let remaining = order.amount,
                 filled = 0,
+                pair = 0,
                 i = 0,
                 path = 0,
                 contract = ''
@@ -57,6 +58,7 @@ exports.dex_sell = (json, from, active, pc) => {
                             fee += next.fee //add the fees
                             remaining -= next.amount
                             dex.tick = price
+                            pair += next[order.pair]
                             dex.buyBook = DEX.remove(item, dex.buyBook) //adjust the orderbook
                             console.log(dex.buyBook)
                             delete dex.buyOrders[`${price}:${item}`]
@@ -82,6 +84,7 @@ exports.dex_sell = (json, from, active, pc) => {
                             next.fee -= thisfee
                             next[order.pair] -= thistarget
                             filled += remaining
+                            pair += thistarget
                             adds.push([next.from, remaining - thisfee])
                             dex.tick = price
                             his.push({type: 'sell', block: json.block_num, base_vol: remaining, target_vol: thistarget + thisfee, target: order.pair, price: next.rate, id: json.transaction_id + i})
@@ -91,11 +94,11 @@ exports.dex_sell = (json, from, active, pc) => {
                                     {
                                         "from": config.msaccount,
                                         "to": from,
-                                        "amount": parseFloat(remaining/1000).toFixed(3) + ' ' + order.pair.toUpperCase(),
+                                        "amount": parseFloat(thistarget/1000).toFixed(3) + ' ' + order.pair.toUpperCase(),
                                         "memo": `Partial Filled ${item}:${json.transaction_id}`
                                     }
                                 ]
-                            let msg = `@${from} sold ${parseFloat(parseInt(remaining)/1000).toFixed(3)} ${config.TOKEN} with ${parseFloat(parseInt(next[order.pair])/1000).toFixed(3)} ${order.pair.toUpperCase()} to ${next.from} (${item})`
+                            let msg = `@${from} sold ${parseFloat(parseInt(remaining)/1000).toFixed(3)} ${config.TOKEN} with ${parseFloat(parseInt(thistarget)/1000).toFixed(3)} ${order.pair.toUpperCase()} to ${next.from} (${item})`
                             ops.push({type: 'put', path: ['feed', `${json.block_num}:${json.transaction_id}.${i}`], data: msg})
                             ops.push({type: 'put', path: ['msa', `${item}:${json.transaction_id}:${json.block_num}`], data: JSON.stringify(transfer)}) //send HIVE out via MS
                             ops.push({type: 'put', path: ['contracts', next.from , item], data: next}) //remove the contract
@@ -154,8 +157,9 @@ exports.dex_sell = (json, from, active, pc) => {
                 ops.push({type: 'put', path: ['history', order.pair, `${json.block_num}:${his[j].id}`], data: his[j]})
             }
             var hiveTimeWeight = 1 - ((json.block_num - stats[`H${order.pair.substr(1)}VWMA`].block) * 0.000033)
+            if (hiveTimeWeight < 0) hiveTimeWeight = 0
             stats[`H${order.pair.substr(1)}VWMA`] = {
-                    rate: parseFloat((filled + (parseFloat(stats[`H${order.pair.substr(1)}VWMA`].rate) * stats[`H${order.pair.substr(1)}VWMA`].vol * hiveTimeWeight)) / (order.amount + (stats[`H${order.pair.substr(1)}VWMA`].vol * hiveTimeWeight))).toFixed(6),
+                    rate: parseFloat((filled + (parseFloat(stats[`H${order.pair.substr(1)}VWMA`].rate) * stats[`H${order.pair.substr(1)}VWMA`].vol * hiveTimeWeight)) / (pair + (stats[`H${order.pair.substr(1)}VWMA`].vol * hiveTimeWeight))).toFixed(6),
                     block: json.block_num,
                     vol: parseInt(filled + (stats[`H${order.pair.substr(1)}VWMA`].vol * hiveTimeWeight))
                 }
