@@ -429,7 +429,7 @@ exports.transfer = (json, pc) => {
                                 block: json.block_num,
                                 type: `${order.pair}:buy`
                             }
-                            contract.amount = parseInt(remaining * crate)
+                            contract.amount = parseInt(remaining / crate)
                             contract[order.pair] = remaining
                             dex.buyBook = DEX.insert(txid, crate, dex.buyBook, 'buy')
                             path = chronAssign(expBlock, {
