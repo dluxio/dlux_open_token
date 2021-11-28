@@ -478,6 +478,7 @@ exports.transfer = (json, pc) => {
                         ops.push({type: 'put', path: ['dex', order.pair], data: dex})
                         ops.push({type: 'put', path: ['feed', `${json.block_num}:${json.transaction_id}.${i}`], data: msg})
                         if (process.env.npm_lifecycle_event == 'test') pc[2] = ops
+                        console.log(ops)
                         store.batch(ops, pc)
                     })
                 }
