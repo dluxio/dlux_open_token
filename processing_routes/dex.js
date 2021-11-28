@@ -1,9 +1,9 @@
 const config = require('./../config')
 const { store, GetNodeOps, spliceOp } = require('./../index')
 const { getPathObj, getPathNum } = require('./../getPathObj')
-const { add, addCol, addGov, release, deletePointer, credit, chronAssign, hashThis, isEmpty } = require('./../lil_ops')
+const { DEX, release } = require('./../helpers')
+const { add, addCol, addGov, deletePointer, credit, chronAssign, hashThis, isEmpty } = require('./../lil_ops')
 const { postToDiscord } = require('./../discord')
-const { DEX } = require('./../helpers')
 
 exports.dex_sell = (json, from, active, pc) => {
     let PfromBal = getPathNum(['balances', from]),
