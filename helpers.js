@@ -113,7 +113,7 @@ const release = (from, txid, bn, tx_id) => {
                                     {
                                         "from": config.msaccount,
                                         "to": a.from,
-                                        "amount": a.hive + ' HIVE',
+                                        "amount": parseFloat(a.hive/1000).toFixed(3) + ' HIVE',
                                         "memo": `Canceled DLUX buy ${a.txid}`
                                     }
                                 ]
@@ -141,7 +141,7 @@ const release = (from, txid, bn, tx_id) => {
                                     {
                                         "from": config.msaccount,
                                         "to": a.from,
-                                        "amount": a.hbd + ' HBD',
+                                        "amount": parseFloat(a.hbd/1000).toFixed(3) + ' HBD',
                                         "memo": `Canceled DLUX buy ${a.txid}`
                                     }
                                 ]
