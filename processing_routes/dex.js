@@ -164,7 +164,7 @@ exports.dex_sell = (json, from, active, pc) => {
                     vol: parseInt(filled + (stats[`H${order.pair.substr(1)}VWMA`].vol * hiveTimeWeight))
                 }
             ops.push({type: 'put', path: ['stats'], data: stats})
-            ops.push({type: 'put', path: ['dex', order.pair, 'his'], data: his})
+            if(Object.keys(his).length)ops.push({type: 'put', path: ['dex', order.pair, 'his'], data: his})
             if(path){
                 Promise.all([path, ...waitfor])
                 .then(expPath =>{
@@ -326,7 +326,7 @@ exports.transfer = (json, pc) => {
                                 ]
                             let msg = `@${json.from} bought ${parseFloat(parseInt(next.amount)/1000).toFixed(3)} ${config.TOKEN} with ${parseFloat(parseInt(next[order.pair])/1000).toFixed(3)} ${order.pair.toUpperCase()} from ${next.from} (${item})`
                             ops.push({type: 'put', path: ['feed', `${json.block_num}:${json.transaction_id}.${i}`], data: msg})
-                            ops.push({type: 'put', path: ['dex', order.pair, 'his'], data: his})
+                            if(Object.keys(his).length)ops.push({type: 'put', path: ['dex', order.pair, 'his'], data: his})
                             ops.push({type: 'put', path: ['msa', `${item}:${json.transaction_id}:${json.block_num}`], data: JSON.stringify(transfer)}) //send HIVE out via MS
                             ops.push({type: 'del', path: ['dex', order.pair, 'sellOrders', `${price}:${item}`]}) //remove the order
                             ops.push({type: 'del', path: ['contracts', next.from , item]}) //remove the contract
@@ -460,7 +460,7 @@ exports.transfer = (json, pc) => {
                 if (config.hookurl || config.status) postToDiscord(msg, `${json.block_num}:${json.transaction_id}`)
                 ops.push({type: 'put', path: ['balances', json.from], data: bal})
                 ops.push({type: 'put', path: ['feed', `${json.block_num}:${json.transaction_id}.${i++}`], data: msg})
-                ops.push({type: 'put', path: ['dex', order.pair, 'his'], data: his})
+                if(Object.keys(his).length)ops.push({type: 'put', path: ['dex', order.pair, 'his'], data: his})
                 if(!path){
                     ops.push({type: 'put', path: ['dex', order.pair], data: dex})
                     if (process.env.npm_lifecycle_event == 'test') pc[2] = ops
@@ -478,7 +478,6 @@ exports.transfer = (json, pc) => {
                         ops.push({type: 'put', path: ['dex', order.pair], data: dex})
                         ops.push({type: 'put', path: ['feed', `${json.block_num}:${json.transaction_id}.${i}`], data: msg})
                         if (process.env.npm_lifecycle_event == 'test') pc[2] = ops
-                        console.log(ops)
                         store.batch(ops, pc)
                     })
                 }
