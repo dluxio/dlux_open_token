@@ -598,7 +598,7 @@ function startWith(hash, second) {
                             if (hash) {
                                 var cleanState = data[1]
                                 delete cleanState.mss
-                                cleanState.mss['59557551'] = '{\"ref_block_num\":50613,\"ref_block_prefix\":1660601226,\"expiration\":\"2021-11-28T02:59:45\",\"operations\":[[\"transfer\",{\"from\":\"dlux-cc\",\"to\":\"disregardfiat\",\"amount\":\"0.499 HIVE\",\"memo\":\"Canceled DLUX buy DLUXQmb5aV5dBqusUrJpUqRdeHBJ5PZpRC5B1NGuYnYDrjsQPQ\"}]],\"extensions\":[]}'
+                                cleanState.mss = {['59557551']: '{\"ref_block_num\":50613,\"ref_block_prefix\":1660601226,\"expiration\":\"2021-11-28T02:59:45\",\"operations\":[[\"transfer\",{\"from\":\"dlux-cc\",\"to\":\"disregardfiat\",\"amount\":\"0.499 HIVE\",\"memo\":\"Canceled DLUX buy DLUXQmb5aV5dBqusUrJpUqRdeHBJ5PZpRC5B1NGuYnYDrjsQPQ\"}]],\"extensions\":[]}'}
                                 store.put([], cleanState, function(err) {
                                     if (err) {
                                         console.log('errr',err)
