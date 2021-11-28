@@ -326,7 +326,7 @@ function verify(trx, sig, at){
                             }
                         } else {
                             hiveClient.api.broadcastTransactionSynchronous(tx, function(err, result) {
-                                if(err.data.code == 4030100){
+                            if (err && err.data.code == 4030100){
                                 console.log('EXPIRED')
                                 resolve('EXPIRED')
                             } else if (err.data.code == 3010000) { //missing authority
@@ -335,7 +335,7 @@ function verify(trx, sig, at){
                                 console.log('SENT:Signer')
                                 resolve('SENT')
                             } else {
-                                console.log(err.data)
+                                console.log(err)
                             }
                             })
                         }
