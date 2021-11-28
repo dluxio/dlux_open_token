@@ -4,6 +4,7 @@ var bytewise = require('bytewise');
 var type = require('component-type');
 var after = require('after');
 var streamToArray = require('stream-to-array');
+const stringify = require('json-stable-stringify');
 
 module.exports = Pathwise;
 
@@ -40,7 +41,7 @@ Pathwise.prototype._write = function(batch, key, obj, fn) {
             this._write(batch, key, arrToObj(obj), fn);
             break;
         default:
-            batch.put(bytewise.encode(key), JSON.stringify(obj));
+            batch.put(bytewise.encode(key), stringify(obj));
             break;
     }
 }

@@ -2,6 +2,7 @@ const { store, TXID } = require("./index");
 const { renderNFTtoDiscord, postToDiscord } = require('./discord')
 const { add, addMT, burn } = require('./lil_ops')
 const config = require('./config')
+const stringify = require('json-stable-stringify');
 
 exports.sortBuyArray = (array, key) => array.sort(function(a, b) {
     return b[key] - a[key];
@@ -117,7 +118,7 @@ const release = (from, txid, bn, tx_id) => {
                                         "memo": `Canceled DLUX buy ${a.txid}`
                                     }
                                 ]
-                                ops.push({type: 'put', path: ['msa', `refund@${a.from}:${a.txid}:${bn}`], data: JSON.stringify(transfer)})
+                                ops.push({type: 'put', path: ['msa', `refund@${a.from}:${a.txid}:${bn}`], data: stringify(transfer)})
                                 ops.push({ type: 'del', path: ['contracts', from, r.txid]});
                                 ops.push({ type: 'del', path: ['dex', 'hive', 'buyOrders', `${a.rate}:${a.txid}`] });
                                 if(tx_id && config.hookurl){postToDiscord(`${from} has canceled ${txid}`, `${bn}:${tx_id}`)}
@@ -145,7 +146,7 @@ const release = (from, txid, bn, tx_id) => {
                                         "memo": `Canceled DLUX buy ${a.txid}`
                                     }
                                 ]
-                                ops.push({type: 'put', path: ['msa', `refund@${a.from}:${a.txid}:${bn}`], data: JSON.stringify(transfer)})
+                                ops.push({type: 'put', path: ['msa', `refund@${a.from}:${a.txid}:${bn}`], data: stringify(transfer)})
                                 ops.push({ type: 'del', path: ['contracts', from, r.txid]});
                                 ops.push({ type: 'del', path: ['dex', 'hbd', 'buyOrders', `${a.rate}:${a.txid}`] });
                                 if(tx_id && config.hookurl){postToDiscord(`${from} has canceled ${txid}`, `${bn}:${tx_id}`)}

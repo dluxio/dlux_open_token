@@ -1,6 +1,7 @@
 const { store, hiveClient } = require('./index')
 const { getPathObj } = require('./getPathObj')
 const config = require('./config')
+const stringify = require('json-stable-stringify');
 //const privateKey = hiveClient.PrivateKey.fromString(config.msprivatekey);
 
 
@@ -83,7 +84,7 @@ exports.consolidate = (num, plasma) => {
                     operations: txs,
                     extensions: [],
                 }
-                ops.push({type: 'put', path: ['mss', `${num}`], data: JSON.stringify(op)})
+                ops.push({type: 'put', path: ['mss', `${num}`], data: stringify(op)})
                 if(config.msowner && config.active && txs.length){
                     const stx = hiveClient.auth.signTransaction(op, [config.active])
                     sig.sig = stx.signatures[0]
@@ -115,7 +116,7 @@ exports.sign = (num, plasma, missed) => {
                     }
                     ops.push({type:'del', path:['mss', `${missed}`]})
                     ops.push({type:'del', path:['mss', `${missed}:sigs`]})
-                    ops.push({type: 'put', path: ['mss', `${num}`], data: JSON.stringify(op)})
+                    ops.push({type: 'put', path: ['mss', `${num}`], data: stringify(op)})
                     if(mem[1].ms.active_account_auths[config.username]  && config.active){
                         const stx = hiveClient.auth.signTransaction(op, [config.active])
                         sig.sig = stx.signatures[0]
