@@ -126,8 +126,8 @@ api.get('/api/tickers', API.tickers);
 api.get('/api/orderbook', API.orderbook);
 api.get('/api/orderbook/:ticker_id', API.orderbook);
 api.get('/api/pairs', API.pairs);
-api.get('/api/historical_trades', API.historical_trades);
-api.get('/api/historical_trades/:ticker_id', API.historical_trades);
+api.get('/api/historical', API.historical_trades);
+api.get('/api/historical/:ticker_id', API.historical_trades);
 api.get('/api/mirrors', API.mirrors);
 api.get('/api/coin_detail', API.detail);
 api.get('/api/nfts/:user', API.nfts);
@@ -597,6 +597,7 @@ function startWith(hash, second) {
                         if (!e && (second || data[0] > API.RAM.head - 325)) {
                             if (hash) {
                                 var cleanState = data[1]
+                                delete cleanState.history
                                 store.put([], cleanState, function(err) {
                                     if (err) {
                                         console.log('errr',err)

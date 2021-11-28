@@ -282,12 +282,11 @@ exports.historical_trades = (req, res, next) => {
                 sell = [],
                 count = 0
             if(v[0][pair].his)for(var item in v[0][pair].his){
-                //{type: 'buy', t:Date.parse(json.timestamp), block: json.block_num, base_vol: inv, target_vol: remaining, target: order.pair, price: next.rate, id: json.transaction_id + i}
                 const record = {        
                     "trade_id":v[0][pair].his[item].id,
                     "price":v[0][pair].his[item].price,
-                    "base_volume":parseFloat(v[0][pair].his[item].base_volume / 1000).toFixed(3),
-                    "target_volume": parseFloat(v[0][pair].his[item].target_volume / 1000).toFixed(3),
+                    "base_volume":parseFloat(parseInt(v[0][pair].his[item].base_vol) / 1000).toFixed(3),
+                    "target_volume": parseFloat(parseInt(v[0][pair].his[item].target_vol) / 1000).toFixed(3),
                     "trade_timestamp": v[0][pair].his[item].t,
                     "type":v[0][pair].his[item].type
                 }

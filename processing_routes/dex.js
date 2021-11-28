@@ -153,10 +153,6 @@ exports.dex_sell = (json, from, active, pc) => {
                 waitfor.push(add(to, addops[to]))
             }
             ops.push({type: 'put', path: ['dex', order.pair], data: dex})
-
-            for (var j = 0; j < his.length; j++){
-                ops.push({type: 'put', path: ['history', order.pair, `${json.block_num}:${his[j].id}`], data: his[j]})
-            }
             var hiveTimeWeight = 1 - ((json.block_num - stats[`H${order.pair.substr(1)}VWMA`].block) * 0.000033)
             if (hiveTimeWeight < 0) hiveTimeWeight = 0
             stats[`H${order.pair.substr(1)}VWMA`] = {
