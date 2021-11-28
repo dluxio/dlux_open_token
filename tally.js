@@ -318,7 +318,7 @@ function verify(trx, sig, at){
                                 console.log('MISSING')
                                 sendit(tx, sg, t, j+1)
                             } else if (err.data.code == 10) { //duplicate transaction
-                                console.log('SENT')
+                                console.log('SENT:Verifier')
                                 resolve('SENT')
                             } else {
                                 console.log(err.data)
@@ -332,7 +332,7 @@ function verify(trx, sig, at){
                             } else if (err.data.code == 3010000) { //missing authority
                                 console.log('MISSING')
                             } else if (err.data.code == 10) { //duplicate transaction
-                                console.log('SENT')
+                                console.log('SENT:Signer')
                                 resolve('SENT')
                             } else {
                                 console.log(err.data)
