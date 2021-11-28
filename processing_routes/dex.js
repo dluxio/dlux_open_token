@@ -31,7 +31,7 @@ exports.dex_sell = (json, from, active, pc) => {
             dex = a[2],
             ops = [],
             adds = [],
-            his = [],
+            his = {},
             fee = 0,
             hours = parseInt(json.hours) || 720
         if (hours > 720) { hours = 720 }
@@ -53,7 +53,7 @@ exports.dex_sell = (json, from, active, pc) => {
                     if (next.amount <= remaining){
                             filled += next.amount
                             adds.push([next.from, next.amount - next.fee])
-                            his.push({type: 'sell', block: json.block_num, base_vol: next.amount, target_vol: next[order.pair], target: order.pair, price: next.rate, id: json.transaction_id + i})
+                            his[`${json.block_num}:${i}:${json.transaction_id}`] = {type: 'sell', t:Date.parse(json.timestamp + '.000Z'), block: json.block_num, base_vol: next.amount, target_vol: next[order.pair], target: order.pair, price: next.rate, id: json.transaction_id + i}
                             fee += next.fee //add the fees
                             remaining -= next.amount
                             dex.tick = price
@@ -87,7 +87,7 @@ exports.dex_sell = (json, from, active, pc) => {
                             pair += thistarget
                             adds.push([next.from, remaining - thisfee])
                             dex.tick = price
-                            his.push({type: 'sell', block: json.block_num, base_vol: remaining, target_vol: thistarget + thisfee, target: order.pair, price: next.rate, id: json.transaction_id + i})
+                            his[`${json.block_num}:${i}:${json.transaction_id}`] = {type: 'sell', t:Date.parse(json.timestamp), block: json.block_num, base_vol: remaining, target_vol: thistarget + thisfee, target: order.pair, price: next.rate, id: json.transaction_id + i}
                             fee += thisfee
                             const transfer = [
                                     "transfer",
@@ -164,6 +164,7 @@ exports.dex_sell = (json, from, active, pc) => {
                     vol: parseInt(filled + (stats[`H${order.pair.substr(1)}VWMA`].vol * hiveTimeWeight))
                 }
             ops.push({type: 'put', path: ['stats'], data: stats})
+            ops.push({type: 'put', path: ['dex', order.pair, 'his'], data: his})
             if(path){
                 Promise.all([path, ...waitfor])
                 .then(expPath =>{
@@ -292,6 +293,7 @@ exports.transfer = (json, pc) => {
                     filled = 0,
                     remaining = order.amount,
                     ops = [],
+                    his = {},
                     fee = 0,
                     i = 0
                 if (order.type == 'LIMIT' && order.rate == 0) {
@@ -310,6 +312,7 @@ exports.transfer = (json, pc) => {
                             fee += next.fee //add the fees
                             remaining -= next[order.pair]
                             dex.tick = order.rate
+                            his[`${json.block_num}:${i}:${json.transaction_id}`] = {type: 'buy', t:Date.parse(json.timestamp), block: json.block_num, base_vol: next.amount, target_vol: next[order.pair], target: order.pair, price: next.rate, id: json.transaction_id + i}
                             dex.sellBook = DEX.remove(item, dex.sellBook) //adjust the orderbook
                             delete dex.sellOrders[`${price}:${item}`]
                             const transfer = [
@@ -323,6 +326,7 @@ exports.transfer = (json, pc) => {
                                 ]
                             let msg = `@${json.from} bought ${parseFloat(parseInt(next.amount)/1000).toFixed(3)} ${config.TOKEN} with ${parseFloat(parseInt(next[order.pair])/1000).toFixed(3)} ${order.pair.toUpperCase()} from ${next.from} (${item})`
                             ops.push({type: 'put', path: ['feed', `${json.block_num}:${json.transaction_id}.${i}`], data: msg})
+                            ops.push({type: 'put', path: ['dex', order.pair, 'his'], data: his})
                             ops.push({type: 'put', path: ['msa', `${item}:${json.transaction_id}:${json.block_num}`], data: JSON.stringify(transfer)}) //send HIVE out via MS
                             ops.push({type: 'del', path: ['dex', order.pair, 'sellOrders', `${price}:${item}`]}) //remove the order
                             ops.push({type: 'del', path: ['contracts', next.from , item]}) //remove the contract
@@ -337,6 +341,7 @@ exports.transfer = (json, pc) => {
                             fee += feeAmount //add the fees
                             next.amount -= tokenAmount
                             next.fee -= feeAmount
+                            his[`${json.block_num}:${i}:${json.transaction_id}`] = {type: 'buy', t:Date.parse(json.timestamp), block: json.block_num, base_vol: tokenAmount, target_vol: remaining, target: order.pair, price: next.rate, id: json.transaction_id + i}
                             if(!next.partial){
                                 next.partial = {[json.transaction_id]:{token: tokenAmount, coin: remaining}}
                             } else {
@@ -357,6 +362,7 @@ exports.transfer = (json, pc) => {
                             remaining = 0
                             ops.push({type: 'put', path: ['feed', `${json.block_num}:${json.transaction_id}.${i}`], data: msg})
                             ops.push({type: 'put', path: ['balances', json.from], data: bal})
+                            ops.push({type: 'put', path: ['dex', order.pair, 'his'], data: his})
                             ops.push({type: 'put', path: ['msa', `${item}:${json.transaction_id}:${json.block_num}`], data: JSON.stringify(transfer)}) //send HIVE out via MS
                             ops.push({type: 'put', path: ['dex', order.pair, 'sellOrders', `${price}:${item}`], data: next}) //update the order
                             ops.push({type: 'put', path: ['contracts', next.from , item], data: next}) //update the contract
@@ -373,7 +379,6 @@ exports.transfer = (json, pc) => {
                                         "memo": `ICO Buy from ${json.from}`
                                     }
                                 ]
-                            
                             ops.push({type: 'put', path: ['msa', `ICO@${json.from}:${json.transaction_id}:${json.block_num}`], data: JSON.stringify(transfer)}) //send HIVE out via MS
                             if (!stats.outOnBlock) {
                                 purchase = parseInt(remaining / stats.icoPrice * 1000)
@@ -381,6 +386,7 @@ exports.transfer = (json, pc) => {
                                 if (purchase < inv) {
                                     inv -= purchase
                                     bal += purchase
+                                    his[`${json.block_num}:${i}:${json.transaction_id}`] = {type: 'buy', t:Date.parse(json.timestamp), block: json.block_num, base_vol: purchase, target_vol: remaining, target: order.pair, price: next.rate, id: json.transaction_id + i}
                                     const msg = `@${json.from}| bought ${parseFloat(purchase / 1000).toFixed(3)} ${config.TOKEN} with ${parseFloat(remaining / 1000).toFixed(3)} HIVE`
                                     ops.push({ type: 'put', path: ['feed', `${json.block_num}:${json.transaction_id}:${i}`], data: msg },
                                         { type: 'put', path: ['balances', 'ri'], data: inv })
@@ -388,6 +394,7 @@ exports.transfer = (json, pc) => {
                                     bal += inv
                                     const left = purchase - inv
                                     stats.outOnBlock = json.block_num
+                                    his[`${json.block_num}:${i}:${json.transaction_id}`] = {type: 'buy', t:Date.parse(json.timestamp), block: json.block_num, base_vol: inv, target_vol: remaining, target: order.pair, price: next.rate, id: json.transaction_id + i}
                                     const msg = `@${json.from}| bought ALL ${parseFloat(parseInt(purchase - left)).toFixed(3)} ${config.TOKEN} with ${parseFloat(parseInt(amount) / 1000).toFixed(3)} HIVE. And bid in the over-auction`
                                     ops.push({ type: 'put', path: ['ico', `${json.block_num}`, json.from], data: parseInt(amount * left / purchase) },
                                         { type: 'put', path: ['balances', 'ri'], data: 0 },
@@ -453,6 +460,7 @@ exports.transfer = (json, pc) => {
                 if (config.hookurl || config.status) postToDiscord(msg, `${json.block_num}:${json.transaction_id}`)
                 ops.push({type: 'put', path: ['balances', json.from], data: bal})
                 ops.push({type: 'put', path: ['feed', `${json.block_num}:${json.transaction_id}.${i++}`], data: msg})
+                ops.push({type: 'put', path: ['dex', order.pair, 'his'], data: his})
                 if(!path){
                     ops.push({type: 'put', path: ['dex', order.pair], data: dex})
                     if (process.env.npm_lifecycle_event == 'test') pc[2] = ops

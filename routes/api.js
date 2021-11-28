@@ -282,13 +282,14 @@ exports.historical_trades = (req, res, next) => {
                 sell = [],
                 count = 0
             if(v[0][pair].his)for(var item in v[0][pair].his){
+                //{type: 'buy', t:Date.parse(json.timestamp), block: json.block_num, base_vol: inv, target_vol: remaining, target: order.pair, price: next.rate, id: json.transaction_id + i}
                 const record = {        
-                    "trade_id":item.split(':')[1],
-                    "price":v[0][pair].his[item].rate,
-                    "base_volume":parseFloat(v[0][pair].his[item].rate * v[0][pair].his[item].amount / 1000).toFixed(3),
-                    "target_volume": parseFloat(parseFloat(v[0][pair].his[item].amount) / 1000).toFixed(3),
-                    "trade_timestamp": v[0][pair].his[item].timestamp || Date.now() - ((v[1].lastIBlock - v[0][pair].his[item].block)*3000),
-                    "type":v[0][pair].his[item].type || "buy"
+                    "trade_id":v[0][pair].his[item].id,
+                    "price":v[0][pair].his[item].price,
+                    "base_volume":parseFloat(v[0][pair].his[item].base_volume / 1000).toFixed(3),
+                    "target_volume": parseFloat(v[0][pair].his[item].target_volume / 1000).toFixed(3),
+                    "trade_timestamp": v[0][pair].his[item].t,
+                    "type":v[0][pair].his[item].type
                 }
                 if(record.type == 'buy'){
                     buy.push(record)
@@ -354,16 +355,49 @@ exports.historical_trades = (req, res, next) => {
 }
 
 exports.dex = (req, res, next) => {
-    var dex = getPathObj(['dex'])
-    var queue = getPathObj(['queue'])
+    var Pdex = getPathObj(['dex'])
+    var Pstats = getPathObj(['stats'])
+    var Pico = getPathObj(['balances', 'ri'])
     res.setHeader('Content-Type', 'application/json');
-    Promise.all([dex, queue])
+    Promise.all([Pdex, Pstats, Pico])
         .then(function(v) {
             var markets = v[0]
             markets.hive.sells = []
             markets.hive.buys = []
             markets.hbd.sells = []
             markets.hbd.buys = []
+            markets.hive.sells.push({"amount": v[2],
+               "block": 0,
+               "expire_path": "NA",
+               "fee": 0,
+               "from": "ICO",
+               "hbd": 0,
+               "hive": parseInt((v[2]*v[1].icoPrice)/1000),
+               "rate": parseFloat(v[1].icoPrice/1000).toFixed(6),
+               "txid": "DLUXICO",
+               "type": "hive:sell",
+               "key": `${parseFloat(v[1].icoPrice/1000).toFixed(6)}:DLUXICO`,
+               "hivenai": {
+                  "amount": parseInt((v[2]*v[1].icoPrice)/1000),
+                  "precision": 3,
+                  "token": "HIVE"
+               },
+               "hbdnai": {
+                  "amount": 0,
+                  "precision": 3,
+                  "token": "HBD"
+               },
+               "amountnai": {
+                  "amount": v[2],
+                  "precision": 3,
+                  "token": "DLUX"
+               },
+               "feenai": {
+                  "amount": 0,
+                  "precision": 3,
+                  "token": "DLUX"
+               }
+            })
             for(item in v[0].hive.sellOrders){
                 markets.hive.sellOrders[item].key = item
                 var order = {}
@@ -476,9 +510,13 @@ exports.dex = (req, res, next) => {
                 }
                 markets.hbd.buys.push(order)
             }
+            delete markets.hbd.buyOrders
+            delete markets.hbd.sellOrders
+            delete markets.hive.buyOrders
+            delete markets.hbd.sellOrders
             res.send(JSON.stringify({
                 markets,
-                queue: v[1],
+                stats: v[1],
                 node: config.username,
                 behind: RAM.behind,
                 VERSION

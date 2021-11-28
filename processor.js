@@ -157,6 +157,7 @@ module.exports = function(client, steem, currentBlockNumber = 1, blockComputeSpe
                                     if(onOperation[vo[j].op[0]] !== undefined){
                                     var json = vo[j].op[1]
                                     json.block_num = vo[j].block
+                                    //json.timestamp = vo[j].timestamp
                                     json.txid = vo[j].trx_id
                                     Vops.push([vo[j].op[0],json])
                                     }
