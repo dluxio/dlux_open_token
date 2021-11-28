@@ -593,28 +593,28 @@ exports.dex_clear = (json, from, active, pc) => {
                         case 'hive:sell':
                             store.get(['dex', 'hive', 'sellOrders', `${b.rate}:${b.txid}`], function(e, a) {
                                 if (e) { console.log(e) } else if (isEmpty(a)) { console.log('Nothing here' + b.txid) } else {
-                                    release(from, b.txid, json.block_num, json.transaction_id)
+                                    release(from, b.txid, json.block_num, json.transaction_id).then(empty => {pc[0](pc[2])})
                                 }
                             })
                             break
                         case 'hbd:sell':
                             store.get(['dex', 'hbd', 'sellOrders', `${b.rate}:${b.txid}`], function(e, a) {
                                 if (e) { console.log(e) } else if (isEmpty(a)) { console.log('Nothing here' + b.txid) } else {
-                                    release(from, b.txid, json.block_num, json.transaction_id)
+                                    release(from, b.txid, json.block_num, json.transaction_id).then(empty => {pc[0](pc[2])})
                                 }
                             })
                             break
                         case 'hive:buy':
                             store.get(['dex', 'hive', 'buyOrders', `${b.rate}:${b.txid}`], function(e, a) {
                                 if (e) { console.log(e) } else if (isEmpty(a)) { console.log('Nothing here' + b.txid) } else {
-                                    release(from, b.txid, json.block_num, json.transaction_id)
+                                    release(from, b.txid, json.block_num, json.transaction_id).then(empty => {pc[0](pc[2])})
                                 }
                             })
                             break
                         case 'hbd:buy':
                             store.get(['dex', 'hbd', 'buyOrders', `${b.rate}:${b.txid}`], function(e, a) {
                                 if (e) { console.log(e) } else if (isEmpty(a)) { console.log('Nothing here' + b.txid) } else {
-                                    release(from, b.txid, json.block_num, json.transaction_id)
+                                    release(from, b.txid, json.block_num, json.transaction_id).then(empty => {pc[0](pc[2])})
                                 }
                             })
                             break
