@@ -700,7 +700,7 @@ function buildSplitTransfers(amount, pair, ds, memos){
     let ops = [],
         total = 0
     for(var i = tos.length - 1; i >= 0; i--) {
-        let dis = parseInt((amount*10000)/parseInt(tos.split('_')[1]))
+        let dis = parseInt((amount*10000)/parseInt(tos[i].split('_')[1]))
             total += dis
         if(!i)dis = amount - total
         ops.push(['transfer',{
