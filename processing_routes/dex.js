@@ -702,8 +702,8 @@ function buildSplitTransfers(amount, pair, ds, memos){
         total = 0
     for(var i = tos.length - 1; i >= 0; i--) {
         let dis = parseInt((amount*parseInt(tos[i].split('_')[1])/10000))
-            total += dis
-        if(!i)dis = amount - total
+        if(!i)dis = amount - total    
+        total += dis
         ops.push(['transfer',{
             to: tos[i].split('_')[0],
             from: config.msaccount,
