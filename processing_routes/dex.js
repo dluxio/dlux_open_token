@@ -695,12 +695,13 @@ exports.dex_clear = (json, from, active, pc) => {
 }
 
 function buildSplitTransfers(amount, pair, ds, memos){
+    console.log({amount, pair, ds, memos})
     let tos = ds.split(',') || 0
     if (!tos)return []
     let ops = [],
         total = 0
     for(var i = tos.length - 1; i >= 0; i--) {
-        let dis = parseInt((amount*10000)/parseInt(tos[i].split('_')[1]))
+        let dis = parseInt((amount*parseInt(tos[i].split('_')[1])/10000))
             total += dis
         if(!i)dis = amount - total
         ops.push(['transfer',{
