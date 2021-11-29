@@ -384,7 +384,7 @@ exports.transfer = (json, pc) => {
                                 if (purchase < inv) {
                                     inv -= purchase
                                     bal += purchase
-                                    his[`${json.block_num}:${i}:${json.transaction_id}`] = {type: 'buy', t:Date.parse(json.timestamp), block: json.block_num, base_vol: purchase, target_vol: remaining, target: order.pair, price: next.rate, id: json.transaction_id + i}
+                                    his[`${json.block_num}:${i}:${json.transaction_id}`] = {type: 'buy', t:Date.parse(json.timestamp), block: json.block_num, base_vol: purchase, target_vol: remaining, target: order.pair, price: parseFloat(stats.icoPrice/1000).toFixed(6), id: json.transaction_id + i}
                                     const msg = `@${json.from}| bought ${parseFloat(purchase / 1000).toFixed(3)} ${config.TOKEN} with ${parseFloat(remaining / 1000).toFixed(3)} HIVE`
                                     ops.push({ type: 'put', path: ['feed', `${json.block_num}:${json.transaction_id}:${i}`], data: msg },
                                         { type: 'put', path: ['balances', 'ri'], data: inv })
@@ -392,7 +392,7 @@ exports.transfer = (json, pc) => {
                                     bal += inv
                                     const left = purchase - inv
                                     stats.outOnBlock = json.block_num
-                                    his[`${json.block_num}:${i}:${json.transaction_id}`] = {type: 'buy', t:Date.parse(json.timestamp), block: json.block_num, base_vol: inv, target_vol: remaining, target: order.pair, price: next.rate, id: json.transaction_id + i}
+                                    his[`${json.block_num}:${i}:${json.transaction_id}`] = {type: 'buy', t:Date.parse(json.timestamp), block: json.block_num, base_vol: inv, target_vol: remaining, target: order.pair, price: parseFloat(stats.icoPrice/1000).toFixed(6), id: json.transaction_id + i}
                                     const msg = `@${json.from}| bought ALL ${parseFloat(parseInt(purchase - left)).toFixed(3)} ${config.TOKEN} with ${parseFloat(parseInt(amount) / 1000).toFixed(3)} HIVE. And bid in the over-auction`
                                     ops.push({ type: 'put', path: ['ico', `${json.block_num}`, json.from], data: parseInt(amount * left / purchase) },
                                         { type: 'put', path: ['balances', 'ri'], data: 0 },
