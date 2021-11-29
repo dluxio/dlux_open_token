@@ -707,7 +707,7 @@ function buildSplitTransfers(amount, pair, ds, memos){
             to: tos[i].split('_')[0],
             from: config.msaccount,
             amount: `${parseFloat(dis/1000).toFixed(3)} ${pair.toUpperCase()}`,
-            memo: memos + `:${parseFloat(parseInt(tos.split('_')[1])/100).toFixed(2)}%`
+            memo: memos + `:${parseFloat(parseInt(tos[i].split('_')[1])/100).toFixed(2)}%`
         }])
     }
     return ops
