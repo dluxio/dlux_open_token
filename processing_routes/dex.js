@@ -302,7 +302,7 @@ exports.transfer = (json, pc) => {
                     ops.push({type: 'put', path: ['lth', item], data: listing})
                 }
                 if(qty)addMT(['rnfts', json.from, setname], qty)
-                transfers.push(buildSplitTransfers(qty*listing.h+qty*listing.b, type, listing.d, `${setname} mint token sale - ${json.from}:${json.transaction_id.substr(0,8)}:`))
+                transfers = [...transfers, ...buildSplitTransfers(qty*listing.h+qty*listing.b, type, listing.d, `${setname} mint token sale - ${json.from}:${json.transaction_id.substr(0,8)}:`)]
                 if(refund_amount){
                     transfers.push(['transfer',{
                         to:json.from,
