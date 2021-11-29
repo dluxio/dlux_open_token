@@ -215,6 +215,8 @@ function startApp() {
     processor.on('ft_escrow_cancel', HR.ft_escrow_cancel)
     processor.on('ft_escrow_complete', HR.ft_escrow_complete)
     processor.on('ft_escrow', HR.ft_escrow)
+    processor.on('fts_sell_h', HR.fts_sell_h)
+    processor.on('fts_sell_hcancel', HR.fts_sell_hcancel)
     processor.on('nft_buy', HR.nft_buy)
     processor.on('nft_sell', HR.nft_sell)
     processor.on('nft_sell_cancel', HR.nft_sell_cancel)
