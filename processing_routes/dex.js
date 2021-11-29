@@ -263,7 +263,7 @@ exports.transfer = (json, pc) => {
             }
         })
     } else if (json.to == config.msaccount) {
-        if(json.memo.split('0')[0] == 'NFT'){
+        if(json.memo.split(' ')[0] == 'NFT'){
             /*
                     lth[`set:hash`]{
                         h,//millihive
@@ -273,7 +273,7 @@ exports.transfer = (json, pc) => {
                         i:`${json.set}:${hash}`,//item for canceling
                     }
             */
-            let item = json.memo.split('0')[1],
+            let item = json.memo.split(' ')[1],
                 setname = item.split(':')[0],
                 Pset = getPathObj(['set', setname]),
                 Pitem = getPathObj(['lth', item])
@@ -288,10 +288,10 @@ exports.transfer = (json, pc) => {
                     transfers = []
                 if(type == 'HIVE' && amount >= listing.h && listing.h != 0){
                     qty = parseInt(amount/listing.h)
-                    refund_amount = amount % listing.h
+                    refund_amount = amount % parseInt(listing.h)
                 } else if (type == 'HBD' && amount >= listing.b && listing.b != 0){
                     qty = parseInt(amount/listing.b)
-                    refund_amount = amount % listing.b
+                    refund_amount = amount % parseInt(listing.b)
                 }
                 listing.q -= qty
                 if(listing.q <= 0){
@@ -695,7 +695,8 @@ exports.dex_clear = (json, from, active, pc) => {
 }
 
 function buildSplitTransfers(amount, pair, ds, memos){
-    let tos = ds.split(',')
+    let tos = ds.split(',') || 0
+    if (!tos)return []
     let ops = [],
         total = 0
     for(var i = tos.length - 1; i >= 0; i--) {

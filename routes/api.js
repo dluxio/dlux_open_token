@@ -1051,6 +1051,7 @@ exports.mint_supply = (req, res, next) => {
                     uid: item.split(':')[1],
                     set: item.split(':')[0],
                     price: mem[2][item].p,
+                    qty: mem[2][item].q || 1,
                     pricenai: {
                         amount: mem[2][item].p,
                         precision: config.precision,
@@ -1083,6 +1084,7 @@ exports.mint_supply = (req, res, next) => {
                     uid: item.split(':')[1],
                     set: item.split(':')[0],
                     price: amount,
+                    qty: hivesells[item].q,
                     pricenai: {
                         amount: amount,
                         precision: config.precision,
