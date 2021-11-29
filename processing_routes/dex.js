@@ -309,7 +309,7 @@ exports.transfer = (json, pc) => {
                             bal += next.amount - next.fee //update the balance
                             fee += next.fee //add the fees
                             remaining -= next[order.pair]
-                            dex.tick = order.rate
+                            dex.tick = next.rate
                             his[`${json.block_num}:${i}:${json.transaction_id}`] = {type: 'buy', t:Date.parse(json.timestamp), block: json.block_num, base_vol: next.amount, target_vol: next[order.pair], target: order.pair, price: next.rate, id: json.transaction_id + i}
                             dex.sellBook = DEX.remove(item, dex.sellBook) //adjust the orderbook
                             delete dex.sellOrders[`${price}:${item}`]
@@ -345,7 +345,7 @@ exports.transfer = (json, pc) => {
                             } else {
                                 next.partial[json.transaction_id] = {token: tokenAmount, coin: remaining}
                             }
-                            dex.tick = order.rate
+                            dex.tick = next.rate
                             dex.sellOrders[`${price}:${item}`] = next
                             const transfer = [
                                     "transfer",
@@ -374,10 +374,11 @@ exports.transfer = (json, pc) => {
                                         "from": config.msaccount,
                                         "to": config.mainICO,
                                         "amount": parseFloat(remaining/1000).toFixed(3) + ' ' + order.pair.toUpperCase(),
-                                        "memo": `ICO Buy from ${json.from}`
+                                        "memo": `ICO Buy from ${json.from}:${json.transaction_id}`
                                     }
                                 ]
                             ops.push({type: 'put', path: ['msa', `ICO@${json.from}:${json.transaction_id}:${json.block_num}`], data: stringify(transfer)}) //send HIVE out via MS
+                            dex.tick = parseFloat(stats.icoPrice/1000).toFixed(6)
                             if (!stats.outOnBlock) {
                                 purchase = parseInt(remaining / stats.icoPrice * 1000)
                                 filled += purchase
