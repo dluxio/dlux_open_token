@@ -281,7 +281,7 @@ exports.transfer = (json, pc) => {
                 let set = mem[0],
                     listing = mem[1],
                     amount = parseInt(json.amount.split(' ')[0] * 1000),
-                    type = json.memo.split(' ')[1],
+                    type = json.amount.split(' ')[1],
                     ops = [],
                     qty = 0,
                     refund_amount = amount,
