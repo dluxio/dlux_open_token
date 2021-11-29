@@ -984,7 +984,7 @@ exports.mint_supply = (req, res, next) => {
         ahp = getPathObj(['am']),
         setp = getPathObj(['sets']),
         lsp = getPathObj(['lt']),
-        lshp = getPathObj(['lh'])
+        lshp = getPathObj(['lth'])
     Promise.all([ahp, setp, lsp, lshp])
     .then(mem => {
         let result = []
@@ -1087,7 +1087,7 @@ exports.mint_supply = (req, res, next) => {
                     qty: hivesells[item].q,
                     pricenai: {
                         amount: amount,
-                        precision: config.precision,
+                        precision: 3,
                         token: token
                     },
                     by:hivesells[item].o,
