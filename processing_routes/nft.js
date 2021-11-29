@@ -3,8 +3,9 @@ const { store, unshiftOp } = require('./../index')
 const { chronAssign, add, hashThis, addMT } = require('./../lil_ops')
 const { getPathObj, getPathNum } = require('../getPathObj')
 const { postToDiscord } = require('./../discord')
-const { Base64, primes, NFT } = require('./../helpers')
+const { Base64, primes, NFT, distro } = require('./../helpers')
 const { set } = require('@hiveio/hive-js/lib/auth/serializer/src/types')
+const { promises } = require('stream')
 
 /*
 json { set, uid}
@@ -121,16 +122,7 @@ exports.nft_reserve_complete  = function(json, from, active, pc) {
                 set = nfts[1]
             nft.s = NFT.last(json.block_num, nft.s)
             set.u = NFT.move(json.uid, from, set.u)
-            let per = set.r || 0
-            let royalty = parseInt((per / 10000) * price)
-            if(set.a == nft.t.split('_')[0]){
-                add(nft.t.split('_')[0], price)
-            }
-            else {
-                add(nft.t.split('_')[0], price - royalty)
-                add(set.a, royalty)
-            }
-            add(from, -price)
+            let promises = distro(from, to, price, set.r, set.a, set.ra)
             delete nft.t
             ops.push({type:'put', path:['nfts', from,`${json.set}:${json.uid}`], data: nft})
             ops.push({type:'put', path:['sets', json.set], data: set})
@@ -139,7 +131,7 @@ exports.nft_reserve_complete  = function(json, from, active, pc) {
             let msg = `@${from} completed NFT: ${json.set}:${json.uid} transfer`
             if (config.hookurl || config.status) postToDiscord(msg, `${json.block_num}:${json.transaction_id}`)
             ops.push({ type: 'put', path: ['feed', `${json.block_num}:${json.transaction_id}`], data: msg });
-            store.batch(ops, pc)
+            Promise.all(promises).then(empty => {store.batch(ops, pc) })
         } else {
             if (config.hookurl) postToDiscord(`Can't find NFT: ${json.set}:${json.uid} in pending transfers`)
             pc[0](pc[2])
@@ -250,7 +242,7 @@ json:nft_define: {
 exports.nft_define = function(json, from, active, pc) {
 if (active && from == 'disregardfiat'){
     let statsp = getPathObj(['stats']),
-        balp = getPathNum(['balances', from]),
+        balp = getPathObj(['balances']),
         setp = getPathObj(['sets', json.name])
     Promise.all([statsp, balp, setp])
     .then(mem => {
@@ -274,7 +266,7 @@ if (active && from == 'disregardfiat'){
                         var bond = json.bond || 0
                         if(typeof bond !== 'number') bond = 0
                         const fee = (byte_cost * byte_count * total_num) + mem[0].nft_fee_1 + (total_num * bond)
-                        if(json.max_fee >= fee && mem[1] >= fee){
+                        if(json.max_fee >= fee && mem[1].from >= fee){
                             let set = { //5 plus set name bytes
                                 "a":from, //the account that pays the set fee, --23 bytes
                                 "s":json.script, //build app hash --53bytes
@@ -289,8 +281,22 @@ if (active && from == 'disregardfiat'){
                                 "b":bond, //burn value
                                 "f":fee - (total_num * bond) //fee
                             }
+                            let pairs = json.ra.split(',')
+                                let total = 0,
+                                    failed = false
+                            if (json.ra){ //string verification
+                                for (let i = 0; i < pairs.length; i++){
+                                    total += parseInt(pairs[i].split('_')[1])
+                                    if(!mem[1][pairs[i].split('_')[0]])failed = true
+                                }
+                                if(!failed && total === 10000){
+                                    set.ra = json.ra
+                                } else {
+                                    set.build_message = 'invalid RA string'
+                                }
+                            }
                             const ops = []
-                            ops.push({type:'put', path:['balances', from], data: mem[1] - fee})
+                            ops.push({type:'put', path:['balances', from], data: mem[1].from - fee})
                             ops.push({type:'put', path:['sets', json.name], data: set})
                             ops.push({type:'put', path:['rnfts', json.name, from], data: total_num})
                             let msg = `@${from} defined ${json.name} NFT set. ${parseFloat(fee/1000).toFixed(3)} ${config.TOKEN} paid`
@@ -613,23 +619,15 @@ exports.nft_buy = function(json, from, active, pc) {
             nft.s.replace(last_modified, Base64.fromNumber(json.block_num)) //update the modified block
             if(json.uid.split(':')[0] != 'Qm') set.u = NFT.move(json.uid, from, set.u)//update set
             else set.u = from
-            let per = set.r || 0
-            let royalty = parseInt((per / 10000)* listing.p)
-            add(set.a, royalty)
-            .then(empty =>{
-                add(listing.o, listing.p - royalty)
-                var newBal = mem[0] - listing.p
-                if (from == set.a) newBal += royalty
-                ops.push({type:'put', path:['balances', from], data: newBal})
-                ops.push({type:'put', path:['nfts', from, `${json.set}:${json.uid}`], data: nft})
-                ops.push({type:'del', path:['ls', `${json.set}:${json.uid}`]})
-                if (json.set == 'Qm') ops.push({type:'put', path:['sets', `Qm${json.uid}`], data: set})
-                else ops.push({type:'put', path:['sets', json.set], data: set})
-                let msg = `@${from} bought ${json.set}:${json.uid}`
-                if (config.hookurl || config.status) postToDiscord(msg, `${json.block_num}:${json.transaction_id}`)
-                ops.push({ type: 'put', path: ['feed', `${json.block_num}:${json.transaction_id}`], data: msg });
-                store.batch(ops, pc)
-            })
+            let promises = distro(from, listing.o, listing.p, set.r, set.a, set.ra)
+            ops.push({type:'put', path:['nfts', from, `${json.set}:${json.uid}`], data: nft})
+            ops.push({type:'del', path:['ls', `${json.set}:${json.uid}`]})
+            if (json.set == 'Qm') ops.push({type:'put', path:['sets', `Qm${json.uid}`], data: set})
+            else ops.push({type:'put', path:['sets', json.set], data: set})
+            let msg = `@${from} bought ${json.set}:${json.uid}`
+            if (config.hookurl || config.status) postToDiscord(msg, `${json.block_num}:${json.transaction_id}`)
+            ops.push({ type: 'put', path: ['feed', `${json.block_num}:${json.transaction_id}`], data: msg });
+            Promise.all(promises).then(empty=>{store.batch(ops, pc)})
         } else {
             let msg = `@${from} can't afford to buy: ${json.set}:${json.uid}, or signed with posting key`
             if (config.hookurl || config.status) postToDiscord(msg, `${json.block_num}:${json.transaction_id}`)
@@ -772,23 +770,14 @@ exports.ft_escrow_complete = function(json, from, active, pc) {
             let ops = [],
                 nft = nfts[0],
                 set = nfts[1]
-            let per = set.r || 0
-            let royalty = parseInt((per / 10000) * price)
-            if(set.a == nft.t.split('_')[0]){
-                add(nft.t.split('_')[0], price)
-            }
-            else {
-                add(nft.t.split('_')[0], price - royalty)
-                add(set.a, royalty)
-            }
-            add(from, -price)
+            let promises = distro(from, to, price, set.r, set.a, set.ra)
             addMT(['rnfts', json.set, from],1)
             ops.push({type:'del', path:['fts', 't', `${json.set}:${json.uid}`]})
             // is there anything in the NFT that needs to be modified? owner, renter, 
             let msg = `@${from} completed ${json.set} mint token transfer`
             if (config.hookurl || config.status) postToDiscord(msg, `${json.block_num}:${json.transaction_id}`)
             ops.push({ type: 'put', path: ['feed', `${json.block_num}:${json.transaction_id}`], data: msg });
-            store.batch(ops, pc)
+            Promise.all(promises).then(empty=>{store.batch(ops, pc)})
         } else {
             if (config.hookurl) postToDiscord(`Can't find Mint Token: ${json.set}:${json.uid} in pending transfers`)
             pc[0](pc[2])
@@ -854,6 +843,90 @@ exports.ft_sell = function(json, from, active, pc) {
     })
     .catch(e => { console.log(e); });
 }
+/*
+json = {
+    hive:1000, //1.000 Hive || hbd: 1000 // 1.000 HBD
+    quantity: 4096, //4096 NFTs
+    set: 'dlux', //set tokens to sell
+    distro: 'account1_5000,acc2_5000' //must add to 10000
+}
+*/
+exports.fts_sell_h = function(json, from, active, pc) {
+    let fnftp = getPathNum(['rnfts', json.set, from]),
+        ltp = getPathObj(['lth']),
+        Pbal = getPathObj(['balances']),
+        h = parseInt(json.hive) || 0, 
+        b = parseInt(json.hbd) || 0,
+        q = parseInt(json.quantity),
+        d = `${from}_10000`,
+        failed = false
+    Promise.all([fnftp, ltp, Pbal])
+    .then(mem => {
+        if (mem[0] >= q && active){
+                var ls = mem[1], 
+                    nft = mem[0],
+                    bals = mem[2]
+                if (json.distro){ //string verification
+                    let pairs = json.distro.split(','),
+                        total = 0
+                    for (let i = 0; i < pairs.length; i++){
+                        total += parseInt(pairs[i].split('_')[1])
+                        if(!bals[pairs[i].split('_')[0]])failed = true
+                    }
+                    if(!failed && total === 10000){
+                        d = json.distro
+                    }
+                }
+                var hash = hashThis(`${from}:${json.set}:${json.block_num}`),
+                    listing = {
+                        h,//millihive
+                        b,//millihbd
+                        q,//qty
+                        d,//distro string,
+                        o: from,//seller
+                        i:`${json.set}:${hash}`,//item for canceling
+                    }
+                ls[`${json.set}:${hash}`] = listing //place the listing in the AH
+                var ops = []
+                ops.push({type:'put', path:['lth'], data: ls})
+                ops.push({type:'put', path:['rnfts', json.set, from], data: nft - q})
+                let msg = `@${from} Listed ${json.set} mint tokens for hive/hbd sale`
+                if (config.hookurl || config.status) postToDiscord(msg, `${json.block_num}:${json.transaction_id}`)
+                ops.push({ type: 'put', path: ['feed', `${json.block_num}:${json.transaction_id}`], data: msg });
+                store.batch(ops, pc)
+            } else if (!active){
+                let msg = `@${from} tried to sell with out signing ACTIVE`
+                if (config.hookurl || config.status) postToDiscord(msg, `${json.block_num}:${json.transaction_id}`)
+                pc[0](pc[2])
+            } else {
+                let msg = `@${from} doesn't own enough ${json.set} mint tokens`
+                if (config.hookurl || config.status) postToDiscord(msg, `${json.block_num}:${json.transaction_id}`)
+                pc[0](pc[2])
+            }
+    })
+    .catch(e => { console.log(e); });
+}
+
+exports.fts_sell_hcancel = function(json, from, active, pc) {
+    let lsp = getPathObj(['lth', `${json.set}:${json.uid}`])
+    Promise.all([lsp])
+    .then(mem => {
+        if(active && from == mem[0].o){
+            let ops = []
+            addMT(['rnfts', json.set, from], mem[0].q)
+            ops.push({type:'del', path:['lth', `${json.set}:${json.uid}`]})
+            let msg = `@${from} canceled sell of ${json.set}:${json.uid}`
+            if (config.hookurl || config.status) postToDiscord(msg, `${json.block_num}:${json.transaction_id}`)
+            ops.push({ type: 'put', path: ['feed', `${json.block_num}:${json.transaction_id}`], data: msg });
+            store.batch(ops, pc)
+        } else {
+            let msg = `@${from} can't cancel: ${json.set}:${json.uid} with posting key`
+            if (config.hookurl || config.status) postToDiscord(msg, `${json.block_num}:${json.transaction_id}`)
+            pc[0](pc[2])
+        }
+    })
+    .catch(e => { console.log(e); });
+}
 
 exports.ft_buy = function(json, from, active, pc) {
     console.log('ft_buy', {json})
@@ -867,24 +940,15 @@ exports.ft_buy = function(json, from, active, pc) {
         try {price = mem[1].p}catch(e){}
         if(price <= mem[0] && active && mem[1].o != from){
             let set = mem[2],
-                per = set.r || 0
-            let royalty = parseInt((per / 10000)* listing.p)
-            add(set.a, royalty)
-            .then(empty =>{
-                var newBal = mem[0] - listing.p
-                if (set.a == from){
-                    newBal += royalty
-                }
-                let ops = []
-                add(listing.o, listing.p - royalty)
-                addMT(['rnfts', json.set, from], 1)
-                ops.push({type:'put', path:['balances', from], data: newBal})
-                ops.push({type:'del', path:['lt', `${json.set}:${json.uid}`]})
-                let msg = `@${from} bought ${json.set}:${json.uid} mint token`
-                if (config.hookurl || config.status) postToDiscord(msg, `${json.block_num}:${json.transaction_id}`)
-                ops.push({ type: 'put', path: ['feed', `${json.block_num}:${json.transaction_id}`], data: msg });
-                store.batch(ops, pc)
-            })
+                promises = distro(from, listing.o, price, set.r, set.a, set.ra)
+            let ops = []
+            addMT(['rnfts', json.set, from], 1)
+            ops.push({type:'put', path:['balances', from], data: newBal})
+            ops.push({type:'del', path:['lt', `${json.set}:${json.uid}`]})
+            let msg = `@${from} bought ${json.set}:${json.uid} mint token`
+            if (config.hookurl || config.status) postToDiscord(msg, `${json.block_num}:${json.transaction_id}`)
+            ops.push({ type: 'put', path: ['feed', `${json.block_num}:${json.transaction_id}`], data: msg });
+            Promise.all(promises).then(empty => {store.batch(ops, pc)})
         } else {
             let msg = `@${from} can't afford to buy: ${json.set}:${json.uid}, or signed with posting key`
             if (config.hookurl || config.status) postToDiscord(msg, `${json.block_num}:${json.transaction_id}`)

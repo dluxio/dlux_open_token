@@ -296,42 +296,6 @@ exports.historical_trades = (req, res, next) => {
                     sell.push(record)
                 }
             }
-            /*
-            open, close, top, bottom, dlux pairvolume 
-            for(item of v[0][pair].days){
-                const record = {        
-                    "trade_id":item.split(':')[1],
-                    "price":v[0][pair].his[item].rate,
-                    "base_volume":parseFloat(v[0][pair].his[item].rate * v[0][pair].his[item].amount).toFixed(3),
-                    "target_volume":v[0][pair].his[item].amount,
-                    "trade_timestamp":v[0][pair].his[item].timestamp || Date.now() - ((v[1].lastIBlock - v[0][pair].his[item].block)*3000),
-                    "type":v[0][pair].his[item].type
-                }
-                [v[0][pair].his[item].type].push(record)
-            }
-            
-           function makeTrades(day, closeBlock){
-               var num = 0
-               if(day.o != day.c){
-                   num++
-                   if(day.t > day.c)num++
-                   if(day.b < day.c)num++
-               } else if (day.t != day.c){
-
-               } else if (day.b != day.c){
-
-               }
-               var trades = [{        
-                    "trade_id":closeBlock + 'c',
-                    "price": day.c,
-                    "base_volume":parseFloat(v[0][pair].his[item].rate * v[0][pair].his[item].amount).toFixed(3),
-                    "target_volume":v[0][pair].his[item].amount,
-                    "trade_timestamp":Date.now() - ((v[1].lastIBlock - closeBlock) * 3000),
-                    "type": "buy"
-                }]
-               
-           }
-           */
             if (typ.indexOf('buy') < 0){
                 buy = []
             }
@@ -846,38 +810,41 @@ exports.sets = (req, res, next) => {
 }
 
 exports.auctions = (req, res, next) => {
-    let ahp = getPathObj(['ah']),
+    let from = req.params.set,
+        ahp = getPathObj(['ah']),
         setp = getPathObj(['sets'])
     Promise.all([ahp, setp])
     .then(mem => {
         let result = []
         for(item in mem[0]){
-            let auctionTimer = {},
-            now = new Date()
-            auctionTimer.expiryIn = now.setSeconds(now.getSeconds() + ((mem[0][item].e - TXID.getBlockNum())*3));
-            auctionTimer.expiryUTC = new Date(auctionTimer.expiryIn);
-            auctionTimer.expiryString = auctionTimer.expiryUTC.toISOString();
-            result.push({
-                        uid: item.split(':')[1],
-                        set: item.split(':')[0],
-                        price: {
-                            amount: mem[0][item].b || mem[0][item].p,
-                            precision: config.precision,
-                            token: config.TOKEN
-                        }, //starting price
-                        initial_price: {
-                            amount: mem[0][item].p,
-                            precision: config.precision,
-                            token: config.TOKEN
-                        },
-                        time: auctionTimer.expiryString,
-                        by:mem[0][item].o,
-                        bids: mem[0][item].c || 0,
-                        bidder: mem[0][item].f || '',
-                        script: mem[1][item.split(':')[0]].s,
-                        days: mem[0][item].t,
-                        buy: mem[0][item].n || ''
-                    })
+            if(!from || item.split(':')[0] == from){
+                let auctionTimer = {},
+                now = new Date()
+                auctionTimer.expiryIn = now.setSeconds(now.getSeconds() + ((mem[0][item].e - TXID.getBlockNum())*3));
+                auctionTimer.expiryUTC = new Date(auctionTimer.expiryIn);
+                auctionTimer.expiryString = auctionTimer.expiryUTC.toISOString();
+                result.push({
+                            uid: item.split(':')[1],
+                            set: item.split(':')[0],
+                            price: {
+                                amount: mem[0][item].b || mem[0][item].p,
+                                precision: config.precision,
+                                token: config.TOKEN
+                            }, //starting price
+                            initial_price: {
+                                amount: mem[0][item].p,
+                                precision: config.precision,
+                                token: config.TOKEN
+                            },
+                            time: auctionTimer.expiryString,
+                            by:mem[0][item].o,
+                            bids: mem[0][item].c || 0,
+                            bidder: mem[0][item].f || '',
+                            script: mem[1][item.split(':')[0]].s,
+                            days: mem[0][item].t,
+                            buy: mem[0][item].n || ''
+                        })
+            }
         }
         res.setHeader('Content-Type', 'application/json')
         res.send(JSON.stringify({
@@ -965,38 +932,41 @@ exports.limbo = (req, res, next) => {
 }
 
 exports.mint_auctions = (req, res, next) => {
-    let ahp = getPathObj(['am']),
+    let from = req.params.set,
+        ahp = getPathObj(['am']),
         setp = getPathObj(['sets'])
     Promise.all([ahp, setp])
     .then(mem => {
         let result = []
         for(item in mem[0]){
-            let auctionTimer = {},
-            now = new Date()
-            auctionTimer.expiryIn = now.setSeconds(now.getSeconds() + ((mem[0][item].e - TXID.getBlockNum())*3));
-            auctionTimer.expiryUTC = new Date(auctionTimer.expiryIn);
-            auctionTimer.expiryString = auctionTimer.expiryUTC.toISOString();
-            result.push({
-                        uid: item.split(':')[1],
-                        set: item.split(':')[0],
-                        price: {
-                            amount: mem[0][item].b || mem[0][item].p,
-                            precision: config.precision,
-                            token: config.TOKEN
-                        }, //starting price
-                        initial_price: {
-                            amount: mem[0][item].p,
-                            precision: config.precision,
-                            token: config.TOKEN
-                        },
-                        time: auctionTimer.expiryString,
-                        by:mem[0][item].o,
-                        bids: mem[0][item].c || 0,
-                        bidder: mem[0][item].f || '',
-                        script: mem[1][item.split(':')[0]].s,
-                        days: mem[0][item].t,
-                        buy: mem[0][item].n || ''
-                    })
+            if(!from || item.split(':')[0] == from){
+                let auctionTimer = {},
+                now = new Date()
+                auctionTimer.expiryIn = now.setSeconds(now.getSeconds() + ((mem[0][item].e - TXID.getBlockNum())*3));
+                auctionTimer.expiryUTC = new Date(auctionTimer.expiryIn);
+                auctionTimer.expiryString = auctionTimer.expiryUTC.toISOString();
+                result.push({
+                            uid: item.split(':')[1],
+                            set: item.split(':')[0],
+                            price: {
+                                amount: mem[0][item].b || mem[0][item].p,
+                                precision: config.precision,
+                                token: config.TOKEN
+                            }, //starting price
+                            initial_price: {
+                                amount: mem[0][item].p,
+                                precision: config.precision,
+                                token: config.TOKEN
+                            },
+                            time: auctionTimer.expiryString,
+                            by:mem[0][item].o,
+                            bids: mem[0][item].c || 0,
+                            bidder: mem[0][item].f || '',
+                            script: mem[1][item.split(':')[0]].s,
+                            days: mem[0][item].t,
+                            buy: mem[0][item].n || ''
+                        })
+            }
         }
         res.setHeader('Content-Type', 'application/json')
         res.send(JSON.stringify({
@@ -1010,126 +980,121 @@ exports.mint_auctions = (req, res, next) => {
 }
 
 exports.mint_supply = (req, res, next) => {
-    let ahp = getPathObj(['am']),
+    let from = req.params.set,
+        ahp = getPathObj(['am']),
         setp = getPathObj(['sets']),
-        lsp = getPathObj(['lt'])
-    Promise.all([ahp, setp, lsp])
+        lsp = getPathObj(['lt']),
+        lshp = getPathObj(['lh'])
+    Promise.all([ahp, setp, lsp, lshp])
     .then(mem => {
         let result = []
-        let sets = {
-            /*
-                BZ : {
-                    set: 'BZ',
-                    script: 'QmcdvCEd4UUvEKXmxeQXhPBwyrppCJyEuWztLJbhgYHADj',
-                    auctions: [{
-                        uid: 'fake',
-                        set: 'BZ',
-                        price: 100000000000,
-                        pricenai: {
-                            amount: 100000000000,
-                            precision: config.precision,
-                            token: config.TOKEN
-                        }, //starting price
-                        initial_price: {
-                            amount: 100000000000,
-                            precision: config.precision,
-                            token: config.TOKEN
-                        },
-                        time: '2021-10-31T21:18:57.955Z',
-                        by: 'disregardfiat',
-                        bids: 0,
-                        bidder: '',
-                        script: 'QmcdvCEd4UUvEKXmxeQXhPBwyrppCJyEuWztLJbhgYHADj',
-                        days: 10,
-                        buy: ''
-                    }],
-                    sales: [{
-                uid: 'FAKE',
-                set: 'BZ',
-                price: 100000000000,
-                pricenai: {
-                    amount: 100000000000,
-                    precision: config.precision,
-                    token: config.TOKEN
-                },
-                by: 'null',
-                script: 'QmcdvCEd4UUvEKXmxeQXhPBwyrppCJyEuWztLJbhgYHADj'
-            }],
-                    qty_sales: 1,
-                    qty_auctions: 1,
-                    qty: 2
-                } //QmcdvCEd4UUvEKXmxeQXhPBwyrppCJyEuWztLJbhgYHADj
-                */
-            }
+        let sets = {}
+        let hivesells = mem[3]
         for(item in mem[0]){
-            if(sets[item.split(':')[0]] == undefined){
-                sets[item.split(':')[0]] = {
-                    set: item.split(':')[0],
-                    script: mem[1][item.split(':')[0]].s,
-                    auctions: [],
-                    sales: [],
-                    qty_sales: 0,
-                    qty_auctions: 0,
-                    qty: 0
-                }
-            }
-            let auctionTimer = {},
-            now = new Date()
-            auctionTimer.expiryIn = now.setSeconds(now.getSeconds() + ((mem[0][item].e - TXID.getBlockNum())*3));
-            auctionTimer.expiryUTC = new Date(auctionTimer.expiryIn);
-            auctionTimer.expiryString = auctionTimer.expiryUTC.toISOString();
-            sets[item.split(':')[0]].qty_auctions += (mem[0][item].a || 1)
-            sets[item.split(':')[0]].qty += (mem[0][item].a || 1)
-            sets[item.split(':')[0]].auctions.push({
-                        uid: item.split(':')[1],
+            if(!from || item.split(':')[0] == from){
+                if(sets[item.split(':')[0]] == undefined){
+                    sets[item.split(':')[0]] = {
                         set: item.split(':')[0],
-                        price: mem[0][item].b || mem[0][item].p,
-                        pricenai: {
-                            amount: mem[0][item].b || mem[0][item].p,
-                            precision: config.precision,
-                            token: config.TOKEN
-                        }, //starting price
-                        initial_price: {
-                            amount: mem[0][item].p,
-                            precision: config.precision,
-                            token: config.TOKEN
-                        },
-                        time: auctionTimer.expiryString,
-                        by:mem[0][item].o,
-                        bids: mem[0][item].c || 0,
-                        bidder: mem[0][item].f || '',
                         script: mem[1][item.split(':')[0]].s,
-                        days: mem[0][item].t,
-                        buy: mem[0][item].n || ''
-                    })
+                        auctions: [],
+                        sales: [],
+                        qty_sales: 0,
+                        qty_auctions: 0,
+                        qty: 0
+                    }
+                }
+                let auctionTimer = {},
+                now = new Date()
+                auctionTimer.expiryIn = now.setSeconds(now.getSeconds() + ((mem[0][item].e - TXID.getBlockNum())*3));
+                auctionTimer.expiryUTC = new Date(auctionTimer.expiryIn);
+                auctionTimer.expiryString = auctionTimer.expiryUTC.toISOString();
+                sets[item.split(':')[0]].qty_auctions += (mem[0][item].a || 1)
+                sets[item.split(':')[0]].qty += (mem[0][item].a || 1)
+                sets[item.split(':')[0]].auctions.push({
+                            uid: item.split(':')[1],
+                            set: item.split(':')[0],
+                            price: mem[0][item].b || mem[0][item].p,
+                            pricenai: {
+                                amount: mem[0][item].b || mem[0][item].p,
+                                precision: config.precision,
+                                token: config.TOKEN
+                            }, //starting price
+                            initial_price: {
+                                amount: mem[0][item].p,
+                                precision: config.precision,
+                                token: config.TOKEN
+                            },
+                            time: auctionTimer.expiryString,
+                            by:mem[0][item].o,
+                            bids: mem[0][item].c || 0,
+                            bidder: mem[0][item].f || '',
+                            script: mem[1][item.split(':')[0]].s,
+                            days: mem[0][item].t,
+                            buy: mem[0][item].n || ''
+                        })
+                    }
         }
         for (item in mem[2]){
-            if(sets[item.split(':')[0]] == undefined){
-                sets[item.split(':')[0]] = {
-                    set: item.split(':')[0],
-                    script: mem[1][item.split(':')[0]].s,
-                    auctions: [],
-                    sales: [],
-                    qty_sales: 0,
-                    qty_auctions: 0,
-                    qty: 0
+            if(!from || item.split(':')[0] == from){
+                if(sets[item.split(':')[0]] == undefined){
+                    sets[item.split(':')[0]] = {
+                        set: item.split(':')[0],
+                        script: mem[1][item.split(':')[0]].s,
+                        auctions: [],
+                        sales: [],
+                        qty_sales: 0,
+                        qty_auctions: 0,
+                        qty: 0
+                    }
                 }
+                const listing = {
+                    uid: item.split(':')[1],
+                    set: item.split(':')[0],
+                    price: mem[2][item].p,
+                    pricenai: {
+                        amount: mem[2][item].p,
+                        precision: config.precision,
+                        token: config.TOKEN
+                    },
+                    by:mem[2][item].o,
+                    script: mem[1][item.split(':')[0]].s
+                }
+                sets[item.split(':')[0]].qty += (mem[2][item].a || 1)
+                sets[item.split(':')[0]].qty_sales += (mem[2][item].a || 1)
+                sets[item.split(':')[0]].sales.push(listing)
             }
-            const listing = {
-                uid: item.split(':')[1],
-                set: item.split(':')[0],
-                price: mem[2][item].p,
-                pricenai: {
-                    amount: mem[2][item].p,
-                    precision: config.precision,
-                    token: config.TOKEN
-                },
-                by:mem[2][item].o,
-                script: mem[1][item.split(':')[0]].s
+        }
+        for (item in hivesells){
+            if(!from || item.split(':')[0] == from){
+                if(sets[item.split(':')[0]] == undefined){
+                    sets[item.split(':')[0]] = {
+                        set: item.split(':')[0],
+                        script: mem[1][item.split(':')[0]].s,
+                        auctions: [],
+                        sales: [],
+                        qty_sales: 0,
+                        qty_auctions: 0,
+                        qty: 0
+                    }
+                }
+                let token = hivesells[item].h ? 'HIVE' : 'HBD'
+                let amount = hivesells[item].h ? hivesells[item].h : hivesells[item].b
+                const listing = {
+                    uid: item.split(':')[1],
+                    set: item.split(':')[0],
+                    price: amount,
+                    pricenai: {
+                        amount: amount,
+                        precision: config.precision,
+                        token: token
+                    },
+                    by:hivesells[item].o,
+                    script: mem[1][item.split(':')[0]].s
+                }
+                sets[item.split(':')[0]].qty += (hivesells[item].q || 1)
+                sets[item.split(':')[0]].qty_sales += (hivesells[item].q || 1)
+                sets[item.split(':')[0]].sales.push(listing)
             }
-            sets[item.split(':')[0]].qty += (mem[2][item].a || 1)
-            sets[item.split(':')[0]].qty_sales += (mem[2][item].a || 1)
-            sets[item.split(':')[0]].sales.push(listing)
         }
         for (item in sets){
             result.push(sets[item])
@@ -1146,27 +1111,28 @@ exports.mint_supply = (req, res, next) => {
 }
 
 exports.sales = (req, res, next) => {
-    let lsp = getPathObj(['ls']),
+    let from = req.params.set,
+        lsp = getPathObj(['ls']),
         mlsp = getPathObj(['mls']),
         setp = getPathObj(['sets'])
     Promise.all([lsp, mlsp, setp])
     .then(mem => {
-        let result = [],
-            mint = [],
-            sets = {}
+        let result = []
         for (item in mem[0]){
-            const listing = {
-                uid: item.split(':')[1],
-                set: item.split(':')[0],
-                price: {
-                    amount: mem[0][item].p,
-                    precision: config.precision,
-                    token: config.TOKEN
-                },
-                by:mem[0][item].o,
-                script: mem[2][item.split(':')[0]].s
+            if(!from || from != item.split(':')[0]){
+                const listing = {
+                    uid: item.split(':')[1],
+                    set: item.split(':')[0],
+                    price: {
+                        amount: mem[0][item].p,
+                        precision: config.precision,
+                        token: config.TOKEN
+                    },
+                    by:mem[0][item].o,
+                    script: mem[2][item.split(':')[0]].s
+                }
+                result.push(listing)
             }
-            result.push(listing)
         }
         res.setHeader('Content-Type', 'application/json')
         res.send(JSON.stringify({
@@ -1180,7 +1146,8 @@ exports.sales = (req, res, next) => {
 }
 
 exports.mint_sales = (req, res, next) => {
-    let lsp = getPathObj(['lt']),
+    let from = req.params.set,
+        lsp = getPathObj(['lt']),
         setp = getPathObj(['sets'])
     Promise.all([lsp, setp])
     .then(mem => {
@@ -1188,18 +1155,20 @@ exports.mint_sales = (req, res, next) => {
             mint = [],
             sets = {}
         for (item in mem[0]){
-            const listing = {
-                uid: item.split(':')[1],
-                set: item.split(':')[0],
-                price: {
-                    amount: mem[0][item].p,
-                    precision: config.precision,
-                    token: config.TOKEN
-                },
-                by:mem[0][item].o,
-                script: mem[1][item.split(':')[0]].s
+            if (!from || from == item.split(':')[0]){
+                const listing = {
+                    uid: item.split(':')[1],
+                    set: item.split(':')[0],
+                    price: {
+                        amount: mem[0][item].p,
+                        precision: config.precision,
+                        token: config.TOKEN
+                    },
+                    by:mem[0][item].o,
+                    script: mem[1][item.split(':')[0]].s
+                }
+                result.push(listing)
             }
-            result.push(listing)
         }
         res.setHeader('Content-Type', 'application/json')
         res.send(JSON.stringify({

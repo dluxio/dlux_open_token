@@ -248,8 +248,8 @@ function dao(num) {
                                     his.push(dex.hive.his[int]);
                                     daops.push({ type: 'del', path: ['dex', 'hive', 'his', int] });
                                 } else {
-                                    vol = parseInt(parseInt(dex.hive.his[int].amount) + vol);
-                                    vols = parseInt(parseInt(parseInt(dex.hive.his[int].amount) * parseFloat(dex.hive.his[int].rate)) + vols);
+                                    vol = parseInt(parseInt(dex.hive.his[int].base_vol) + vol);
+                                    vols = parseInt(parseInt(dex.hive.his[int].target_vol) + vols);
                                 }
                             }
                             for (var int in dex.hbd.his) {
@@ -258,7 +258,7 @@ function dao(num) {
                                     daops.push({ type: 'del', path: ['dex', 'hbd', 'his', int] });
                                 } else {
                                     vol = parseInt(parseInt(dex.hbd.his[int].amount) + vol);
-                                    volhbd = parseInt(parseInt(parseInt(dex.hbd.his[int].amount) * parseFloat(dex.hbd.his[int].rate)) + volhbd);
+                                    volhbd = parseInt(parseInt(dex.hbd.his[int].target_vol)  + volhbd);
                                 }
                             }
                             if (his.length) {
@@ -269,14 +269,14 @@ function dao(num) {
                                 hi.d = 0;
                                 hi.v = 0;
                                 for (var int = 0; int < his.length; int++) {
-                                    if (hi.t < parseFloat(his[int].rate)) {
-                                        hi.t = parseFloat(his[int].rate);
+                                    if (hi.t < parseFloat(his[int].price)) {
+                                        hi.t = parseFloat(his[int].price);
                                     }
-                                    if (hi.b > parseFloat(his[int].rate)) {
-                                        hi.b = parseFloat(his[int].rate);
+                                    if (hi.b > parseFloat(his[int].price)) {
+                                        hi.b = parseFloat(his[int].price);
                                     }
 
-                                    hi.v += parseFloat(parseInt(his[int].amount) * parseInt(his[int].rate));
+                                    hi.v += parseInt(his[int].target_vol);
                                     hi.d += parseInt(his[int].amount);
                                 }
                                 if (!dex.hive.days)
@@ -291,13 +291,13 @@ function dao(num) {
                                 hib.v = 0;
                                 hib.d = 0;
                                 for (var int = 0; int < hisb.length; int++) {
-                                    if (hib.t < parseFloat(hisb[int].rate)) {
-                                        hib.t = parseFloat(hisb[int].rate);
+                                    if (hib.t < parseFloat(hisb[int].price)) {
+                                        hib.t = parseFloat(hisb[int].price);
                                     }
-                                    if (hib.b > parseFloat(hisb[int].rate)) {
-                                        hib.b = parseFloat(hisb[int].rate);
+                                    if (hib.b > parseFloat(hisb[int].price)) {
+                                        hib.b = parseFloat(hisb[int].price);
                                     }
-                                    hib.v += parseInt(parseInt(hisb[int].amount) * parseInt(hisb[int].rate));
+                                    hib.v += parseInt(hisb[int].target_vol);
                                     hib.d += parseInt(hisb[int].amount);
                                 }
                                 if (!dex.hbd.days)

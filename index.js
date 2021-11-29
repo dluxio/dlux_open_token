@@ -135,10 +135,15 @@ api.get('/api/nft/:set/:item', API.item);
 api.get('/api/sets', API.sets);
 api.get('/api/set/:set', API.set);
 api.get('/api/auctions', API.auctions);
+api.get('/api/auctions/:set', API.auctions);
 api.get('/api/mintauctions', API.mint_auctions);
+api.get('/api/mintauctions/:set', API.mint_auctions);
 api.get('/api/sales', API.sales);
+api.get('/api/sales/:set', API.sales);
 api.get('/api/mintsales', API.mint_sales);
+api.get('/api/mintsales/:set', API.mint_sales);
 api.get('/api/mintsupply', API.mint_supply);
+api.get('/api/mintsupply/:set', API.mint_supply);
 api.get('/api/pfp/:user', API.official);
 api.get('/api/trades/:kind/:user', API.limbo);
 api.get('/@:un', API.user);
@@ -193,17 +198,11 @@ function startApp() {
     processor.on('power_down', HR.power_down);
     processor.on('power_grant', HR.power_grant);
     processor.on('vote_content', HR.vote_content);
-    //processor.on('dex_buy', HR.dex_buy);
     processor.on('dex_sell', HR.dex_sell);
-    //processor.on('dex_hbd_sell', HR.dex_hbd_sell);
-    processor.on('dex_clear', HR.dex_clear)
-    //processor.onOperation('escrow_transfer', HR.escrow_transfer);
-    //processor.onOperation('escrow_approve', HR.escrow_approve);
-    //processor.onOperation('escrow_dispute', HR.escrow_dispute);
-    //processor.onOperation('escrow_release', HR.escrow_release);
+    processor.on('dex_clear', HR.dex_clear);
     processor.on('gov_down', HR.gov_down);
     processor.on('gov_up', HR.gov_up);
-    processor.on('node_add', HR.node_add); //node add and update
+    processor.on('node_add', HR.node_add);
     processor.on('node_delete', HR.node_delete);
     processor.on('report', HR.report);
     processor.on('queueForDaily', HR.q4d)
@@ -273,7 +272,6 @@ function startApp() {
                                     .catch(e => { rej(e) })
                                 }))
                             }
-                            let memkill = []
                             for(var missed = 0; missed < mss.length; missed++){
                                 if(mss[missed].split(':').length == 1){
                                     missed_num = mss[missed]

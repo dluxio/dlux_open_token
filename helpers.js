@@ -268,20 +268,14 @@ const NFT = {
                 .then(mem => {
                     let listing = mem[0],
                         set = mem[1],
-                        ops = []
+                        ops = [],
+                        promises = []
                     // const fee = parseInt(listing.b /100); add('n', fee); listingb = listing.b - fee;
                     nft = listing.nft
                     const last_modified = nft.s.split(',')[0]
                     nft.s.replace(last_modified, Base64.fromNumber(num)) //update last modified
                     if(listing.b){ //winner
-                        if (set.r > 0){
-                            let royalty = parseInt(listing.b * (set.r / 10000))
-                            add(set.a, royalty) //distribute royalty
-                            .then(empty=>add(listing.o, listing.b - royalty))
-                             //distribute rest
-                        } else {
-                            add(listing.o, listing.b)
-                        }
+                        promises = distro('AH', listing.o, listing.b, set.r, set.a, set.ra)
                         if(b.item.split(':')[0] != 'Qm') set.u = NFT.move(b.item.split(':')[1], listing.f, set.u)//update set
                         else set.u = listing.f
                         ops.push({ type: 'put', path: ['nfts', listing.f, b.item], data: nft }) //update nft
@@ -300,7 +294,8 @@ const NFT = {
                     else ops.push({ type: 'put', path: ['sets', `Qm${b.item.split(':')[1]}`], data: set })
                     ops.push({ type: 'del', path: ['chrono', delkey] })
                     ops.push({ type: 'del', path: ['ah', b.item] })
-                    store.batch(ops, [resolve, reject])
+                    if(promises.length)Promise.all(promises).then(empty=>{store.batch(ops, [resolve, reject])})
+                    else store.batch(ops, [resolve, reject])
                 })
                 .catch(e => { console.log(e) })
         })
@@ -311,17 +306,11 @@ const NFT = {
                 .then(mem => {
                     let listing = mem[0],
                         set = mem[1],
-                        ops = []
+                        ops = [],
+                        promises = []
                     // const fee = parseInt(listing.b /100); add('n', fee); listingb = listing.b - fee;
                     if(listing.b){ //winner
-                        if (set.r > 0){
-                            let royalty = parseInt(listing.b * (set.r / 10000))
-                            add(set.a, royalty) //distribute royalty
-                            .then(empty=>add(listing.o, listing.b - royalty))
-                             //distribute rest
-                        } else {
-                            add(listing.o, listing.b)
-                        }
+                        promises = distro('AH', listing.o, listing.b, set.r, set.a, set.ra)
                         addMT(['rnfts', b.item.split(':')[0], listing.f], 1)
                         const msg = `Auction of ${listing.o}'s ${b.item} mint token has ended for ${parseFloat(listing.b / 1000).toFixed(3)} ${config.TOKEN} to ${listing.f}`
                         ops.push({ type: 'put', path: ['feed', `${num}:vop_${delkey.split(':')[1]}`], data: msg })
@@ -334,7 +323,8 @@ const NFT = {
                     }
                     ops.push({ type: 'del', path: ['chrono', delkey] })
                     ops.push({ type: 'del', path: ['am', b.item] })
-                    store.batch(ops, [resolve, reject])
+                    if(promises.length)Promise.all(promises).then(empty=>{store.batch(ops, [resolve, reject])})
+                    else store.batch(ops, [resolve, reject])
                 })
                 .catch(e => { console.log(e) })
         })
@@ -505,3 +495,46 @@ const Base64 = {
     }
 }
 exports.Base64 = Base64
+
+function distro(payingAccount, recievingAccount, price, royalty_per, author, royaltyString){
+    let per = royalty_per || 0,
+        royalty = parseInt((per / 10000) * price),
+        adjust = [ payingAccount, recievingAccount],
+        amounts = [-price, price - royalty],
+    promises = []
+    if(payingAccount == 'AH'){
+        adjust = [ recievingAccount]
+        amounts = [price - royalty]
+    }
+    if (royalty){
+        if (royaltyString){
+            let royalties = set.royaltyString.split(','),
+                remaining = royalty
+            for (var i = royalties.length - 1; i >= 0; i--){
+                const to = royalties[i].split('_')[0],
+                    share = parseInt(royalty * (parseInt(royalties[i].split('_')[1]) / 10000))
+                if(i==0) share = remaining
+                if(adjust.indexOf(to) == -1){
+                    adjust.push(to)
+                    amounts.push(share)
+                } else {
+                    amounts[adjust.indexOf(to)] += share
+                }
+                remaining -= share
+            }
+        } else {
+            if(adjust.indexOf(author) == -1){
+                adjust.push(author)
+                amounts.push(royalty)
+            } else {
+                amounts[adjust.indexOf(author)] += royalty
+            }
+        }
+    }
+    for (var i = 0; i < adjust.length; i++) {
+        promises.push(add(adjust[i], amounts[i]))
+    }
+    return promises
+}
+
+exports.distro = distro
