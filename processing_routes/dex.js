@@ -17,11 +17,13 @@ exports.dex_sell = (json, from, active, pc) => {
         }
         if(json.hive){
             order.type = 'LIMIT'
+            order.target = json.hive
             order.rate = parseFloat( parseInt(json.hive) / parseInt(json[config.jsonTokenName]) ).toFixed(6)
         } else if(json.hbd){
             PSB = getPathObj(['dex', 'hbd'])
             order.type = 'LIMIT'
             order.pair = 'hbd'
+            order.target = json.hbd
             order.rate = parseFloat( parseInt(json.hbd) / parseInt(json[config.jsonTokenName]) ).toFixed(6)
         }
         order[config.jsonTokenName] = json[config.jsonTokenName]
@@ -37,7 +39,7 @@ exports.dex_sell = (json, from, active, pc) => {
         if (hours > 720) { hours = 720 }
         const expBlock = json.block_num + (hours * 1200)
         if (json[config.jsonTokenName] <= bal && json[config.jsonTokenName] >= 4 && typeof order.amount == 'number' && active) {
-            let remaining = order.amount,
+            let remaining = json[config.jsonTokenName],
                 filled = 0,
                 pair = 0,
                 i = 0,
@@ -108,7 +110,7 @@ exports.dex_sell = (json, from, active, pc) => {
                 } else {
                     const txid = config.TOKEN + hashThis(from + json.transaction_id),
                         cfee = parseInt(remaining * parseFloat(stats.dex_fee)),
-                        crate = order.rate || stats[`H${order.pair.substr(1)}VWMA`].rate,
+                        crate = parseFloat((order.target - pair)/remaining).toFixed(6),
                         hours = 720
                     contract = {
                         txid,
@@ -121,7 +123,7 @@ exports.dex_sell = (json, from, active, pc) => {
                         block: json.block_num,
                         type: `${order.pair}:sell`
                     }
-                    contract[order.pair] = parseInt(remaining/crate)
+                    contract[order.pair] = order.target - pair
                     dex.sellBook = DEX.insert(txid, crate, dex.sellBook, 'sell')
                     path = chronAssign(expBlock, {
                         block: expBlock,
