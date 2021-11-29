@@ -17,15 +17,14 @@ exports.dex_sell = (json, from, active, pc) => {
         }
         if(json.hive){
             order.type = 'LIMIT'
-            order.rate = parseFloat(parseInt(json[config.jsonTokenName]) / parseInt(json.hive) ).toFixed(6)
+            order.rate = parseFloat( parseInt(json.hive) / parseInt(json[config.jsonTokenName]) ).toFixed(6)
         } else if(json.hbd){
             PSB = getPathObj(['dex', 'hbd'])
             order.type = 'LIMIT'
             order.pair = 'hbd'
-            order.rate = parseFloat( parseInt(json[config.jsonTokenName]) / parseInt(json.hbd)).toFixed(6)
+            order.rate = parseFloat( parseInt(json.hbd) / parseInt(json[config.jsonTokenName]) ).toFixed(6)
         }
         order[config.jsonTokenName] = json[config.jsonTokenName]
-        console.log(order)
     Promise.all([PfromBal, PStats, PSB]).then(a => {
         let bal = a[0],
             stats = a[1],
