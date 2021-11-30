@@ -1,6 +1,6 @@
 let config = require('./../config')
 const { Base64} = require('./../helpers')
-const { store, GetNodeOps, VERSION, status, TXID, exit, processor} = require("./../index");
+const { store, GetNodeOps, VERSION, status, TXID, exit, processor } = require("./../index");
 const fetch = require('node-fetch');
 let { getPathObj, getPathNum } = require("./../getPathObj");
 const decodeURIcomponent = require('decode-uri-component');
@@ -10,7 +10,7 @@ const {
     getPost,
     getNewPosts,
     getAuthorPosts 
-    } = require('./../edb');
+} = require('./../edb');
 //const { reject } = require('async');
 
 var RAM = {

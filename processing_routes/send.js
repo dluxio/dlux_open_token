@@ -13,7 +13,7 @@ exports.send = (json, from, active, pc) => {
                 tbal = bals[1],
                 ops = [];
             send = parseInt(json.amount);
-            if (json.to && typeof json.to == 'string' && send > 0 && fbal >= send && active) { //balance checks
+            if (json.to && typeof json.to == 'string' && send > 0 && fbal >= send && active && json.to != from) { //balance checks
                 ops.push({ type: 'put', path: ['balances', from], data: parseInt(fbal - send) });
                 ops.push({ type: 'put', path: ['balances', json.to], data: parseInt(tbal + send) });
                 let msg = `@${from}| Sent @${json.to} ${parseFloat(parseInt(json.amount) / 1000).toFixed(3)} ${config.TOKEN}`
