@@ -25,6 +25,10 @@ exports.dex_sell = (json, from, active, pc) => {
             order.pair = 'hbd'
             order.target = json.hbd
             order.rate = parseFloat( parseInt(json.hbd) / parseInt(json[config.jsonTokenName]) ).toFixed(6)
+        } else if (json.pair = 'HBD'){
+            PSB = getPathObj(['dex', 'hbd'])
+            order.type = 'MARKET'
+            order.pair = 'hbd'
         }
         order[config.jsonTokenName] = json[config.jsonTokenName]
     Promise.all([PfromBal, PStats, PSB]).then(a => {
