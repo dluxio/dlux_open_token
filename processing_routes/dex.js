@@ -10,25 +10,27 @@ exports.dex_sell = (json, from, active, pc) => {
     let PfromBal = getPathNum(['balances', from]),
         PStats = getPathObj(['stats']),
         PSB = getPathObj(['dex', 'hive']),
-        order = {
-            type: 'MARKET',
-            pair: 'hive',
-            amount: json[config.jsonTokenName]
-        }
-        if(json.hive){
+        order = {}
+        if(parseInt(json.hive)){
             order.type = 'LIMIT'
-            order.target = json.hive
+            order.target = parseInt(json.hive)
             order.rate = parseFloat( parseInt(json.hive) / parseInt(json[config.jsonTokenName]) ).toFixed(6)
-        } else if(json.hbd){
+        } else if(parseInt(json.hbd)){
             PSB = getPathObj(['dex', 'hbd'])
             order.type = 'LIMIT'
             order.pair = 'hbd'
-            order.target = json.hbd
+            order.target = parseInt(json.hbd)
             order.rate = parseFloat( parseInt(json.hbd) / parseInt(json[config.jsonTokenName]) ).toFixed(6)
         } else if (json.pair = 'HBD'){
             PSB = getPathObj(['dex', 'hbd'])
             order.type = 'MARKET'
             order.pair = 'hbd'
+        } else {
+            order = {
+                type: 'MARKET',
+                pair: 'hive',
+                amount: json[config.jsonTokenName]
+            }
         }
         order[config.jsonTokenName] = json[config.jsonTokenName]
     Promise.all([PfromBal, PStats, PSB]).then(a => {
