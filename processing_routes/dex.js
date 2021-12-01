@@ -32,7 +32,7 @@ exports.dex_sell = (json, from, active, pc) => {
                 amount: json[config.jsonTokenName]
             }
         }
-        order[config.jsonTokenName] = json[config.jsonTokenName]
+        order[config.jsonTokenName] = parseInt(json[config.jsonTokenName])
     Promise.all([PfromBal, PStats, PSB]).then(a => {
         let bal = a[0],
             stats = a[1],
@@ -44,7 +44,7 @@ exports.dex_sell = (json, from, active, pc) => {
             hours = parseInt(json.hours) || 720
         if (hours > 720) { hours = 720 }
         const expBlock = json.block_num + (hours * 1200)
-        if (json[config.jsonTokenName] <= bal && json[config.jsonTokenName] >= 4 && typeof order.amount == 'number' && active) {
+        if (order[config.jsonTokenName] <= bal && order[config.jsonTokenName] >= 4 && active) {
             let remaining = json[config.jsonTokenName],
                 filled = 0,
                 pair = 0,
