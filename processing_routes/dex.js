@@ -358,6 +358,7 @@ exports.transfer = (json, pc) => {
                         i = 0
                     if (order.type == 'LIMIT' && order.rate == 0) {
                         order.rate = stats[`H${order.pair.substr(1)}VWMA`].rate
+                        console.log('vwma', stats[`H${order.pair.substr(1)}VWMA`].rate)
                     }
                     order.rate = parseFloat(order.rate).toFixed(6)
                     while (remaining){
