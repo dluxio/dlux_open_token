@@ -357,7 +357,7 @@ exports.transfer = (json, pc) => {
                         fee = 0,
                         i = 0
                     if (parseFloat(order.rate) == 0) {
-                        order.rate = stats[`H${order.pair.substr(1)}VWMA`].rate
+                        order.rate = dex.tick
                         console.log('vwma', stats[`H${order.pair.substr(1)}VWMA`].rate)
                     }
                     order.rate = parseFloat(order.rate).toFixed(6)
