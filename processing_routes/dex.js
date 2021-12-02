@@ -15,6 +15,7 @@ exports.dex_sell = (json, from, active, pc) => {
             order.type = 'LIMIT'
             order.target = parseInt(json.hive)
             order.rate = parseFloat( parseInt(json.hive) / parseInt(json[config.jsonTokenName]) ).toFixed(6)
+            order.pair = 'hive'
         } else if(parseInt(json.hbd)){
             PSB = getPathObj(['dex', 'hbd'])
             order.type = 'LIMIT'
