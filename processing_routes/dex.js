@@ -54,7 +54,7 @@ exports.dex_sell = (json, from, active, pc) => {
                 path = 0,
                 contract = ''
             while(remaining){
-                let price = dex.buyBook.split('_')[0]
+                let price = parseFloat(dex.buyBook.split('_')[0])
                 let item
                 if(price)item = dex.buyBook.split('_')[1].split(',')[0]
                 if (item && (order.type == 'MARKET' || parseFloat(price) >= order.rate)){
@@ -362,9 +362,9 @@ exports.transfer = (json, pc) => {
                     order.rate = parseFloat(order.rate).toFixed(6)
                     while (remaining){
                         i++
-                        const price = dex.sellBook.split('_')[0].split(',')[0]
+                        const price = parseFloat(dex.sellBook.split('_')[0])
                         let item = ''
-                        if(price)item = dex.sellBook.split('_')[1]
+                        if(price)item = dex.sellBook.split('_')[1].split(',')[0]
                         if (item && (price <= stats.icoPrice/1000) && ( order.type == 'MARKET' || (order.type == 'LIMIT' && order.rate <= price))) {
                             var next = dex.sellOrders[`${price}:${item}`]
                             if (next[order.pair] <= remaining){
