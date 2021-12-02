@@ -226,6 +226,71 @@ exports.orderbook = (req, res, next) => {
     }
 }
 
+exports.chart = (req, res, next) => {
+    var dex = getPathObj(['dex'])
+    var stats = getPathObj(['stats'])
+    var orderbook = {
+        timestamp: Date.now(),
+        recents: [],
+    }
+    /*
+{        
+      trade_id:1234567,
+      price:"50.1",
+      base_volume:"0.1",
+      target_volume:"1",
+      trade_timestamp:"1700050000",
+      type:"buy"
+   }
+
+    */
+    var pair = req.params.ticker_id || req.query.ticker_id
+    const limit = parseInt(req.query.limit) || 50
+    res.setHeader('Content-Type', 'application/json');
+    switch (pair) {
+        case `HIVE_${config.TOKEN}`:
+            getHistory([dex, stats], 'hive', type, limit)
+            break;
+        case `HBD_${config.TOKEN}`:
+            getHistory([dex, stats], 'hbd', type, limit)
+            break;
+        default:
+            res.send(JSON.stringify({
+                error: 'Ticker_ID is not supported',
+                node: config.username,
+                VERSION
+            }, null, 3))
+            break;
+    }
+    function getHistory(promises, pair, typ, lim){
+    Promise.all(promises)
+        .then(function(v) {
+            var his = []
+                count = 0
+            if(v[0][pair].his)for(var item in v[0][pair].his){
+                const record = {        
+                    "trade_id":v[0][pair].his[item].id,
+                    "price":v[0][pair].his[item].price,
+                    "base_volume":parseFloat(parseInt(v[0][pair].his[item].base_vol) / 1000).toFixed(3),
+                    "target_volume": parseFloat(parseInt(v[0][pair].his[item].target_vol) / 1000).toFixed(3),
+                    "trade_timestamp": v[0][pair].his[item].t,
+                    "type":v[0][pair].his[item].type
+                }
+                his.push(record)
+            }
+            res.send(JSON.stringify({
+                recent_trades: his,
+                node: config.username,
+                behind: RAM.behind,
+                VERSION
+            }, null, 3))
+        })
+        .catch(function(err) {
+            console.log(err)
+        })
+    }
+}
+
 exports.historical_trades = (req, res, next) => {
     var dex = getPathObj(['dex'])
     var stats = getPathObj(['stats'])

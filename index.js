@@ -128,6 +128,7 @@ api.get('/api/orderbook/:ticker_id', API.orderbook);
 api.get('/api/pairs', API.pairs);
 api.get('/api/historical', API.historical_trades);
 api.get('/api/historical/:ticker_id', API.historical_trades);
+api.get('/api/recent/:ticker_id', API.chart);
 api.get('/api/mirrors', API.mirrors);
 api.get('/api/coin_detail', API.detail);
 api.get('/api/nfts/:user', API.nfts);
