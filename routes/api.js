@@ -249,10 +249,10 @@ exports.chart = (req, res, next) => {
     res.setHeader('Content-Type', 'application/json');
     switch (pair) {
         case `HIVE_${config.TOKEN}`:
-            getHistory([dex, stats], 'hive', type, limit)
+            getHistory([dex, stats], 'hive', limit)
             break;
         case `HBD_${config.TOKEN}`:
-            getHistory([dex, stats], 'hbd', type, limit)
+            getHistory([dex, stats], 'hbd', limit)
             break;
         default:
             res.send(JSON.stringify({
@@ -262,7 +262,7 @@ exports.chart = (req, res, next) => {
             }, null, 3))
             break;
     }
-    function getHistory(promises, pair, typ, lim){
+    function getHistory(promises, pair, lim){
     Promise.all(promises)
         .then(function(v) {
             var his = []
@@ -277,6 +277,8 @@ exports.chart = (req, res, next) => {
                     "type":v[0][pair].his[item].type
                 }
                 his.push(record)
+                count++
+                if(count == limit)break;
             }
             res.send(JSON.stringify({
                 recent_trades: his,
@@ -345,7 +347,8 @@ exports.historical_trades = (req, res, next) => {
         .then(function(v) {
             var buy = [],
                 sell = [],
-                count = 0
+                countb = 0
+                counts = 0
             if(v[0][pair].his)for(var item in v[0][pair].his){
                 const record = {        
                     "trade_id":v[0][pair].his[item].id,
@@ -356,9 +359,17 @@ exports.historical_trades = (req, res, next) => {
                     "type":v[0][pair].his[item].type
                 }
                 if(record.type == 'buy'){
-                    buy.push(record)
-                } else {
-                    sell.push(record)
+                    countb++
+                    if(countb <= lim){
+                        buy.push(record)
+                        if(counts == lim)break
+                    }
+                }else {
+                    counts++
+                    if(counts <= lim){
+                        sell.push(record)
+                        if(countb == lim)break
+                    }
                 }
             }
             if (typ.indexOf('buy') < 0){
