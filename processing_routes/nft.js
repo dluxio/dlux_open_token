@@ -122,7 +122,7 @@ exports.nft_reserve_complete  = function(json, from, active, pc) {
                 set = nfts[1]
             nft.s = NFT.last(json.block_num, nft.s)
             set.u = NFT.move(json.uid, from, set.u)
-            let promises = distro(from, to, price, set.r, set.a, set.ra)
+            let promises = distro(from, to, price, set.r, set.a, set.ra, json.set)
             delete nft.t
             ops.push({type:'put', path:['nfts', from,`${json.set}:${json.uid}`], data: nft})
             ops.push({type:'put', path:['sets', json.set], data: set})
@@ -623,7 +623,7 @@ exports.nft_buy = function(json, from, active, pc) {
             nft.s.replace(last_modified, Base64.fromNumber(json.block_num)) //update the modified block
             if(json.uid.split(':')[0] != 'Qm') set.u = NFT.move(json.uid, from, set.u)//update set
             else set.u = from
-            let promises = distro(from, listing.o, listing.p, set.r, set.a, set.ra)
+            let promises = distro(from, listing.o, listing.p, set.r, set.a, set.ra, json.set)
             ops.push({type:'put', path:['nfts', from, `${json.set}:${json.uid}`], data: nft})
             ops.push({type:'del', path:['ls', `${json.set}:${json.uid}`]})
             if (json.set == 'Qm') ops.push({type:'put', path:['sets', `Qm${json.uid}`], data: set})
@@ -859,7 +859,7 @@ exports.ft_escrow_complete = function(json, from, active, pc) {
             let ops = [],
                 nft = nfts[0],
                 set = nfts[1]
-            let promises = distro(from, to, price, set.r, set.a, set.ra)
+            let promises = distro(from, to, price, set.r, set.a, set.ra, json.set)
             addMT(['rnfts', json.set, from],1)
             ops.push({type:'del', path:['fts', 't', `${json.set}:${json.uid}`]})
             // is there anything in the NFT that needs to be modified? owner, renter, 
@@ -1029,7 +1029,7 @@ exports.ft_buy = function(json, from, active, pc) {
         try {price = mem[1].p}catch(e){}
         if(price <= mem[0] && active && mem[1].o != from){
             let set = mem[2],
-                promises = distro(from, listing.o, price, set.r, set.a, set.ra)
+                promises = distro(from, listing.o, price, set.r, set.a, set.ra, json.set)
             let ops = []
             addMT(['rnfts', json.set, from], 1)
             ops.push({type:'put', path:['balances', from], data: newBal})
