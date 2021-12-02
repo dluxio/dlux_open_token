@@ -111,8 +111,8 @@ var recents = []
     //HIVE API CODE
 
 //Start Program Options   
-startWith('QmaMrXY1g7EbrvJNwSJrZKeq2irfrsjFCYNoJU76Ho4AEj', true) //for testing and replaying 58859101
-//dynStart(config.leader)
+//startWith('QmaMrXY1g7EbrvJNwSJrZKeq2irfrsjFCYNoJU76Ho4AEj', true) //for testing and replaying 58859101
+dynStart(config.leader)
 
 // API defs
 api.use(API.https_redirect);
@@ -319,6 +319,11 @@ function startApp() {
                                         if (b.item.split(':')[0] != 'Qm') setamp = getPathObj(['sets', b.item.split(':')[0]])
                                         else setamp = getPathObj(['sets', `Qm${b.item.split(':')[1]}`])
                                     promises.push(NFT.AMEOp([amp, setamp], passed.delKey, num, b))
+                                    break;
+                                case 'div':
+                                    let contract = getPathObj(['div', b.set]),
+                                        set = getPathObj(['sets', b.set])
+                                    promises.push(NFT.DividendOp([contract, set], passed.delKey, num, b))
                                     break;
                                 case 'del_pend':
                                     store.batch([{ type: 'del', path: ['chrono', passed.delKey] }, { type: 'del', path: ['pend', `${b.author}/${b.permlink}`]}], [function() {}, function() { console.log('failure') }])

@@ -1,5 +1,4 @@
 const { store } = require('./index')
-const { DEX } = require('./helpers')
 const { getPathObj, getPathNum } = require('./getPathObj')
 const crypto = require('crypto');
 const bs58 = require('bs58');

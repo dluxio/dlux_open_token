@@ -164,7 +164,7 @@ exports.dex_sell = (json, from, active, pc) => {
             ops.push({type: 'put', path: ['dex', order.pair], data: dex})
             var hiveTimeWeight = 1 - ((json.block_num - stats[`H${order.pair.substr(1)}VWMA`].block) * 0.000033)
             if (hiveTimeWeight < 0) hiveTimeWeight = 0
-            stats[`H${order.pair.substr(1)}VWMA`] = {
+            if(pair)stats[`H${order.pair.substr(1)}VWMA`] = {
                     rate: parseFloat((filled + (parseFloat(stats[`H${order.pair.substr(1)}VWMA`].rate) * stats[`H${order.pair.substr(1)}VWMA`].vol * hiveTimeWeight)) / (pair + (stats[`H${order.pair.substr(1)}VWMA`].vol * hiveTimeWeight))).toFixed(6),
                     block: json.block_num,
                     vol: parseInt(filled + (stats[`H${order.pair.substr(1)}VWMA`].vol * hiveTimeWeight))
@@ -221,7 +221,7 @@ exports.transfer = (json, pc) => {
                 purchase = parseInt(amount / stats.icoPrice * 1000)
                 var hiveTimeWeight = 1 - ((json.block_num - stats.HiveVWMA.block) * 0.000033)
                 if (hiveTimeWeight < 0) { hiveTimeWeight = 0 }
-                hiveVWMA = {
+                if(purchase)hiveVWMA = {
                     rate: parseFloat((purchase + (parseFloat(stats.HiveVWMA.rate) * stats.HiveVWMA.vol * hiveTimeWeight)) / (purchase + (stats.HiveVWMA.vol * hiveTimeWeight))).toFixed(6),
                     block: json.block_num,
                     vol: parseInt(amount + (stats.HiveVWMA.vol * hiveTimeWeight))

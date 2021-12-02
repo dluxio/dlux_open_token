@@ -446,12 +446,13 @@ json:{
 exports.nft_auction = function(json, from, active, pc) {
     let fnftp = getPathObj(['nfts', from, `${json.set}:${json.uid}`]), //zoom in?
         ahp = getPathObj(['ah']), //needed?
-        setp = getPathObj(['sets', json.set])
+        setp = getPathObj(['sets', json.set]),
+        divp = getPathObj(['div', json.set])
         if(json.set == `Qm`) setp = getPathObj(['sets', `Qm${json.uid}`])
     Promise.all([fnftp, ahp, setp])
         .then(mem => {
             if (mem[0].s && !mem[0].l && active){
-                var ah = mem[1], nft = mem[0], set = mem[2]
+                var ah = mem[1], nft = mem[0], set = mem[2], div = mem[3]
                 var p = json.price || 1000,
                     n = json.now || '',
                     t = json.time || 7
@@ -477,6 +478,7 @@ exports.nft_auction = function(json, from, active, pc) {
                     nft.s.replace(last_modified, Base64.fromNumber(json.block_num)) //update the modified block
                     listing.nft = nft //place the nft in the listing
                     ah[`${json.set}:${json.uid}`] = listing //place the listing in the AH
+                    if(div.p)ops.push({type:'put', path:['div', json.set, 'm', from], data: 0})
                     ops.push({type:'put', path:['ah'], data: ah})
                     ops.push({type:'del', path:['nfts', from, `${json.set}:${json.uid}`]})
                     if (json.set == 'Qm') ops.push({type:'put', path:['sets', `Qm${json.uid}`], data: set})
@@ -566,12 +568,13 @@ exports.nft_bid = function(json, from, active, pc) {
 exports.nft_sell = function(json, from, active, pc) {
     let fnftp = getPathObj(['nfts', from, `${json.set}:${json.uid}`]),
         ahp = getPathObj(['ls']),
-        setp = getPathObj(['sets', json.set])
+        setp = getPathObj(['sets', json.set]),
+        divp = getPathObj(['div', json.set])
         if(json.set == `Qm`) setp = getPathObj(['sets', `Qm${json.uid}`])
     Promise.all([fnftp, ahp, setp])
     .then(mem => {
         if (mem[0].s && !mem[0].l && active){
-                var ls = mem[1], nft = mem[0], set = mem[2]
+                var ls = mem[1], nft = mem[0], set = mem[2], div = mem[3]
                 var p = json.price || 1000
                     var listing = {
                             p, //starting price
@@ -584,6 +587,7 @@ exports.nft_sell = function(json, from, active, pc) {
                     nft.s.replace(last_modified, Base64.fromNumber(json.block_num)) //update the modified block
                     listing.nft = nft //place the nft in the listing
                     ls[`${json.set}:${json.uid}`] = listing //place the listing in the AH
+                    if(div.p)ops.push({type:'put', path:['div', json.set, 'm', from], data: 0})
                     ops.push({type:'put', path:['ls'], data: ls})
                     ops.push({type:'del', path:['nfts', from, `${json.set}:${json.uid}`]})
                     if (json.set == 'Qm') ops.push({type:'put', path:['sets', `Qm${json.uid}`], data: set})
@@ -726,6 +730,91 @@ exports.ft_airdrop = function(json, from, active, pc) {
 
         } else {
             let msg = `@${from} doesn't own ${json.set}`
+            if (config.hookurl || config.status) postToDiscord(msg, `${json.block_num}:${json.transaction_id}`)
+            pc[0](pc[2])
+        }
+    })
+    .catch(e => { console.log(e); });
+}
+
+exports.nft_div = function(json, from, active, pc) {
+    let promises = [getPathObj(['sets', json.set]), getPathObj(['div', json.set])]
+    Promise.all(promises)
+    .then(mem => {
+        let set = mem[0], div = mem[1]
+        if (set.a >= from && active && !div.p && json.period > 28800 && json.period < 864001){
+            let ops = []
+            ops.push({ type: 'put', path: ['div', json.set], data: {p:json.period,s:json.set} });
+            let msg = `@${from} established a dividend for ${json.set}`
+            if (config.hookurl || config.status) postToDiscord(msg, `${json.block_num}:${json.transaction_id}`)
+            ops.push({ type: 'put', path: ['feed', `${json.block_num}:${json.transaction_id}`], data: msg });
+            store.batch(ops, pc)
+
+        } else {
+            let msg = `@${from} doesn't own ${json.set}`
+            if (config.hookurl || config.status) postToDiscord(msg, `${json.block_num}:${json.transaction_id}`)
+            pc[0](pc[2])
+        }
+    })
+    .catch(e => { console.log(e); });
+}
+
+exports.nft_add_roy = function(json, from, active, pc) {
+    let promises = [getPathObj(['sets', json.set])]
+    Promise.all(promises)
+    .then(mem => {
+        let set = mem[0], failed = false, d
+        if (json.distro){ //string verification
+            let pairs = json.distro.split(','),
+                total = 0
+            for (let i = 0; i < pairs.length; i++){
+                total += parseInt(pairs[i].split('_')[1])
+                if(!bals[pairs[i].split('_')[0]])failed = true
+            }
+            if(!failed && total === 10000){
+                d = json.distro
+            }
+        }
+        if (set.r == from || set.ra.indexOf(`${from}_` >= 0 && active && !failed) ){
+            let ops = [],
+            amount = 0, running = 0
+            if (set.ra){
+                let rs = set.ra.split(',')
+                for (let i = 0; i < rs.length; i++){
+                    if (rs[i].split('_')[0] == from){
+                        amount = parseInt(rs[i].split('_')[1])
+                        break
+                    }
+                }
+                running = amount
+                let newd = d.split(',')
+                for (let i = 0; i < newd.length; i++){
+                    ry = parseInt(newd[i].split('_')[1])
+                    rz = (amount/10000 * ry)
+                    if(i == newd.length - 1)rz = running
+                    d.replace(`${newd[i].split('_')[0]}_${newd[i].split('_')[1]}`, `${newd[i].split('_')[0]}_${rz}`)
+                    running -= rz
+                }
+                newd = d.split(',')
+                newra = set.ra.split(',')
+                newd.concat(newra)
+                newd.sort()
+                for (let i = 0; i < newd.length - 1; i++){
+                    if(newd[i].split('_')[0] == newd[i+1].split('_')[0]){
+                        newd[i+1] = `${newd[i].split('_')[0]}_${parseInt(newd[i+1].split('_')[1]) + parseInt(newd[i].split('_')[1])}`
+                        newd.splice(i, 1)
+                    }
+                }
+            } else {
+                set.ra = d
+            }
+            //ops.push({ type: 'put', path: [json.set, 'ra'], data: {p:json.period,s:json.set} });
+            let msg = `@${from} changed their royalties for ${json.set}`
+            if (config.hookurl || config.status) postToDiscord(msg, `${json.block_num}:${json.transaction_id}`)
+            ops.push({ type: 'put', path: ['feed', `${json.block_num}:${json.transaction_id}`], data: msg });
+            store.batch(ops, pc)
+        } else {
+            let msg = `@${from} doesn't own ${json.set} royalties`
             if (config.hookurl || config.status) postToDiscord(msg, `${json.block_num}:${json.transaction_id}`)
             pc[0](pc[2])
         }

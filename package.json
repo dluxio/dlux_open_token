@@ -18,7 +18,7 @@
     "license": "MIT",
     "dependencies": {
         "@hiveio/dhive": "^0.14.12",
-        "@hiveio/hive-js": "^0.8.10",
+        "@hiveio/hive-js": "^2.0.4",
         "aes-js": "^3.1.2",
         "bs58": "^4.0.1",
         "cors": "^2.8.5",
@@ -35,7 +35,7 @@
         "ipld-dag-pb": "^0.15.3",
         "json-stable-stringify": "^1.0.1",
         "level": "^5.0.1",
-        "level-pathwise": "^4.0.0",
+        "level-pathwise": "^4.0.1",
         "node-fetch": "^2.6.0",
         "pg": "^8.6.0",
         "request": "^2.88.2",
@@ -44,6 +44,6 @@
     "devDependencies": {
         "chai": "^4.2.0",
         "eslint": "^7.17.0",
-        "mocha": "^8.2.1"
+        "mocha": "^9.1.3"
     }
 }
