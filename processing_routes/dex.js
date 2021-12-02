@@ -34,6 +34,7 @@ exports.dex_sell = (json, from, active, pc) => {
             }
         }
         order[config.jsonTokenName] = parseInt(json[config.jsonTokenName])
+        console.log(order)
     Promise.all([PfromBal, PStats, PSB]).then(a => {
         let bal = a[0],
             stats = a[1],
@@ -361,8 +362,9 @@ exports.transfer = (json, pc) => {
                     order.rate = parseFloat(order.rate).toFixed(6)
                     while (remaining){
                         i++
-                        const item = dex.sellBook.split('_')[1]
                         const price = dex.sellBook.split('_')[0].split(',')[0]
+                        let item = ''
+                        if(price)item = dex.sellBook.split('_')[1]
                         if (item && (price <= stats.icoPrice/1000) && ( order.type == 'MARKET' || (order.type == 'LIMIT' && order.rate <= price))) {
                             var next = dex.sellOrders[`${price}:${item}`]
                             if (next[order.pair] <= remaining){
