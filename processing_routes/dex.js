@@ -367,7 +367,7 @@ exports.transfer = (json, pc) => {
                         if(price)item = dex.sellBook.split('_')[1].split(',')[0]
                         console.log(price, item)
                         if (item && (price <= stats.icoPrice/1000) && ( order.type == 'MARKET' || (order.type == 'LIMIT' && order.rate <= price))) {
-                            var next = dex.sellOrders[`${price}:${item}`]
+                            var next = dex.sellOrders[`${price.toFixed(6)}:${item}`]
                             console.log(next)
                             if (next[order.pair] <= remaining){
                                 filled += next.amount - next.fee
