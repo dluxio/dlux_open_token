@@ -1614,7 +1614,7 @@ exports.user = (req, res, next) => {
     Promise.all([bal, pb, lp, contracts, incol, gp, pup, pdown, lg])
         .then(function(v) {
             var arr = []
-            for (var i = 0; i < v[3].length; i++) {arr.push(v[3][i])}
+            for (var i in v[3]) {arr.push(v[3][i])}
             res.send(JSON.stringify({
                 balance: v[0],
                 poweredUp: v[1],
