@@ -215,7 +215,7 @@ exports.tally = (num, plasma, isStreaming) => {
                             ]
                             if (Object.keys(new_queue).length) ops.push({ type: 'put', path: ['queue'], data: new_queue })
                                 //if (process.env.npm_lifecycle_event == 'test') newPlasma = ops
-                                //console.log({ stats, still_running, nodes, new_queue })
+                                //console.log(ops)
                             store.batch(ops, [resolve, reject, newPlasma]);
                             if (process.env.npm_lifecycle_event != 'test') {
                                 if (consensus && (consensus != plasma.hashLastIBlock || consensus != nodes[config.username].report.hash && nodes[config.username].report.block_num > num - 100) && isStreaming) {
