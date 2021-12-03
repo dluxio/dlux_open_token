@@ -248,7 +248,6 @@ function startApp() {
         function(num, pc, prand) {
             console.log(num)
             TXID.clean(num)
-            plasma[`${num % 1000}`] = processor.getBlockHeader(`${num % 1000}`)
             return new Promise((resolve, reject) => {
                 let Pchron = getPathSome(['chrono'],{
                     gte: "" + num - 1,
