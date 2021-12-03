@@ -59,7 +59,7 @@ exports.dex_sell = (json, from, active, pc) => {
                 let item
                 if(price)item = dex.buyBook.split('_')[1].split(',')[0]
                 if (item && (order.type == 'MARKET' || parseFloat(price) >= order.rate)){
-                    let next = dex.buyOrders[`${price}:${item}`]
+                    let next = dex.buyOrders[`${price.toFixed(6)}:${item}`]
                     console.log({price, item, next})
                     if (next.amount <= remaining){
                             filled += next.amount
