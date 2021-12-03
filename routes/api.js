@@ -1,6 +1,6 @@
 let config = require('./../config')
 const { Base64} = require('./../helpers')
-const { store, GetNodeOps, VERSION, status, TXID, exit, processor } = require("./../index");
+const { store, GetNodeOps, VERSION, status, TXID, exit, plasma } = require("./../index");
 const fetch = require('node-fetch');
 let { getPathObj, getPathNum } = require("./../getPathObj");
 const decodeURIcomponent = require('decode-uri-component');
@@ -1681,7 +1681,11 @@ exports.state = (req, res, next) => {
 
 exports.pending = (req, res, next) => {
     res.setHeader('Content-Type', 'application/json');
-    res.send(JSON.stringify(GetNodeOps(), null, 3))
+    result = {
+        nodeOps: GetNodeOps(),
+        plasma: plasma
+    }
+    res.send(JSON.stringify(result, null, 3))
 }
 
 //heroku force https
