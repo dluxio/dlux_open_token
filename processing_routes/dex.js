@@ -398,7 +398,7 @@ exports.transfer = (json, pc) => {
 
                             } else {
                                 next[order.pair] = next[order.pair] - remaining // modify the contract
-                                const tokenAmount = parseInt(parseFloat(next.rate) * remaining)
+                                const tokenAmount = parseInt(remaining / parseFloat(next.rate))
                                 const feeAmount = parseInt((tokenAmount / next.amount) * next.fee)
                                 filled += tokenAmount - feeAmount
                                 bal += tokenAmount - feeAmount //update the balance
