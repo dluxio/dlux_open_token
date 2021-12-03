@@ -4,8 +4,6 @@ const { chronAssign, add, hashThis, addMT } = require('./../lil_ops')
 const { getPathObj, getPathNum } = require('../getPathObj')
 const { postToDiscord } = require('./../discord')
 const { Base64, primes, NFT, distro } = require('./../helpers')
-const { set } = require('@hiveio/hive-js/lib/auth/serializer/src/types')
-const { promises } = require('stream')
 
 /*
 json { set, uid}

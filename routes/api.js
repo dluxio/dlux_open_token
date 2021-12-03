@@ -1613,14 +1613,15 @@ exports.user = (req, res, next) => {
     res.setHeader('Content-Type', 'application/json');
     Promise.all([bal, pb, lp, contracts, incol, gp, pup, pdown, lg])
         .then(function(v) {
-            console.log(bal, pb, lp, contracts)
+            var arr = []
+            for (var i = 0; i < v[3].length; i++) {arr.push(v[3][i])}
             res.send(JSON.stringify({
                 balance: v[0],
                 poweredUp: v[1],
                 granted: v[2],
                 granting: v[8],
                 heldCollateral: v[4],
-                contracts: v[3],
+                contracts: arr,
                 up: v[6],
                 down: v[7],
                 gov: v[5],

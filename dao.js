@@ -404,7 +404,7 @@ function dao(num) {
                     daops.push({ type: 'del', path: ['balances', bali] });
                 }
             }
-            store.batch(daops, [resolve, reject]);
+            store.batch(daops, [resolve, reject, num]);
         });
     });
 }
