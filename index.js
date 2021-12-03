@@ -111,8 +111,8 @@ var recents = []
     //HIVE API CODE
 
 //Start Program Options   
-//startWith('QmaMrXY1g7EbrvJNwSJrZKeq2irfrsjFCYNoJU76Ho4AEj', true) //for testing and replaying 58859101
-dynStart(config.leader)
+startWith('QmXF8jw9YJNzeCRKht21dUc1buvtzBA6JR6bwGgcaEmAkq', true) //for testing and replaying 58859101
+//dynStart(config.leader)
 
 // API defs
 api.use(API.https_redirect);
@@ -605,6 +605,8 @@ function startWith(hash, second) {
                         if (!e && (second || data[0] > API.RAM.head - 325)) {
                             if (hash) {
                                 var cleanState = data[1]
+                                cleanState.stats.HiveVWMA.rate = 1.0
+                                cleanState.stats.HbdVWMA.price = 2.0
                                 store.put([], cleanState, function(err) {
                                     if (err) {
                                         console.log('errr',err)
