@@ -121,8 +121,8 @@ var recents = []
     //HIVE API CODE
 
 //Start Program Options   
-startWith('Qmbz8XbiabrADMgPT5kRk1HSTFHHjDmJMikHuckRgvxHmY', true) //for testing and replaying 58859101
-//dynStart(config.leader)
+//startWith('Qmbz8XbiabrADMgPT5kRk1HSTFHHjDmJMikHuckRgvxHmY', true) //for testing and replaying 58859101
+dynStart(config.leader)
 
 // API defs
 api.use(API.https_redirect);
@@ -248,6 +248,7 @@ function startApp() {
         function(num, pc, prand) {
             console.log(num)
             TXID.clean(num)
+            plasma[`${num % 1000}`].bh = processor.getBlockHeader()
             return new Promise((resolve, reject) => {
                 let Pchron = getPathSome(['chrono'],{
                     gte: "" + num - 1,
@@ -404,7 +405,6 @@ function startApp() {
                         promises.push(voter());
                     }
                     if (num % 100 === 1) {
-                        plasma.bh = processor.getBlockHeader()
                         store.get([], function(err, obj) {
                             const blockState = Buffer.from(stringify([num, obj]))
                             ipfsSaveState(num, blockState)
