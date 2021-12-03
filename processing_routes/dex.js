@@ -271,7 +271,7 @@ exports.transfer = (json, pc) => {
                 store.batch(ops, pc)
             }
         })
-    } else if (json.to == config.msaccount) {
+    } else if (json.to == config.msaccount && json.from != config.mainICO) {
         if(json.memo.split(' ')[0] == 'NFT'){
             /*
                     lth[`set:hash`]{

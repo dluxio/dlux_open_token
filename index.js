@@ -122,8 +122,8 @@ var recents = []
     //HIVE API CODE
 
 //Start Program Options   
-startWith('QmUKb4r8efnpfXawAiDze87nC2Nf2rQnwCMW3Y7NG6vomg', true) //for testing and replaying 58859101
-//dynStart(config.leader)
+//startWith('QmUKb4r8efnpfXawAiDze87nC2Nf2rQnwCMW3Y7NG6vomg', true) //for testing and replaying 58859101
+dynStart(config.leader)
 
 // API defs
 api.use(API.https_redirect);
@@ -433,9 +433,13 @@ function startApp() {
                                 var ops = [],
                                     cjbool = false,
                                     votebool = false
-                                for (i = 0; i < NodeOps.length; i++) {
+                                signerloop: for (i = 0; i < NodeOps.length; i++) {
                                     if (NodeOps[i][0][1] == 0 && NodeOps[i][0][0] <= 100) {
-                                        if (NodeOps[i][1][0] == 'custom_json' && !cjbool){
+                                        if (JSON.parse(NodeOps[i][1][1].json).sig_block && num - 100 > JSON.parse(NodeOps[i][1][1].json).sig_block){
+                                            NodeOps.splice(i, 1)
+                                            continue signerloop
+                                        }
+                                        if (NodeOps[i][1][0] == 'custom_json' && !cjbool ) {
                                             ops.push(NodeOps[i][1])
                                             NodeOps[i][0][1] = 1
                                             cjbool = true
