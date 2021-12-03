@@ -235,6 +235,7 @@ exports.tally = (num, plasma, isStreaming) => {
 }
 
 function payout(this_payout, weights, pending, num) {
+    console.log(this_payout, weights, pending, num)
     return new Promise((resolve, reject) => {
         let payments = {},
             out = 0
@@ -278,6 +279,7 @@ function payout(this_payout, weights, pending, num) {
                     ops.push({ type: 'put', path: ['balances', account], data: p[i] + payments[account] })
                     i++
                 }
+                console.log(ops)
                 let change = this_payout - out
                 store.batch(ops, [resolve, reject, change]) //return the paid ammount so millitokens aren't lost
             } else {
