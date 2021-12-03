@@ -8,7 +8,7 @@ module.exports = function(client, steem, currentBlockNumber = 1, blockComputeSpe
     var onStreamingStart = function() {};
 
     var isStreaming;
-    var block_header;
+    var block_header = {};
     var stream;
 
     var stopping = false;
@@ -83,7 +83,7 @@ module.exports = function(client, steem, currentBlockNumber = 1, blockComputeSpe
             }
             getBlock(blockNum)
                 .then((result) => {
-                    block_header = {
+                    block_header[`${blockNum % 1000}`] = {
                         timestamp: result.timestamp,
                         block_id: result.block_id,
                         block_number: blockNum
@@ -288,8 +288,8 @@ module.exports = function(client, steem, currentBlockNumber = 1, blockComputeSpe
             return isStreaming;
         },
 
-        getBlockHeader: function() {
-            return block_header;
+        getBlockHeader: function(num) {
+            return block_header[num];
         },
 
         onStreamingStart: function(callback) {

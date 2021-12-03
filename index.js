@@ -121,7 +121,7 @@ var recents = []
     //HIVE API CODE
 
 //Start Program Options   
-startWith('QmeNWqFfTV1L1LoZS94i49tYNtACdmvx4RA8Cuu1atEn24', true) //for testing and replaying 58859101
+startWith('QmUKb4r8efnpfXawAiDze87nC2Nf2rQnwCMW3Y7NG6vomg', true) //for testing and replaying 58859101
 //dynStart(config.leader)
 
 // API defs
@@ -248,7 +248,7 @@ function startApp() {
         function(num, pc, prand) {
             console.log(num)
             TXID.clean(num)
-            plasma[`${num % 1000}`] = processor.getBlockHeader()
+            plasma[`${num % 1000}`] = processor.getBlockHeader(`${num % 1000}`)
             return new Promise((resolve, reject) => {
                 let Pchron = getPathSome(['chrono'],{
                     gte: "" + num - 1,
