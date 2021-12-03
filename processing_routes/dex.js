@@ -378,7 +378,7 @@ exports.transfer = (json, pc) => {
                                 dex.tick = next.rate
                                 his[`${json.block_num}:${i}:${json.transaction_id}`] = {type: 'buy', t:Date.parse(json.timestamp), block: json.block_num, base_vol: next.amount, target_vol: next[order.pair], target: order.pair, price: next.rate, id: json.transaction_id + i}
                                 dex.sellBook = DEX.remove(item, dex.sellBook) //adjust the orderbook
-                                delete dex.sellOrders[`${price}:${item}`]
+                                delete dex.sellOrders[`${price.toFixed(6)}:${item}`]
                                 const transfer = [
                                         "transfer",
                                         {
@@ -392,7 +392,7 @@ exports.transfer = (json, pc) => {
                                 ops.push({type: 'put', path: ['feed', `${json.block_num}:${json.transaction_id}.${i}`], data: msg})
                                 if(Object.keys(his).length)ops.push({type: 'put', path: ['dex', order.pair, 'his'], data: his})
                                 ops.push({type: 'put', path: ['msa', `${item}:${json.transaction_id}:${json.block_num}`], data: stringify(transfer)}) //send HIVE out via MS
-                                ops.push({type: 'del', path: ['dex', order.pair, 'sellOrders', `${price}:${item}`]}) //remove the order
+                                ops.push({type: 'del', path: ['dex', order.pair, 'sellOrders', `${price.toFixed(6)}:${item}`]}) //remove the order
                                 ops.push({type: 'del', path: ['contracts', next.from , item]}) //remove the contract
                                 ops.push({type: 'del', path: ['chrono', next.expire_path]}) //remove the chrono
 
@@ -412,7 +412,7 @@ exports.transfer = (json, pc) => {
                                     next.partial[json.transaction_id] = {token: tokenAmount, coin: remaining}
                                 }
                                 dex.tick = next.rate
-                                dex.sellOrders[`${price}:${item}`] = next
+                                dex.sellOrders[`${price.toFixed(6)}:${item}`] = next
                                 const transfer = [
                                         "transfer",
                                         {
