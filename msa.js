@@ -1,4 +1,4 @@
-const { store, hiveClient, processor } = require('./index')
+const { store, hiveClient } = require('./index')
 const { getPathObj } = require('./getPathObj')
 const config = require('./config')
 const stringify = require('json-stable-stringify');
@@ -76,10 +76,10 @@ exports.consolidate = (num, plasma) => {
                     block: num,
                     sig: ''
                 },
-                now = Date.parse(processor.getBlockHeader(`${num % 1000}`).timestamp + '.000Z'),
+                now = Date.parse(plasma[`${num % 1000}`].timestamp + '.000Z'),
                 op = {
-                    ref_block_num: processor.getBlockHeader(`${num % 1000}`).block_number & 0xffff,
-                    ref_block_prefix: Buffer.from(processor.getBlockHeader(`${num % 1000}`).block_id, 'hex').readUInt32LE(4),
+                    ref_block_num: plasma[`${num % 1000}`].block_number & 0xffff,
+                    ref_block_prefix: Buffer.from(plasma[`${num % 1000}`].block_id, 'hex').readUInt32LE(4),
                     expiration: new Date(now + 3660000).toISOString().slice(0, -5),
                     operations: txs,
                     extensions: [],
@@ -106,10 +106,10 @@ exports.sign = (num, plasma, missed) => {
                     },
                     obj = JSON.parse(mem[0]),
                     ops = [],
-                    now = Date.parse(processor.getBlockHeader(`${num % 1000}`).timestamp + '.000Z'),
+                    now = Date.parse(plasma[`${num % 1000}`].timestamp + '.000Z'),
                     op = {
-                        ref_block_num: processor.getBlockHeader(`${num % 1000}`).block_number & 0xffff,
-                        ref_block_prefix: Buffer.from(processor.getBlockHeader(`${num % 1000}`).block_id, 'hex').readUInt32LE(4),
+                        ref_block_num: plasma[`${num % 1000}`].block_number & 0xffff,
+                        ref_block_prefix: Buffer.from(plasma[`${num % 1000}`].block_id, 'hex').readUInt32LE(4),
                         expiration: new Date(now + 3660000).toISOString().slice(0, -5),
                         operations: obj.operations,
                         extensions: [],

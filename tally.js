@@ -178,13 +178,11 @@ exports.tally = (num, plasma, isStreaming) => {
                         new_queue = v[6]
                         still_running = runners
                     }
-                    let newPlasma = {
-                        consensus: consensus || 0,
-                        new_queue,
-                        still_running,
-                        stats,
-                        bh: plasma.bh
-                    };
+                    let newPlasma = plasma
+                    plasma.consensus = consensus || 0,
+                    plasma.new_queue = new_queue
+                    plasma.still_running = still_running
+                    plasma.stats = stats
                     if(!consensus) {
                         newPlasma.potential = tally
                     }
