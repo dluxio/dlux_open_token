@@ -1,17 +1,22 @@
 const config = require('./config');
+const { plasma } = require('./index');
 
 //tell the hive your state, this is asynchronous with IPFS return... 
-function report(plasma, con) {
+function report(plas, con) {
     return new Promise((resolve, reject) => {
         con.then(r =>{
             let report = {
-                hash: plasma.hashLastIBlock,
-                block: plasma.hashBlock,
-                stash: plasma.privHash
+                hash: plas.hashLastIBlock,
+                block: plas.hashBlock,
+                stash: plas.privHash
             }
         try {if(r.block > report.block){
                 report.sig = r.sig,
                 report.sig_block = r.block
+            }
+        } catch (e){}
+        try {if(plasma.oracle){
+                report.oracle = plasma.oracle
             }
         } catch (e){}
 
@@ -21,6 +26,7 @@ function report(plasma, con) {
             id: `${config.prefix}report`,
             json: JSON.stringify(report)
         }];
+        delete plasma.oracle
         resolve([
             [0, 0], op
         ])

@@ -476,7 +476,7 @@ exports.nft_auction = function(json, from, active, pc) {
                     nft.s.replace(last_modified, Base64.fromNumber(json.block_num)) //update the modified block
                     listing.nft = nft //place the nft in the listing
                     ah[`${json.set}:${json.uid}`] = listing //place the listing in the AH
-                    if(div.p)ops.push({type:'put', path:['div', json.set, 'm', from], data: 0})
+                    if(div && div.p)ops.push({type:'put', path:['div', json.set, 'm', from], data: 0})
                     ops.push({type:'put', path:['ah'], data: ah})
                     ops.push({type:'del', path:['nfts', from, `${json.set}:${json.uid}`]})
                     if (json.set == 'Qm') ops.push({type:'put', path:['sets', `Qm${json.uid}`], data: set})
@@ -585,7 +585,7 @@ exports.nft_sell = function(json, from, active, pc) {
                     nft.s.replace(last_modified, Base64.fromNumber(json.block_num)) //update the modified block
                     listing.nft = nft //place the nft in the listing
                     ls[`${json.set}:${json.uid}`] = listing //place the listing in the AH
-                    if(div.p)ops.push({type:'put', path:['div', json.set, 'm', from], data: 0})
+                    if(div && div.p)ops.push({type:'put', path:['div', json.set, 'm', from], data: 0})
                     ops.push({type:'put', path:['ls'], data: ls})
                     ops.push({type:'del', path:['nfts', from, `${json.set}:${json.uid}`]})
                     if (json.set == 'Qm') ops.push({type:'put', path:['sets', `Qm${json.uid}`], data: set})
@@ -945,6 +945,7 @@ exports.fts_sell_h = function(json, from, active, pc) {
         h = parseInt(json.hive) || 0, 
         b = parseInt(json.hbd) || 0,
         q = parseInt(json.quantity),
+        e= json.enforce || false
         d = `${from}_10000`,
         failed = false
     Promise.all([fnftp, ltp, Pbal])
@@ -964,6 +965,7 @@ exports.fts_sell_h = function(json, from, active, pc) {
                         d = json.distro
                     }
                 }
+                if(h)b=0 //refund fountian prevent 
                 var hash = hashThis(`${from}:${json.set}:${json.block_num}`),
                     listing = {
                         h,//millihive
@@ -972,6 +974,7 @@ exports.fts_sell_h = function(json, from, active, pc) {
                         d,//distro string,
                         o: from,//seller
                         i:`${json.set}:${hash}`,//item for canceling
+                        e //enforce
                     }
                 ls[`${json.set}:${hash}`] = listing //place the listing in the AH
                 var ops = []

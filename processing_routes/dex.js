@@ -1,10 +1,11 @@
 const config = require('./../config')
-const { store, GetNodeOps, spliceOp } = require('./../index')
+const { store, GetNodeOps, spliceOp, plasma } = require('./../index')
 const { getPathObj, getPathNum } = require('./../getPathObj')
 const { DEX, release } = require('./../helpers')
 const { add, addCol, addGov, deletePointer, credit, chronAssign, hashThis, isEmpty, addMT } = require('./../lil_ops')
 const { postToDiscord } = require('./../discord')
 const stringify = require('json-stable-stringify');
+const fetch = require('node-fetch');
 
 exports.dex_sell = (json, from, active, pc) => {
     let PfromBal = getPathNum(['balances', from]),
@@ -279,6 +280,9 @@ exports.transfer = (json, pc) => {
                         q,//qty
                         d,//distro string
                         i:`${json.set}:${hash}`,//item for canceling
+                        e:'pb:startdate_enddate,max:3',
+                        s:'account1_1,account2_2,account3_1',
+                        p,//pending sales 
                     }
             */
             let item = json.memo.split(' ')[1],
@@ -293,24 +297,58 @@ exports.transfer = (json, pc) => {
                     ops = [],
                     qty = 0,
                     refund_amount = amount,
-                    transfers = []
+                    transfers = [],
+                    enf = enforce(listing.e),
+                    allowed = 9999999,
+                    whoBoughtIndex,
+                    whoBoughtAmount = 0
+                if(enf.max){
+                    allowed = enf.max
+                    whoBoughtIndex = listing.s.indexOf(`${json.from}_`)
+                    if(whoBoughtIndex != -1){
+                        whoBoughtAmount = parseInt(listing.s.split(`${json.from}_`)[1].split(',')[0])
+                        allowed -= whoBoughtAmount
+                    }
+                }
                 if(type == 'HIVE' && amount >= listing.h && listing.h != 0){
                     qty = parseInt(amount/listing.h)
                     refund_amount = amount % parseInt(listing.h)
+                    if(qty > allowed){
+                        tor = qty - allowed
+                        qty = allowed
+                        refund_amount += tor * listing.h
+                    }
                 } else if (type == 'HBD' && amount >= listing.b && listing.b != 0){
                     qty = parseInt(amount/listing.b)
                     refund_amount = amount % parseInt(listing.b)
+                    if(qty > allowed){
+                        tor = qty - allowed
+                        qty = allowed
+                        refund_amount += tor * listing.b
+                    }
+                }
+                if(enf.max && whoBoughtIndex != -1){
+                    listing.s.replace(`${json.from}_${whoBoughtAmount}`, `${json.from}_${whoBoughtAmount + qty}`)
+                } else if (enf.max){
+                    listing.s += `,${json.from}_${qty}`
                 }
                 listing.q -= qty
+                if(enf.max){
+                    if(!listing.p)listing.p = 0
+                    listing.p += qty
+                }
+                ops.push({type: 'put', path: ['lth', item], data: listing})
                 if(listing.q <= 0){
                     qty += listing.q
                     refund_amount += (listing.h * listing.q) + (listing.b * listing.q)
-                    ops.push({type: 'del', path: ['lth', item]})
-                } else {
-                    ops.push({type: 'put', path: ['lth', item], data: listing})
+                    if(!listing.p)ops.push({type: 'del', path: ['lth', item]})
                 }
-                if(qty)addMT(['rnfts', setname, json.from], qty)
-                transfers = [...transfers, ...buildSplitTransfers(qty*listing.h+qty*listing.b, type, listing.d, `${setname} mint token sale - ${json.from}:${json.transaction_id.substr(0,8)}:`)]
+                if(qty && !enf.pb)addMT(['rnfts', setname, json.from], qty)
+                else if(qty && enf.pb){
+                    addMT(['prnfts', setname, json.from], qty)
+                    postVerify(enf.pb, json.from, listing.i)
+                }
+                transfers = [...buildSplitTransfers(qty*listing.h+qty*listing.b, type, listing.d, `${setname} mint token sale - ${json.from}:${json.transaction_id.substr(0,8)}:`)]
                 if(refund_amount){
                     transfers.push(['transfer',{
                         to:json.from,
@@ -724,4 +762,39 @@ function buildSplitTransfers(amount, pair, ds, memos){
         }])
     }
     return ops
+}
+
+function enforce(str){
+    let enforce = {},
+        arr = str.split(',')
+    for(let i = 0; i < arr.length; i++){
+        let s = arr[i].split(':')
+        enforce[s[0]] = s[1]
+    }
+    return enforce
+} 
+
+function postVerify(str, from, loc){
+    fetch("https://api.hive.blog", {
+        body: `{"jsonrpc":"2.0", "method":"bridge.get_account_posts", "params":{"sort":"posts", "account": "${from}", "limit": 25}, "id":1}`,
+        headers: {
+            "Content-Type": "application/x-www-form-urlencoded"
+        },
+        method: "POST"
+    })
+    .then(res => res.json()).then(json => {
+        var valid = false
+        for(var i = 0; i < json.result.length; i++){
+            if(new Date(`${json.result[i].created}.000Z`).getTime() > new Date(`${str.split('_')[0]}:00.000Z`).getTime() && new Date(`${json.result[i].created}.000Z`).getTime() < new Date(`${str.split('_')[1]}:00.000Z`).getTime()){
+                    valid = true
+                    break 
+            }
+        }
+        if (plasma.oracle){
+            plasma.oracle[`${loc}:${from}`] = valid
+        } else {
+            plasma.oracle = {}
+            plasma.oracle[`${loc}:${from}`] = valid
+        }
+    })
 }

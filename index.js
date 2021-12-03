@@ -34,7 +34,17 @@ broadcastClient.api.setOptions({ url: config.startURL });
 hiveClient.api.setOptions({ url: config.clientURL });
 console.log('Using APIURL: ', config.clientURL)
 exports.hiveClient = hiveClient
-
+//non-consensus node memory
+var plasma = {
+        consensus: '',
+        pending: {},
+        page: [],
+        hashLastIBlock: 0,
+        hashSecIBlock: 0
+            //pagencz: []
+    },
+    jwt;
+exports.plasma = plasma
 var NodeOps = [];
 //aare these used still?
 exports.GetNodeOps = function() { return NodeOps }
@@ -167,6 +177,7 @@ api.get('/pending', API.pending); // The transaction signer now can sign multipl
 // Some HIVE APi is wrapped here to support a stateless frontend built on the cheap with dreamweaver
 // None of these functions are required for token functionality and should likely be removed from the community version
 api.get('/api/:api_type/:api_call', API.hive_api);
+api.get('/hapi/:api_type/:api_call', API.hive_api);
 api.get('/getwrap', API.getwrap);
 api.get('/getauthorpic/:un', API.getpic);
 api.get('/getblog/:un', API.getblog);
@@ -174,18 +185,6 @@ api.get('/getblog/:un', API.getblog);
 http.listen(config.port, function() {
     console.log(`${config.TOKEN} token API listening on port ${config.port}`);
 });
-
-//non-consensus node memory
-var plasma = {
-        consensus: '',
-        pending: {},
-        page: [],
-        hashLastIBlock: 0,
-        hashSecIBlock: 0
-            //pagencz: []
-    },
-    jwt;
-exports.jwt = jwt
 //grabs an API token for IPFS pinning of TOKEN posts
 if (config.rta && config.rtp) {
     rtrades.handleLogin(config.rta, config.rtp)
