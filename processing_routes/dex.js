@@ -428,7 +428,7 @@ exports.transfer = (json, pc) => {
                                 ops.push({type: 'put', path: ['balances', json.from], data: bal})
                                 ops.push({type: 'put', path: ['dex', order.pair, 'his'], data: his})
                                 ops.push({type: 'put', path: ['msa', `${item}:${json.transaction_id}:${json.block_num}`], data: stringify(transfer)}) //send HIVE out via MS
-                                ops.push({type: 'put', path: ['dex', order.pair, 'sellOrders', `${price}:${item}`], data: next}) //update the order
+                                ops.push({type: 'put', path: ['dex', order.pair, 'sellOrders', `${price.toFixed(6)}:${item}`], data: next}) //update the order
                                 ops.push({type: 'put', path: ['contracts', next.from , item], data: next}) //update the contract
                             }
                         } else {
