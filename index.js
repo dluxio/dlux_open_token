@@ -689,7 +689,7 @@ function startWith(hash, second) {
                                 }
                                 var tally = 0, winner = null
                                 for(hash in votes){
-                                    if(votes[hash] > tally && blocks[values[acc].hash] == newest){
+                                    if(votes[hash] >= tally && blocks[values[acc].hash] == newest){
                                         tally = votes[hash]
                                         var winner = hash
                                     }

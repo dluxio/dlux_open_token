@@ -96,6 +96,7 @@ exports.consolidate = (num, plasma, bh) => {
 }
 
 exports.sign = (num, plasma, missed, bh) => {
+    console.log('sign bh', bh)
     return new Promise((resolve, reject) => {
         let Pmissed = getPathObj(['mss', `${missed}`]),
             Pstats = getPathObj(['stats'])
