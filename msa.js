@@ -5,7 +5,7 @@ const stringify = require('json-stable-stringify');
 //const privateKey = hiveClient.PrivateKey.fromString(config.msprivatekey);
 
 
-exports.consolidate = (num, plasma) => {
+exports.consolidate = (num, plasma, bh) => {
     return new Promise((resolve, reject) => {
         store.get(['msa'], (err, result) => {
             if (err || Object.keys(result).length === 0) {
@@ -76,10 +76,10 @@ exports.consolidate = (num, plasma) => {
                     block: num,
                     sig: ''
                 },
-                now = Date.parse(plasma[`${(num - 1) % 1000}`].timestamp + '.000Z'),
+                now = Date.parse(bh.timestamp + '.000Z'),
                 op = {
-                    ref_block_num: plasma[`${(num - 1) % 1000}`].block_number & 0xffff,
-                    ref_block_prefix: Buffer.from(plasma[`${(num - 1) % 1000}`].block_id, 'hex').readUInt32LE(4),
+                    ref_block_num: bh.block_number & 0xffff,
+                    ref_block_prefix: Buffer.from(bh.block_id, 'hex').readUInt32LE(4),
                     expiration: new Date(now + 3660000).toISOString().slice(0, -5),
                     operations: txs,
                     extensions: [],
@@ -95,7 +95,7 @@ exports.consolidate = (num, plasma) => {
     })
 }
 
-exports.sign = (num, plasma, missed) => {
+exports.sign = (num, plasma, missed, bh) => {
     return new Promise((resolve, reject) => {
         let Pmissed = getPathObj(['mss', `${missed}`]),
             Pstats = getPathObj(['stats'])
@@ -106,10 +106,10 @@ exports.sign = (num, plasma, missed) => {
                     },
                     obj = JSON.parse(mem[0]),
                     ops = [],
-                    now = Date.parse(plasma[`${(num - 1) % 1000}`].timestamp + '.000Z'),
+                    now = Date.parse(bh.timestamp + '.000Z'),
                     op = {
-                        ref_block_num: plasma[`${(num - 1) % 1000}`].block_number & 0xffff,
-                        ref_block_prefix: Buffer.from(plasma[`${(num - 1) % 1000}`].block_id, 'hex').readUInt32LE(4),
+                        ref_block_num: bh.block_number & 0xffff,
+                        ref_block_prefix: Buffer.from(bh.block_id, 'hex').readUInt32LE(4),
                         expiration: new Date(now + 3660000).toISOString().slice(0, -5),
                         operations: obj.operations,
                         extensions: [],
