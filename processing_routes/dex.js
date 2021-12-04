@@ -23,7 +23,7 @@ exports.dex_sell = (json, from, active, pc) => {
             order.pair = 'hbd'
             order.target = parseInt(json.hbd)
             order.rate = parseFloat( parseInt(json.hbd) / parseInt(json[config.jsonTokenName]) ).toFixed(6)
-        } else if (json.pair = 'HBD'){
+        } else if (json.pair == 'HBD'){
             PSB = getPathObj(['dex', 'hbd'])
             order.type = 'MARKET'
             order.pair = 'hbd'
