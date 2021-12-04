@@ -249,7 +249,6 @@ function startApp() {
         function(num, pc, prand) {
             console.log(num)
             TXID.clean(num)
-            plasma[`${num % 1000}`] = processor.getBlockHeader(`${num % 1000}`)
             return new Promise((resolve, reject) => {
                 let Pchron = getPathSome(['chrono'],{
                     gte: "" + num - 1,
@@ -270,7 +269,7 @@ function startApp() {
                         if(num % 100 !== 50){
                             if(msa_keys.length > 80){
                                 promises.push(new Promise((res,rej)=>{
-                                    sig_submit(consolidate(num, plasma, processor.getBlockHeader(`${num % 1000}`)))
+                                    sig_submit(consolidate(num, plasma, processor.getBlockHeader(`${(num-2) % 1000}`)))
                                     .then(nodeOp => {
                                         res('SAT')
                                         NodeOps.unshift(nodeOp)
@@ -282,7 +281,7 @@ function startApp() {
                                 if(mss[missed].split(':').length == 1){
                                     missed_num = mss[missed]
                                     promises.push(new Promise((res,rej)=>{
-                                        sig_submit(sign(num, plasma, missed_num, processor.getBlockHeader(`${num % 1000}`)))
+                                        sig_submit(sign(num, plasma, missed_num, processor.getBlockHeader(`${(num-2) % 1000}`)))
                                         .then(nodeOp => {
                                             res('SAT')
                                             if(JSON.parse(nodeOp[1][1].json).sig){
@@ -388,7 +387,7 @@ function startApp() {
                             }
                         }, 620000, plasma.hashLastIBlock)
                         promises.push(new Promise((res,rej)=>{
-                            report(plasma, consolidate(num, plasma, processor.getBlockHeader(`${num % 1000}`)))
+                            report(plasma, consolidate(num, plasma, processor.getBlockHeader(`${(num-2) % 1000}`)))
                             .then(nodeOp => {
                                 res('SAT')
                                 if(processor.isStreaming())NodeOps.unshift(nodeOp)
