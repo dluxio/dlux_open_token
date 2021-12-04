@@ -67,11 +67,11 @@ exports.dex_sell = (json, from, active, pc) => {
                             his[`${json.block_num}:${i}:${json.transaction_id}`] = {type: 'sell', t:Date.parse(json.timestamp + '.000Z'), block: json.block_num, base_vol: next.amount, target_vol: next[order.pair], target: order.pair, price: next.rate, id: json.transaction_id + i}
                             fee += next.fee //add the fees
                             remaining -= next.amount
-                            dex.tick = price
+                            dex.tick = price.toFixed(6)
                             pair += next[order.pair]
                             dex.buyBook = DEX.remove(item, dex.buyBook) //adjust the orderbook
                             console.log(dex.buyBook)
-                            delete dex.buyOrders[`${price}:${item}`]
+                            delete dex.buyOrders[`${price.toFixed(6)}:${item}`]
                             const transfer = [
                                     "transfer",
                                     {
@@ -84,7 +84,7 @@ exports.dex_sell = (json, from, active, pc) => {
                             let msg = `@${from} sold ${parseFloat(parseInt(next.amount)/1000).toFixed(3)} ${config.TOKEN} with ${parseFloat(parseInt(next[order.pair])/1000).toFixed(3)} ${order.pair.toUpperCase()} to ${next.from} (${item})`
                             ops.push({type: 'put', path: ['feed', `${json.block_num}:${json.transaction_id}.${i}`], data: msg})
                             ops.push({type: 'put', path: ['msa', `${item}:${json.transaction_id}:${json.block_num}`], data: stringify(transfer)}) //send HIVE out via MS
-                            ops.push({type: 'del', path: ['dex', order.pair, 'buyOrders', `${price}:${item}`]}) //remove the order
+                            ops.push({type: 'del', path: ['dex', order.pair, 'buyOrders', `${price.toFixed(6)}:${item}`]}) //remove the order
                             ops.push({type: 'del', path: ['contracts', next.from , item]}) //remove the contract
                             ops.push({type: 'del', path: ['chrono', next.expire_path]}) //remove the chrono
 
@@ -97,7 +97,7 @@ exports.dex_sell = (json, from, active, pc) => {
                             filled += remaining
                             pair += thistarget
                             adds.push([next.from, remaining - thisfee])
-                            dex.tick = price
+                            dex.tick = price.toFixed(6)
                             his[`${json.block_num}:${i}:${json.transaction_id}`] = {type: 'sell', t:Date.parse(json.timestamp), block: json.block_num, base_vol: remaining, target_vol: thistarget + thisfee, target: order.pair, price: next.rate, id: json.transaction_id + i}
                             fee += thisfee
                             const transfer = [
@@ -113,7 +113,7 @@ exports.dex_sell = (json, from, active, pc) => {
                             ops.push({type: 'put', path: ['feed', `${json.block_num}:${json.transaction_id}.${i}`], data: msg})
                             ops.push({type: 'put', path: ['msa', `${item}:${json.transaction_id}:${json.block_num}`], data: stringify(transfer)}) //send HIVE out via MS
                             ops.push({type: 'put', path: ['contracts', next.from , item], data: next}) //remove the contract
-                            dex.buyOrders[`${price}:${item}`] = next
+                            dex.buyOrders[`${price.toFixed(6)}:${item}`] = next
                             remaining = 0
                         }
                 } else {
