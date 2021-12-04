@@ -434,7 +434,7 @@ function startApp() {
                                     votebool = false
                                 signerloop: for (i = 0; i < NodeOps.length; i++) {
                                     if (NodeOps[i][0][1] == 0 && NodeOps[i][0][0] <= 100) {
-                                        if (JSON.parse(NodeOps[i][1][1].json).sig_block && num - 100 > JSON.parse(NodeOps[i][1][1].json).sig_block){
+                                        if (NodeOps[i][1][0] == 'custom_json' && JSON.parse(NodeOps[i][1][1].json).sig_block && num - 100 > JSON.parse(NodeOps[i][1][1].json).sig_block){
                                             NodeOps.splice(i, 1)
                                             continue signerloop
                                         }
@@ -524,7 +524,6 @@ function waitfor(promises_array) {
         Promise.all(promises_array)
             .then(r => {
                 for (i = 0; i < r.length; i++) {
-                    console.log(r[i])
                     if (r[i].consensus) {
                         plasma.consensus = r[1].consensus
                     }
@@ -653,7 +652,6 @@ function startWith(hash, second) {
                                                 let ebus = result.filter(tx => tx[1].op[1].id === `${config.prefix}report`)
                                                 for (i = ebus.length - 1; i >= 0; i--) {
                                                     if (JSON.parse(ebus[i][1].op[1].json).hash) {
-                                                        console.log(JSON.parse(ebus[i][1].op[1].json).block, JSON.parse(ebus[i][1].op[1].json).hash)
                                                         if(recents.block < JSON.parse(ebus[i][1].op[1].json).block){
                                                             recents = {
                                                                 hash: JSON.parse(ebus[i][1].op[1].json).hash,
@@ -677,7 +675,6 @@ function startWith(hash, second) {
                                     }))
                                 }
                             Promise.all(promises).then(values =>{
-                                console.log('values', values)
                                 var newest = 0, votes = {}, blocks = {}
                                 for(var acc in values){
                                     if(values[acc].block >= newest && !votes[values[acc].hash]){
