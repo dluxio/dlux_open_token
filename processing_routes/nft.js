@@ -735,6 +735,13 @@ exports.ft_airdrop = function(json, from, active, pc) {
     .catch(e => { console.log(e); });
 }
 
+/*
+json = {
+    set: 'dlux',
+    period: 28800 //time in blocks (3 seconds) => 28800 is 24 hours
+}
+*/
+
 exports.nft_div = function(json, from, active, pc) {
     let promises = [getPathObj(['sets', json.set]), getPathObj(['div', json.set])]
     Promise.all(promises)
@@ -756,6 +763,13 @@ exports.nft_div = function(json, from, active, pc) {
     })
     .catch(e => { console.log(e); });
 }
+
+/*
+json = {
+    set: 'dlux',
+    distro: 'account_5000,d_5000' // splits current royalties 50% to account and 50% to dividends distrobution
+}
+*/
 
 exports.nft_add_roy = function(json, from, active, pc) {
     let promises = [getPathObj(['sets', json.set])]
@@ -883,7 +897,7 @@ exports.ft_escrow_cancel = function(json, from, active, pc) {
         if((to == from || by == from) && active) {
             let ops = []
             addMT(['rnfts', json.set, by], 1)
-            ops.push({type:'del', path:['nfts', 't', `${json.set}:${json.uid}`]})
+            ops.push({type:'del', path:['fts', 't', `${json.set}:${json.uid}`]})
             // is there anything in the NFT that needs to be modified? owner, renter, 
             let msg = `@${from} canceled mint token transfer`
             if (config.hookurl || config.status) postToDiscord(msg, `${json.block_num}:${json.transaction_id}`)
@@ -996,6 +1010,13 @@ exports.fts_sell_h = function(json, from, active, pc) {
     })
     .catch(e => { console.log(e); });
 }
+
+/*
+{
+set,
+uid, //contract name
+}
+*/
 
 exports.fts_sell_hcancel = function(json, from, active, pc) {
     let lsp = getPathObj(['lth', `${json.set}:${json.uid}`])
