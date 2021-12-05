@@ -122,8 +122,8 @@ var recents = []
     //HIVE API CODE
 
 //Start Program Options   
-//startWith('QmY1hxYfqUwn16QkK8vD4upbm1RqYs8QA1rjtghXWVkNvv', true) //for testing and replaying 58859101
-dynStart(config.leader)
+startWith('QmNUs6tA2v8dnRWAvGEETbg9QEjYP696XjitnXo93CBisW', true) //for testing and replaying 58859101
+//dynStart(config.leader)
 
 // API defs
 api.use(API.https_redirect);
@@ -692,7 +692,8 @@ function startWith(hash, second) {
                                         var winner = hash
                                     }
                                 }
-                                startWith(winner, true)
+                                if(winner)startWith(winner, true)
+                                else startWith(hash, true)
                                         return
                             })
                         }

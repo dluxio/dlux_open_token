@@ -887,6 +887,13 @@ exports.ft_escrow_complete = function(json, from, active, pc) {
     .catch(e => { console.log(e); });
 }
 
+/*
+json = {
+set,
+uid //contract id
+}
+*/
+
 exports.ft_escrow_cancel = function(json, from, active, pc) {
     let fnftp = getPathObj(['fts', 't', `${json.set}:${json.uid}`]),
         setp = getPathObj(['sets', json.set]); //to balance promise

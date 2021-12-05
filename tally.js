@@ -215,7 +215,7 @@ exports.tally = (num, plasma, isStreaming) => {
                             ]
                             if (Object.keys(new_queue).length) ops.push({ type: 'put', path: ['queue'], data: new_queue })
                                 //if (process.env.npm_lifecycle_event == 'test') newPlasma = ops
-                                //console.log(ops)
+                                console.log(ops)
                             store.batch(ops, [resolve, reject, newPlasma]);
                             if (process.env.npm_lifecycle_event != 'test') {
                                 if (consensus && (consensus != plasma.hashLastIBlock || consensus != nodes[config.username].report.hash && nodes[config.username].report.block_num > num - 100) && isStreaming) {
@@ -279,7 +279,6 @@ function payout(this_payout, weights, pending, num) {
                     ops.push({ type: 'put', path: ['balances', account], data: p[i] + payments[account] })
                     i++
                 }
-                console.log(ops)
                 let change = this_payout - out
                 store.batch(ops, [resolve, reject, change]) //return the paid ammount so millitokens aren't lost
             } else {
