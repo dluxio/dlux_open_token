@@ -117,10 +117,11 @@ exports.dex_sell = (json, from, active, pc) => {
                             remaining = 0
                         }
                 } else {
-                    const txid = config.TOKEN + hashThis(from + json.transaction_id),
+                    let txid = config.TOKEN + hashThis(from + json.transaction_id),
                         cfee = parseInt(remaining * parseFloat(stats.dex_fee)),
                         crate = parseFloat((order.target - pair)/remaining).toFixed(6),
                         hours = 720
+                    if (crate == 'NaN') { crate = dex.tick }
                     contract = {
                         txid,
                         from: from,
@@ -132,7 +133,7 @@ exports.dex_sell = (json, from, active, pc) => {
                         block: json.block_num,
                         type: `${order.pair}:sell`
                     }
-                    contract[order.pair] = order.target - pair
+                    contract[order.pair] = parseInt(remaining * parseFloat(crate))
                     dex.sellBook = DEX.insert(txid, crate, dex.sellBook, 'sell')
                     path = chronAssign(expBlock, {
                         block: expBlock,

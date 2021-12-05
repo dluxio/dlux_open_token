@@ -94,16 +94,10 @@ exports.tally = (num, plasma, isStreaming) => {
                             if (tally.agreements.hashes[node] == consensus) {
                                 if (num < 50500000) {
                                     new_queue[node] = {
-                                        t: (rbal[node] || 0) + (rcol[node] || 0) + (rgov[node] || 0),
-                                        l: rbal[node] || 0,
-                                        c: rcol[node] || 0,
                                         g: rgov[node] || 0
                                     }
                                 } else {
                                     new_queue[node] = {
-                                        t: (rcol[node] || 0) + (rgov[node] || 0),
-                                        l: rbal[node] || 0,
-                                        c: rcol[node] || 0,
                                         g: rgov[node] || 0
                                     }
                                 }
@@ -113,7 +107,7 @@ exports.tally = (num, plasma, isStreaming) => {
                         for (node in new_queue) {
                             if (runners.hasOwnProperty(node)) {
                                 still_running[node] = new_queue[node]
-                                counting_array.push(new_queue[node].t)
+                                counting_array.push(new_queue[node].g)
                             } else {
                                 election[node] = new_queue[node]
                             }
@@ -131,17 +125,17 @@ exports.tally = (num, plasma, isStreaming) => {
                         if (Object.keys(still_running).length < 25) {
                             let winner = {
                                 node: '',
-                                t: 0
+                                g: 0
                             }
                             for (node in election) {
-                                if (election[node].t > winner.t) { //disallow 0 bals in governance
+                                if (election[node].g > winner.g) { //disallow 0 bals in governance
                                     winner.node = node
-                                    winner.t = election[node].t
+                                    winner.g = election[node].g
                                 }
                             }
                             //console.log({counting_array, low_sum, last_bal, still_running})
                             stats.gov_threshhold = parseInt((low_sum - last_bal) / (Object.keys(still_running).length / 2)) 
-                            if (winner.node && (winner.t > stats.gov_threshhold || Object.keys(still_running).length < 9)) { //simple test to see if the election will benifit the runners collateral totals
+                            if (winner.node && (winner.g > stats.gov_threshhold || Object.keys(still_running).length < 9)) { //simple test to see if the election will benifit the runners collateral totals
                                 still_running[winner.node] = new_queue[winner.node]
                             }
                         } else {
@@ -208,11 +202,12 @@ exports.tally = (num, plasma, isStreaming) => {
                             rbal.ra += mint;
                             let ops = [
                                 { type: 'put', path: ['stats'], data: stats },
-                                { type: 'put', path: ['runners'], data: still_running },
                                 { type: 'put', path: ['markets', 'node'], data: nodes },
                                 { type: 'put', path: ['balances', 'ra'], data: rbal.ra },
                                 { type: 'put', path: ['balances', 'rc'], data: rbal.rc - (this_payout - change) }
                             ]
+                            if(Object.keys(still_running).length > 1) ops.push(
+                                { type: 'put', path: ['runners'], data: still_running })
                             if (Object.keys(new_queue).length) ops.push({ type: 'put', path: ['queue'], data: new_queue })
                                 //if (process.env.npm_lifecycle_event == 'test') newPlasma = ops
                                 //console.log(ops)
