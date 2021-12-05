@@ -395,11 +395,6 @@ exports.transfer = (json, pc) => {
                         his = {},
                         fee = 0,
                         i = 0
-                    if (parseFloat(order.rate) == 0) {
-                        order.rate = dex.tick
-                        console.log('vwma', stats[`H${order.pair.substr(1)}VWMA`].rate)
-                    }
-                    order.rate = parseFloat(order.rate).toFixed(6)
                     while (remaining){
                         i++
                         const price = parseFloat(dex.sellBook.split('_')[0])
@@ -519,7 +514,7 @@ exports.transfer = (json, pc) => {
                             } else {
                                 const txid = config.TOKEN + hashThis(json.from + json.transaction_id),
                                     cfee = parseInt(remaining * parseFloat(stats.dex_fee)),
-                                    crate = order.rate || stats[`H${order.pair.substr(1)}VWMA`].rate,
+                                    crate = order.rate || dex.tick,
                                     hours = 720,
                                     expBlock = json.block_num + (hours * 1200)
                                 contract = {
