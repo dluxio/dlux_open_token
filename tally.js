@@ -208,6 +208,7 @@ exports.tally = (num, plasma, isStreaming) => {
                             ]
                             if(Object.keys(still_running).length > 1) ops.push(
                                 { type: 'put', path: ['runners'], data: still_running })
+                            else ops.push({ type: 'put', path: ['runners'], data: runners })
                             if (Object.keys(new_queue).length) ops.push({ type: 'put', path: ['queue'], data: new_queue })
                                 //if (process.env.npm_lifecycle_event == 'test') newPlasma = ops
                                 //console.log(ops)
