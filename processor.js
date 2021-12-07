@@ -289,7 +289,9 @@ module.exports = function(client, steem, currentBlockNumber = 1, blockComputeSpe
         },
 
         getBlockHeader: function(num) {
-            return block_header[num];
+            return new Promise((resolve, reject) => {
+                resolve(block_header[num])
+            })
         },
 
         onStreamingStart: function(callback) {

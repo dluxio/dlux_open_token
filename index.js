@@ -269,19 +269,22 @@ function startApp() {
                         if(num % 100 !== 50){
                             if(msa_keys.length > 80){
                                 promises.push(new Promise((res,rej)=>{
-                                    sig_submit(consolidate(num, plasma, processor.getBlockHeader(`${(num) % 1000}`)))
+                                    processor.getBlockHeader(`${num % 1000}`).then(bh =>{
+                                        sig_submit(consolidate(num, plasma, bh))
                                     .then(nodeOp => {
                                         res('SAT')
                                         NodeOps.unshift(nodeOp)
                                     })
                                     .catch(e => { rej(e) })
+                                    })
                                 }))
                             }
                             for(var missed = 0; missed < mss.length; missed++){
                                 if(mss[missed].split(':').length == 1){
                                     missed_num = mss[missed]
                                     promises.push(new Promise((res,rej)=>{
-                                        sig_submit(sign(num, plasma, missed_num, processor.getBlockHeader(`${num % 1000}`)))
+                                        processor.getBlockHeader(`${num % 1000}`).then(bh =>{
+                                            sig_submit(sign(num, plasma, missed_num, bh))
                                         .then(nodeOp => {
                                             res('SAT')
                                             if(JSON.parse(nodeOp[1][1].json).sig){
@@ -289,6 +292,7 @@ function startApp() {
                                             }
                                         })
                                         .catch(e => { rej(e) })
+                                        })
                                     })) 
                                     break;
                                 }
@@ -387,12 +391,14 @@ function startApp() {
                             }
                         }, 620000, plasma.hashLastIBlock)
                         promises.push(new Promise((res,rej)=>{
-                            report(plasma, consolidate(num, plasma, processor.getBlockHeader(`${num % 1000}`)))
+                            processor.getBlockHeader(`${num % 1000}`).then(bh => {
+                                report(plasma, consolidate(num, plasma, bh))
                             .then(nodeOp => {
                                 res('SAT')
                                 if(processor.isStreaming())NodeOps.unshift(nodeOp)
                             })
                             .catch(e => { rej(e) })
+                            })
                         }))
                     }
                     if ((num - 20003) % 30240 === 0) { //time for daily magic
