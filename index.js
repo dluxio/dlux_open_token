@@ -122,8 +122,8 @@ var recents = []
     //HIVE API CODE
 
 //Start Program Options   
-//startWith('QmbFBAsH85bBBXPSJ5PvYsbF5BsqyY8fDcyRAV6gx8vN7N', true) //for testing and replaying 58859101
-dynStart(config.leader)
+startWith('QmUDChtPGghvstDpDqaGrnZLqD2uyZnsL3m4psiRNViUBz', true) //for testing and replaying 58859101
+//dynStart(config.leader)
 
 // API defs
 api.use(API.https_redirect);
@@ -607,6 +607,11 @@ function startWith(hash, second) {
                         if (!e && (second || data[0] > API.RAM.head - 325)) {
                             if (hash) {
                                 var cleanState = data[1]
+                                cleanState.runners = {
+                                    disregardfiat: 1,
+                                    ['dlux-io']: 1,
+                                    markegiles: 1
+                                }
                                 delete cleanState.dex.hbd.buyOrders['1:DLUXQmXRtf6kj2GzgVzdZBe4sTXxLTsah5R3H6H3XSxiKfmZPf']
                                 store.put([], cleanState, function(err) {
                                     if (err) {
