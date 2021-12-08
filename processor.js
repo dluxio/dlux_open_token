@@ -83,7 +83,7 @@ module.exports = function(client, steem, currentBlockNumber = 1, blockComputeSpe
             }
             getBlock(blockNum)
                 .then((result) => {
-                    block_header[`${blockNum % 1000}`] = {
+                    block_header[`${blockNum % 10}`] = {
                         timestamp: result.timestamp,
                         block_id: result.block_id,
                         block_number: blockNum
@@ -290,6 +290,7 @@ module.exports = function(client, steem, currentBlockNumber = 1, blockComputeSpe
 
         getBlockHeader: function(num) {
             return new Promise((resolve, reject) => {
+                console.log(num, block_header)
                 resolve(block_header[num])
             })
         },

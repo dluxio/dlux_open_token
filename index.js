@@ -269,7 +269,7 @@ function startApp() {
                         if(num % 100 !== 50){
                             if(msa_keys.length > 80){
                                 promises.push(new Promise((res,rej)=>{
-                                    processor.getBlockHeader(`${(num-1) % 1000}`).then(bh =>{
+                                    processor.getBlockHeader(`${(num-1) % 10}`).then(bh =>{
                                         sig_submit(consolidate(num, plasma, bh))
                                     .then(nodeOp => {
                                         res('SAT')
@@ -283,7 +283,7 @@ function startApp() {
                                 if(mss[missed].split(':').length == 1){
                                     missed_num = mss[missed]
                                     promises.push(new Promise((res,rej)=>{
-                                        processor.getBlockHeader(`${(num-1) % 1000}`).then(bh =>{
+                                        processor.getBlockHeader(`${(num-1) % 10}`).then(bh =>{
                                             sig_submit(sign(num, plasma, missed_num, bh))
                                         .then(nodeOp => {
                                             res('SAT')
@@ -391,7 +391,7 @@ function startApp() {
                             }
                         }, 620000, plasma.hashLastIBlock)
                         promises.push(new Promise((res,rej)=>{
-                            processor.getBlockHeader(`${(num-1) % 1000}`).then(bh => {
+                            processor.getBlockHeader(`${(num-1) % 10}`).then(bh => {
                                 report(plasma, consolidate(num, plasma, bh))
                             .then(nodeOp => {
                                 res('SAT')
