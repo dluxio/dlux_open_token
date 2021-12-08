@@ -264,7 +264,7 @@ if (active && (from == 'disregardfiat' || from == 'hivefolks')){
                         var bond = json.bond || 0
                         if(typeof bond !== 'number') bond = 0
                         const fee = (byte_cost * byte_count * total_num) + mem[0].nft_fee_1 + (total_num * bond)
-                        if(json.max_fee >= fee && mem[1].from >= fee){
+                        if(json.max_fee >= fee && mem[1][from] >= fee){
                             let set = { //5 plus set name bytes
                                 "a":from, //the account that pays the set fee, --23 bytes
                                 "s":json.script, //build app hash --53bytes
@@ -294,7 +294,7 @@ if (active && (from == 'disregardfiat' || from == 'hivefolks')){
                                 }
                             }
                             const ops = []
-                            ops.push({type:'put', path:['balances', from], data: mem[1].from - fee})
+                            ops.push({type:'put', path:['balances', from], data: mem[1][from] - fee})
                             ops.push({type:'put', path:['sets', json.name], data: set})
                             ops.push({type:'put', path:['rnfts', json.name, from], data: total_num})
                             let msg = `@${from} defined ${json.name} NFT set. ${parseFloat(fee/1000).toFixed(3)} ${config.TOKEN} paid`
@@ -331,7 +331,7 @@ if (active && (from == 'disregardfiat' || from == 'hivefolks')){
                         var bond = parseInt(json.bond) || 0
                         if(typeof bond !== 'number') bond = 0
                         const fee = (byte_cost * byte_count * total_num) + mem[0].nft_fee_1 + (total_num * bond)
-                        if(json.max_fee >= fee && mem[1] >= fee){
+                        if(json.max_fee >= fee && mem[1][from] >= fee){
                             let set = { //5 plus set name bytes
                                 "a":from, //the account that pays the set fee, --23 bytes
                                 "s":json.script, //build app hash --53bytes
@@ -347,7 +347,7 @@ if (active && (from == 'disregardfiat' || from == 'hivefolks')){
                                 "f":fee - (total_num * bond) //fee
                             }
                             const ops = []
-                            ops.push({type:'put', path:['balances', from], data: mem[1] - fee})
+                            ops.push({type:'put', path:['balances', from], data: mem[1][from] - fee})
                             ops.push({type:'put', path:['sets', json.name], data: set})
                             ops.push({type:'put', path:['rnfts', json.name, from], data: total_num})
                             let msg = `@${from} defined ${json.name} NFT set. ${parseFloat(fee/1000).toFixed(3)} ${config.TOKEN} paid`
