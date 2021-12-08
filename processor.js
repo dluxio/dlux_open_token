@@ -83,7 +83,7 @@ module.exports = function(client, steem, currentBlockNumber = 1, blockComputeSpe
             }
             getBlock(blockNum)
                 .then((result) => {
-                    block_header[`${blockNum % 10}`] = {
+                    block_header = {
                         timestamp: result.timestamp,
                         block_id: result.block_id,
                         block_number: blockNum
@@ -166,7 +166,7 @@ module.exports = function(client, steem, currentBlockNumber = 1, blockComputeSpe
                                 if(Vops.length){
                                     transactional(Vops, 0, v[2], v[3], v[4])
                                 } else {
-                                    onNewBlock(num, v, v[4].witness_signature)
+                                    onNewBlock(num, v, v[4].witness_signature, block_header)
                                         .then(r => {
                                             pc[0](pc[2])
                                         })
@@ -175,7 +175,7 @@ module.exports = function(client, steem, currentBlockNumber = 1, blockComputeSpe
                             })
                             .catch(e=>{console.log(e);cycleapi()})
                         } else {
-                            onNewBlock(num, v, v[4].witness_signature)
+                            onNewBlock(num, v, v[4].witness_signature, block_header)
                             .then(r => {
                                 pc[0](pc[2])
                             })
@@ -188,7 +188,7 @@ module.exports = function(client, steem, currentBlockNumber = 1, blockComputeSpe
                     pc[1](e)
                 })
         } else {
-            onNewBlock(num, pc, block.witness_signature)
+            onNewBlock(num, pc, block.witness_signature, block_header)
                 .then(r => {
                     r[0]()
                 })
@@ -287,14 +287,6 @@ module.exports = function(client, steem, currentBlockNumber = 1, blockComputeSpe
         isStreaming: function() {
             return isStreaming;
         },
-
-        getBlockHeader: function(num) {
-            return new Promise((resolve, reject) => {
-                console.log(num, block_header)
-                resolve(block_header[num])
-            })
-        },
-
         onStreamingStart: function(callback) {
             onStreamingStart = callback;
         },

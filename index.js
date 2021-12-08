@@ -246,7 +246,7 @@ function startApp() {
     processor.onOperation('comment', HR.comment);
     //do things in cycles based on block time
     processor.onBlock(
-        function(num, pc, prand) {
+        function(num, pc, prand, bh) {
             console.log(num)
             TXID.clean(num)
             return new Promise((resolve, reject) => {
@@ -269,22 +269,19 @@ function startApp() {
                         if(num % 100 !== 50){
                             if(msa_keys.length > 80){
                                 promises.push(new Promise((res,rej)=>{
-                                    processor.getBlockHeader(`${(num-1) % 10}`).then(bh =>{
-                                        sig_submit(consolidate(num, plasma, bh))
+                                    sig_submit(consolidate(num, plasma, bh))
                                     .then(nodeOp => {
                                         res('SAT')
                                         NodeOps.unshift(nodeOp)
                                     })
                                     .catch(e => { rej(e) })
-                                    })
                                 }))
                             }
                             for(var missed = 0; missed < mss.length; missed++){
                                 if(mss[missed].split(':').length == 1){
                                     missed_num = mss[missed]
                                     promises.push(new Promise((res,rej)=>{
-                                        processor.getBlockHeader(`${(num-1) % 10}`).then(bh =>{
-                                            sig_submit(sign(num, plasma, missed_num, bh))
+                                        sig_submit(sign(num, plasma, missed_num, bh))
                                         .then(nodeOp => {
                                             res('SAT')
                                             if(JSON.parse(nodeOp[1][1].json).sig){
@@ -292,7 +289,6 @@ function startApp() {
                                             }
                                         })
                                         .catch(e => { rej(e) })
-                                        })
                                     })) 
                                     break;
                                 }
@@ -391,14 +387,12 @@ function startApp() {
                             }
                         }, 620000, plasma.hashLastIBlock)
                         promises.push(new Promise((res,rej)=>{
-                            processor.getBlockHeader(`${(num-1) % 10}`).then(bh => {
-                                report(plasma, consolidate(num, plasma, bh))
+                            report(plasma, consolidate(num, plasma, bh))
                             .then(nodeOp => {
                                 res('SAT')
                                 if(processor.isStreaming())NodeOps.unshift(nodeOp)
                             })
                             .catch(e => { rej(e) })
-                            })
                         }))
                     }
                     if ((num - 20003) % 30240 === 0) { //time for daily magic

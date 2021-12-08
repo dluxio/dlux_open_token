@@ -230,6 +230,20 @@ exports.tally = (num, plasma, isStreaming) => {
     })
 }
 
+function oracle(oracleArr){
+    return new Promise((resolve, reject) => {
+        getPathObj(['pcon']).then(pcon =>{
+            let results = {}
+            for(var i = 0; i < oracleArr.length; i++){
+                for(item in oracleArr[i]){
+                    results[item] = oracleArr[i][item]
+                }
+            }
+            
+        })
+    });
+}
+
 function payout(this_payout, weights, pending, num) {
     console.log(this_payout, weights, pending, num)
     return new Promise((resolve, reject) => {

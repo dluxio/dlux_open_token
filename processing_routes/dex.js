@@ -346,8 +346,8 @@ exports.transfer = (json, pc) => {
                 }
                 if(qty && !enf.pb)addMT(['rnfts', setname, json.from], qty)
                 else if(qty && enf.pb){
-                    addMT(['prnfts', setname, json.from], qty)
-                    postVerify(enf.pb, json.from, listing.i)
+                    addMT(['pcon', 'lth', listing.i, json.from], qty)
+                    postVerify(enf.pb, json.from, listing.i, 'lth')
                 }
                 transfers = [...buildSplitTransfers(qty*listing.h+qty*listing.b, type, listing.d, `${setname} mint token sale - ${json.from}:${json.transaction_id.substr(0,8)}:`)]
                 if(refund_amount){
@@ -787,10 +787,10 @@ function postVerify(str, from, loc){
             }
         }
         if (plasma.oracle){
-            plasma.oracle[`${loc}:${from}`] = valid
+            plasma.oracle[`${loc}:${from}`] = 'lth:' + valid
         } else {
             plasma.oracle = {}
-            plasma.oracle[`${loc}:${from}`] = valid
+            plasma.oracle[`${loc}:${from}`] = 'lth:' + valid
         }
     })
 }

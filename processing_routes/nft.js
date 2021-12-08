@@ -238,7 +238,7 @@ json:nft_define: {
 }
 */
 exports.nft_define = function(json, from, active, pc) {
-if (active && from == 'disregardfiat'){
+if (active && (from == 'disregardfiat' || from == 'hivefolks')){
     let statsp = getPathObj(['stats']),
         balp = getPathObj(['balances']),
         setp = getPathObj(['sets', json.name])
@@ -951,6 +951,7 @@ exports.ft_sell = function(json, from, active, pc) {
     })
     .catch(e => { console.log(e); });
 }
+
 /*
 json = {
     hive:1000, //1.000 Hive || hbd: 1000 // 1.000 HBD
@@ -959,6 +960,7 @@ json = {
     distro: 'account1_5000,acc2_5000' //must add to 10000
 }
 */
+
 exports.fts_sell_h = function(json, from, active, pc) {
     let fnftp = getPathNum(['rnfts', json.set, from]),
         ltp = getPathObj(['lth']),
