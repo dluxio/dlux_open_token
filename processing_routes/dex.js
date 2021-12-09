@@ -55,7 +55,7 @@ exports.dex_sell = (json, from, active, pc) => {
                 path = 0,
                 contract = ''
             while(remaining){
-                let price = parseFloat(dex.buyBook.split('_')[0]).toFixed(6)
+                let price = parseFloat(dex.buyBook.split('_')[0])
                 let item
                 if(price)item = dex.buyBook.split('_')[1].split(',')[0]
                 if (item && (order.type == 'MARKET' || parseFloat(price) >= order.rate)){
@@ -526,7 +526,7 @@ exports.transfer = (json, pc) => {
                             } else {
                                 const txid = config.TOKEN + hashThis(json.from + json.transaction_id),
                                     cfee = parseInt(remaining * parseFloat(stats.dex_fee)),
-                                    crate = order.rate || dex.tick,
+                                    crate = order.rate.toFixed(6) || dex.tick,
                                     hours = 720,
                                     expBlock = json.block_num + (hours * 1200)
                                 contract = {
