@@ -288,75 +288,92 @@ exports.transfer = (json, pc) => {
                     allowed = 9999999,
                     whoBoughtIndex,
                     whoBoughtAmount = 0
+                if(listing){
                     if(!listing.s)listing.s = ''
-                if(enf.max){
-                    allowed = enf.max
-                    whoBoughtIndex = listing.s.indexOf(`${json.from}_`)
-                    if(whoBoughtIndex != -1){
-                        whoBoughtAmount = parseInt(listing.s.split(`${json.from}_`)[1].split(',')[0])
-                        allowed -= whoBoughtAmount
+                    if(enf.max){
+                        allowed = enf.max
+                        whoBoughtIndex = listing.s.indexOf(`${json.from}_`)
+                        if(whoBoughtIndex != -1){
+                            whoBoughtAmount = parseInt(listing.s.split(`${json.from}_`)[1].split(',')[0])
+                            allowed -= whoBoughtAmount
+                        }
                     }
-                }
-                if(type == 'HIVE' && amount >= listing.h && listing.h != 0){
-                    qty = parseInt(amount/listing.h)
-                    refund_amount = amount % parseInt(listing.h)
-                    if(qty > allowed){
-                        tor = qty - allowed
-                        qty = allowed
-                        refund_amount += tor * listing.h
+                    if(type == 'HIVE' && amount >= listing.h && listing.h != 0){
+                        qty = parseInt(amount/listing.h)
+                        refund_amount = amount % parseInt(listing.h)
+                        if(qty > allowed){
+                            tor = qty - allowed
+                            qty = allowed
+                            refund_amount += tor * listing.h
+                        }
+                    } else if (type == 'HBD' && amount >= listing.b && listing.b != 0){
+                        qty = parseInt(amount/listing.b)
+                        refund_amount = amount % parseInt(listing.b)
+                        if(qty > allowed){
+                            tor = qty - allowed
+                            qty = allowed
+                            refund_amount += tor * listing.b
+                        }
                     }
-                } else if (type == 'HBD' && amount >= listing.b && listing.b != 0){
-                    qty = parseInt(amount/listing.b)
-                    refund_amount = amount % parseInt(listing.b)
-                    if(qty > allowed){
-                        tor = qty - allowed
-                        qty = allowed
-                        refund_amount += tor * listing.b
+                    if(enf.max && whoBoughtIndex != -1){
+                        listing.s.replace(`${json.from}_${whoBoughtAmount}`, `${json.from}_${whoBoughtAmount + qty}`)
+                    } else if (enf.max){
+                        listing.s += `,${json.from}_${qty}`
                     }
+                    listing.q -= qty
+                    if(enf.max){
+                        if(!listing.p)listing.p = 0
+                        listing.p += qty
+                    }
+                    ops.push({type: 'put', path: ['lth', item], data: listing})
+                    if(listing.q <= 0){
+                        qty += listing.q
+                        refund_amount += (listing.h * listing.q) + (listing.b * listing.q)
+                        if(!listing.p)ops.push({type: 'del', path: ['lth', item]})
+                    }
+                    if(qty && !enf.pb){
+                        addMT(['rnfts', setname, json.from], parseInt(qty))
+                        transfers = [...buildSplitTransfers(qty*listing.h+qty*listing.b, type, listing.d, `${setname} mint token sale - ${json.from}:${json.transaction_id.substr(0,8)}:`)]
+                    } else if(qty && enf.pb){
+                        addMT(['pcon', 'lth', listing.i, json.from], parseInt(qty))
+                        postVerify(enf.pb, json.from, listing.i, 'lth')
+                        transfers= []
+                    }
+                    if(refund_amount){
+                        transfers.push(['transfer',{
+                            to:json.from,
+                            from: config.msaccount,
+                            amount: parseFloat(refund_amount/1000).toFixed(3) + ` ${type}`,
+                            memo: `${qty?'Refund':'Partial refund'} ${setname} mint token purchase:${json.transaction_id}:`
+                        }])
+                    }
+                    for(var i = 0; i < transfers.length; i++){
+                        ops.push({type: 'put', path: ['msa', `${i}:${json.transaction_id}:${json.block_num}`], data: stringify(transfers[i])})
+                    }
+                    const msg = `@${json.from}| bought ${qty} ${setname} token${qty>1?'s':''} with ${parseFloat(parseInt(amount) / 1000).toFixed(3)} ${type}`
+                        if (config.hookurl || config.status) postToDiscord(msg, `${json.block_num}:${json.transaction_id}`)
+                        ops.push({
+                            type: 'put',
+                            path: ['feed', `${json.block_num}:${json.transaction_id}`],
+                            data: msg
+                        })
+                    store.batch(ops, pc)
+                } else {
+                    ops.push({type: 'put', path: ['msa', `${i}:${json.transaction_id}:${json.block_num}`], data: stringify(['transfer',{
+                            to:json.from,
+                            from: config.msaccount,
+                            amount: json.amount,
+                            memo: `Refund: Item(s) not found.`
+                        }])})
+                    const msg = `@${json.from}| can't locate item(s). Refund in progress.`
+                        if (config.hookurl || config.status) postToDiscord(msg, `${json.block_num}:${json.transaction_id}`)
+                        ops.push({
+                            type: 'put',
+                            path: ['feed', `${json.block_num}:${json.transaction_id}`],
+                            data: msg
+                        })
+                    store.batch(ops, pc)
                 }
-                if(enf.max && whoBoughtIndex != -1){
-                    listing.s.replace(`${json.from}_${whoBoughtAmount}`, `${json.from}_${whoBoughtAmount + qty}`)
-                } else if (enf.max){
-                    listing.s += `,${json.from}_${qty}`
-                }
-                listing.q -= qty
-                if(enf.max){
-                    if(!listing.p)listing.p = 0
-                    listing.p += qty
-                }
-                ops.push({type: 'put', path: ['lth', item], data: listing})
-                if(listing.q <= 0){
-                    qty += listing.q
-                    refund_amount += (listing.h * listing.q) + (listing.b * listing.q)
-                    if(!listing.p)ops.push({type: 'del', path: ['lth', item]})
-                }
-                if(qty && !enf.pb){
-                    addMT(['rnfts', setname, json.from], parseInt(qty))
-                    transfers = [...buildSplitTransfers(qty*listing.h+qty*listing.b, type, listing.d, `${setname} mint token sale - ${json.from}:${json.transaction_id.substr(0,8)}:`)]
-                } else if(qty && enf.pb){
-                    addMT(['pcon', 'lth', listing.i, json.from], parseInt(qty))
-                    postVerify(enf.pb, json.from, listing.i, 'lth')
-                    transfers= []
-                }
-                if(refund_amount){
-                    transfers.push(['transfer',{
-                        to:json.from,
-                        from: config.msaccount,
-                        amount: parseFloat(refund_amount/1000).toFixed(3) + ` ${type}`,
-                        memo: `${qty?'Refund':'Partial refund'} ${setname} mint token purchase:${json.transaction_id}:`
-                    }])
-                }
-                for(var i = 0; i < transfers.length; i++){
-                    ops.push({type: 'put', path: ['msa', `${i}:${json.transaction_id}:${json.block_num}`], data: stringify(transfers[i])})
-                }
-                const msg = `@${json.from}| bought ${qty} ${setname} token${qty>1?'s':''} with ${parseFloat(parseInt(amount) / 1000).toFixed(3)} ${type}`
-                    if (config.hookurl || config.status) postToDiscord(msg, `${json.block_num}:${json.transaction_id}`)
-                    ops.push({
-                        type: 'put',
-                        path: ['feed', `${json.block_num}:${json.transaction_id}`],
-                        data: msg
-                    })
-                store.batch(ops, pc)
             })
         } else {
             let order = {
