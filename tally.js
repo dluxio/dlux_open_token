@@ -273,7 +273,9 @@ function oracle(oracleArr, num){
                     }
                     ops.push({type:'del',path:['pcon','lth', addr, from]})
                     del.push(item)
+                    try{
                     delete plasma.oracle[`${addr}:${from}`]
+                    } catch(e){}
                 } else if (results[item] < 0){
                     addMT(['lth', addr, 'q'], parseInt(qty))
                     ops.push({type: 'put', path: ['msa', `${item}:${num}`], data: stringify([
@@ -285,7 +287,9 @@ function oracle(oracleArr, num){
                     ])})
                     ops.push({type:'del',path:['pcon','lth', addr, from]})
                     del.push(item)
+                    try{
                     delete plasma.oracle[`${addr}:${from}`]
+                    }catch(e){}
                 }
                 cleanOracle(del)
             }
