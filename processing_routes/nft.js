@@ -772,22 +772,26 @@ json = {
 */
 
 exports.nft_add_roy = function(json, from, active, pc) {
-    let promises = [getPathObj(['sets', json.set])]
+    let promises = [getPathObj(['sets', json.set]),getPathObj(['balances'])]
     Promise.all(promises)
     .then(mem => {
-        let set = mem[0], failed = false, d
+        let set = mem[0], bals = mem[1], failed = true, d
         if (json.distro){ //string verification
             let pairs = json.distro.split(','),
                 total = 0
+                failed = false
             for (let i = 0; i < pairs.length; i++){
                 total += parseInt(pairs[i].split('_')[1])
-                if(!bals[pairs[i].split('_')[0]])failed = true
+                if(!bals[pairs[i].split('_')[0]] && pairs[i].split('_')[0] != 'd'){
+                    failed = true
+                    console.log(pairs[i], bals[pairs[i].split('_')[0]] , pairs[i].split('_')[0] != 'd')
+                }
             }
             if(!failed && total === 10000){
                 d = json.distro
             }
         }
-        if (set.r == from || set.ra.indexOf(`${from}_` >= 0 && active && !failed) ){
+        if (((set.a == from && !set.ra) || set.ra.indexOf(`${from}_` >= 0)) && active && !failed) {
             let ops = [],
             amount = 0, running = 0
             if (set.ra){
@@ -817,10 +821,11 @@ exports.nft_add_roy = function(json, from, active, pc) {
                         newd.splice(i, 1)
                     }
                 }
+                d = newd.join(',')
             } else {
                 set.ra = d
             }
-            //ops.push({ type: 'put', path: [json.set, 'ra'], data: {p:json.period,s:json.set} });
+            ops.push({ type: 'put', path: ['sets', json.set, 'ra'], data: set.ra });
             let msg = `@${from} changed their royalties for ${json.set}`
             if (config.hookurl || config.status) postToDiscord(msg, `${json.block_num}:${json.transaction_id}`)
             ops.push({ type: 'put', path: ['feed', `${json.block_num}:${json.transaction_id}`], data: msg });

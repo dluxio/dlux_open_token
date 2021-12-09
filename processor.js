@@ -83,7 +83,7 @@ module.exports = function(client, steem, currentBlockNumber = 1, blockComputeSpe
             }
             getBlock(blockNum)
                 .then((result) => {
-                    block_header = {
+                    block_header[`${blockNum % 20}`] = {
                         timestamp: result.timestamp,
                         block_id: result.block_id,
                         block_number: blockNum
@@ -166,7 +166,7 @@ module.exports = function(client, steem, currentBlockNumber = 1, blockComputeSpe
                                 if(Vops.length){
                                     transactional(Vops, 0, v[2], v[3], v[4])
                                 } else {
-                                    onNewBlock(num, v, v[4].witness_signature, block_header)
+                                    onNewBlock(num, v, v[4].witness_signature, block_header[`${num % 20}`])
                                         .then(r => {
                                             pc[0](pc[2])
                                         })
@@ -175,7 +175,7 @@ module.exports = function(client, steem, currentBlockNumber = 1, blockComputeSpe
                             })
                             .catch(e=>{console.log(e);cycleapi()})
                         } else {
-                            onNewBlock(num, v, v[4].witness_signature, block_header)
+                            onNewBlock(num, v, v[4].witness_signature, block_header[`${num % 20}`])
                             .then(r => {
                                 pc[0](pc[2])
                             })
@@ -188,7 +188,7 @@ module.exports = function(client, steem, currentBlockNumber = 1, blockComputeSpe
                     pc[1](e)
                 })
         } else {
-            onNewBlock(num, pc, block.witness_signature, block_header)
+            onNewBlock(num, pc, block.witness_signature, block_header[`${num % 20}`])
                 .then(r => {
                     r[0]()
                 })

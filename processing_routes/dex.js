@@ -163,15 +163,10 @@ exports.dex_sell = (json, from, active, pc) => {
             for(var to in addops){
                 waitfor.push(add(to, addops[to]))
             }
+            const msg = `@${from}| Sell order confirmed.`
+            if (config.hookurl || config.status) postToDiscord(msg, `${json.block_num}:${json.transaction_id}`)
+            ops = [{ type: 'put', path: ['feed', `${json.block_num}:${json.transaction_id}`], data: msg }]
             ops.push({type: 'put', path: ['dex', order.pair], data: dex})
-            var hiveTimeWeight = 1 - ((json.block_num - stats[`H${order.pair.substr(1)}VWMA`].block) * 0.000033)
-            if (hiveTimeWeight < 0) hiveTimeWeight = 0
-            if(pair)stats[`H${order.pair.substr(1)}VWMA`] = {
-                    rate: parseFloat((filled + (parseFloat(stats[`H${order.pair.substr(1)}VWMA`].rate) * stats[`H${order.pair.substr(1)}VWMA`].vol * hiveTimeWeight)) / (pair + (stats[`H${order.pair.substr(1)}VWMA`].vol * hiveTimeWeight))).toFixed(6),
-                    block: json.block_num,
-                    vol: parseInt(filled + (stats[`H${order.pair.substr(1)}VWMA`].vol * hiveTimeWeight))
-                }
-            ops.push({type: 'put', path: ['stats'], data: stats})
             if(Object.keys(his).length)ops.push({type: 'put', path: ['dex', order.pair, 'his'], data: his})
             if(path){
                 Promise.all([path, ...waitfor])
@@ -221,14 +216,6 @@ exports.transfer = (json, pc) => {
                 ops = []
             if (!stats.outOnBlock) {
                 purchase = parseInt(amount / stats.icoPrice * 1000)
-                var hiveTimeWeight = 1 - ((json.block_num - stats.HiveVWMA.block) * 0.000033)
-                if (hiveTimeWeight < 0) { hiveTimeWeight = 0 }
-                if(purchase)hiveVWMA = {
-                    rate: parseFloat((purchase + (parseFloat(stats.HiveVWMA.rate) * stats.HiveVWMA.vol * hiveTimeWeight)) / (purchase + (stats.HiveVWMA.vol * hiveTimeWeight))).toFixed(6),
-                    block: json.block_num,
-                    vol: parseInt(amount + (stats.HiveVWMA.vol * hiveTimeWeight))
-                }
-                //forceCancel(hiveVWMA.rate, 'hive', json.block_num)
                 .then(empty => {
                     if (purchase < i) {
                         i -= purchase
@@ -237,8 +224,7 @@ exports.transfer = (json, pc) => {
                         if (config.hookurl || config.status) postToDiscord(msg, `${json.block_num}:${json.transaction_id}`)
                         ops = [{ type: 'put', path: ['feed', `${json.block_num}:${json.transaction_id}`], data: msg },
                             { type: 'put', path: ['balances', json.from], data: b },
-                            { type: 'put', path: ['balances', 'ri'], data: i },
-                            { type: 'put', path: ['stats', 'HiveVWMA'], data: hiveVWMA }
+                            { type: 'put', path: ['balances', 'ri'], data: i }
                         ]
                         if (process.env.npm_lifecycle_event == 'test') pc[2] = ops
                         store.batch(ops, pc)
@@ -246,7 +232,6 @@ exports.transfer = (json, pc) => {
                         b += i
                         const left = purchase - i
                         stats.outOnBlock = json.block_num
-                        stats.HiveVWMA = hiveVWMA
                         const msg = `@${json.from}| bought ALL ${parseFloat(parseInt(purchase - left)).toFixed(3)} ${config.TOKEN} with ${parseFloat(parseInt(amount) / 1000).toFixed(3)} HIVE. And bid in the over-auction`
                         if (config.hookurl || config.status) postToDiscord(msg, `${json.block_num}:${json.transaction_id}`)
                         ops = [
@@ -546,13 +531,6 @@ exports.transfer = (json, pc) => {
                         msg = `@${json.from} set a buy order at ${contrate.rate}.`
                         
                     } else {
-                        var hiveTimeWeight = 1 - ((json.block_num - stats[`H${order.pair.substr(1)}VWMA`].block) * 0.000033)
-                        if (hiveTimeWeight < 0) { hiveTimeWeight = 0 }
-                        stats[`H${order.pair.substr(1)}VWMA`] = {
-                                        rate: parseFloat((filled + (parseFloat(stats[`H${order.pair.substr(1)}VWMA`].rate) * stats[`H${order.pair.substr(1)}VWMA`].vol * hiveTimeWeight)) / (filled + (stats[`H${order.pair.substr(1)}VWMA`].vol * hiveTimeWeight))).toFixed(6),
-                                        block: json.block_num,
-                                        vol: parseInt(order.amount + (stats[`H${order.pair.substr(1)}VWMA`].vol * hiveTimeWeight))
-                                    }
                         msg = `@${json.from} | order recieved.`
                         add('rn', fee)
                     }
