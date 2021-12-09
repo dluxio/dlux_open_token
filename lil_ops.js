@@ -70,7 +70,7 @@ const addMT = (path, amount) => {
         store.get(path, function(e, a) {
             if (!e) {
                 console.log(amount, a)
-                const a2 = typeof a != 'number' ? amount : a + amount
+                const a2 = typeof a != 'number' ? parseInt(amount) : parseInt(a) + parseInt(amount)
                 console.log(a2)
                 store.batch([{ type: 'put', path, data: a2 }], [resolve, reject, 1])
             } else {
