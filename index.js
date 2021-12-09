@@ -122,8 +122,8 @@ var recents = []
     //HIVE API CODE
 
 //Start Program Options   
-startWith('QmWx6wsXodNuErkecCnP49VYVBzDPuEdarZ4oqZXpwNbDk', true) //for testing and replaying 58859101
-//dynStart(config.leader)
+//startWith('QmWx6wsXodNuErkecCnP49VYVBzDPuEdarZ4oqZXpwNbDk', true) //for testing and replaying 58859101
+dynStart(config.leader)
 
 // API defs
 api.use(API.https_redirect);
@@ -607,23 +607,6 @@ function startWith(hash, second) {
                         if (!e && (second || data[0] > API.RAM.head - 325)) {
                             if (hash) {
                                 var cleanState = data[1]
-                                cleanState.rnfts.hf.jlsplatts = 3
-                                cleanState.rnfts.hf.dagger212 = 1
-                                cleanState.rnfts.hf.raymondspeaks = 1
-                                delete cleanState.pcon.lth['hf:QmYwz8J5UpvfGQfUQbRqTyQzymWN6ue4epkC42TtPreJzL'].jlsplatts
-                                delete cleanState.pcon.lth['hf:QmYwz8J5UpvfGQfUQbRqTyQzymWN6ue4epkC42TtPreJzL'].dagger212
-                                delete cleanState.pcon.lth['hf:QmYwz8J5UpvfGQfUQbRqTyQzymWN6ue4epkC42TtPreJzL'].raymondspeaks
-                                var count = 5
-                                for(var acc in cleanState.rnfts.hf) {
-                                    count += cleanState.rnfts.hf[acc]
-                                }
-                                var things = cleanState.sets.hf.u.split(',')
-                                for(var i = 0; i < things.length; i++) {
-                                    count += parseInt(things[i].split('_').length - 1)
-                                }
-                                console.log({count})
-                                cleanState.lth['hf:QmYwz8J5UpvfGQfUQbRqTyQzymWN6ue4epkC42TtPreJzL'].q = 546 - count
-                                console.log(cleanState.lth['hf:QmYwz8J5UpvfGQfUQbRqTyQzymWN6ue4epkC42TtPreJzL'].q)
                                 store.put([], cleanState, function(err) {
                                     if (err) {
                                         console.log('errr',err)
