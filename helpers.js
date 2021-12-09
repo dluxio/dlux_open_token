@@ -555,7 +555,7 @@ function distro(payingAccount, recievingAccount, price, royalty_per, author, roy
     }
     if (royalty){
         if (royaltyString){
-            let royalties = set.royaltyString.split(','),
+            let royalties = royaltyString.split(','),
                 remaining = royalty
             for (var i = royalties.length - 1; i >= 0; i--){
                 const to = royalties[i].split('_')[0],
