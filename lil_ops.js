@@ -69,9 +69,8 @@ const addMT = (path, amount) => {
     return new Promise((resolve, reject) => {
         store.get(path, function(e, a) {
             if (!e) {
-                console.log(amount, a)
                 const a2 = typeof a != 'number' ? parseInt(amount) : parseInt(a) + parseInt(amount)
-                console.log(a2)
+                console.log(`MTo:${a},add:${amount},final:${a2}`, )
                 store.batch([{ type: 'put', path, data: a2 }], [resolve, reject, 1])
             } else {
                 console.log(e)
