@@ -1080,7 +1080,7 @@ exports.ft_buy = function(json, from, active, pc) {
                 promises = distro(from, listing.o, price, set.r, set.a, set.ra, json.set)
             let ops = []
             addMT(['rnfts', json.set, from], 1)
-            ops.push({type:'put', path:['balances', from], data: newBal})
+            ops.push({type:'put', path:['balances', from], data: mem[0] - price})
             ops.push({type:'del', path:['lt', `${json.set}:${json.uid}`]})
             let msg = `@${from} bought ${json.set}:${json.uid} mint token`
             if (config.hookurl || config.status) postToDiscord(msg, `${json.block_num}:${json.transaction_id}`)

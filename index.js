@@ -122,8 +122,8 @@ var recents = []
     //HIVE API CODE
 
 //Start Program Options   
-//startWith('QmQsyzJnCY4kjtVwBsBHkGED6dRJAehtCTqmQwLFJuCfPY', true) //for testing and replaying 58859101
-dynStart(config.leader)
+startWith('QmXVTQ4X3dPcnMsBCC2uCUyE1FM6DRnx57iVhNmE3yvo1W', true) //for testing and replaying 58859101
+//dynStart(config.leader)
 
 // API defs
 api.use(API.https_redirect);

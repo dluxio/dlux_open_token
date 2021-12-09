@@ -1,13 +1,12 @@
 const config = require('./config');
 const { getPathObj, getPathNum } = require("./getPathObj");
 const { deleteObjs } = require('./deleteObjs')
-const { store, exit, hiveClient } = require("./index");
+const { store, exit, hiveClient, plasma } = require("./index");
 const { updatePost } = require('./edb');
 const { 
     //add, addCol, addGov, deletePointer, credit, chronAssign, hashThis, isEmpty, 
     addMT } = require('./lil_ops')
 const stringify = require('json-stable-stringify');
-const { ops } = require('@hiveio/hive-js/lib/auth/serializer');
 
 //determine consensus... needs some work with memory management
 exports.tally = (num, plasma, isStreaming) => {
@@ -251,11 +250,13 @@ function oracle(oracleArr, num){
                 ops = []
             for(var i = 0; i < oracleArr.length; i++){
                 for(var item in oracleArr[i]){
+                    try{
                     if(oracleArr[i][item].split(':')[0] == 'lth'){
                         results[item] = results[item] || 0
                         results[item] += oracleArr[i][item].split(':')[1] == 'true' ? 1 : -1
-                        console.log(oracleArr[i][item].split(':')[1] == 'true' ? 1 : -1)
+                        
                     }
+                } catch (e){}
                 }
             }
             for ( var item in results){
@@ -265,13 +266,14 @@ function oracle(oracleArr, num){
                     from = item.split(':')[2],
                     qty = parseInt(pcon.lth[addr][from])
                 if(results[item] > 0){
-                    var transfers = [...buildSplitTransfers(qty*listing.h+qty*listing.b, listing.h ? 'HIVE' : 'HBD', listing.d, `${setname} mint token sale - ${from}:{i}:vop:${num}`)]
+                    var transfers = [...buildSplitTransfers(qty*listing.h+qty*listing.b, listing.h ? 'HIVE' : 'HBD', listing.d, `${setname} mint token sale - ${from}:vop:${num}`)]
                     addMT(['rnfts', setname, from], parseInt(qty))
                     for(var i = 0; i < transfers.length; i++){
                         ops.push({type: 'put', path: ['msa', `${i}:$vop:${num}`], data: stringify(transfers[i])})
                     }
                     ops.push({type:'del',path:['pcon','lth', addr, from]})
                     del.push(item)
+                    delete plasma.oracle[`${addr}:${from}`]
                 } else if (results[item] < 0){
                     addMT(['lth', addr, 'q'], parseInt(qty))
                     ops.push({type: 'put', path: ['msa', `${i}:vop:${num}`], data: stringify([
@@ -283,6 +285,7 @@ function oracle(oracleArr, num){
                     ])})
                     ops.push({type:'del',path:['pcon','lth', addr, from]})
                     del.push(item)
+                    delete plasma.oracle[`${addr}:${from}`]
                 }
                 cleanOracle(del)
             }
