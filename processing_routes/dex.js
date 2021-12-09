@@ -153,12 +153,13 @@ exports.dex_sell = (json, from, active, pc) => {
                     addops[adds[j][0]] = adds[j][1]
                 }
             }
+            console.log({bal})
             bal -= json[config.jsonTokenName]
             if (addops[from]){
                 bal += addops[from]
                 delete addops[from]
             }
-            ops.push({type: 'put', path: ['balances', from], data: bal})
+            console.log({bal})
             var waitfor = [add('rn', fee)]
             for(var to in addops){
                 waitfor.push(add(to, addops[to]))
@@ -166,6 +167,7 @@ exports.dex_sell = (json, from, active, pc) => {
             const msg = `@${from}| Sell order confirmed.`
             if (config.hookurl || config.status) postToDiscord(msg, `${json.block_num}:${json.transaction_id}`)
             ops = [{ type: 'put', path: ['feed', `${json.block_num}:${json.transaction_id}`], data: msg }]
+            ops.push({type: 'put', path: ['balances', from], data: bal})
             ops.push({type: 'put', path: ['dex', order.pair], data: dex})
             if(Object.keys(his).length)ops.push({type: 'put', path: ['dex', order.pair, 'his'], data: his})
             if(path){
