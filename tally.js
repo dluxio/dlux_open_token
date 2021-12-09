@@ -276,7 +276,7 @@ function oracle(oracleArr, num){
                     delete plasma.oracle[`${addr}:${from}`]
                 } else if (results[item] < 0){
                     addMT(['lth', addr, 'q'], parseInt(qty))
-                    ops.push({type: 'put', path: ['msa', `${i}:vop:${num}`], data: stringify([
+                    ops.push({type: 'put', path: ['msa', `${i}:vop:${num}:${item.split(':')[2]}`], data: stringify([
                         'transfer',
                         {from: config.msaccount,
                         to:from,
