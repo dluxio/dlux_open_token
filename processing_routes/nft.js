@@ -4,7 +4,7 @@ const { chronAssign, add, hashThis, addMT } = require('./../lil_ops')
 const { getPathObj, getPathNum } = require('../getPathObj')
 const { postToDiscord } = require('./../discord')
 const { Base64, primes, NFT, distro } = require('./../helpers')
-
+const stringify = require('json-stable-stringify');
 /*
 json { set, uid}
 */
@@ -1033,11 +1033,23 @@ uid, //contract name
 */
 
 exports.fts_sell_hcancel = function(json, from, active, pc) {
-    let lsp = getPathObj(['lth', `${json.set}:${json.uid}`])
-    Promise.all([lsp])
+    let lsp = getPathObj(['lth', `${json.set}:${json.uid}`]),
+        pco = getPathObj(['pcon', 'lth', `${json.set}:${json.uid}`])
+    Promise.all([lsp, pco])
     .then(mem => {
+        const listing = mem[0],
+            pending = mem[1],
+            i = 0
         if(active && from == mem[0].o){
             let ops = []
+            for(var item in pending){
+            var transfers = [...buildSplitTransfers(pending[item]*listing.h+pending[item]*listing.b, listing.h ? 'HIVE' : 'HBD', listing.d, `${json.set} mint token sale - ${item}:${i}:${json.block_num}`)]
+                    addMT(['rnfts', json.set, item], parseInt(pending[item]))
+                    for(var j = 0; j < transfers.length; j++){
+                        ops.push({type: 'put', path: ['msa', `${i}:${j}:vop:${json.block_num}`], data: stringify(transfers[j])})
+                    }
+                    ops.push({type:'del',path:['pcon','lth', `${json.set}:${json.uid}`, item]})
+                }
             addMT(['rnfts', json.set, from], mem[0].q)
             ops.push({type:'del', path:['lth', `${json.set}:${json.uid}`]})
             let msg = `@${from} canceled sell of ${json.set}:${json.uid}`
@@ -1202,4 +1214,24 @@ exports.ft_bid = function(json, from, active, pc) {
             }
         })
     .catch(e => { console.log(e); });
+}
+
+function buildSplitTransfers(amount, pair, ds, memos){
+    console.log({amount, pair, ds, memos})
+    let tos = ds.split(',') || 0
+    if (!tos)return []
+    let ops = [],
+        total = 0
+    for(var i = tos.length - 1; i >= 0; i--) {
+        let dis = parseInt((amount*parseInt(tos[i].split('_')[1])/10000))
+        if(!i)dis = amount - total    
+        total += dis
+        ops.push(['transfer',{
+            to: tos[i].split('_')[0],
+            from: config.msaccount,
+            amount: `${parseFloat(dis/1000).toFixed(3)} ${pair.toUpperCase()}`,
+            memo: memos + `:${parseFloat(parseInt(tos[i].split('_')[1])/100).toFixed(2)}%`
+        }])
+    }
+    return ops
 }

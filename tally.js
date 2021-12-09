@@ -3,7 +3,11 @@ const { getPathObj, getPathNum } = require("./getPathObj");
 const { deleteObjs } = require('./deleteObjs')
 const { store, exit, hiveClient } = require("./index");
 const { updatePost } = require('./edb');
-const { truncateSync } = require('fs');
+const { 
+    //add, addCol, addGov, deletePointer, credit, chronAssign, hashThis, isEmpty, 
+    addMT } = require('./lil_ops')
+const stringify = require('json-stable-stringify');
+const { ops } = require('@hiveio/hive-js/lib/auth/serializer');
 
 //determine consensus... needs some work with memory management
 exports.tally = (num, plasma, isStreaming) => {
@@ -43,14 +47,15 @@ exports.tally = (num, plasma, isStreaming) => {
                             }
                         },
                         consensus = undefined,
-                            mss = {},
-                            mssb = 0
-                        for(var block in mssp){
-                            if (block == num - 50){
-                                mss = JSON.parse(mssp[block])
-                                mssb = block
-                            }
+                        mss = {},
+                        mssb = 0,
+                        oracleArr = []
+                    for(var block in mssp){
+                        if (block == num - 50){
+                            mss = JSON.parse(mssp[block])
+                            mssb = block
                         }
+                    }
                     for (node in nodes) {
                         var hash = '',
                             when = 0,
@@ -59,15 +64,19 @@ exports.tally = (num, plasma, isStreaming) => {
                             if(stats.ms.active_account_auths[node] && nodes[node].report.sig && nodes[node].report.sig_block == mssb){
                                 signatures.push(nodes[node].report.sig)
                             }
-                        } catch (e) { console.log({ node }) }
-                        try { hash = nodes[node].report.hash } catch (e) { console.log({ node }) }
-                        try { when = nodes[node].report.block_num } catch { console.log({ node }) }
-                        try { online = hash && nodes[node].escrow } catch { console.log({ node }) }
+                        } catch (e) {}
+                        try { hash = nodes[node].report.hash } catch (e) {}
+                        try { if(nodes[node].report.oracle)oracleArr.push(nodes[node].report.oracle) } catch (e) {}
+                        try { hash = nodes[node].report.hash } catch (e) {}
+                        try { when = nodes[node].report.block_num } catch(e) {}
+                        try { online = hash && nodes[node].escrow } catch(e) {}
                         if (when > (num - 50) && hash && online) {
                             tally.agreements.hashes[node] = hash
                             tally.agreements.tally[hash] = 0
                         } //recent and signing
                     }
+                    
+                    var promises = [oracle(oracleArr, num)]
                     if(runners[config.username] && mss.expiration)verify(mss, signatures, stats.ms.active_threshold)
                     for (runner in runners) {
                         tally.agreements.votes++
@@ -83,9 +92,9 @@ exports.tally = (num, plasma, isStreaming) => {
                             break;
                         }
                     }
-                    let still_running = {}
-                    let election = {}
-                    let new_queue = {}
+                    let still_running = {},
+                        election = {},
+                        new_queue = {}
                     console.log('Consensus: ' + consensus)
                     if (consensus) {
                         stats.hashLastIBlock = consensus;
@@ -195,8 +204,8 @@ exports.tally = (num, plasma, isStreaming) => {
                     let this_weight = parseInt(weights / 2016),
                         this_payout = parseInt((((rbal.rc / 200) + stats.movingWeight.dailyPool) / 304) * (this_weight / running_weight)) //subtract this from the rc account... 13300 is 70% of inflation
                         stats.movingWeight.running = parseInt(((stats.movingWeight.running * 2015) / 2016) + (weights / 2016)) //7 day average at 5 minute intervals
-                    payout(this_payout, weights, pending, num)
-                        .then(change => {
+                    promises.unshift(payout(this_payout, weights, pending, num))
+                    Promise.all(promises).then(change => {
                             const mint = parseInt(stats.tokenSupply / stats.interestRate);
                             stats.tokenSupply += mint;
                             rbal.ra += mint;
@@ -204,7 +213,7 @@ exports.tally = (num, plasma, isStreaming) => {
                                 { type: 'put', path: ['stats'], data: stats },
                                 { type: 'put', path: ['markets', 'node'], data: nodes },
                                 { type: 'put', path: ['balances', 'ra'], data: rbal.ra },
-                                { type: 'put', path: ['balances', 'rc'], data: rbal.rc - (this_payout - change) }
+                                { type: 'put', path: ['balances', 'rc'], data: rbal.rc - (this_payout - change[0]) }
                             ]
                             if(Object.keys(still_running).length > 1) ops.push(
                                 { type: 'put', path: ['runners'], data: still_running })
@@ -230,27 +239,72 @@ exports.tally = (num, plasma, isStreaming) => {
     })
 }
 
-function oracle(oracleArr){
+function oracle(oracleArr, num){
+    console.log(oracleArr[0])
     return new Promise((resolve, reject) => {
         var promises = [getPathObj(['pcon']), getPathObj(['lth'])]
         Promise.all(promises).then(mem =>{
             let results = {},
                 pcon = mem[0],
-                lth = mem[1]
+                lth = mem[1],
+                del = [],
+                ops = []
             for(var i = 0; i < oracleArr.length; i++){
-                for(item in oracleArr[i]){
+                for(var item in oracleArr[i]){
                     if(oracleArr[i][item].split(':')[0] == 'lth'){
-                        results[item] = pcon[oracleArr[i][item].split(':')[1]]
+                        results[item] = results[item] || 0
+                        results[item] += oracleArr[i][item].split(':')[1] == 'true' ? 1 : -1
+                        console.log(oracleArr[i][item].split(':')[1] == 'true' ? 1 : -1)
                     }
                 }
             }
-            
+            for ( var item in results){
+                let addr = `${item.split(':')[0]}:${item.split(':')[1]}`,
+                    listing = lth[addr],
+                    setname = item.split(':')[0],
+                    from = item.split(':')[2],
+                    qty = parseInt(pcon.lth[addr][from])
+                if(results[item] > 0){
+                    var transfers = [...buildSplitTransfers(qty*listing.h+qty*listing.b, listing.h ? 'HIVE' : 'HBD', listing.d, `${setname} mint token sale - ${from}:{i}:vop:${num}`)]
+                    addMT(['rnfts', setname, from], parseInt(qty))
+                    for(var i = 0; i < transfers.length; i++){
+                        ops.push({type: 'put', path: ['msa', `${i}:$vop:${num}`], data: stringify(transfers[i])})
+                    }
+                    ops.push({type:'del',path:['pcon','lth', addr, from]})
+                    del.push(item)
+                } else if (results[item] < 0){
+                    addMT(['lth', addr, 'q'], parseInt(qty))
+                    ops.push({type: 'put', path: ['msa', `${i}:vop:${num}`], data: stringify([
+                        'transfer',
+                        {from: config.msaccount,
+                        to:from,
+                        amount:`${parseFloat((qty*listing.h+qty*listing.b)/1000).toFixed(3)} ${listing.h ? 'HIVE' : 'HBD'}`,
+                        memo:`Refund: ${from} is not authorized to buy this NFT`}
+                    ])})
+                    ops.push({type:'del',path:['pcon','lth', addr, from]})
+                    del.push(item)
+                }
+                cleanOracle(del)
+            }
+            console.log(ops)
+            store.batch(ops,[resolve,reject,'PCON'])
         })
     });
 }
 function cleanOracle(oracleArr){
     return new Promise((resolve, reject) => {
-        resolve(oracleArr)
+        let ops = [],
+            pn = getPathObj(['markets', 'node'])
+        Promise.all([pn]).then(mem=>{
+            let nodes = mem[0]
+            for(var node in nodes){
+                for(var i = 0; i < oracleArr.length; i++){
+                    ops.push({type: 'del', path:['markets', 'node', node, 'report', 'oracle', oracleArr[i]]})
+                }
+            }
+            store.batch(ops, [resolve, reject, 'DEL'])
+        })
+        
     })
 }
 
@@ -366,3 +420,23 @@ function verify(trx, sig, at){
     })
 }
 exports.verify_broadcast = verify
+
+function buildSplitTransfers(amount, pair, ds, memos){
+    console.log({amount, pair, ds, memos})
+    let tos = ds.split(',') || 0
+    if (!tos)return []
+    let ops = [],
+        total = 0
+    for(var i = tos.length - 1; i >= 0; i--) {
+        let dis = parseInt((amount*parseInt(tos[i].split('_')[1])/10000))
+        if(!i)dis = amount - total    
+        total += dis
+        ops.push(['transfer',{
+            to: tos[i].split('_')[0],
+            from: config.msaccount,
+            amount: `${parseFloat(dis/1000).toFixed(3)} ${pair.toUpperCase()}`,
+            memo: memos + `:${parseFloat(parseInt(tos[i].split('_')[1])/100).toFixed(2)}%`
+        }])
+    }
+    return ops
+}
