@@ -558,7 +558,7 @@ function distro(payingAccount, recievingAccount, price, royalty_per, author, roy
             let royalties = royaltyString.split(','),
                 remaining = royalty
             for (var i = royalties.length - 1; i >= 0; i--){
-                const to = royalties[i].split('_')[0],
+                let to = royalties[i].split('_')[0],
                     share = parseInt(royalty * (parseInt(royalties[i].split('_')[1]) / 10000))
                 if(i==0) share = remaining
                 if(adjust.indexOf(to) == -1){
