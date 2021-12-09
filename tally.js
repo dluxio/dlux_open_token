@@ -269,14 +269,14 @@ function oracle(oracleArr, num){
                     var transfers = [...buildSplitTransfers(qty*listing.h+qty*listing.b, listing.h ? 'HIVE' : 'HBD', listing.d, `${setname} mint token sale - ${from}:vop:${num}`)]
                     addMT(['rnfts', setname, from], parseInt(qty))
                     for(var i = 0; i < transfers.length; i++){
-                        ops.push({type: 'put', path: ['msa', `${i}:$vop:${num}`], data: stringify(transfers[i])})
+                        ops.push({type: 'put', path: ['msa', `${item}:${i}:${num}`], data: stringify(transfers[i])})
                     }
                     ops.push({type:'del',path:['pcon','lth', addr, from]})
                     del.push(item)
                     delete plasma.oracle[`${addr}:${from}`]
                 } else if (results[item] < 0){
                     addMT(['lth', addr, 'q'], parseInt(qty))
-                    ops.push({type: 'put', path: ['msa', `${i}:vop:${num}:${item.split(':')[2]}`], data: stringify([
+                    ops.push({type: 'put', path: ['msa', `${item}:${num}`], data: stringify([
                         'transfer',
                         {from: config.msaccount,
                         to:from,
