@@ -55,7 +55,7 @@ exports.dex_sell = (json, from, active, pc) => {
                 path = 0,
                 contract = ''
             while(remaining){
-                let price = parseFloat(dex.buyBook.split('_')[0])
+                let price = parseFloat(dex.buyBook.split('_')[0]).toFixed(6)
                 let item
                 if(price)item = dex.buyBook.split('_')[1].split(',')[0]
                 if (item && (order.type == 'MARKET' || parseFloat(price) >= order.rate)){
