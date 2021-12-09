@@ -349,6 +349,13 @@ exports.transfer = (json, pc) => {
                 for(var i = 0; i < transfers.length; i++){
                     ops.push({type: 'put', path: ['msa', `${i}:${json.transaction_id}:${json.block_num}`], data: stringify(transfers[i])})
                 }
+                const msg = `@${json.from}| bought ${qty} ${setname} token${qty>1?'s':''} with ${parseFloat(parseInt(amount) / 1000).toFixed(3)} ${type}`
+                    if (config.hookurl || config.status) postToDiscord(msg, `${json.block_num}:${json.transaction_id}`)
+                    ops.push({
+                        type: 'put',
+                        path: ['feed', `${json.block_num}:${json.transaction_id}`],
+                        data: msg
+                    })
                 store.batch(ops, pc)
             })
         } else {
@@ -742,6 +749,7 @@ function buildSplitTransfers(amount, pair, ds, memos){
 }
 
 function enforce(str){
+    str = str || ''
     let enforce = {},
         arr = str.split(',')
     for(let i = 0; i < arr.length; i++){
