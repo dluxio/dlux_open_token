@@ -1150,6 +1150,7 @@ exports.mint_supply = (req, res, next) => {
                 }
                 let token = hivesells[item].h ? 'HIVE' : 'HBD'
                 let amount = hivesells[item].h ? hivesells[item].h : hivesells[item].b
+                let pb = hivesells[item].e ? ( hivesells[item].e.split('pb:')[1] ? hivesells[item].e.split('pb:')[1].split(',')[0] : '' ) : ''
                 let max = hivesells[item].e ? ( hivesells[item].e.split('max:')[1] ? hivesells[item].e.split('max:')[1].split(',')[0] : hivesells[item].q ) : hivesells[item].q
                 const listing = {
                     uid: item.split(':')[1],
@@ -1163,7 +1164,8 @@ exports.mint_supply = (req, res, next) => {
                     },
                     by:hivesells[item].o,
                     script: mem[1][item.split(':')[0]].s,
-                    max
+                    max,
+                    pb
                 }
                 sets[item.split(':')[0]].qty += (hivesells[item].q || 1)
                 sets[item.split(':')[0]].qty_sales += (hivesells[item].q || 1)
