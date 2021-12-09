@@ -264,7 +264,8 @@ function oracle(oracleArr, num){
                     listing = lth[addr],
                     setname = item.split(':')[0],
                     from = item.split(':')[2],
-                    qty = parseInt(pcon.lth[addr][from])
+                    qty = 0
+                    try{qty = parseInt(pcon.lth[addr][from])}catch(e){} 
                 if(results[item] > 0){
                     var transfers = [...buildSplitTransfers(qty*listing.h+qty*listing.b, listing.h ? 'HIVE' : 'HBD', listing.d, `${setname} mint token sale - ${from}:vop:${num}`)]
                     addMT(['rnfts', setname, from], parseInt(qty))
