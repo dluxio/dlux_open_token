@@ -232,16 +232,26 @@ exports.tally = (num, plasma, isStreaming) => {
 
 function oracle(oracleArr){
     return new Promise((resolve, reject) => {
-        getPathObj(['pcon']).then(pcon =>{
-            let results = {}
+        var promises = [getPathObj(['pcon']), getPathObj(['lth'])]
+        Promise.all(promises).then(mem =>{
+            let results = {},
+                pcon = mem[0],
+                lth = mem[1]
             for(var i = 0; i < oracleArr.length; i++){
                 for(item in oracleArr[i]){
-                    results[item] = oracleArr[i][item]
+                    if(oracleArr[i][item].split(':')[0] == 'lth'){
+                        results[item] = pcon[oracleArr[i][item].split(':')[1]]
+                    }
                 }
             }
             
         })
     });
+}
+function cleanOracle(oracleArr){
+    return new Promise((resolve, reject) => {
+        resolve(oracleArr)
+    })
 }
 
 function payout(this_payout, weights, pending, num) {

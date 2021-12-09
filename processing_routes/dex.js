@@ -288,6 +288,7 @@ exports.transfer = (json, pc) => {
                     allowed = 9999999,
                     whoBoughtIndex,
                     whoBoughtAmount = 0
+                    if(!listing.s)listing.s = ''
                 if(enf.max){
                     allowed = enf.max
                     whoBoughtIndex = listing.s.indexOf(`${json.from}_`)
@@ -329,12 +330,14 @@ exports.transfer = (json, pc) => {
                     refund_amount += (listing.h * listing.q) + (listing.b * listing.q)
                     if(!listing.p)ops.push({type: 'del', path: ['lth', item]})
                 }
-                if(qty && !enf.pb)addMT(['rnfts', setname, json.from], qty)
-                else if(qty && enf.pb){
-                    addMT(['pcon', 'lth', listing.i, json.from], qty)
+                if(qty && !enf.pb){
+                    addMT(['rnfts', setname, json.from], parseInt(qty))
+                    transfers = [...buildSplitTransfers(qty*listing.h+qty*listing.b, type, listing.d, `${setname} mint token sale - ${json.from}:${json.transaction_id.substr(0,8)}:`)]
+                } else if(qty && enf.pb){
+                    addMT(['pcon', 'lth', listing.i, json.from], parseInt(qty))
                     postVerify(enf.pb, json.from, listing.i, 'lth')
+                    transfers= []
                 }
-                transfers = [...buildSplitTransfers(qty*listing.h+qty*listing.b, type, listing.d, `${setname} mint token sale - ${json.from}:${json.transaction_id.substr(0,8)}:`)]
                 if(refund_amount){
                     transfers.push(['transfer',{
                         to:json.from,
@@ -743,7 +746,7 @@ function enforce(str){
         arr = str.split(',')
     for(let i = 0; i < arr.length; i++){
         let s = arr[i].split(':')
-        enforce[s[0]] = s[1]
+        enforce[s[0]] = arr[i].replace(`${s[0]}:`, '')
     }
     return enforce
 } 
