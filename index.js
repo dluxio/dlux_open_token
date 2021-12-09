@@ -122,7 +122,7 @@ var recents = []
     //HIVE API CODE
 
 //Start Program Options   
-startWith('QmUxc5FnZczdg1RS9FxbVcMd7BdPaexrsuqYBwGahahjYZ', true) //for testing and replaying 58859101
+startWith('QmWx6wsXodNuErkecCnP49VYVBzDPuEdarZ4oqZXpwNbDk', true) //for testing and replaying 58859101
 //dynStart(config.leader)
 
 // API defs
@@ -607,7 +607,23 @@ function startWith(hash, second) {
                         if (!e && (second || data[0] > API.RAM.head - 325)) {
                             if (hash) {
                                 var cleanState = data[1]
-                                cleanState.dex.hive.sellBook = "0.019105_DLUXQmTpvd3sN9Ljrkm6paWv1tFhCY5j6uf6TfUxqXTW81VndY,0.649578_DLUXQmc5pfhacFBYchYu9qcx1NpbJAw2CTZRED2GefCJ1crJxV,0.660000_DLUXQmSqDycGDKFTX4Sa8UURUUn76pxCzFDpm2w6hXu7ggxjM7,0.670000_DLUXQmdidHKetrMQAYBXfN39TXx4CVBQiPsu3bL6BN6ou9M82E,0.680000_DLUXQmPru3LzhSZvDw3sAVqHwpk5hVfxsXdxDHBwYrypY2nYnT,0.690000_DLUXQmV3sZKGMwt3MUo4FDNfzkxDPAD9hzkFpaGpMcqqMLUAfn,0.700000_DLUXQmeV8xtVXKhFKJWFjD99EgWgVxRSvWPywtdDLhLf6NkNS5,0.740000_DLUXQmUFZguEWZ3CLxAzd7rEN9oenBsaZoze4mdvjbweNsTszE_DLUXQmUBJAczQvvGfmmrA5WFToJKaBem3iZWaEFCVDfENWFTQk_DLUXQmUpbx2eMYeYMYRvCjFgiQEEUqAkwBegB3SgMEZk6L1jAB,0.750000_DLUXQmWuzX5SDZ2StSJk9mEhsUJYBZT8dpgKgkBuh784bp2W9G,0.755102_DLUXQmfXuhacFvSFsUAC9dJZRkQXF1bDkB2tUVV5hZ8FnJD5VG,0.790000_DLUXQmULa9XnUdQgw4gTki12rGXbzBX496SY2xGuM59i2gRmvN,0.800000_DLUXQmaZMKocHbKpGuPzMS9oFvqq9HXYTxmLcP94Vv69vwa49S_DLUXQmNk2A9CWhrpN8EbTyz2KfWUW8rZjd3g49G9mkh4wwWmpP.960265_DLUXQmb1MJRdTCwAhR2uuiMrGfNe19pQk9rBGs6wpj5AH9Vgmu_DLUXQmRNNar6aUPW4awJk2dVN43g7XJiBehumxWS8Nqu7DzDbB,0.950000_DLUXQmfMGxcRfUEr6i6V1pVqPxyQExbrnbN4c2n6D18Xu1FE7j0.998000_DLUXQmfDic8QRyqBGfgL4b54p8Zc1EkM6K42TF7NHx7nmpGMhC,0.999000_DLUXQmPwVnRDnqVrN7SeYEHEoaMRrYyHWfuQTFANcisCtX6W1G"
+                                cleanState.rnfts.hf.jlsplatts = 3
+                                cleanState.rnfts.hf.dagger212 = 1
+                                cleanState.rnfts.hf.raymondspeaks = 1
+                                delete cleanState.pcon.lth['hf:QmYwz8J5UpvfGQfUQbRqTyQzymWN6ue4epkC42TtPreJzL'].jlsplatts
+                                delete cleanState.pcon.lth['hf:QmYwz8J5UpvfGQfUQbRqTyQzymWN6ue4epkC42TtPreJzL'].dagger212
+                                delete cleanState.pcon.lth['hf:QmYwz8J5UpvfGQfUQbRqTyQzymWN6ue4epkC42TtPreJzL'].raymondspeaks
+                                var count = 5
+                                for(var acc in cleanState.rnfts.hf) {
+                                    count += cleanState.rnfts.hf[acc]
+                                }
+                                var things = cleanState.sets.hf.u.split(',')
+                                for(var i = 0; i < things.length; i++) {
+                                    count += parseInt(things[i].split('_').length - 1)
+                                }
+                                console.log({count})
+                                cleanState.lth['hf:QmYwz8J5UpvfGQfUQbRqTyQzymWN6ue4epkC42TtPreJzL'].q = 546 - count
+                                console.log(cleanState.lth['hf:QmYwz8J5UpvfGQfUQbRqTyQzymWN6ue4epkC42TtPreJzL'].q)
                                 store.put([], cleanState, function(err) {
                                     if (err) {
                                         console.log('errr',err)
