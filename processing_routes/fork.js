@@ -1,7 +1,5 @@
 const config = require('./../config')
 const { store } = require('./../index')
-const { deleteObjs } = require('./../deleteObjs')
-const { chronAssign } = require('./../lil_ops')
 const { getPathObj } = require('../getPathObj')
 const { postToDiscord, contentToDiscord } = require('./../discord')
 

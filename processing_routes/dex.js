@@ -439,7 +439,7 @@ exports.transfer = (json, pc) => {
                                 let msg = `@${json.from} bought ${parseFloat(parseInt(next.amount)/1000).toFixed(3)} ${config.TOKEN} with ${parseFloat(parseInt(next[order.pair])/1000).toFixed(3)} ${order.pair.toUpperCase()} from ${next.from} (${item})`
                                 ops.push({type: 'put', path: ['feed', `${json.block_num}:${json.transaction_id}.${i}`], data: msg})
                                 if(Object.keys(his).length)ops.push({type: 'put', path: ['dex', order.pair, 'his'], data: his})
-                                ops.push({type: 'put', path: ['msa', `${item}:${json.transaction_id}:${json.block_num}`], data: stringify(transfer)}) //send HIVE out via MS
+                                ops.push({type: 'put', path: ['msa', `${item}:${json.transaction_id}:${i}`], data: stringify(transfer)}) //send HIVE out via MS
                                 ops.push({type: 'del', path: ['dex', order.pair, 'sellOrders', `${price.toFixed(6)}:${item}`]}) //remove the order
                                 ops.push({type: 'del', path: ['contracts', next.from , item]}) //remove the contract
                                 ops.push({type: 'del', path: ['chrono', next.expire_path]}) //remove the chrono
@@ -475,7 +475,7 @@ exports.transfer = (json, pc) => {
                                 ops.push({type: 'put', path: ['feed', `${json.block_num}:${json.transaction_id}.${i}`], data: msg})
                                 ops.push({type: 'put', path: ['balances', json.from], data: bal})
                                 ops.push({type: 'put', path: ['dex', order.pair, 'his'], data: his})
-                                ops.push({type: 'put', path: ['msa', `${item}:${json.transaction_id}:${json.block_num}`], data: stringify(transfer)}) //send HIVE out via MS
+                                ops.push({type: 'put', path: ['msa', `${item}:${json.transaction_id}:${i}`], data: stringify(transfer)}) //send HIVE out via MS
                                 //ops.push({type: 'put', path: ['dex', order.pair, 'sellOrders', `${price.toFixed(6)}:${item}`], data: next}) //update the order
                                 ops.push({type: 'put', path: ['contracts', next.from , item], data: next}) //update the contract
                             }

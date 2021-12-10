@@ -1,10 +1,7 @@
 const config = require('./../config')
-const { ipfsVerify } = require('./../rtrades')
-const { store, unshiftOp } = require('./../index')
-//const { deleteObjs } = require('./../deleteObjs')
+const { store } = require('./../index')
 const { chronAssign } = require('./../lil_ops')
 const { getPathObj } = require('../getPathObj')
-var request = require('request');
 const { contentToDiscord } = require('./../discord')
 const { insertNewPost } = require('./../edb');
 

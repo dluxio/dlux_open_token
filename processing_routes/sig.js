@@ -1,9 +1,8 @@
 const config = require('./../config')
 const { store } = require("./../index");
 const hive = require('@hiveio/hive-js');
-const { getPathObj } = require("./../getPathObj");
+const { getPathObj, deleteObjs } = require("./../getPathObj");
 const { postToDiscord } = require('./../discord')
-const { deleteObjs } = require('./../deleteObjs')
 const { chronAssign } = require('./../lil_ops')
 const { verify_broadcast } = require('./../tally')
 

@@ -1,6 +1,5 @@
 const config = require('./config');
-const { getPathObj, getPathNum } = require("./getPathObj");
-const { deleteObjs } = require('./deleteObjs')
+const { getPathObj, getPathNum, deleteObjs } = require("./getPathObj");
 const { store, exit, hiveClient, plasma } = require("./index");
 const { updatePost } = require('./edb');
 const { 

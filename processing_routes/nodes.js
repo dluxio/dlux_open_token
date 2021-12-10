@@ -1,7 +1,6 @@
 const config = require('./../config')
 const { store } = require('./../index')
-const { getPathObj } = require('./../getPathObj')
-const { deleteObjs } = require('./../deleteObjs')
+const { getPathObj, deleteObjs } = require('./../getPathObj')
 const { isEmpty } = require('./../lil_ops')
 const { postToDiscord } = require('./../discord')
 
