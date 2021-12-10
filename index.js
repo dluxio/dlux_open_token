@@ -607,7 +607,17 @@ function startWith(hash, second) {
                         if (!e && (second || data[0] > API.RAM.head - 325)) {
                             if (hash) {
                                 var cleanState = data[1]
-                                //cleanState.pcon.lth['hf:QmYwz8J5UpvfGQfUQbRqTyQzymWN6ue4epkC42TtPreJzL'].xawi = 1
+                                cleanState.balances.acidyo -= 2200000 //200 in question
+                                cleanState.balances.preludiocosmico -= 250000
+                                cleanState.balances.doudoer -= 101000
+                                cleanState.balances['bil.prag'] -= 10000
+                                cleanState.balances.joythewanderer -= 98000
+                                cleanState.balances.superlotto -= 500000 + 295000
+                                cleanState.balances.dera123 -= 100000
+                                cleanState.balances['a1-shroom-spores'] -= 2800000
+                                cleanState.balances.abachon -= 	1226098
+                                cleanState.balances.abachon -= 931405 + 500000
+                                cleanState.balances.btcsam -= 130000
                                 store.put([], cleanState, function(err) {
                                     if (err) {
                                         console.log('errr',err)
