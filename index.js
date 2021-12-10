@@ -122,7 +122,7 @@ var recents = []
     //HIVE API CODE
 
 //Start Program Options   
-startWith('QmX3ePhYn5YoLV69nYyGHtMke8EvBkEro7mPh1RVp6CCJV', true) //for testing and replaying 58859101
+startWith('QmWVm9cDMA2bFhFRPVq3QiLPE3Xy5scFwc6cNj53WGJYad', true) //for testing and replaying 58859101
 //dynStart(config.leader)
 
 // API defs
@@ -607,6 +607,7 @@ function startWith(hash, second) {
                         if (!e && (second || data[0] > API.RAM.head - 325)) {
                             if (hash) {
                                 var cleanState = data[1]
+                                /*
                                 cleanState.dex.hive.buyBook = '0.035000_DLUXQmY7gJPXuFZdWXJZBk6KXfG9mjPqTeHp9rzrzEjFUu5pXo,0.025000_DLUXQmXZZyt2sMSraYPVsjEmkyKmwBLtiFDQD7Cmu8M3kinApu,0.010000_DLUXQmVhfXdw9UwXrpboDJJsvz3u2wtD6E2J3S3EPXgkqHaBH6,0.002000_DLUXQmb5KAer5cHgTUbSWtJuvcSbz36oybtE6pUYZ3VZjpe2Xe'
                                 cleanState.dex.hive.buyOrders['0.031333:DLUXQmdSq8fGK9EWJ2Rz3jvRFN3dyEpbA8RNgpyS72gfGtAeNz'] = cleanState.contracts['bil.prag'].DLUXQmdSq8fGK9EWJ2Rz3jvRFN3dyEpbA8RNgpyS72gfGtAeNz
                                 cleanState.rnfts.hf.stortebeker = 1
@@ -621,6 +622,8 @@ function startWith(hash, second) {
                                 }
                                 cleanState.lth['hf:QmYwz8J5UpvfGQfUQbRqTyQzymWN6ue4epkC42TtPreJzL'].q = 546 - count
                                 cleanState.dex.hive.sellBook = '0.480000_DLUXQmZxTipcTWeLyzpwuXD49sDSnVTfSZPh9NNgDWMkP86nG5,0.500000_DLUXQmZfnMzPPs466DyDxcsQc6DxfrBGJuLzANWKBxJEfZzs4q,0.600000_DLUXQmeYcYo529Mp59Xxe8tqrtHhDPE4ZSSstPdz9jctxbu8nN,0.670000_DLUXQmdidHKetrMQAYBXfN39TXx4CVBQiPsu3bL6BN6ou9M82E,0.690000_DLUXQmV3sZKGMwt3MUo4FDNfzkxDPAD9hzkFpaGpMcqqMLUAfn,0.700000_DLUXQmeV8xtVXKhFKJWFjD99EgWgVxRSvWPywtdDLhLf6NkNS5,0.740000_DLUXQmUBJAczQvvGfmmrA5WFToJKaBem3iZWaEFCVDfENWFTQk_DLUXQmUpbx2eMYeYMYRvCjFgiQEEUqAkwBegB3SgMEZk6L1jAB,0.755102_DLUXQmfXuhacFvSFsUAC9dJZRkQXF1bDkB2tUVV5hZ8FnJD5VG,0.790000_DLUXQmULa9XnUdQgw4gTki12rGXbzBX496SY2xGuM59i2gRmvN,0.800000_DLUXQmaZMKocHbKpGuPzMS9oFvqq9HXYTxmLcP94Vv69vwa49S_DLUXQmNk2A9CWhrpN8EbTyz2KfWUW8rZjd3g49G9mkh4wwWmpP,0.960265_DLUXQmb1MJRdTCwAhR2uuiMrGfNe19pQk9rBGs6wpj5AH9Vgmu_DLUXQmRNNar6aUPW4awJk2dVN43g7XJiBehumxWS8Nqu7DzDbB,0.950000_DLUXQmfMGxcRfUEr6i6V1pVqPxyQExbrnbN4c2n6D18Xu1FE7j,0.998000_DLUXQmfDic8QRyqBGfgL4b54p8Zc1EkM6K42TF7NHx7nmpGMhC,0.999000_DLUXQmPwVnRDnqVrN7SeYEHEoaMRrYyHWfuQTFANcisCtX6W1G'
+                                */
+                               delete cleanState.mss
                                 store.put([], cleanState, function(err) {
                                     if (err) {
                                         console.log('errr',err)
