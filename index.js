@@ -122,8 +122,8 @@ var recents = []
     //HIVE API CODE
 
 //Start Program Options   
-//startWith('QmTQV4CUVreXtWsxeCCqoPEXa533s5Sn1UVK6i2U4ug37Q', true) //for testing and replaying 58859101
-dynStart(config.leader)
+startWith('QmPGxfGufYop6pQ8Z38USN3qwUUYkAX6fjQKEPnY9rsYah', true) //for testing and replaying 58859101
+//dynStart(config.leader)
 
 // API defs
 api.use(API.https_redirect);
@@ -607,19 +607,7 @@ function startWith(hash, second) {
                         if (!e && (second || data[0] > API.RAM.head - 325)) {
                             if (hash) {
                                 var cleanState = data[1]
-                                cleanState.balances.acidyo -= 2200000 //200 in question
-                                cleanState.balances.preludiocosmico -= 250000
-                                cleanState.balances.doudoer -= 101000
-                                cleanState.balances['bil.prag'] -= 10000
-                                cleanState.balances.joythewanderer -= 98000
-                                cleanState.balances.superlotto -= 500000 + 295000
-                                cleanState.balances.dera123 -= 100000
-                                cleanState.balances['a1-shroom-spores'] -= 2800000
-                                cleanState.balances.abachon -= 	1226098
-                                cleanState.balances.abachon -= 931405 + 500000
-                                cleanState.balances.btcsam -= 130000
-                                cleanState.balances['dlux-io'] += -493117
-                                store.put([], cleanState, function(err) {
+                               store.put([], cleanState, function(err) {
                                     if (err) {
                                         console.log('errr',err)
                                     } else {
