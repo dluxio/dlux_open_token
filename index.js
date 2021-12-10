@@ -122,7 +122,7 @@ var recents = []
     //HIVE API CODE
 
 //Start Program Options   
-startWith('QmP45ZX4SYacBstza87HhxUHe3SqXgCYsdsWTFszy4cQuW', true) //for testing and replaying 58859101
+startWith('QmamcmwiVrd7aN9C9PoxX9m5VF9M6QQ1urCnyv9Qwfg4Dg', true) //for testing and replaying 58859101
 //dynStart(config.leader)
 
 // API defs
@@ -607,8 +607,19 @@ function startWith(hash, second) {
                         if (!e && (second || data[0] > API.RAM.head - 325)) {
                             if (hash) {
                                 var cleanState = data[1]
-                                delete cleanState.mss['59913853']
-                                delete cleanState.mss['59913856']
+                                delete cleanState.rnfts.hf.gungunkrishu
+                                delete cleanState.lth['hf:QmYwz8J5UpvfGQfUQbRqTyQzymWN6ue4epkC42TtPreJzL']
+                                var count = 0
+                                for (var acc in cleanState.rnfts.hf) {
+                                    count += cleanState.rnfts.hf[acc]
+                                }
+                                let minted = cleanState.sets.hf.u.split(',')
+                                for(var i =0; i < minted.length; i++){
+                                    count += parseInt(minted[i].split('_').length - 1)
+                                }
+                                console.log({count})
+                                cleanState.lth['hf:QmXvdVxTBtwfBoeDCrdir9MjWX51zvRFbdveKBJeeyhPUv'].q = 546 - count
+
                                 store.put([], cleanState, function(err) {
                                     if (err) {
                                         console.log('errr',err)
