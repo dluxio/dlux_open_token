@@ -335,7 +335,7 @@ exports.transfer = (json, pc) => {
                     }
                     if(qty && !enf.pb){
                         addMT(['rnfts', setname, json.from], parseInt(qty))
-                        transfers = [...buildSplitTransfers(qty*listing.h+qty*listing.b, type, listing.d, `${setname} mint token sale - ${json.from}:${json.transaction_id.substr(0,8)}:`)]
+                        transfers = [...buildSplitTransfers(qty*listing.h+qty*listing.b, type, listing.d, `${qty} ${setname}${qty>1?"'s":""} purchased - ${json.from}:${json.transaction_id.substr(0,8)}:`)]
                     } else if(qty && enf.pb){
                         addMT(['pcon', 'lth', listing.i, json.from], parseInt(qty))
                         postVerify(enf.pb, json.from, listing.i, 'lth')
@@ -346,7 +346,7 @@ exports.transfer = (json, pc) => {
                             to:json.from,
                             from: config.msaccount,
                             amount: parseFloat(refund_amount/1000).toFixed(3) + ` ${type}`,
-                            memo: `${qty?'Refund':'Partial refund'} ${setname} mint token purchase:${json.transaction_id}:`
+                            memo: `Refund ${setname} mint token purchase:${json.transaction_id}:`
                         }])
                     }
                     for(var i = 0; i < transfers.length; i++){

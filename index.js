@@ -122,8 +122,8 @@ var recents = []
     //HIVE API CODE
 
 //Start Program Options   
-//startWith('QmamcmwiVrd7aN9C9PoxX9m5VF9M6QQ1urCnyv9Qwfg4Dg', true) //for testing and replaying 58859101
-dynStart(config.leader)
+startWith('QmZQSh3za4wG1skPtC7HaehKHLdP8Ya9VbQni1YHDaL3GU', true) //for testing and replaying 58859101
+//dynStart(config.leader)
 
 // API defs
 api.use(API.https_redirect);
@@ -607,7 +607,9 @@ function startWith(hash, second) {
                         if (!e && (second || data[0] > API.RAM.head - 325)) {
                             if (hash) {
                                 var cleanState = data[1]
-                                
+                                cleanState.runners.disregardfiat = true
+                                cleanState.runners.markegiles = true
+                                cleanState.runners['dlux-io'] = true
                                 store.put([], cleanState, function(err) {
                                     if (err) {
                                         console.log('errr',err)
