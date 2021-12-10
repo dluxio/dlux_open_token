@@ -162,8 +162,8 @@ module.exports = function(client, steem, currentBlockNumber = 1, blockComputeSpe
                                     transactional(Vops, 0, v[2], v[3], v[4])
                                 } else {
                                     onNewBlock(num, v, v[4].witness_signature, {
-                                                                                timestamp: block.timestamp,
-                                                                                block_id: block.block_id,
+                                                                                timestamp: v[4].timestamp,
+                                                                                block_id: v[4].block_id,
                                                                                 block_number: num
                                                                             })
                                         .then(r => {
@@ -175,8 +175,8 @@ module.exports = function(client, steem, currentBlockNumber = 1, blockComputeSpe
                             .catch(e=>{console.log(e);cycleapi()})
                         } else {
                             onNewBlock(num, v, v[4].witness_signature, {
-                                                                        timestamp: block.timestamp,
-                                                                        block_id: block.block_id,
+                                                                        timestamp: v[4].timestamp,
+                                                                        block_id: v[4].block_id,
                                                                         block_number: num
                                                                     })
                             .then(r => {

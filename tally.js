@@ -56,8 +56,7 @@ exports.tally = (num, plasma, isStreaming) => {
                     }
                     for (node in nodes) {
                         var hash = '',
-                            when = 0,
-                            online = 0
+                            when = 0
                         try { 
                             if(stats.ms.active_account_auths[node] && nodes[node].report.sig && nodes[node].report.sig_block == mssb){
                                 signatures.push(nodes[node].report.sig)
@@ -67,14 +66,12 @@ exports.tally = (num, plasma, isStreaming) => {
                         try { if(nodes[node].report.oracle)oracleArr.push(nodes[node].report.oracle) } catch (e) {}
                         try { hash = nodes[node].report.hash } catch (e) {}
                         try { when = nodes[node].report.block_num } catch(e) {}
-                        try { online = hash && nodes[node].escrow } catch(e) {}
-                        if (when > (num - 50) && hash && online) {
+                        if (when > (num - 50) && hash) {
                             tally.agreements.hashes[node] = hash
                             tally.agreements.tally[hash] = 0
                         } //recent and signing
                     }
-                    
-                    var promises = [oracle(oracleArr, num)]
+                    var promises = []//[oracle(oracleArr, num)]
                     if(runners[config.username] && mss.expiration)verify(mss, signatures, stats.ms.active_threshold)
                     for (runner in runners) {
                         tally.agreements.votes++
