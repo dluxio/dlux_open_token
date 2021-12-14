@@ -59,6 +59,7 @@ const mainFE = 'dlux.io' //frontend for content
 const mainIPFS = 'a.ipfs.dlux.io' //IPFS service
 const mainICO = 'robotolux' //Account collecting ICO HIVE
 const footer = `\n[Find us on Discord](https://discord.gg/Beeb38j)`
+const hive_service_fee = 100 //HIVE service fee for transactions in Hive/HBD in centipercents (1% = 100)
 
 //Aditionally on your branch, look closely at dao, this is where tokenomics happen and custom status posts are made
 
@@ -101,7 +102,8 @@ let config = {
     mainFE,
     mainIPFS,
     mainICO,
-    footer
+    footer,
+    hive_service_fee
 };
 
 module.exports = config;

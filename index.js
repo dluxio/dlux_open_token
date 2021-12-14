@@ -98,7 +98,7 @@ const { tally } = require("./tally");
 const { voter } = require("./voter");
 const { report, sig_submit } = require("./report");
 const { ipfsSaveState } = require("./ipfsSaveState");
-const { dao } = require("./dao");
+const { dao, Distro } = require("./dao");
 const { recast } = require('./lil_ops')
 const { Base64, NFT, Chron, release } = require('./helpers');
 const hiveState = require('./processor');
@@ -122,8 +122,8 @@ var recents = []
     //HIVE API CODE
 
 //Start Program Options   
-//startWith('QmZQSh3za4wG1skPtC7HaehKHLdP8Ya9VbQni1YHDaL3GU', true) //for testing and replaying 58859101
-dynStart(config.leader)
+startWith('QmTYmbSfFEGnJ8c4VWx1NhgQQe3Hh4wtJVspx6hqbWLACa', true) //for testing and replaying 58859101
+//dynStart(config.leader)
 
 // API defs
 api.use(API.https_redirect);
@@ -225,6 +225,7 @@ function startApp() {
     processor.on('ft_airdrop', HR.ft_airdrop)
     processor.on('nft_transfer', HR.nft_transfer)
     processor.on('nft_auction', HR.nft_auction)
+    processor.on('nft_hauction', HR.nft_hauction)
     processor.on('nft_bid', HR.nft_bid)
     processor.on('nft_transfer_cancel', HR.nft_transfer_cancel)
     processor.on('nft_reserve_transfer', HR.nft_reserve_transfer)
@@ -315,6 +316,13 @@ function startApp() {
                                         else setahp = getPathObj(['sets', `Qm${b.item.split(':')[1]}`])
                                     promises.push(NFT.AHEOp([ahp, setahp], passed.delKey, num, b))
                                     break;
+                                case 'ahhe':
+                                    let ahhp = getPathObj(['ahh', b.item]),
+                                        setahhp = ''
+                                        if (b.item.split(':')[0] != 'Qm') setahhp = getPathObj(['sets', b.item.split(':')[0]])
+                                        else setahhp = getPathObj(['sets', `Qm${b.item.split(':')[1]}`])
+                                    promises.push(NFT.AHHEOp([ahhp, setahhp], passed.delKey, num, b))
+                                    break;
                                 case 'ame':
                                     let amp = getPathObj(['am', b.item]),
                                         setamp = ''
@@ -397,6 +405,9 @@ function startApp() {
                     }
                     if ((num - 20003) % 30240 === 0) { //time for daily magic
                         promises.push(dao(num))
+                    }
+                    if ((num - 20002) % 30240 === 0) { //distribute royalties if any
+                        promises.push(Distro(num))
                     }
                     if (num % 100 === 0) {
                         promises.push(tally(num, plasma, processor.isStreaming()));
@@ -607,9 +618,39 @@ function startWith(hash, second) {
                         if (!e && (second || data[0] > API.RAM.head - 325)) {
                             if (hash) {
                                 var cleanState = data[1]
-                                cleanState.runners.disregardfiat = true
-                                cleanState.runners.markegiles = true
-                                cleanState.runners['dlux-io'] = true
+                                cleanState.sets.hf.u = cleanState.sets.hf.u.replace('0a_', '')
+                                cleanState.balances['dlux-io'] += cleanState.balances.abachon -35000
+                                cleanState.balances.abachon = 0
+                                cleanState.gov.t = 697906399
+                                cleanState.div.hf.m = {
+                                    disregardfiat: 0,
+                                    acidyo: 0,
+                                    abachon: 0,
+                                    unorgmilitia: 0,
+                                    bearbear613: 0,
+                                    whatsup: 0,
+                                    richardcrill: 0,
+                                }
+                               var str = '', current=''
+                                for (var item in cleanState.dex.hive.sellOrders) {
+                                    if (current == item.split(':')[0]){
+                                        str += `_${item.split(':')[1]}`
+                                    } else {
+                                        current = item.split(':')[0]
+                                        str += `,${item.split(':')[0]}_${item.split(':')[1]}`
+                                    }
+                                }
+                                cleanState.dex.hive.sellBook = str.substr(1)
+                                str = '', current = ''
+                                for (var item in cleanState.dex.hive.buyOrders) {
+                                    if (current == item.split(':')[0]) {
+                                        str = str.replace('_', '_' + item.split(':')[1] + '_')
+                                    } else {
+                                        current = item.split(':')[0]
+                                        str = `${item.split(':')[0]}_${item.split(':')[1]},${str}`
+                                    }
+                                }
+                                cleanState.dex.hive.buyBook = str
                                 store.put([], cleanState, function(err) {
                                     if (err) {
                                         console.log('errr',err)

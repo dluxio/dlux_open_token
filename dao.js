@@ -2,7 +2,7 @@ const config = require('./config');
 const { getPathObj, getPathNum } = require("./getPathObj");
 const { store } = require("./index");
 const { isEmpty } = require('./lil_ops')
-const { sortBuyArray } = require('./helpers')
+const { sortBuyArray, distro } = require('./helpers')
 
 //the daily post, the inflation point for tokennomics
 function dao(num) {
@@ -410,3 +410,39 @@ function dao(num) {
 }
 
 exports.dao = dao;
+
+function Distro(num){
+    let Pbals = getPathObj(['balances']),
+        Psets = getPathObj(['sets']),
+        Pdiv = getPathObj(['div'])
+    Promise.all([Pbals, Psets, Pdiv]).then(mem =>{
+        let ops = [],
+            bals = mem[0],
+            sets = mem[1],
+            div = mem[2],
+            out = []
+        for(var acc in bals) {
+            if(acc.split(':').length) {
+                out = [...out, ...preadd(bals[acc], sets[acc.split(':')[1]])]
+            }
+        }
+    })
+    function preadd (bal, set){
+        if(set.ra){
+            let ret = [],
+                accounts = set.ra.split(',')
+                out = 0
+            for (var i = 0; i < accounts.length - 1; i++) {
+                t = parseInt((bal*accounts[i].split('_')[1])/100)
+                out += t
+                ret.push([accounts[i].split('_')[0] == 'd' ? `div:${set.n}` : accounts[i].split('_')[0], t])
+            }
+            ret.push([accounts[accounts.length - 1].split('_')[0], bal - out])
+            return ret
+        } else {
+            return [[set.a, bal]]
+        }
+    }
+}
+
+exports.Distro = Distro;

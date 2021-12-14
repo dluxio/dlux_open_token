@@ -1282,6 +1282,7 @@ exports.set = (req, res, next) => {
                 encoding: mem[0].e,
                 type: mem[0].t,
                 royalty: mem[0].r,
+                royalty_accounts: mem[0].ra || mem[0].a + '_10000',
                 name: mem[0].n,
                 minted: Base64.toNumber(mem[0].i),
                 max: Base64.toNumber(mem[0].m) - Base64.toNumber(mem[0].o) + 1
@@ -1542,6 +1543,11 @@ exports.coincheck = (state) => {
             supply += state.col[user]
             coll += state.col[user]
         }
+        let div = 0
+        for (user in state.div) {
+            supply += state.div[user].b
+            div += state.div[user].b
+        }
         try { govt = state.gov.t - coll } catch (e) {}
         for (bal in state.gov) {
             if (bal != 't') {
@@ -1577,7 +1583,7 @@ exports.coincheck = (state) => {
         let info = {}
         let check = `supply check:state:${state.stats.tokenSupply} vs check: ${supply}: ${state.stats.tokenSupply - supply}`
         if (state.stats.tokenSupply != supply) {
-            info = { lbal, gov, govt, pow, powt, con, ah, am, bond }
+            info = { lbal, gov, govt, pow, powt, con, ah, am, bond, div }
         }
         return {check, info, supply}
 }

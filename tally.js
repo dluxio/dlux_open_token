@@ -98,11 +98,13 @@ exports.tally = (num, plasma, isStreaming) => {
                             if (tally.agreements.hashes[node] == consensus) {
                                 if (num < 50500000) {
                                     new_queue[node] = {
-                                        g: rgov[node] || 0
+                                        g: rgov[node] || 0,
+                                        api: nodes[node].domain
                                     }
                                 } else {
                                     new_queue[node] = {
-                                        g: rgov[node] || 0
+                                        g: rgov[node] || 0,
+                                        api: nodes[node].domain,
                                     }
                                 }
                             }
@@ -129,12 +131,14 @@ exports.tally = (num, plasma, isStreaming) => {
                         if (Object.keys(still_running).length < 25) {
                             let winner = {
                                 node: '',
-                                g: 0
+                                g: 0,
+                                api: ''
                             }
                             for (node in election) {
                                 if (election[node].g > winner.g) { //disallow 0 bals in governance
                                     winner.node = node
                                     winner.g = election[node].g
+                                    winner.api = election[node].domain
                                 }
                             }
                             //console.log({counting_array, low_sum, last_bal, still_running})
