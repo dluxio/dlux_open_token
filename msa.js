@@ -7,7 +7,6 @@ const stringify = require('json-stable-stringify');
 
 exports.consolidate = (num, plasma, bh) => {
     return new Promise((resolve, reject) => {
-        console.log(bh)
         store.get(['msa'], (err, result) => {
             if (err || Object.keys(result).length === 0) {
                 resolve('NONE')
