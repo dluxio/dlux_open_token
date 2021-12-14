@@ -35,7 +35,7 @@ exports.dex_sell = (json, from, active, pc) => {
             }
         }
         order[config.jsonTokenName] = parseInt(json[config.jsonTokenName])
-        console.log(order)
+        console.log({order, from, json})
     Promise.all([PfromBal, PStats, PSB]).then(a => {
         let bal = a[0],
             stats = a[1],
@@ -56,8 +56,9 @@ exports.dex_sell = (json, from, active, pc) => {
                 contract = ''
             while(remaining){
                 let price = parseFloat(dex.buyBook.split('_')[0])
-                let item
+                let item = dex.buyBook.split('_')[1].split(',')[0]
                 if(price)item = dex.buyBook.split('_')[1].split(',')[0]
+                console.log({price, item})
                 if (item && (order.type == 'MARKET' || parseFloat(price) >= order.rate)){
                     let next = dex.buyOrders[`${price.toFixed(6)}:${item}`]
                     console.log({price, item, next})

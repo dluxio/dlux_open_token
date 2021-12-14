@@ -269,9 +269,11 @@ if (active && (from == 'disregardfiat' || from == 'hivefolks')){
                                 "a":from, //the account that pays the set fee, --23 bytes
                                 "s":json.script, //build app hash --53bytes
                                 "i":"0", //issued counter for IDs -6bytes
+                                "j":Base64.fromNumber(total_num),
                                 "m":Base64.fromNumber(end_num), //max issue -6-10bytes
                                 "o":Base64.fromNumber(start_num), //start id -10-16bytes
-                                "n":json.name, 
+                                "n":json.name,
+                                "nl":json.long_name || json.name,
                                 "r":json.royalty || 0, 
                                 "t":1, // type
                                 "e":json.handling, //encoding
