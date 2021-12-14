@@ -1,5 +1,5 @@
 const config = require('./config');
-const VERSION = 'v1.1.0b2'
+const VERSION = 'v1.1.0b3'
 exports.VERSION = VERSION
 exports.exit = exit;
 exports.processor = processor;
@@ -122,7 +122,7 @@ var recents = []
     //HIVE API CODE
 
 //Start Program Options   
-startWith('QmTYmbSfFEGnJ8c4VWx1NhgQQe3Hh4wtJVspx6hqbWLACa', true) //for testing and replaying 58859101
+startWith('QmcLVC5grB81Pj5UroA6dcY5gyPeHaPERA643bArReQm48', true) //for testing and replaying 58859101
 //dynStart(config.leader)
 
 // API defs
@@ -618,39 +618,6 @@ function startWith(hash, second) {
                         if (!e && (second || data[0] > API.RAM.head - 325)) {
                             if (hash) {
                                 var cleanState = data[1]
-                                
-                                cleanState.sets.hf.u = cleanState.sets.hf.u.replace('0a_', '')
-                                cleanState.balances['dlux-io'] += cleanState.balances.abachon -35000
-                                cleanState.balances.abachon = 0
-                                cleanState.gov.t = 697906399
-                                cleanState.div.hf.m = {
-                                    disregardfiat: 0,
-                                    acidyo: 0,
-                                    abachon: 0,
-                                    unorgmilitia: 0,
-                                    bearbear613: 0,
-                                    whatsup: 0,
-                                }
-                               var str = '', current=''
-                                for (var item in cleanState.dex.hive.sellOrders) {
-                                    if (current == item.split(':')[0]){
-                                        str += `_${item.split(':')[1]}`
-                                    } else {
-                                        current = item.split(':')[0]
-                                        str += `,${item.split(':')[0]}_${item.split(':')[1]}`
-                                    }
-                                }
-                                cleanState.dex.hive.sellBook = str.substr(1)
-                                str = '', current = ''
-                                for (var item in cleanState.dex.hive.buyOrders) {
-                                    if (current == item.split(':')[0]) {
-                                        str = str.replace('_', '_' + item.split(':')[1] + '_')
-                                    } else {
-                                        current = item.split(':')[0]
-                                        str = `${item.split(':')[0]}_${item.split(':')[1]},${str}`
-                                    }
-                                }
-                                cleanState.dex.hive.buyBook = str
                                 store.put([], cleanState, function(err) {
                                     if (err) {
                                         console.log('errr',err)

@@ -35,7 +35,6 @@ exports.dex_sell = (json, from, active, pc) => {
             }
         }
         order[config.jsonTokenName] = parseInt(json[config.jsonTokenName])
-        console.log({order, from, json})
     Promise.all([PfromBal, PStats, PSB]).then(a => {
         let bal = a[0],
             stats = a[1],
@@ -58,10 +57,8 @@ exports.dex_sell = (json, from, active, pc) => {
                 let price = parseFloat(dex.buyBook.split('_')[0])
                 let item = dex.buyBook.split('_')[1].split(',')[0]
                 if(price)item = dex.buyBook.split('_')[1].split(',')[0]
-                console.log({price, item})
                 if (item && (order.type == 'MARKET' || parseFloat(price) >= order.rate)){
                     let next = dex.buyOrders[`${price.toFixed(6)}:${item}`]
-                    console.log({price, item, next})
                     if (next.amount <= remaining){
                             filled += next.amount
                             adds.push([next.from, next.amount - next.fee])
@@ -71,7 +68,6 @@ exports.dex_sell = (json, from, active, pc) => {
                             dex.tick = price.toFixed(6)
                             pair += next[order.pair]
                             dex.buyBook = DEX.remove(item, dex.buyBook) //adjust the orderbook
-                            console.log(dex.buyBook)
                             delete dex.buyOrders[`${price.toFixed(6)}:${item}`]
                             const transfer = [
                                     "transfer",
@@ -154,20 +150,18 @@ exports.dex_sell = (json, from, active, pc) => {
                     addops[adds[j][0]] = adds[j][1]
                 }
             }
-            console.log({bal})
             bal -= json[config.jsonTokenName]
             if (addops[from]){
                 bal += addops[from]
                 delete addops[from]
             }
-            console.log({bal})
             var waitfor = [add('rn', fee)]
             for(var to in addops){
                 waitfor.push(add(to, addops[to]))
             }
             const msg = `@${from}| Sell order confirmed.`
             if (config.hookurl || config.status) postToDiscord(msg, `${json.block_num}:${json.transaction_id}`)
-            ops = [{ type: 'put', path: ['feed', `${json.block_num}:${json.transaction_id}`], data: msg }]
+            ops.push({ type: 'put', path: ['feed', `${json.block_num}:${json.transaction_id}`], data: msg })
             ops.push({type: 'put', path: ['balances', from], data: bal})
             ops.push({type: 'put', path: ['dex', order.pair], data: dex})
             if(Object.keys(his).length)ops.push({type: 'put', path: ['dex', order.pair, 'his'], data: his})
@@ -192,6 +186,7 @@ exports.dex_sell = (json, from, active, pc) => {
                     if (process.env.npm_lifecycle_event == 'test') pc[2] = ops
                     store.batch(ops, pc)
                 })
+                .catch(e=>console.log('error waitfor'))
             }
         } else {
             const msg = `@${from}| tried to sell ${config.TOKEN} but sent an invalid order.`

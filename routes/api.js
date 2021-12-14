@@ -863,9 +863,11 @@ exports.sets = (req, res, next) => {
                 encoding: mem[0][set].e,
                 type: mem[0][set].t,
                 royalty: mem[0][set].r,
+                royalty_allocation: mem[0][set].ra || `${mem[0][set].a}_10000`,
                 name: mem[0][set].n,
+                long_name: mem[0][set].nl,
                 minted: mem[0][set].i,
-                max: Base64.toNumber(mem[0][set].m) - Base64.toNumber(mem[0][set].o)
+                max: Base64.toNumber(mem[0][set].j)
             })
         }
         res.setHeader('Content-Type', 'application/json')
@@ -1284,8 +1286,9 @@ exports.set = (req, res, next) => {
                 royalty: mem[0].r,
                 royalty_accounts: mem[0].ra || mem[0].a + '_10000',
                 name: mem[0].n,
+                name_long: mem[0].nl,
                 minted: Base64.toNumber(mem[0].i),
-                max: Base64.toNumber(mem[0].m) - Base64.toNumber(mem[0].o) + 1
+                max: Base64.toNumber(mem[0].j)
             },
             uids = []
             if (mem[0].u)uids = mem[0].u.split(',')
