@@ -93,6 +93,7 @@ let TXID = {
 exports.TXID = TXID
 const API = require('./routes/api');
 const HR = require('./processing_routes/index')
+const { release } = require('./processing_routes/dex')
 const { enforce } = require("./enforce");
 const { tally } = require("./tally");
 const { voter } = require("./voter");
@@ -100,7 +101,7 @@ const { report, sig_submit } = require("./report");
 const { ipfsSaveState } = require("./ipfsSaveState");
 const { dao, Distro } = require("./dao");
 const { recast } = require('./lil_ops')
-const { Base64, NFT, Chron, release } = require('./helpers');
+const { Base64, NFT, Chron } = require('./helpers');
 const hiveState = require('./processor');
 const { getPathObj, getPathNum, getPathSome } = require('./getPathObj');
 const { consolidate, sign, createAccount, updateAccount } = require('./msa')
@@ -122,7 +123,7 @@ var recents = []
     //HIVE API CODE
 
 //Start Program Options   
-startWith('QmcLVC5grB81Pj5UroA6dcY5gyPeHaPERA643bArReQm48', true) //for testing and replaying 58859101
+startWith('Qmeqn3VWcXMKtSjdAuUdekA8ZQLodJGvnQF1BLGgjAmxHm', true) //for testing and replaying 58859101
 //dynStart(config.leader)
 
 // API defs
