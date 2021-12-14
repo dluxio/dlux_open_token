@@ -1,5 +1,5 @@
 const config = require('./config');
-const VERSION = 'v1.1.0b2'
+const VERSION = 'v1.1.0b3'
 exports.VERSION = VERSION
 exports.exit = exit;
 exports.processor = processor;
@@ -93,14 +93,15 @@ let TXID = {
 exports.TXID = TXID
 const API = require('./routes/api');
 const HR = require('./processing_routes/index')
+const { release } = require('./processing_routes/dex')
 const { enforce } = require("./enforce");
 const { tally } = require("./tally");
 const { voter } = require("./voter");
 const { report, sig_submit } = require("./report");
 const { ipfsSaveState } = require("./ipfsSaveState");
-const { dao } = require("./dao");
+const { dao, Distro } = require("./dao");
 const { recast } = require('./lil_ops')
-const { Base64, NFT, Chron, release } = require('./helpers');
+const { Base64, NFT, Chron } = require('./helpers');
 const hiveState = require('./processor');
 const { getPathObj, getPathNum, getPathSome } = require('./getPathObj');
 const { consolidate, sign, createAccount, updateAccount } = require('./msa')
@@ -122,8 +123,8 @@ var recents = []
     //HIVE API CODE
 
 //Start Program Options   
-//startWith('QmZQSh3za4wG1skPtC7HaehKHLdP8Ya9VbQni1YHDaL3GU', true) //for testing and replaying 58859101
-dynStart(config.leader)
+startWith('QmZoY4haTnuZxB5yHS1NhbdGMhfjKeXpPcBscz8rTwQHx6', true) //for testing and replaying 58859101
+//dynStart(config.leader)
 
 // API defs
 api.use(API.https_redirect);
@@ -225,6 +226,7 @@ function startApp() {
     processor.on('ft_airdrop', HR.ft_airdrop)
     processor.on('nft_transfer', HR.nft_transfer)
     processor.on('nft_auction', HR.nft_auction)
+    processor.on('nft_hauction', HR.nft_hauction)
     processor.on('nft_bid', HR.nft_bid)
     processor.on('nft_transfer_cancel', HR.nft_transfer_cancel)
     processor.on('nft_reserve_transfer', HR.nft_reserve_transfer)
@@ -315,6 +317,13 @@ function startApp() {
                                         else setahp = getPathObj(['sets', `Qm${b.item.split(':')[1]}`])
                                     promises.push(NFT.AHEOp([ahp, setahp], passed.delKey, num, b))
                                     break;
+                                case 'ahhe':
+                                    let ahhp = getPathObj(['ahh', b.item]),
+                                        setahhp = ''
+                                        if (b.item.split(':')[0] != 'Qm') setahhp = getPathObj(['sets', b.item.split(':')[0]])
+                                        else setahhp = getPathObj(['sets', `Qm${b.item.split(':')[1]}`])
+                                    promises.push(NFT.AHHEOp([ahhp, setahhp], passed.delKey, num, b))
+                                    break;
                                 case 'ame':
                                     let amp = getPathObj(['am', b.item]),
                                         setamp = ''
@@ -397,6 +406,9 @@ function startApp() {
                     }
                     if ((num - 20003) % 30240 === 0) { //time for daily magic
                         promises.push(dao(num))
+                    }
+                    if ((num - 20002) % 30240 === 0) { //distribute royalties if any
+                        promises.push(Distro(num))
                     }
                     if (num % 100 === 0) {
                         promises.push(tally(num, plasma, processor.isStreaming()));
@@ -607,9 +619,6 @@ function startWith(hash, second) {
                         if (!e && (second || data[0] > API.RAM.head - 325)) {
                             if (hash) {
                                 var cleanState = data[1]
-                                cleanState.runners.disregardfiat = true
-                                cleanState.runners.markegiles = true
-                                cleanState.runners['dlux-io'] = true
                                 store.put([], cleanState, function(err) {
                                     if (err) {
                                         console.log('errr',err)

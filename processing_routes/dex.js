@@ -1,7 +1,7 @@
 const config = require('./../config')
 const { store, GetNodeOps, spliceOp, plasma } = require('./../index')
 const { getPathObj, getPathNum } = require('./../getPathObj')
-const { DEX, release } = require('./../helpers')
+//const { release } = require('./../helpers')
 const { add, addCol, addGov, deletePointer, credit, chronAssign, hashThis, isEmpty, addMT } = require('./../lil_ops')
 const { postToDiscord } = require('./../discord')
 const stringify = require('json-stable-stringify');
@@ -35,7 +35,6 @@ exports.dex_sell = (json, from, active, pc) => {
             }
         }
         order[config.jsonTokenName] = parseInt(json[config.jsonTokenName])
-        console.log(order)
     Promise.all([PfromBal, PStats, PSB]).then(a => {
         let bal = a[0],
             stats = a[1],
@@ -56,11 +55,10 @@ exports.dex_sell = (json, from, active, pc) => {
                 contract = ''
             while(remaining){
                 let price = parseFloat(dex.buyBook.split('_')[0])
-                let item
+                let item = dex.buyBook.split('_')[1].split(',')[0]
                 if(price)item = dex.buyBook.split('_')[1].split(',')[0]
                 if (item && (order.type == 'MARKET' || parseFloat(price) >= order.rate)){
                     let next = dex.buyOrders[`${price.toFixed(6)}:${item}`]
-                    console.log({price, item, next})
                     if (next.amount <= remaining){
                             filled += next.amount
                             adds.push([next.from, next.amount - next.fee])
@@ -70,7 +68,6 @@ exports.dex_sell = (json, from, active, pc) => {
                             dex.tick = price.toFixed(6)
                             pair += next[order.pair]
                             dex.buyBook = DEX.remove(item, dex.buyBook) //adjust the orderbook
-                            console.log(dex.buyBook)
                             delete dex.buyOrders[`${price.toFixed(6)}:${item}`]
                             const transfer = [
                                     "transfer",
@@ -153,20 +150,18 @@ exports.dex_sell = (json, from, active, pc) => {
                     addops[adds[j][0]] = adds[j][1]
                 }
             }
-            console.log({bal})
             bal -= json[config.jsonTokenName]
             if (addops[from]){
                 bal += addops[from]
                 delete addops[from]
             }
-            console.log({bal})
             var waitfor = [add('rn', fee)]
             for(var to in addops){
                 waitfor.push(add(to, addops[to]))
             }
             const msg = `@${from}| Sell order confirmed.`
             if (config.hookurl || config.status) postToDiscord(msg, `${json.block_num}:${json.transaction_id}`)
-            ops = [{ type: 'put', path: ['feed', `${json.block_num}:${json.transaction_id}`], data: msg }]
+            ops.push({ type: 'put', path: ['feed', `${json.block_num}:${json.transaction_id}`], data: msg })
             ops.push({type: 'put', path: ['balances', from], data: bal})
             ops.push({type: 'put', path: ['dex', order.pair], data: dex})
             if(Object.keys(his).length)ops.push({type: 'put', path: ['dex', order.pair, 'his'], data: his})
@@ -191,6 +186,7 @@ exports.dex_sell = (json, from, active, pc) => {
                     if (process.env.npm_lifecycle_event == 'test') pc[2] = ops
                     store.batch(ops, pc)
                 })
+                .catch(e=>console.log('error waitfor'))
             }
         } else {
             const msg = `@${from}| tried to sell ${config.TOKEN} but sent an invalid order.`
@@ -377,6 +373,86 @@ exports.transfer = (json, pc) => {
                     store.batch(ops, pc)
                 }
             })
+        } else if (json.memo.split(' ')[0] == 'NFTbid'){
+            let item = json.memo.split(' ')[1],
+                set = item.split(':')[0],
+                uid = item.split(':')[1]
+                ahp = getPathObj(['ahh', `${set}:${uid}`])
+                amount = parseInt(parseFloat(json.amount.split[0])*1000)
+                type = json.amount.split(' ')[1]
+            Promise.all([ahp])
+            .then(mem => {
+                if(mem[0].h == type && json.from != mem[0].f){ //check for item and type
+                    var listing = mem[0]
+                    if(listing.b){
+                        if (amount > listing.b){
+                            const transfer = ['transfer',{ 
+                                to: listing.f,
+                                from: config.msaccount,
+                                amount: parseFloat(listing.b/1000).toFixed(3) + ` ${type}`,
+                                memo: `Outbid on ${set}:${uid}. ${json.transaction_id.substr(0,8)}`
+                            }]
+                            var ops = []
+                            ops.push({type:'put', path:['msa', `Outbid:${set}:${uid}:${json.transaction_id}`], data: stringify(transfer)})
+                            listing.f = json.from
+                            listing.b = amount
+                            listing.c++
+                            ops.push({type:'put', path:['ahh', `${set}:${uid}`], data: listing})
+                            let msg = `@${json.from} bid ${parseFloat(amount/1000).toFixed(3)} ${type} on ${set}:${uid}'s auction`
+                            if (config.hookurl || config.status) postToDiscord(msg, `${json.block_num}:${json.transaction_id}`)
+                            ops.push({ type: 'put', path: ['feed', `${json.block_num}:${json.transaction_id}`], data: msg });
+                            store.batch(ops, pc)
+                        } else {
+                            const transfer = ['transfer',{ 
+                                to: json.from,
+                                from: config.msaccount,
+                                amount: parseFloat(listing.b/1000).toFixed(3) + ` ${type}`,
+                                memo: `Underbid on ${set}:${uid}. ${json.transaction_id.substr(0,8)}`
+                            }]
+                            var ops = []
+                            ops.push({type:'put', path:['msa', `Underbid:${set}:${uid}:${json.transaction_id}`], data: stringify(transfer)})
+                            let msg = `@${json.from} hasn't outbid on ${set}:${uid}`
+                            if (config.hookurl || config.status) postToDiscord(msg, `${json.block_num}:${json.transaction_id}`)
+                            store.batch(ops, pc)
+                        }
+                    } else if (amount >= listing.p){
+                        listing.f = json.from
+                        listing.b = amount
+                        listing.c = 1
+                        var ops = []
+                        ops.push({type:'put', path:['ahh', `${set}:${uid}`], data: listing})
+                        let msg = `@${json.from} bid ${parseFloat(amount/1000).toFixed(3)} ${type} on ${set}:${uid}'s auction`
+                        if (config.hookurl || config.status) postToDiscord(msg, `${json.block_num}:${json.transaction_id}`)
+                        ops.push({ type: 'put', path: ['feed', `${json.block_num}:${json.transaction_id}`], data: msg });
+                        store.batch(ops, pc)
+                    } else {
+                        const transfer = ['transfer',{ 
+                                to: json.from,
+                                from: config.msaccount,
+                                amount: parseFloat(listing.b/1000).toFixed(3) + ` ${type}`,
+                                memo: `Underbid on ${set}:${uid}. ${json.transaction_id.substr(0,8)}`
+                            }]
+                        var ops = []
+                        ops.push({type:'put', path:['msa', `Underbid:${set}:${uid}:${json.transaction_id}`], data: stringify(transfer)})
+                        let msg = `@${json.from} hasn't outbid on ${set}:${uid}`
+                        if (config.hookurl || config.status) postToDiscord(msg, `${json.block_num}:${json.transaction_id}`)
+                        store.batch(ops, pc)
+                    }
+                } else {
+                    const transfer = ['transfer',{ 
+                                to: json.from,
+                                from: config.msaccount,
+                                amount: parseFloat(listing.b/1000).toFixed(3) + ` ${type}`,
+                                memo: `Underbid on ${set}:${uid}. ${json.transaction_id.substr(0,8)}`
+                            }]
+                    var ops = []
+                    ops.push({type:'put', path:['msa', `Underbid:${set}:${uid}:${json.transaction_id}`], data: stringify(transfer)})
+                    let msg = `@${json.from} bid on ${set}:${uid} didn't go well.`
+                    if (config.hookurl || config.status) postToDiscord(msg, `${json.block_num}:${json.transaction_id}`)
+                    store.batch(ops, pc)
+                }
+            })
+            .catch(e => { console.log(e); })
         } else {
             let order = {
                 type: 'LIMIT'
@@ -802,3 +878,167 @@ function postVerify(str, from, loc){
         }
     })
 }
+
+const DEX = {
+    insert : function ( item, price, string, type) {
+        let price_location = string.indexOf(price)
+        if (price_location === -1) {
+            let prices = string.split(',')
+            if (string !== ''){
+                for (var i = 0; i < prices.length; i++) {
+                    if(type != 'buy'){
+                        if (parseFloat(prices[i].split('_')[0]) > parseFloat(price)) {
+                            prices.splice(i, 0, price + '_' + item )
+                            return prices.join(',')
+                        }
+                    } else {
+                        if (parseFloat(prices[i].split('_')[0]) < parseFloat(price)) {
+                            prices.splice(i, 0, price + '_' + item )
+                            return prices.join(',')
+                        }
+                    }
+                }
+                return string + ',' + price + '_' + item
+            } else {
+                return price + '_' + item
+            }
+        } else {
+            let insert_location = string.indexOf(',', price_location)
+            if (insert_location === -1) {
+                return string + '_' + item
+            } else {
+                return string.substring(0, insert_location) + '_' + item + string.substring(insert_location)
+            }
+        }
+    },
+    remove : function ( item, string) {
+        if (string.indexOf(item + '_') > -1) {
+            return string.replace(`${item}_`, '')
+        } else {
+            let item_location = string.indexOf('_' + item)
+            let lowerThan = string.substring(0, item_location)
+            let greaterThan = string.substring(item_location).replace(`_${item},`, '')
+            let prices = lowerThan.split(',')
+            if(prices[prices.length - 1].split('_').length > 2){
+                return string.replace(`_${item}`, '')
+            } else {
+                prices.pop()
+                return prices.join(',') + greaterThan
+            }
+        }
+    },
+    buyDluxFromDex : (amount, type, num, txid, to) =>{
+        return new Promise((resolve, reject) => {
+            transfer({
+                from: to,
+                to: config.msaccount,
+                amount: `${parseFloat(amount/1000).toFixed(3)} ${type}`,
+                memo: '',
+                block_num: num,
+                transaction_id: txid
+            }, [resolve, reject, 'AutoBuy'])
+        })
+    }
+}
+exports.DEX = DEX
+
+const release = (from, txid, bn, tx_id) => {
+    return new Promise((resolve, reject) => {
+        store.get(['contracts', from, txid], function(er, a) {
+            if (er) { console.log(er); } else {
+                var ops = [];
+                switch (a.type) {
+                    case 'hive:sell':
+                        store.get(['dex', 'hive'], function(e, res) {
+                            
+                            if (e) { console.log(e); } else if (isEmpty(res)) { console.log('Nothing here' + a.txid); } else {
+                                r = res.sellOrders[`${a.rate}:${a.txid}`]
+                                res.sellBook = DEX.remove(a.txid, res.sellBook)
+                                ops.push({ type: 'put', path: ['dex', 'hive', 'sellBook'], data: res.sellBook });
+                                add(r.from, r.amount).then(empty => {
+                                    ops.push({ type: 'del', path: ['contracts', from, txid] });
+                                    ops.push({ type: 'del', path: ['chrono', a.expire_path] });
+                                    ops.push({ type: 'del', path: ['dex', 'hive', 'sellOrders', `${a.rate}:${a.txid}`] });
+                                    if(tx_id && config.hookurl){postToDiscord(`${from} has canceled ${txid}`, `${bn}:${tx_id}`)}
+                                    store.batch(ops, [resolve, reject]);
+                                }).catch(e => { reject(e); });
+                            }
+                        });
+                        break;
+                    case 'hbd:sell':
+                        store.get(['dex', 'hbd'], function(e, res) {
+                            if (e) { console.log(e); } else if (isEmpty(res)) { console.log('Nothing here' + a.txid); } else {
+                                r = res.sellOrders[`${a.rate}:${a.txid}`]
+                                res.sellBook = DEX.remove(a.txid, res.sellBook)
+                                ops.push({ type: 'put', path: ['dex', 'hbd', 'sellBook'], data: res.sellBook });
+                                add(r.from, r.amount).then(empty => {
+                                    ops.push({ type: 'del', path: ['contracts', from, txid] });
+                                    ops.push({ type: 'del', path: ['chrono', a.expire_path] });
+                                    ops.push({ type: 'del', path: ['dex', 'hbd', 'sellOrders', `${a.rate}:${a.txid}`] });
+                                    if(tx_id && config.hookurl){postToDiscord(`${from} has canceled ${txid}`, `${bn}:${tx_id}`)}
+                                    store.batch(ops, [resolve, reject]);
+                                }).catch(e => { reject(e); });
+
+                            }
+                        });
+                        break;
+                    case 'hive:buy':
+                        store.get(['dex', 'hive'], function(e, res) {
+                            if (e) { console.log(e); } else if (isEmpty(res)) { console.log('Nothing here' + a.txid); } else {
+                                r = res.buyOrders[`${a.rate}:${a.txid}`]
+                                res.buyBook = DEX.remove(a.txid, res.buyBook)
+                                ops.push({ type: 'put', path: ['dex', 'hive', 'buyBook'], data: res.buyBook });
+                                a.cancel = true;
+                                const Transfer = [
+                                    "transfer",
+                                    {
+                                        "from": config.msaccount,
+                                        "to": a.from,
+                                        "amount": parseFloat(a.hive/1000).toFixed(3) + ' HIVE',
+                                        "memo": `Canceled DLUX buy ${a.txid}`
+                                    }
+                                ]
+                                ops.push({type: 'put', path: ['msa', `refund@${a.from}:${a.txid}:${bn}`], data: stringify(Transfer)})
+                                ops.push({ type: 'del', path: ['contracts', from, r.txid]});
+                                ops.push({ type: 'del', path: ['dex', 'hive', 'buyOrders', `${a.rate}:${a.txid}`] });
+                                if(tx_id && config.hookurl){postToDiscord(`${from} has canceled ${txid}`, `${bn}:${tx_id}`)}
+                                store.batch(ops, [resolve, reject]);
+                            }
+                        });
+                        break;
+                    case 'hbd:buy':
+                        store.get(['dex', 'hbd'], function(e, res) {
+                            if (e) {
+                                console.log(e);
+                            } else if (isEmpty(res)) {
+                                console.log('Nothing here' + a.txid);
+                            } else {
+                                r = res.buyOrders[`${a.rate}:${a.txid}`]
+                                res.buyBook = DEX.remove(a.txid, res.buyBook)
+                                ops.push({ type: 'put', path: ['dex', 'hbd', 'buyBook'], data: res.buyBook });
+                                a.cancel = true;
+                                const Transfer = [
+                                    "transfer",
+                                    {
+                                        "from": config.msaccount,
+                                        "to": a.from,
+                                        "amount": parseFloat(a.hbd/1000).toFixed(3) + ' HBD',
+                                        "memo": `Canceled DLUX buy ${a.txid}`
+                                    }
+                                ]
+                                ops.push({type: 'put', path: ['msa', `refund@${a.from}:${a.txid}:${bn}`], data: stringify(Transfer)})
+                                ops.push({ type: 'del', path: ['contracts', from, r.txid]});
+                                ops.push({ type: 'del', path: ['dex', 'hbd', 'buyOrders', `${a.rate}:${a.txid}`] });
+                                if(tx_id && config.hookurl){postToDiscord(`${from} has canceled ${txid}`, `${bn}:${tx_id}`)}
+                                store.batch(ops, [resolve, reject]);
+                            }
+                        });
+                        break;
+                    default:
+                        resolve();
+                }
+            }
+        });
+    })
+}
+exports.release = release

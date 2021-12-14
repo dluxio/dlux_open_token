@@ -269,9 +269,11 @@ if (active && (from == 'disregardfiat' || from == 'hivefolks')){
                                 "a":from, //the account that pays the set fee, --23 bytes
                                 "s":json.script, //build app hash --53bytes
                                 "i":"0", //issued counter for IDs -6bytes
+                                "j":Base64.fromNumber(total_num),
                                 "m":Base64.fromNumber(end_num), //max issue -6-10bytes
                                 "o":Base64.fromNumber(start_num), //start id -10-16bytes
-                                "n":json.name, 
+                                "n":json.name,
+                                "nl":json.long_name || json.name,
                                 "r":json.royalty || 0, 
                                 "t":1, // type
                                 "e":json.handling, //encoding
@@ -447,7 +449,7 @@ exports.nft_auction = function(json, from, active, pc) {
         setp = getPathObj(['sets', json.set]),
         divp = getPathObj(['div', json.set])
         if(json.set == `Qm`) setp = getPathObj(['sets', `Qm${json.uid}`])
-    Promise.all([fnftp, ahp, setp])
+    Promise.all([fnftp, ahp, setp, divp])
         .then(mem => {
             if (mem[0].s && !mem[0].l && active){
                 var ah = mem[1], nft = mem[0], set = mem[2], div = mem[3]
@@ -482,6 +484,75 @@ exports.nft_auction = function(json, from, active, pc) {
                     if (json.set == 'Qm') ops.push({type:'put', path:['sets', `Qm${json.uid}`], data: set})
                     else ops.push({type:'put', path:['sets', json.set], data: set})
                     let msg = `@${from} Listed ${json.set}:${json.uid} for auction`
+                    if (config.hookurl || config.status) postToDiscord(msg, `${json.block_num}:${json.transaction_id}`)
+                    ops.push({ type: 'put', path: ['feed', `${json.block_num}:${json.transaction_id}`], data: msg });
+                    store.batch(ops, pc)
+                })
+            } else if (!active){
+                let msg = `@${from} tried to auction with out signing ACTIVE`
+                if (config.hookurl || config.status) postToDiscord(msg, `${json.block_num}:${json.transaction_id}`)
+                pc[0](pc[2])
+            } else {
+                let msg = `@${from} doesn't own ${json.set}:${json.uid}`
+                if (config.hookurl || config.status) postToDiscord(msg, `${json.block_num}:${json.transaction_id}`)
+                pc[0](pc[2])
+            }
+        })
+        .catch(e => { console.log(e); });
+}
+/*
+json:{
+    set: 'dlux',
+    uid: 'AA',
+    price: 1000,
+    type: 'HIVE', //or 'HBD'
+    now: 10000, //not implemented
+    time: 7 //integer days (max 7 days)
+}
+*/
+exports.nft_hauction = function(json, from, active, pc) {
+    let fnftp = getPathObj(['nfts', from, `${json.set}:${json.uid}`]), //zoom in?
+        ahp = getPathObj(['ahh']), //needed?
+        setp = getPathObj(['sets', json.set]),
+        divp = getPathObj(['div', json.set])
+        if(json.set == `Qm`) setp = getPathObj(['sets', `Qm${json.uid}`])
+    Promise.all([fnftp, ahp, setp, divp])
+        .then(mem => {
+            if (mem[0].s && !mem[0].l && active){
+                var ah = mem[1], nft = mem[0], set = mem[2], div = mem[3]
+                var p = json.price || 1000,
+                    n = json.now || '',
+                    t = json.time || 7
+                    h = json.type.toUpperCase() == 'HBD' ? 'HBD' : 'HIVE'
+                    if(typeof t != "number" || t > 7 || t < 1 )t = 7
+                    if(typeof p != "number" || p < 1)p = 1000
+                    if(typeof n != "number" || n <= p) n = ''
+                const e = json.block_num + (t * 1200 * 24),
+                    ep = chronAssign(e, {op:"ahhe", item:`${json.set}:${json.uid}`, block: e}) //auction house expire vop
+                ep.then(exp => {
+                    var listing = {
+                            p, //starting price
+                            h,
+                            n, //buy it now price
+                            t, //time in days
+                            e, //expires
+                            i:`${json.set}:${json.uid}`, //can this be a name?
+                            q: exp, //expire path / vop
+                            o: from,
+                            c: 0
+                        }
+                    if(json.uid.split(':')[0] != 'Qm') set.u = NFT.move(json.uid, 'hh', set.u)//update set
+                    else set.u = 'hh'
+                    var last_modified = nft.s.split(',')[0], ops = []  //last modified is the first item in the string
+                    nft.s.replace(last_modified, Base64.fromNumber(json.block_num)) //update the modified block
+                    listing.nft = nft //place the nft in the listing
+                    ah[`${json.set}:${json.uid}`] = listing //place the listing in the AH
+                    if(div && div.p)ops.push({type:'put', path:['div', json.set, 'm', from], data: 0})
+                    ops.push({type:'put', path:['ahh'], data: ah})
+                    ops.push({type:'del', path:['nfts', from, `${json.set}:${json.uid}`]})
+                    if (json.set == 'Qm') ops.push({type:'put', path:['sets', `Qm${json.uid}`], data: set})
+                    else ops.push({type:'put', path:['sets', json.set], data: set})
+                    let msg = `@${from} Listed ${json.set}:${json.uid} for ${h} auction`
                     if (config.hookurl || config.status) postToDiscord(msg, `${json.block_num}:${json.transaction_id}`)
                     ops.push({ type: 'put', path: ['feed', `${json.block_num}:${json.transaction_id}`], data: msg });
                     store.batch(ops, pc)
@@ -569,7 +640,7 @@ exports.nft_sell = function(json, from, active, pc) {
         setp = getPathObj(['sets', json.set]),
         divp = getPathObj(['div', json.set])
         if(json.set == `Qm`) setp = getPathObj(['sets', `Qm${json.uid}`])
-    Promise.all([fnftp, ahp, setp])
+    Promise.all([fnftp, ahp, setp, divp])
     .then(mem => {
         if (mem[0].s && !mem[0].l && active){
                 var ls = mem[1], nft = mem[0], set = mem[2], div = mem[3]
