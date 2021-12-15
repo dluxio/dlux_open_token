@@ -134,7 +134,7 @@ active=hiveactivekey`
 * Connect your fork to the cloud server
 * Set configuration variables
 
-`username=hiveaccount`
+`account=hiveaccount`
 
 `active=hiveactivekey`
 
