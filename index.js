@@ -1,5 +1,5 @@
 const config = require('./config');
-const VERSION = 'v1.1.0b3'
+const VERSION = 'v1.1.0b4'
 exports.VERSION = VERSION
 exports.exit = exit;
 exports.processor = processor;
@@ -123,8 +123,8 @@ var recents = []
     //HIVE API CODE
 
 //Start Program Options   
-startWith('QmVWY1NBDcmZeV2AGgJPGbfkbt6uQNv9zfhUAaZaXcHTpm', true) //for testing and replaying 58859101
-//dynStart(config.leader)
+//startWith('QmVWY1NBDcmZeV2AGgJPGbfkbt6uQNv9zfhUAaZaXcHTpm', true) //for testing and replaying 58859101
+dynStart(config.leader)
 
 // API defs
 api.use(API.https_redirect);
@@ -619,16 +619,16 @@ function startWith(hash, second) {
                         if (!e && (second || data[0] > API.RAM.head - 325)) {
                             if (hash) {
                                 var cleanState = data[1]
-                                let str = '', current = ''
-                                for (var order in cleanState.dex.hive.sellOrders){
-                                    if(current == order.split(':')[0]){
-                                        str = `${str}_${order.split(":")[1]}`
-                                    } else {
-                                        current = order.split(':')[0]
-                                        str += `,${current}_${order.split(":")[1]}`
-                                    }
-                                }
-                                cleanState.dex.hive.sellBook = str.substr(1)
+                                // let str = '', current = ''
+                                // for (var order in cleanState.dex.hive.sellOrders){
+                                //     if(current == order.split(':')[0]){
+                                //         str = `${str}_${order.split(":")[1]}`
+                                //     } else {
+                                //         current = order.split(':')[0]
+                                //         str += `,${current}_${order.split(":")[1]}`
+                                //     }
+                                // }
+                                // cleanState.dex.hive.sellBook = str.substr(1)
                                 store.put([], cleanState, function(err) {
                                     if (err) {
                                         console.log('errr',err)
