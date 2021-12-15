@@ -917,9 +917,9 @@ const DEX = {
         } else {
             let item_location = string.indexOf('_' + item)
             let lowerThan = string.substring(0, item_location)
-            let greaterThan = string.substring(item_location).replace(`_${item},`, '')
+            let greaterThan = string.substring(item_location).replace(`_${item}`, '')
             let prices = lowerThan.split(',')
-            if(prices[prices.length - 1].split('_').length > 2){
+            if(prices[prices.length - 1].split('_').length >= 2){
                 return string.replace(`_${item}`, '')
             } else {
                 prices.pop()
