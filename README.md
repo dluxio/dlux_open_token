@@ -109,7 +109,7 @@ Deploy from heroku or similar and set ENV variables with a hive name and active 
 
 `nano .env` or your favorite editor
 
-`username=hiveaccount
+`account=hiveaccount
 active=hiveactivekey`
 
 * Quit editor and save changes
