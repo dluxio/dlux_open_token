@@ -923,7 +923,9 @@ const DEX = {
                 return string.replace(`_${item}`, '')
             } else {
                 prices.pop()
-                return prices.join(',') + greaterThan
+                let str = prices.join(',') + greaterThan
+                if (str.substr(0,1) == ',') return str.substr(1)
+                else return string
             }
         }
     },

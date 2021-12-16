@@ -820,6 +820,7 @@ exports.nft_div = function(json, from, active, pc) {
         let set = mem[0], div = mem[1]
         if (set.a >= from && active && !div.p && json.period > 28800 && json.period < 864001){
             let ops = []
+            chronAssign(num + parseInt(json.period), {set:json.set, op: 'div'})
             ops.push({ type: 'put', path: ['div', json.set], data: {p:json.period,s:json.set} });
             let msg = `@${from} established a dividend for ${json.set}`
             if (config.hookurl || config.status) postToDiscord(msg, `${json.block_num}:${json.transaction_id}`)
