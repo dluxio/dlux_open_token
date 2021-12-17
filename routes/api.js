@@ -839,8 +839,9 @@ exports.nfts = (req, res, next) => {
 }
 
 exports.sets = (req, res, next) => {
-    let sets = getPathObj(['sets'])
-    Promise.all([sets])
+    let sets = getPathObj(['sets']),
+        divs = getPathObj(['div'])
+    Promise.all([sets, divs])
     .then(mem => {
         let result = []
         for (set in mem[0]){
@@ -867,7 +868,18 @@ exports.sets = (req, res, next) => {
                 name: mem[0][set].n,
                 long_name: mem[0][set].nl,
                 minted: mem[0][set].i,
-                max: Base64.toNumber(mem[0][set].j)
+                max: Base64.toNumber(mem[0][set].j),
+                total_div: {
+                    amount: mem[1][set]?.e || 0,
+                    precision: config.precision,
+                    token: config.TOKEN
+                },
+                last_div: {
+                    amount:mem[1][set]?.l || 0,
+                    precision: config.precision,
+                    token: config.TOKEN
+                },
+                period_div: mem[1][set]?.p
             })
         }
         res.setHeader('Content-Type', 'application/json')
@@ -884,8 +896,9 @@ exports.sets = (req, res, next) => {
 exports.auctions = (req, res, next) => {
     let from = req.params.set,
         ahp = getPathObj(['ah']),
-        setp = getPathObj(['sets'])
-    Promise.all([ahp, setp])
+        setp = getPathObj(['sets']),
+        ahhp = getPathObj(['ahh'])
+    Promise.all([ahp, setp, ahhp])
     .then(mem => {
         let result = []
         for(item in mem[0]){
@@ -915,6 +928,36 @@ exports.auctions = (req, res, next) => {
                             script: mem[1][item.split(':')[0]].s,
                             days: mem[0][item].t,
                             buy: mem[0][item].n || ''
+                        })
+            }
+        }
+        for(item in mem[2]){
+            if(!from || item.split(':')[0] == from){
+                let auctionTimer = {},
+                now = new Date()
+                auctionTimer.expiryIn = now.setSeconds(now.getSeconds() + ((mem[2][item].e - TXID.getBlockNum())*3));
+                auctionTimer.expiryUTC = new Date(auctionTimer.expiryIn);
+                auctionTimer.expiryString = auctionTimer.expiryUTC.toISOString();
+                result.push({
+                            uid: item.split(':')[1],
+                            set: item.split(':')[0],
+                            price: {
+                                amount: mem[2][item].b || mem[2][item].p,
+                                precision: 3,
+                                token: mem[2][item].h
+                            }, //starting price
+                            initial_price: {
+                                amount: mem[2][item].p,
+                                precision: 3,
+                                token: mem[2][item].h
+                            },
+                            time: auctionTimer.expiryString,
+                            by:mem[2][item].o,
+                            bids: mem[2][item].c || 0,
+                            bidder: mem[2][item].f || '',
+                            script: mem[1][item.split(':')[0]].s,
+                            days: mem[2][item].t,
+                            buy: mem[2][item].n || ''
                         })
             }
         }
@@ -1261,8 +1304,9 @@ exports.mint_sales = (req, res, next) => {
 
 exports.set = (req, res, next) => {
     let setname = req.params.set,
-        setp = getPathObj(['sets', setname])
-    Promise.all([setp])
+        setp = getPathObj(['sets', setname]),
+        divs = getPathObj(['divs'])
+    Promise.all([setp, divs])
     .then(mem => {
         res.setHeader('Content-Type', 'application/json')
         var result = [], set = {
@@ -1288,7 +1332,18 @@ exports.set = (req, res, next) => {
                 name: mem[0].n,
                 name_long: mem[0].nl,
                 minted: Base64.toNumber(mem[0].i),
-                max: Base64.toNumber(mem[0].j)
+                max: Base64.toNumber(mem[0].j),
+                total_div: {
+                    amount: mem[1][set]?.e || 0,
+                    precision: config.precision,
+                    token: config.TOKEN
+                },
+                last_div: {
+                    amount:mem[1][set]?.l || 0,
+                    precision: config.precision,
+                    token: config.TOKEN
+                },
+                period_div: mem[1][set]?.p
             },
             uids = []
             if (mem[0].u)uids = mem[0].u.split(',')

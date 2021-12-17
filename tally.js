@@ -121,8 +121,8 @@ exports.tally = (num, plasma, isStreaming) => {
                         //concerns, size of multi-sig transactions
                         //minimum to outweight large initial stake holders
                         //adjust size of runners group based on stake
-                        let low_sum = 0
-                        let last_bal = 0
+                        let low_sum = 0,
+                            last_bal = 0
                         counting_array.sort((a, b) => a - b)
                         for (i = 0; i < parseInt(counting_array.length / 2) + 1; i++) {
                             low_sum += counting_array[i]
@@ -133,7 +133,7 @@ exports.tally = (num, plasma, isStreaming) => {
                                 node: '',
                                 g: 0,
                                 api: ''
-                            }
+                                }
                             for (node in election) {
                                 if (election[node].g > winner.g) { //disallow 0 bals in governance
                                     winner.node = node

@@ -252,7 +252,7 @@ const NFT = {
                         set = mem[1],
                         ops = [],
                         promises = []
-                    promises = divDistro(contract.b, set.u, contract.m, contract.s) //balance, owners, movers, setname(for refund)
+                    promises = divDistro(contract.b, set.u, contract.m, contract.s, contract.l) //balance, owners, movers, setname(for refund)
                     const msg = `Dividends of ${contract.s}'s ${contract.b? parseFloat(contract.b/Math.pow(10,config.precision)).toFixed(config.precision) : 0} ${config.TOKEN} have been distributed to ${promises.length} accounts`
                     promises.push(chronAssign(num + contract.p, {op:"div", set:contract.s}))
                     ops.push({ type: 'put', path: ['feed', `${num}:vop_${delkey.split(':')[1]}`], data: msg })
@@ -261,14 +261,14 @@ const NFT = {
                     ops.push({ type: 'del', path: ['div', contract.s, 'm'] })
                     if(promises.length)Promise.all(promises).then(empty=>{store.batch(ops, [resolve, reject])})
                     else store.batch(ops, [resolve, reject])
-                    function divDistro(balance, owners, movers, setname) {
+                    function divDistro(balance, owners, movers, setname, last) {
                         let accounts = owners.split(','),
                             tos = [],
                             items = [],
                             promies = [],
                             total = 0,
                             no = Object.keys(movers)
-                        no.push('ls', 'D', 'ah', 't')
+                        no.push('ls', 'D', 'ah', 't', 'hh')
                         if(accounts.length > 0)for(var i = 0; i < accounts.length; i++) {
                             const len = accounts[i].split('_').length - 1
                             const who = accounts[i].split('_')[len]
@@ -281,6 +281,8 @@ const NFT = {
                         let cada = parseInt(balance / total)
                         let truco = balance % total
                         promies.push(addMT(['div', setname, 'b'], truco - balance))
+                        promies.push(addMT(['div', setname, 'e'], cada))
+                        promies.push(addMT(['div', setname, 'l'], cada - last))
                         for(var i = 0; i < items.length; i++) {
                             promies.push(add(tos[i] , cada * items[i]))
                         }
