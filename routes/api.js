@@ -1254,8 +1254,8 @@ exports.sales = (req, res, next) => {
                     set: item.split(':')[0],
                     price: {
                         amount: mem[0][item].p,
-                        precision: config.precision,
-                        token: config.TOKEN
+                        precision: mem[0][item].h ? 3 : config.precision,
+                        token: mem[0][item].h ? mem[0][item].h :config.TOKEN
                     },
                     by:mem[0][item].o,
                     script: mem[2][item.split(':')[0]].s,

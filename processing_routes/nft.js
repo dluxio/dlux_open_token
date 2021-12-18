@@ -643,12 +643,15 @@ exports.nft_sell = function(json, from, active, pc) {
     Promise.all([fnftp, ahp, setp, divp])
     .then(mem => {
         if (mem[0].s && !mem[0].l && active){
-                var ls = mem[1], nft = mem[0], set = mem[2], div = mem[3]
+                var ls = mem[1], nft = mem[0], set = mem[2], div = mem[3], h = undefined
+                if(json.type.toUpperCase() == 'HIVE')h = 'HIVE'
+                else if (json.type.toUpperCase() == 'HBD')h = 'HBD'
                 var p = json.price || 1000
                     var listing = {
                             p, //starting price
                             i:`${json.set}:${json.uid}`,
-                            o: from
+                            o: from,
+                            h
                         }
                     if(json.uid.split(':')[0] != 'Qm') set.u = NFT.move(json.uid, 'ls', set.u)//update set
                     else set.u = 'ls'
@@ -686,7 +689,7 @@ exports.nft_buy = function(json, from, active, pc) {
     Promise.all([fbalp, lsp, setp])
     .then(mem => {
         let listing = mem[1]
-        if(mem[1].p <= mem[0] && active && from != listing.o){
+        if(mem[1].p <= mem[0] && !listing.h && active && from != listing.o){
             let nft = mem[1].nft, set = mem[2], listing = mem[1]
             var last_modified = nft.s.split(',')[0], ops = []  //last modified is the first item in the string
             nft.s.replace(last_modified, Base64.fromNumber(json.block_num)) //update the modified block

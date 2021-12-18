@@ -191,6 +191,7 @@ const NFT = {
                             ops.push({ type: 'put', path: ['nfts', listing.f, b.item], data: nft }) //update nft
                             const msg = `Auction of ${listing.o}'s ${b.item} has ended for ${parseFloat(listing.b / 1000).toFixed(3)} ${listing.h} to ${listing.f}`
                             ops.push({ type: 'put', path: ['feed', `${num}:vop_${delkey.split(':')[1]}`], data: msg })
+                            ops.push({ type: 'put', path: ['msa', `${num}:vop_${delkey.split(':')[1]}`], data: stringify(Transfer) })
                             if(config.hookurl)postToDiscord(msg, `${num}:vop_${delkey.split(':')[1]}`)
                             if (b.item.split(':')[0] != 'Qm') ops.push({ type: 'put', path: ['sets', b.item.split(':')[0]], data: set }) //update set
                             else ops.push({ type: 'put', path: ['sets', `Qm${b.item.split(':')[1]}`], data: set })
