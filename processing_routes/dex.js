@@ -429,7 +429,7 @@ exports.transfer = (json, pc) => {
                         const transfer = ['transfer',{ 
                                 to: json.from,
                                 from: config.msaccount,
-                                amount: parseFloat(listing.b/1000).toFixed(3) + ` ${type}`,
+                                amount: json.amount,
                                 memo: `Underbid on ${set}:${uid}. ${json.transaction_id.substr(0,8)}`
                             }]
                         var ops = []
