@@ -839,8 +839,9 @@ exports.nfts = (req, res, next) => {
 }
 
 exports.sets = (req, res, next) => {
-    let sets = getPathObj(['sets'])
-    Promise.all([sets])
+    let sets = getPathObj(['sets']),
+        divs = getPathObj(['div'])
+    Promise.all([sets, divs])
     .then(mem => {
         let result = []
         for (set in mem[0]){
@@ -865,9 +866,20 @@ exports.sets = (req, res, next) => {
                 royalty: mem[0][set].r,
                 royalty_allocation: mem[0][set].ra || `${mem[0][set].a}_10000`,
                 name: mem[0][set].n,
-                long_name: mem[0][set].nl,
+                name_long: mem[0][set].nl,
                 minted: mem[0][set].i,
-                max: Base64.toNumber(mem[0][set].j)
+                max: Base64.toNumber(mem[0][set].j),
+                total_div: {
+                    amount: mem[1][set]?.e || 0,
+                    precision: config.precision,
+                    token: config.TOKEN
+                },
+                last_div: {
+                    amount:mem[1][set]?.l || 0,
+                    precision: config.precision,
+                    token: config.TOKEN
+                },
+                period_div: mem[1][set]?.p
             })
         }
         res.setHeader('Content-Type', 'application/json')
@@ -884,8 +896,9 @@ exports.sets = (req, res, next) => {
 exports.auctions = (req, res, next) => {
     let from = req.params.set,
         ahp = getPathObj(['ah']),
-        setp = getPathObj(['sets'])
-    Promise.all([ahp, setp])
+        setp = getPathObj(['sets']),
+        ahhp = getPathObj(['ahh'])
+    Promise.all([ahp, setp, ahhp])
     .then(mem => {
         let result = []
         for(item in mem[0]){
@@ -913,8 +926,40 @@ exports.auctions = (req, res, next) => {
                             bids: mem[0][item].c || 0,
                             bidder: mem[0][item].f || '',
                             script: mem[1][item.split(':')[0]].s,
+                            name_long: mem[1][item.split(':')[0]].nl,
                             days: mem[0][item].t,
                             buy: mem[0][item].n || ''
+                        })
+            }
+        }
+        for(item in mem[2]){
+            if(!from || item.split(':')[0] == from){
+                let auctionTimer = {},
+                now = new Date()
+                auctionTimer.expiryIn = now.setSeconds(now.getSeconds() + ((mem[2][item].e - TXID.getBlockNum())*3));
+                auctionTimer.expiryUTC = new Date(auctionTimer.expiryIn);
+                auctionTimer.expiryString = auctionTimer.expiryUTC.toISOString();
+                result.push({
+                            uid: item.split(':')[1],
+                            set: item.split(':')[0],
+                            price: {
+                                amount: mem[2][item].b || mem[2][item].p,
+                                precision: 3,
+                                token: mem[2][item].h
+                            }, //starting price
+                            initial_price: {
+                                amount: mem[2][item].p,
+                                precision: 3,
+                                token: mem[2][item].h
+                            },
+                            time: auctionTimer.expiryString,
+                            by:mem[2][item].o,
+                            bids: mem[2][item].c || 0,
+                            bidder: mem[2][item].f || '',
+                            script: mem[1][item.split(':')[0]].s,
+                            name_long: mem[1][item.split(':')[0]].nl,
+                            days: mem[2][item].t,
+                            buy: mem[2][item].n || ''
                         })
             }
         }
@@ -1035,6 +1080,7 @@ exports.mint_auctions = (req, res, next) => {
                             bids: mem[0][item].c || 0,
                             bidder: mem[0][item].f || '',
                             script: mem[1][item.split(':')[0]].s,
+                            name_long: mem[1][item.split(':')[0]].nl,
                             days: mem[0][item].t,
                             buy: mem[0][item].n || ''
                         })
@@ -1068,6 +1114,7 @@ exports.mint_supply = (req, res, next) => {
                     sets[item.split(':')[0]] = {
                         set: item.split(':')[0],
                         script: mem[1][item.split(':')[0]].s,
+                        name_long: mem[1][item.split(':')[0]].nl,
                         auctions: [],
                         sales: [],
                         qty_sales: 0,
@@ -1101,6 +1148,7 @@ exports.mint_supply = (req, res, next) => {
                             bids: mem[0][item].c || 0,
                             bidder: mem[0][item].f || '',
                             script: mem[1][item.split(':')[0]].s,
+                            name_long: mem[1][item.split(':')[0]].nl,
                             days: mem[0][item].t,
                             buy: mem[0][item].n || ''
                         })
@@ -1130,7 +1178,8 @@ exports.mint_supply = (req, res, next) => {
                         token: config.TOKEN
                     },
                     by:mem[2][item].o,
-                    script: mem[1][item.split(':')[0]].s
+                    script: mem[1][item.split(':')[0]].s,
+                    name_long: mem[1][item.split(':')[0]].nl
                 }
                 sets[item.split(':')[0]].qty += (mem[2][item].a || 1)
                 sets[item.split(':')[0]].qty_sales += (mem[2][item].a || 1)
@@ -1143,6 +1192,7 @@ exports.mint_supply = (req, res, next) => {
                     sets[item.split(':')[0]] = {
                         set: item.split(':')[0],
                         script: mem[1][item.split(':')[0]].s,
+                        name_long: mem[1][item.split(':')[0]].nl,
                         auctions: [],
                         sales: [],
                         qty_sales: 0,
@@ -1166,6 +1216,7 @@ exports.mint_supply = (req, res, next) => {
                     },
                     by:hivesells[item].o,
                     script: mem[1][item.split(':')[0]].s,
+                    name_long: mem[1][item.split(':')[0]].nl,
                     max,
                     pb
                 }
@@ -1203,11 +1254,12 @@ exports.sales = (req, res, next) => {
                     set: item.split(':')[0],
                     price: {
                         amount: mem[0][item].p,
-                        precision: config.precision,
-                        token: config.TOKEN
+                        precision: mem[0][item].h ? 3 : config.precision,
+                        token: mem[0][item].h ? mem[0][item].h :config.TOKEN
                     },
                     by:mem[0][item].o,
-                    script: mem[2][item.split(':')[0]].s
+                    script: mem[2][item.split(':')[0]].s,
+                    name_long: mem[2][item.split(':')[0]].nl
                 }
                 result.push(listing)
             }
@@ -1243,7 +1295,8 @@ exports.mint_sales = (req, res, next) => {
                         token: config.TOKEN
                     },
                     by:mem[0][item].o,
-                    script: mem[1][item.split(':')[0]].s
+                    script: mem[1][item.split(':')[0]].s,
+                    name_long: mem[1][item.split(':')[0]].nl
                 }
                 result.push(listing)
             }
@@ -1261,8 +1314,9 @@ exports.mint_sales = (req, res, next) => {
 
 exports.set = (req, res, next) => {
     let setname = req.params.set,
-        setp = getPathObj(['sets', setname])
-    Promise.all([setp])
+        setp = getPathObj(['sets', setname]),
+        divs = getPathObj(['divs'])
+    Promise.all([setp, divs])
     .then(mem => {
         res.setHeader('Content-Type', 'application/json')
         var result = [], set = {
@@ -1288,7 +1342,18 @@ exports.set = (req, res, next) => {
                 name: mem[0].n,
                 name_long: mem[0].nl,
                 minted: Base64.toNumber(mem[0].i),
-                max: Base64.toNumber(mem[0].j)
+                max: Base64.toNumber(mem[0].j),
+                total_div: {
+                    amount: mem[1][set]?.e || 0,
+                    precision: config.precision,
+                    token: config.TOKEN
+                },
+                last_div: {
+                    amount:mem[1][set]?.l || 0,
+                    precision: config.precision,
+                    token: config.TOKEN
+                },
+                period_div: mem[1][set]?.p
             },
             uids = []
             if (mem[0].u)uids = mem[0].u.split(',')
@@ -1356,6 +1421,7 @@ exports.item = (req, res, next) => {
                         permlink: mem[0].p,
                         author: mem[0].a,
                         script: mem[0].s,
+                        name_long: mem[0].nl,
                         encoding: mem[0].e,
                         type: mem[0].t,
                         royalty: mem[0].r,

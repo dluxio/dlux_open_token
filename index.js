@@ -619,6 +619,8 @@ function startWith(hash, second) {
                         if (!e && (second || data[0] > API.RAM.head - 325)) {
                             if (hash) {
                                 var cleanState = data[1]
+                                cleanState.div.hf.e = 232
+                                cleanState.div.hf.l = 232
                                 store.put([], cleanState, function(err) {
                                     if (err) {
                                         console.log('errr',err)

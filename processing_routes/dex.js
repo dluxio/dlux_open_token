@@ -442,7 +442,7 @@ exports.transfer = (json, pc) => {
                     const transfer = ['transfer',{ 
                                 to: json.from,
                                 from: config.msaccount,
-                                amount: parseFloat(listing.b/1000).toFixed(3) + ` ${type}`,
+                                amount: json.amount,
                                 memo: `Underbid on ${set}:${uid}. ${json.transaction_id.substr(0,8)}`
                             }]
                     var ops = []
@@ -453,7 +453,33 @@ exports.transfer = (json, pc) => {
                 }
             })
             .catch(e => { console.log(e); })
-        } else {
+        } else if (json.memo.split(' ')[0] == 'NFTbuy'){
+            let item = json.memo.split(' ')[1],
+                set = item.split(':')[0],
+                uid = item.split(':')[1]
+                lsp = getPathObj(['ls', `${set}:${uid}`])
+                amount = parseInt(parseFloat(json.amount.split[0])*1000)
+                type = json.amount.split(' ')[1]
+            Promise.all([lsp])
+            .then(mem => {
+                if(mem[0].h == type && json.from != mem[0].o && amount == mem[0].p){ //check for item and type
+                    
+                } else {
+                    const transfer = ['transfer',{ 
+                                to: json.from,
+                                from: config.msaccount,
+                                amount: parseFloat(listing.b/1000).toFixed(3) + ` ${type}`,
+                                memo: `Failed to buy ${json.set}:${json.uid}. ${json.transaction_id.substr(0,8)}`
+                            }]
+                    var ops = []
+                    ops.push({type:'put', path:['msa', `FailedBuy:${set}:${uid}:${json.transaction_id}`], data: stringify(transfer)})
+                    let msg = `@${json.from} buy of ${set}:${uid} didn't go well.`
+                    if (config.hookurl || config.status) postToDiscord(msg, `${json.block_num}:${json.transaction_id}`)
+                    store.batch(ops, pc)
+                }
+            })
+            .catch(e => { console.log(e); })
+        }else {
             let order = {
                 type: 'LIMIT'
             },
