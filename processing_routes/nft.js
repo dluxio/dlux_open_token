@@ -692,7 +692,7 @@ exports.nft_buy = function(json, from, active, pc) {
     Promise.all([fbalp, lsp, setp])
     .then(mem => {
         let listing = mem[1]
-        if(mem[1].p <= mem[0] && !listing.h && active && from != listing.o){
+        if(mem[1].p <= mem[0] && listing?.h != 'HIVE' && listing?.h != 'HBD' && active && from != listing.o){
             let nft = mem[1].nft, set = mem[2], listing = mem[1]
             var last_modified = nft.s.split(',')[0], ops = []  //last modified is the first item in the string
             nft.s.replace(last_modified, Base64.fromNumber(json.block_num)) //update the modified block
