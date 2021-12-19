@@ -257,7 +257,7 @@ exports.transfer = (json, pc) => {
             }
         })
     } else if (json.to == config.msaccount && json.from != config.mainICO) {
-        if(json.memo.split(' ')[0] == 'NFT'){
+        if(json.memo.split(' ').length > 1 && json.memo.split(' ')[0] == 'NFT'){
             /*
                     lth[`set:hash`]{
                         h,//millihive
@@ -374,7 +374,76 @@ exports.transfer = (json, pc) => {
                     store.batch(ops, pc)
                 }
             })
-        } else if (json.memo.split(' ')[0] == 'NFTbid'){
+        } else if(json.memo.split(' ').length > 1 && json.memo.split(' ')[0] == 'NFTtrade'){
+            let item = json.memo.split(' ')[1],
+                setname = item.split(":")[0],
+                uid = item.split(':')[1],
+                fnftp = getPathObj(['nfts', 't', item]),
+                setp = getPathObj(['sets', setname])
+            Promise.all([fnftp, setp])
+            .then(nfts => {
+                var to, price, type
+                try{ to = nfts[0].t.split('_')[1];price = parseInt(nfts[0].t.split('_')[2]), type = nfts[0].t.split('_')[3]} catch (e){console.log(nfts[0])}
+                if(nfts[0].s !== undefined && to == json.from && parseInt(parseFloat(json.amount.split(' ')[0])*1000) == price && type == json.amount.split(' ')[1]) {
+                    let ops = [],
+                        nft = nfts[0],
+                        set = nfts[1]
+                    let royalties = parseInt((price * set.r) / 10000)
+                    let fee = parseInt((price * config.hive_service_fee) / 10000)
+                    let total = price - royalties - fee
+                    const Transfer = ['transfer',
+                        {
+                            from: config.msaccount,
+                            to: nfts[0].t.split('_')[0],
+                            amount: parseFloat(total/1000).toFixed(3) + ` ${type}`,
+                            memo: `${item} traded to ${json.from}.`
+                        }]
+                    if(royalties){
+                        DEX.buyDluxFromDex(royalties, type, json.block_num, `roy_${json.transaction_id}`, `n:${set.n}`)
+                        .then(empty=>{
+                            DEX.buyDluxFromDex(fee, type, json.block_num, `fee_${json.transaction_id}`, `rn`)
+                            .then(emp=>{
+                                finish(set, json, listing, uid, item, Transfer, nft, pc)
+                            })
+                        })
+                    } else {
+                        DEX.buyDluxFromDex(fee, type, json.block_num, `fee_${json.transaction_id}`, `rn`)
+                        .then(emp=>{
+                            finish(set, json, listing, uid, item, Transfer, nft, pc)
+                        })
+                    }
+                    function finish(set, json, listing, uid, item, Transfer, nft, promise){
+                        var ops = []
+                        nft.s = NFT.last(json.block_num, nft.s)
+                        set.u = NFT.move(uid, json.from, set.u)
+                        delete nft.t
+                        ops.push({type:'put', path:['nfts', json.from,`${setname}:${uid}`], data: nft})
+                        ops.push({type:'put', path:['sets', setname], data: set})
+                        ops.push({type:'del', path:['nfts', 't', `${setname}:${uid}`]})
+                        ops.push({ type: 'put', path: ['msa', `${json.block_num}:vop_${json.transaction_id}`], data: stringify(Transfer) })
+                        // is there anything in the NFT that needs to be modified? owner, renter, 
+                        let msg = `@${json.from} completed NFT: ${setname}:${uid} transfer`
+                        if (config.hookurl || config.status) postToDiscord(msg, `${json.block_num}:${json.transaction_id}`)
+                        ops.push({ type: 'put', path: ['feed', `${json.block_num}:${json.transaction_id}`], data: msg });
+                        store.batch(ops, promise)
+                    }
+                    
+                } else {
+                    const transfer = ['transfer',{ 
+                                to: json.from,
+                                from: config.msaccount,
+                                amount: json.amount,
+                                memo: `Failed trade. ${json.transaction_id.substr(0,8)}`
+                            }]
+                    var ops = []
+                    ops.push({type:'put', path:['msa', `Failed:${setname}:${uid}:${json.transaction_id}`], data: stringify(transfer)})
+                    let msg = `@${json.from} trade of ${setname}:${uid} didn't go well.`
+                    if (config.hookurl || config.status) postToDiscord(msg, `${json.block_num}:${json.transaction_id}`)
+                    store.batch(ops, pc)
+                }
+            })
+            .catch(e => { console.log(e); });
+        } else if (json.memo.split(' ').length > 1 && json.memo.split(' ')[0] == 'NFTbid'){
             let item = json.memo.split(' ')[1],
                 set = item.split(':')[0],
                 uid = item.split(':')[1]
@@ -454,11 +523,11 @@ exports.transfer = (json, pc) => {
                 }
             })
             .catch(e => { console.log(e); })
-        } else if (json.memo.split(' ')[0] == 'NFTbuy'){
+        } else if (json.memo.split(' ').length > 1 && json.memo.split(' ')[0] == 'NFTbuy'){
             let item = json.memo.split(' ')[1],
-                set = item.split(':')[0],
+                setname = item.split(':')[0],
                 uid = item.split(':')[1],
-                lsp = getPathObj(['ls', `${set}:${uid}`]),
+                lsp = getPathObj(['ls', `${setname}:${uid}`]),
                 setp = getPathObj(['sets', set])
                 amount = parseInt(parseFloat(json.amount.split(' ')[0])*1000)
                 type = json.amount.split(' ')[1]
@@ -476,7 +545,6 @@ exports.transfer = (json, pc) => {
                     let royalties = parseInt((listing.p * set.r) / 10000)
                     let fee = parseInt((listing.p * config.hive_service_fee) / 10000)
                     let total = listing.p - royalties - fee
-                    console.log(total)
                     const Transfer = ['transfer',
                         {
                             from: config.msaccount,
@@ -517,7 +585,7 @@ exports.transfer = (json, pc) => {
                                 to: json.from,
                                 from: config.msaccount,
                                 amount: parseFloat(listing.b/1000).toFixed(3) + ` ${type}`,
-                                memo: `Failed to buy ${json.set}:${json.uid}. ${json.transaction_id.substr(0,8)}`
+                                memo: `Failed to buy ${setname}:${uid}. ${json.transaction_id.substr(0,8)}`
                             }]
                     var ops = []
                     ops.push({type:'put', path:['msa', `FailedBuy:${set}:${uid}:${json.transaction_id}`], data: stringify(transfer)})

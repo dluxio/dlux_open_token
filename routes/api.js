@@ -11,6 +11,7 @@ const {
     getNewPosts,
     getAuthorPosts 
 } = require('./../edb');
+const { precision } = require('./../config');
 //const { reject } = require('async');
 
 var RAM = {
@@ -1028,6 +1029,12 @@ exports.limbo = (req, res, next) => {
                     from: str[0],
                     to: str[1],
                     price: parseInt(str[2]),
+                    type: str[3],
+                    nai:{
+                        amount: parseInt(str[2]),
+                        precision: (str[3] == "HIVE" || str[3] == "HBD") ? 3 : config.precision,
+                        token: str[3] == 'TOKEN' ? config.TOKEN : str[3]
+                    },
                     item,
                     kind,
                     set:item.split(':')[0],

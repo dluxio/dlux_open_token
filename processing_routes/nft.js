@@ -83,7 +83,10 @@ exports.nft_reserve_transfer = function(json, from, active, pc) {
                 set = nfts[1]
             nft.s = NFT.last(json.block_num, nft.s)
             set.u = NFT.move(json.uid, 't', set.u)
-            nft.t = `${from}_${json.to}_${json.price}`
+            let type = 'TOKEN'
+            if(json?.type.toUpperCase() == 'HIVE')type = 'HIVE'
+            else if(json?.type.toUpperCase() == 'HBD')type = 'HBD'
+            nft.t = `${from}_${json.to}_${json.price}_${type}`
             ops.push({type:'put', path:['nfts', 't', `${json.set}:${json.uid}`], data: nft})
             ops.push({type:'put', path:['sets', json.set], data: set})
             ops.push({type:'del', path:['nfts', from, `${json.set}:${json.uid}`]})
@@ -112,9 +115,9 @@ exports.nft_reserve_complete  = function(json, from, active, pc) {
         balp = getPathNum(['balances', from])
     Promise.all([fnftp, setp, balp])
     .then(nfts => {
-        var to, price
-        try{ to = nfts[0].t.split('_')[1];price = parseInt(nfts[0].t.split('_')[2])} catch (e){console.log(nfts[0])}
-        if(nfts[0].s !== undefined && to == from && active && nfts[2] >= price) {
+        var to, price, type
+        try{ to = nfts[0].t.split('_')[1];price = parseInt(nfts[0].t.split('_')[2]), type = nfts[0].t.split('_')[3]} catch (e){console.log(nfts[0])}
+        if(nfts[0].s !== undefined && to == from && active && nfts[2] >= price && type == 'TOKEN') {
             let ops = [],
                 nft = nfts[0],
                 set = nfts[1]
