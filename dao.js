@@ -1,7 +1,7 @@
 const config = require('./config');
 const { getPathObj, getPathNum } = require("./getPathObj");
 const { store } = require("./index");
-const { isEmpty } = require('./lil_ops')
+const { isEmpty, addMT } = require('./lil_ops')
 const { sortBuyArray, distro } = require('./helpers')
 
 //the daily post, the inflation point for tokennomics
@@ -38,7 +38,8 @@ function dao(num) {
                     Pfeed = getPathObj(['feed']),
                     Ppaid = getPathObj(['paid']),
                     Prnfts = getPathObj(['rnfts']);
-                Promise.all([Pnews, Pbals, Prunners, Pnodes, Pstats, Pdelegations, Pico, Pdex, Pbr, Ppbal, Pnomen, Pposts, Pfeed, Ppaid, Prnfts]).then(function(v) {
+                    Pdistro = Distro()
+                Promise.all([Pnews, Pbals, Prunners, Pnodes, Pstats, Pdelegations, Pico, Pdex, Pbr, Ppbal, Pnomen, Pposts, Pfeed, Ppaid, Prnfts, Pdistro]).then(function(v) {
                             daops.push({ type: 'del', path: ['postQueue'] });
                             daops.push({ type: 'del', path: ['br'] });
                             daops.push({ type: 'del', path: ['rolling'] });
@@ -59,6 +60,14 @@ function dao(num) {
                                 feedCleaner = v[12],
                                 paidCleaner = v[13],
                                 rnftsCleaner = v[14];
+                                dist = v[15]
+                            for(var i = 0; i < dist.length;i++){
+                                if(dist[i][0].split('div:')[1]){
+                                    addMT(['div', dist[i][0].split('div:')[1], b], dist[i][1] )
+                                } else {
+                                    bals[dist[i][0]] += dist[i][1]
+                                }
+                            }
                             feedKeys = Object.keys(feedCleaner);
                             paidKeys = Object.keys(paidCleaner);
                             for(var set in rnftsCleaner){
@@ -411,21 +420,32 @@ function dao(num) {
 
 exports.dao = dao;
 
-function Distro(num){
-    let Pbals = getPathObj(['balances']),
+function Distro(){
+    return new Promise ((resolve, reject)=>{
+        let Pbals = getPathObj(['balances']),
         Psets = getPathObj(['sets']),
         Pdiv = getPathObj(['div'])
-    Promise.all([Pbals, Psets, Pdiv]).then(mem =>{
-        let ops = [],
-            bals = mem[0],
-            sets = mem[1],
-            div = mem[2],
-            out = []
-        for(var acc in bals) {
-            if(acc.split(':').length) {
-                out = [...out, ...preadd(bals[acc], sets[acc.split(':')[1]])]
+        Promise.all([Pbals, Psets, Pdiv]).then(mem =>{
+            let ops = [],
+                bals = mem[0],
+                sets = mem[1],
+                div = mem[2],
+                out = []
+            for(var acc in bals) {
+                if(acc.split('n:')[1]) {
+                    out = [...out, ...preadd(bals[acc], sets[acc.split(':')[1]]), [acc, - bals[acc]]]
+                }
             }
-        }
+            out.sort((a, b) => a[0] - b[0])
+            for(var i = 0; i < out.length - 1; i++) {
+                if (out[i][0] == out[i + 1][0]) {
+                    out[i+1][1] = out[i][1] + out[i+1][1]
+                    out.splice(i, 1)
+                    i--
+                }
+            }
+            resolve(out)
+        })
     })
     function preadd (bal, set){
         if(set.ra){

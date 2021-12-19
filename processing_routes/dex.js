@@ -1,7 +1,8 @@
 const config = require('./../config')
+
+const { Base64, NFT, DEX } = require('./../helpers')
 const { store, GetNodeOps, spliceOp, plasma } = require('./../index')
 const { getPathObj, getPathNum } = require('./../getPathObj')
-//const { release } = require('./../helpers')
 const { add, addCol, addGov, deletePointer, credit, chronAssign, hashThis, isEmpty, addMT } = require('./../lil_ops')
 const { postToDiscord } = require('./../discord')
 const stringify = require('json-stable-stringify');
@@ -271,7 +272,7 @@ exports.transfer = (json, pc) => {
             */
             let item = json.memo.split(' ')[1],
                 setname = item.split(':')[0],
-                Pset = getPathObj(['set', setname]),
+                Pset = getPathObj(['sets', setname]),
                 Pitem = getPathObj(['lth', item])
             Promise.all([Pset, Pitem]).then(mem =>{
                 let set = mem[0],
@@ -378,11 +379,11 @@ exports.transfer = (json, pc) => {
                 set = item.split(':')[0],
                 uid = item.split(':')[1]
                 ahp = getPathObj(['ahh', `${set}:${uid}`])
-                amount = parseInt(parseFloat(json.amount.split[0])*1000)
+                amount = parseInt(parseFloat(json.amount.split(' ')[0])*1000)
                 type = json.amount.split(' ')[1]
             Promise.all([ahp])
             .then(mem => {
-                if(mem[0].h == type && json.from != mem[0].f){ //check for item and type
+                if(mem[0].h == type){ // && json.from != mem[0].f){ //check for item and type
                     var listing = mem[0]
                     if(listing.b){
                         if (amount > listing.b){
@@ -406,7 +407,7 @@ exports.transfer = (json, pc) => {
                             const transfer = ['transfer',{ 
                                 to: json.from,
                                 from: config.msaccount,
-                                amount: parseFloat(listing.b/1000).toFixed(3) + ` ${type}`,
+                                amount: json.amount,
                                 memo: `Underbid on ${set}:${uid}. ${json.transaction_id.substr(0,8)}`
                             }]
                             var ops = []
@@ -456,14 +457,61 @@ exports.transfer = (json, pc) => {
         } else if (json.memo.split(' ')[0] == 'NFTbuy'){
             let item = json.memo.split(' ')[1],
                 set = item.split(':')[0],
-                uid = item.split(':')[1]
-                lsp = getPathObj(['ls', `${set}:${uid}`])
-                amount = parseInt(parseFloat(json.amount.split[0])*1000)
+                uid = item.split(':')[1],
+                lsp = getPathObj(['ls', `${set}:${uid}`]),
+                setp = getPathObj(['sets', set])
+                amount = parseInt(parseFloat(json.amount.split(' ')[0])*1000)
                 type = json.amount.split(' ')[1]
-            Promise.all([lsp])
+            Promise.all([lsp, setp])
             .then(mem => {
                 if(mem[0].h == type && json.from != mem[0].o && amount == mem[0].p){ //check for item and type
-                    
+                    let listing = mem[0],
+                        set = mem[1],
+                        ops = [],
+                        promises = [],
+                    // const fee = parseInt(listing.b /100); add('n', fee); listingb = listing.b - fee;
+                        nft = listing.nft
+                    const last_modified = nft.s.split(',')[0]
+                    nft.s.replace(last_modified, Base64.fromNumber(json.block_num)) //update last modified
+                    let royalties = parseInt((listing.p * set.r) / 10000)
+                    let fee = parseInt((listing.p * config.hive_service_fee) / 10000)
+                    let total = listing.p - royalties - fee
+                    console.log(total)
+                    const Transfer = ['transfer',
+                        {
+                            from: config.msaccount,
+                            to: listing.o,
+                            amount: parseFloat(total/1000).toFixed(3) + ` ${listing.h}`,
+                            memo: `${item} sold to ${json.from}.`
+                        }]
+                    if(royalties){
+                        DEX.buyDluxFromDex(royalties, listing.h, json.block_num, `roy_${json.transaction_id}`, `n:${set.n}`)
+                        .then(empty=>{
+                            DEX.buyDluxFromDex(fee, listing.h, json.block_num, `fee_${json.transaction_id}`, `rn`)
+                            .then(emp=>{
+                                finish(set, json, listing, uid, item, Transfer, nft, pc)
+                            })
+                        })
+                    } else {
+                        DEX.buyDluxFromDex(fee, listing.h, json.block_num, `fee_${json.transaction_id}`, `rn`)
+                        .then(emp=>{
+                            finish(set, json, listing, uid, item, Transfer, nft, pc)
+                        })
+                    }
+                    function finish(set, json, listing, uid, item, Transfer, nft, promise){
+                        var ops = []
+                        if(set != 'Qm') set.u = NFT.move(uid, json.from, set.u)//update set
+                        else set.u = json.from
+                        ops.push({ type: 'put', path: ['nfts', json.from, item], data: nft }) //update nft
+                        const msg = `Sell of ${listing.o}'s ${item} finalized for ${json.amount} to ${json.from}`
+                        ops.push({ type: 'put', path: ['feed', `${json.block_num}:vop_${json.transaction_id}`], data: msg })
+                        ops.push({ type: 'put', path: ['msa', `${json.block_num}:vop_${json.transaction_id}`], data: stringify(Transfer) })
+                        if(config.hookurl)postToDiscord(msg, `${json.block_num}:vop_${json.transaction_id}`)
+                        if (set != 'Qm') ops.push({ type: 'put', path: ['sets', set.n], data: set }) //update set
+                        else ops.push({ type: 'put', path: ['sets', `Qm${uid}`], data: set })
+                        ops.push({ type: 'del', path: ['ls', item] })
+                        store.batch(ops, promise)
+                    }
                 } else {
                     const transfer = ['transfer',{ 
                                 to: json.from,
@@ -484,6 +532,7 @@ exports.transfer = (json, pc) => {
                 type: 'LIMIT'
             },
                 path = '',
+                waiting = Promise.resolve(''),
                 contract = ''
             try {order = JSON.parse(json.memo)} catch (e) {}
             if (!order.rate) {
@@ -516,10 +565,10 @@ exports.transfer = (json, pc) => {
                         const price = parseFloat(dex.sellBook.split('_')[0])
                         let item = ''
                         if(price)item = dex.sellBook.split('_')[1].split(',')[0]
-                        console.log(price, item)
+                        console.log(price, item, order)
                         if (item && (order.pair == 'hbd' || (order.pair == 'hive' && (price <= stats.icoPrice/1000))) && ( order.type == 'MARKET' || (order.type == 'LIMIT' && order.rate >= price))) {
                             var next = dex.sellOrders[`${price.toFixed(6)}:${item}`]
-                            console.log(next)
+                            console.log({next})
                             if (next[order.pair] <= remaining){
                                 filled += next.amount - next.fee
                                 bal += next.amount - next.fee //update the balance
@@ -661,20 +710,26 @@ exports.transfer = (json, pc) => {
                     if(remaining == order.amount){
                         msg = `@${json.from} set a buy order at ${contrate.rate}.`
                         
-                    } else {
+                    } else if (json.from != 'rn') {
                         msg = `@${json.from} | order recieved.`
-                        add('rn', fee)
+                        waiting = add('rn', fee)
+                    } else {
+                        console.log({fee})
+                        msg = `@${json.from} | order recieved.`
+                        bal += fee
                     }
                     if (config.hookurl || config.status) postToDiscord(msg, `${json.block_num}:${json.transaction_id}`)
                     ops.push({type: 'put', path: ['balances', json.from], data: bal})
                     ops.push({type: 'put', path: ['feed', `${json.block_num}:${json.transaction_id}.${i++}`], data: msg})
                     if(Object.keys(his).length)ops.push({type: 'put', path: ['dex', order.pair, 'his'], data: his})
                     if(!path){
-                        ops.push({type: 'put', path: ['dex', order.pair], data: dex})
+                        Promise.all([waiting]).then(empty=>{
+                            ops.push({type: 'put', path: ['dex', order.pair], data: dex})
                         if (process.env.npm_lifecycle_event == 'test') pc[2] = ops
                         store.batch(ops, pc) 
+                        })
                     } else {
-                        Promise.all([path]).then(expPath => {
+                        Promise.all([path,waiting]).then(expPath => {
                             contract.expire_path = expPath[0]
                             ops.push({type: 'put', path: ['contracts', json.from , contract.txid], data: contract})
                             if(dex.buyOrders){
@@ -904,71 +959,6 @@ function postVerify(str, from, loc){
         }
     })
 }
-
-const DEX = {
-    insert : function ( item, price, string, type) {
-        let price_location = string.indexOf(price)
-        if (price_location === -1) {
-            let prices = string.split(',')
-            if (string !== ''){
-                for (var i = 0; i < prices.length; i++) {
-                    if(type != 'buy'){
-                        if (parseFloat(prices[i].split('_')[0]) > parseFloat(price)) {
-                            prices.splice(i, 0, price + '_' + item )
-                            return prices.join(',')
-                        }
-                    } else {
-                        if (parseFloat(prices[i].split('_')[0]) < parseFloat(price)) {
-                            prices.splice(i, 0, price + '_' + item )
-                            return prices.join(',')
-                        }
-                    }
-                }
-                return string + ',' + price + '_' + item
-            } else {
-                return price + '_' + item
-            }
-        } else {
-            let insert_location = string.indexOf(',', price_location)
-            if (insert_location === -1) {
-                return string + '_' + item
-            } else {
-                return string.substring(0, insert_location) + '_' + item + string.substring(insert_location)
-            }
-        }
-    },
-    remove : function ( item, string) {
-        if (string.indexOf(item + '_') > -1) {
-            return string.replace(`${item}_`, '')
-        } else {
-            let item_location = string.indexOf('_' + item)
-            let lowerThan = string.substring(0, item_location)
-            let greaterThan = string.substring(item_location).replace(`_${item}`, '')
-            let prices = lowerThan.split(',')
-            if(prices[prices.length - 1].split('_').length >= 2){
-                return string.replace(`_${item}`, '')
-            } else {
-                prices.pop()
-                let str = prices.join(',') + greaterThan
-                if (str.substr(0,1) == ',') return str.substr(1)
-                else return string
-            }
-        }
-    },
-    buyDluxFromDex : (amount, type, num, txid, to) =>{
-        return new Promise((resolve, reject) => {
-            transfer({
-                from: to,
-                to: config.msaccount,
-                amount: `${parseFloat(amount/1000).toFixed(3)} ${type}`,
-                memo: '',
-                block_num: num,
-                transaction_id: txid
-            }, [resolve, reject, 'AutoBuy'])
-        })
-    }
-}
-exports.DEX = DEX
 
 const release = (from, txid, bn, tx_id) => {
     return new Promise((resolve, reject) => {

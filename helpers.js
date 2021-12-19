@@ -3,7 +3,6 @@ const { renderNFTtoDiscord, postToDiscord } = require('./discord')
 const { add, addMT, burn, chronAssign, hashThis } = require('./lil_ops')
 const config = require('./config')
 const stringify = require('json-stable-stringify');
-const { DEX } = require('./processing_routes/dex')
 exports.sortBuyArray = (array, key) => array.sort(function(a, b) {
     return b[key] - a[key];
 })
@@ -142,8 +141,8 @@ const NFT = {
                     else ops.push({ type: 'put', path: ['sets', `Qm${b.item.split(':')[1]}`], data: set })
                     ops.push({ type: 'del', path: ['chrono', delkey] })
                     ops.push({ type: 'del', path: ['ah', b.item] })
-                    if(promises.length)Promise.all(promises).then(empty=>{store.batch(ops, [resolve, reject])})
-                    else store.batch(ops, [resolve, reject])
+                    if(promises.length)Promise.all(promises).then(empty=>{store.batch(ops, [resolve, reject,'waiting'])})
+                    else store.batch(ops, [resolve, reject,'not waiting'])
                 })
                 .catch(e => { console.log(e) })
         })
@@ -155,14 +154,14 @@ const NFT = {
                     let listing = mem[0],
                         set = mem[1],
                         ops = [],
-                        promises = []
+                        promises = [],
                     // const fee = parseInt(listing.b /100); add('n', fee); listingb = listing.b - fee;
-                    nft = listing.nft
+                        nft = listing.nft
                     const last_modified = nft.s.split(',')[0]
                     nft.s.replace(last_modified, Base64.fromNumber(num)) //update last modified
                     if(listing.b){ //winner
-                        let royalties = parseInt((listing.b * set.r) / 100)
-                        let fee = parseInt((listing.b * config.hive_service_fee) / 100)
+                        let royalties = parseInt(listing.b * (set.r / 10000))
+                        let fee = parseInt(listing.b * (config.hive_service_fee / 10000))
                         let total = listing.b - royalties - fee
                         const Transfer = ['transfer',
                             {
@@ -172,15 +171,15 @@ const NFT = {
                                 memo: `${b.item} sold at auction.`
                             }]
                         if(royalties){
-                            DEX.buyDluxFromDex(royalties, listing.h, num, `${num}:roy_${delkey.split(':')[1]}`, `n:${set.n}`)
+                            DEX.buyDluxFromDex(royalties, listing.h, num, `roy_${delkey.split(':')[1]}`, `n:${set.n}`, 'royalty')
                             .then(empty=>{
-                                DEX.buyDluxFromDex(fee, listing.h, num, `${num}:fee_${delkey.split(':')[1]}`, `rn`)
+                                DEX.buyDluxFromDex(fee, listing.h, num, `fee_${delkey.split(':')[1]}`, `rn`, 'fee')
                                 .then(emp=>{
                                     finish()
                                 })
                             })
                         } else {
-                            DEX.buyDluxFromDex(fee, listing.h, num, `${num}:fee_${delkey.split(':')[1]}`, `rn`)
+                            DEX.buyDluxFromDex(fee, listing.h, num, `fee_${delkey.split(':')[1]}`, `rn`)
                             .then(emp=>{
                                 finish()
                             })
@@ -197,7 +196,7 @@ const NFT = {
                             else ops.push({ type: 'put', path: ['sets', `Qm${b.item.split(':')[1]}`], data: set })
                             ops.push({ type: 'del', path: ['chrono', delkey] })
                             ops.push({ type: 'del', path: ['ahh', b.item] })
-                            store.batch(ops, [resolve, reject])
+                            store.batch(ops, [resolve, reject,'bidders'])
                         }
                     } else { //no bidders
                         const msg = `Auction of ${listing.o}'s ${b.item} has ended with no bidders`
@@ -210,7 +209,7 @@ const NFT = {
                         else ops.push({ type: 'put', path: ['sets', `Qm${b.item.split(':')[1]}`], data: set })
                         ops.push({ type: 'del', path: ['chrono', delkey] })
                         ops.push({ type: 'del', path: ['ahh', b.item] })
-                        store.batch(ops, [resolve, reject])
+                        store.batch(ops, [resolve, reject,'no bidders'])
                     }
                 })
                 .catch(e => { console.log(e) })
@@ -504,3 +503,68 @@ function distro(payingAccount, recievingAccount, price, royalty_per, author, roy
 }
 
 exports.distro = distro
+
+const DEX = {
+    insert : function ( item, price, string, type) {
+        let price_location = string.indexOf(price)
+        if (price_location === -1) {
+            let prices = string.split(',')
+            if (string !== ''){
+                for (var i = 0; i < prices.length; i++) {
+                    if(type != 'buy'){
+                        if (parseFloat(prices[i].split('_')[0]) > parseFloat(price)) {
+                            prices.splice(i, 0, price + '_' + item )
+                            return prices.join(',')
+                        }
+                    } else {
+                        if (parseFloat(prices[i].split('_')[0]) < parseFloat(price)) {
+                            prices.splice(i, 0, price + '_' + item )
+                            return prices.join(',')
+                        }
+                    }
+                }
+                return string + ',' + price + '_' + item
+            } else {
+                return price + '_' + item
+            }
+        } else {
+            let insert_location = string.indexOf(',', price_location)
+            if (insert_location === -1) {
+                return string + '_' + item
+            } else {
+                return string.substring(0, insert_location) + '_' + item + string.substring(insert_location)
+            }
+        }
+    },
+    remove : function ( item, string) {
+        if (string.indexOf(item + '_') > -1) {
+            return string.replace(`${item}_`, '')
+        } else {
+            let item_location = string.indexOf('_' + item)
+            let lowerThan = string.substring(0, item_location)
+            let greaterThan = string.substring(item_location).replace(`_${item}`, '')
+            let prices = lowerThan.split(',')
+            if(prices[prices.length - 1].split('_').length >= 2){
+                return string.replace(`_${item}`, '')
+            } else {
+                prices.pop()
+                let str = prices.join(',') + greaterThan
+                if (str.substr(0,1) == ',') return str.substr(1)
+                else return string
+            }
+        }
+    },
+    buyDluxFromDex : (amount, type, num, txid, to, memo = '') =>{
+        return new Promise((resolve, reject) => {
+            require('./processing_routes/dex').transfer({
+                from: to,
+                to: config.msaccount,
+                amount: `${parseFloat(amount/1000).toFixed(3)} ${type}`,
+                memo,
+                block_num: num,
+                transaction_id: txid
+            }, [resolve, reject, memo])
+        })
+    }
+}
+exports.DEX = DEX

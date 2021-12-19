@@ -1,5 +1,5 @@
 const config = require('./config');
-const VERSION = 'v1.1.0b6'
+const VERSION = 'v1.1.1'
 exports.VERSION = VERSION
 exports.exit = exit;
 exports.processor = processor;
@@ -93,15 +93,15 @@ let TXID = {
 exports.TXID = TXID
 const API = require('./routes/api');
 const HR = require('./processing_routes/index')
+const { Base64, NFT, Chron } = require('./helpers');
 const { release } = require('./processing_routes/dex')
 const { enforce } = require("./enforce");
 const { tally } = require("./tally");
 const { voter } = require("./voter");
 const { report, sig_submit } = require("./report");
 const { ipfsSaveState } = require("./ipfsSaveState");
-const { dao, Distro } = require("./dao");
+const { dao } = require("./dao");
 const { recast } = require('./lil_ops')
-const { Base64, NFT, Chron } = require('./helpers');
 const hiveState = require('./processor');
 const { getPathObj, getPathNum, getPathSome } = require('./getPathObj');
 const { consolidate, sign, createAccount, updateAccount } = require('./msa')
@@ -123,7 +123,7 @@ var recents = []
     //HIVE API CODE
 
 //Start Program Options   
-//startWith('QmYDomvs9k3eKkvyCFJXSjNQPxM3HcUr5TAQeT13FsTPTz', true) //for testing and replaying 58859101
+//startWith('QmUp4MLeQxuBdHnkWFCKipaVGFb6vWtpPifxc5qh4YUYeL', true) //for testing and replaying 58859101
 dynStart(config.leader)
 
 // API defs
@@ -248,7 +248,7 @@ function startApp() {
     processor.onOperation('comment', HR.comment);
     //do things in cycles based on block time
     processor.onBlock(
-        function(num, pc, prand, bh) {
+        function (num, pc, prand, bh) {
             console.log(num)
             TXID.clean(num)
             return new Promise((resolve, reject) => {
@@ -300,89 +300,110 @@ function startApp() {
                         chrops[a[i]] = a[i]
                     }
                     var ints = 0
-                   for (var i in chrops) {
+                    let j = Object.keys(chrops)
+                    loop(0,ints,j)
+                function loop (i,ints, j){
                         ints++
-                        let delKey = chrops[i]
-                        store.getWith(['chrono', chrops[i]], {delKey, ints}, function(e, b, passed) {
-                            switch (b.op) {
-                                case 'mint':
-                                    //{op:"mint", set:json.set, for: from}
-                                    let setp = getPathObj(['sets', b.set]);
-                                    promises.push(NFT.mintOp([setp], passed.delKey, num, b, `${passed.ints}${prand}`))
-                                    break;
-                                case 'ahe':
-                                    let ahp = getPathObj(['ah', b.item]),
-                                        setahp = ''
+                        let delKey = chrops[j[i]]
+                        if(i<j.length)ChonOp(delKey, ints, prand, num).then(x=>{
+                            i++
+                            if(i<j.length)loop(i,ints,j)
+                            else every()
+                        })
+                        else every()
+                        function ChonOp (delKey, ints, prand, num){
+                            return new Promise((res,rej)=>{
+                                store.getWith(['chrono', chrops[j[i]]], {delKey, ints}, function(e, b, passed) {
+                                switch (b.op) {
+                                    case 'mint':
+                                        //{op:"mint", set:json.set, for: from}
+                                        let setp = getPathObj(['sets', b.set]);
+                                        NFT.mintOp([setp], passed.delKey, num, b, `${passed.ints}${prand}`)
+                                        .then(x=>res(x))
+                                        break;
+                                    case 'ahe':
+                                        let ahp = getPathObj(['ah', b.item]),
+                                            setahp = ''
                                         if (b.item.split(':')[0] != 'Qm') setahp = getPathObj(['sets', b.item.split(':')[0]])
                                         else setahp = getPathObj(['sets', `Qm${b.item.split(':')[1]}`])
-                                    promises.push(NFT.AHEOp([ahp, setahp], passed.delKey, num, b))
-                                    break;
-                                case 'ahhe':
-                                    let ahhp = getPathObj(['ahh', b.item]),
-                                        setahhp = ''
+                                        NFT.AHEOp([ahp, setahp], passed.delKey, num, b)
+                                        .then(x=>res(x))
+                                        break;
+                                    case 'ahhe':
+                                        let ahhp = getPathObj(['ahh', b.item]),
+                                            setahhp = ''
                                         if (b.item.split(':')[0] != 'Qm') setahhp = getPathObj(['sets', b.item.split(':')[0]])
                                         else setahhp = getPathObj(['sets', `Qm${b.item.split(':')[1]}`])
-                                    promises.push(NFT.AHHEOp([ahhp, setahhp], passed.delKey, num, b))
-                                    break;
-                                case 'ame':
-                                    let amp = getPathObj(['am', b.item]),
-                                        setamp = ''
+                                        NFT.AHHEOp([ahhp, setahhp], passed.delKey, num, b)
+                                        .then(x=>res(x))
+                                        break;
+                                    case 'ame':
+                                        let amp = getPathObj(['am', b.item]),
+                                            setamp = ''
                                         if (b.item.split(':')[0] != 'Qm') setamp = getPathObj(['sets', b.item.split(':')[0]])
                                         else setamp = getPathObj(['sets', `Qm${b.item.split(':')[1]}`])
-                                    promises.push(NFT.AMEOp([amp, setamp], passed.delKey, num, b))
-                                    break;
-                                case 'div':
-                                    let contract = getPathObj(['div', b.set]),
-                                        set = getPathObj(['sets', b.set])
-                                    promises.push(NFT.DividendOp([contract, set], passed.delKey, num, b))
-                                    break;
-                                case 'del_pend':
-                                    store.batch([{ type: 'del', path: ['chrono', passed.delKey] }, { type: 'del', path: ['pend', `${b.author}/${b.permlink}`]}], [function() {}, function() { console.log('failure') }])
-                                    break;
-                                case 'ms_send':
-                                    promises.push(recast(b.attempts, b.txid, num))
-                                    store.batch([{ type: 'del', path: ['chrono', passed.delKey] }], [function() {}, function() { console.log('failure') }])
-                                    break;
-                                case 'expire':
-                                    promises.push(release(b.from, b.txid, num))
-                                    store.batch([{ type: 'del', path: ['chrono', passed.delKey] }], [function() {}, function() { console.log('failure') }])
-                                    break;
-                                case 'check':
-                                    promises.push(enforce(b.agent, b.txid, { id: b.id, acc: b.acc }, num))
-                                    store.batch([{ type: 'del', path: ['chrono', passed.delKey] }], [function() {}, function() { console.log('failure') }])
-                                    break;
-                                case 'denyA':
-                                    promises.push(enforce(b.agent, b.txid, { id: b.id, acc: b.acc }, num))
-                                    store.batch([{ type: 'del', path: ['chrono', passed.delKey] }], [function() {}, function() { console.log('failure') }])
-                                    break;
-                                case 'denyT':
-                                    promises.push(enforce(b.agent, b.txid, { id: b.id, acc: b.acc }, num))
-                                    store.batch([{ type: 'del', path: ['chrono', passed.delKey] }], [function() {}, function() { console.log('failure') }])
-                                    break;
-                                case 'gov_down': //needs work and testing
-                                    let plb = getPathNum(['balances', b.by]),
-                                        tgovp = getPathNum(['gov', 't']),
-                                        govp = getPathNum(['gov', b.by])
-                                    promises.push(Chron.govDownOp([plb, tgovp, govp], b.by, passed.delKey, num, passed.delKey.split(':')[1], b))
-                                    break;
-                                case 'power_down': //needs work and testing
-                                    let lbp = getPathNum(['balances', b.by]),
-                                        tpowp = getPathNum(['pow', 't']),
-                                        powp = getPathNum(['pow', b.by])
-                                    promises.push(Chron.powerDownOp([lbp, tpowp, powp], b.by, passed.delKey, num, passed.delKey.split(':')[1], b))
-                                    break;
-                                case 'post_reward':
-                                    promises.push(Chron.postRewardOP(b, num, passed.delKey.split(':')[1], passed.delKey))
-                                    break;
-                                case 'post_vote':
-                                    promises.push(Chron.postVoteOP(b, passed.delKey))
-                                    break;
-                                default:
+                                        NFT.AMEOp([amp, setamp], passed.delKey, num, b)
+                                        .then(x=>res(x))
+                                        break;
+                                    case 'div':
+                                        let contract = getPathObj(['div', b.set]),
+                                            set = getPathObj(['sets', b.set])
+                                        NFT.DividendOp([contract, set], passed.delKey, num, b)
+                                        .then(x=>res(x))
+                                        break;
+                                    case 'del_pend':
+                                        store.batch([{ type: 'del', path: ['chrono', passed.delKey] }, { type: 'del', path: ['pend', `${b.author}/${b.permlink}`]}], [res, rej,'info'])
+                                        break;
+                                    case 'ms_send':
+                                        recast(b.attempts, b.txid, num)
+                                        store.batch([{ type: 'del', path: ['chrono', passed.delKey] }], [res, rej,'info'])
+                                        break;
+                                    case 'expire':
+                                        release(b.from, b.txid, num)
+                                        store.batch([{ type: 'del', path: ['chrono', passed.delKey] }], [res, rej,'info'])
+                                        break;
+                                    case 'check':
+                                        enforce(b.agent, b.txid, { id: b.id, acc: b.acc }, num)
+                                        store.batch([{ type: 'del', path: ['chrono', passed.delKey] }], [res, rej,'info'])
+                                        break;
+                                    case 'denyA':
+                                        enforce(b.agent, b.txid, { id: b.id, acc: b.acc }, num)
+                                        store.batch([{ type: 'del', path: ['chrono', passed.delKey] }], [res, rej,'info'])
+                                        break;
+                                    case 'denyT':
+                                        enforce(b.agent, b.txid, { id: b.id, acc: b.acc }, num)
+                                        store.batch([{ type: 'del', path: ['chrono', passed.delKey] }], [res, rej,'info'])
+                                        break;
+                                    case 'gov_down': //needs work and testing
+                                        let plb = getPathNum(['balances', b.by]),
+                                            tgovp = getPathNum(['gov', 't']),
+                                            govp = getPathNum(['gov', b.by])
+                                        Chron.govDownOp([plb, tgovp, govp], b.by, passed.delKey, num, passed.delKey.split(':')[1], b)
+                                        .then(x=>res(x))
+                                        break;
+                                    case 'power_down': //needs work and testing
+                                        let lbp = getPathNum(['balances', b.by]),
+                                            tpowp = getPathNum(['pow', 't']),
+                                            powp = getPathNum(['pow', b.by])
+                                        Chron.powerDownOp([lbp, tpowp, powp], b.by, passed.delKey, num, passed.delKey.split(':')[1], b)
+                                        .then(x=>res(x))
+                                        break;
+                                    case 'post_reward':
+                                        Chron.postRewardOP(b, num, passed.delKey.split(':')[1], passed.delKey)
+                                        .then(x=>res(x))
+                                        break;
+                                    case 'post_vote':
+                                        Chron.postVoteOP(b, passed.delKey)
+                                        .then(x=>res(x))
+                                        break;
+                                    default:
 
-                            }
-
-                        })
-                    }
+                                }
+                            })
+                            })
+                        }
+                }
+                function every(){
                     if (num % 100 === 0 && processor.isStreaming()) {
                         client.database.getDynamicGlobalProperties()
                             .then(function(result) {
@@ -407,15 +428,13 @@ function startApp() {
                     if ((num - 20003) % 30240 === 0) { //time for daily magic
                         promises.push(dao(num))
                     }
-                    if ((num - 20002) % 30240 === 0) { //distribute royalties if any
-                        promises.push(Distro(num))
-                    }
                     if (num % 100 === 0) {
                         promises.push(tally(num, plasma, processor.isStreaming()));
                     }
                     if ((num - 2) % 3000 === 0) {
                         promises.push(voter());
                     }
+                }
                     if (num % 100 === 1) {
                         store.get([], function(err, obj) {
                             const blockState = Buffer.from(stringify([num, obj]))
@@ -556,7 +575,7 @@ function cycleAPI() {
             break;
         }
     }
-    if (c == config.clients.length - 1) {
+    if (c == config.clients.length - 2) {
         c = -1
     }
     config.clientURL = config.clients[c + 1]
@@ -619,8 +638,6 @@ function startWith(hash, second) {
                         if (!e && (second || data[0] > API.RAM.head - 325)) {
                             if (hash) {
                                 var cleanState = data[1]
-                                cleanState.div.hf.e = 232
-                                cleanState.div.hf.l = 232
                                 store.put([], cleanState, function(err) {
                                     if (err) {
                                         console.log('errr',err)
