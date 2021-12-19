@@ -1,5 +1,5 @@
 const config = require('./config');
-const VERSION = 'v1.1.2'
+const VERSION = 'v1.1.2r1'
 exports.VERSION = VERSION
 exports.exit = exit;
 exports.processor = processor;
@@ -123,8 +123,8 @@ var recents = []
     //HIVE API CODE
 
 //Start Program Options   
-//startWith('QmUp4MLeQxuBdHnkWFCKipaVGFb6vWtpPifxc5qh4YUYeL', true) //for testing and replaying 58859101
-dynStart(config.leader)
+startWith('QmaBifqRWdYYkG4VGmyWxYBXioh6DYtoaRsxMfVAVn5WqW', true) //for testing and replaying 58859101
+//dynStart(config.leader)
 
 // API defs
 api.use(API.https_redirect);
