@@ -2,7 +2,7 @@ const config = require('./config');
 const { getPathObj, getPathNum } = require("./getPathObj");
 const { store } = require("./index");
 const { isEmpty, addMT } = require('./lil_ops')
-const { sortBuyArray, distro } = require('./helpers')
+const { sortBuyArray } = require('./helpers');
 
 //the daily post, the inflation point for tokennomics
 function dao(num) {
@@ -313,6 +313,21 @@ function dao(num) {
                                     dex.hbd.days = {};
                                 dex.hbd.days[num] = hib;
                             }
+                            let liqt = parseInt((bal.rm/365)*(stats.liq_reward/100))
+                            if (liqt > 0){
+                                let liqa = 0
+                                for (var acc in dex.liq){
+                                    liqa += parseInt(dex.liq[acc])
+                                }
+                                for (var acc in dex.liq){
+                                    thisd = parseInt(liqt*(dex.liq[acc]/liqa))
+                                    if(!bal[acc])bal[acc] = 0
+                                    bal[acc] += thisd
+                                    bal.rm -= thisd
+                                }
+                            }
+                            delete dex.liq
+                            daops.push({type: 'del', path: ['dex', 'liq']})
                             post = post + `*****\n### DEX Report\n#### Prices:\n* ${parseFloat(dex.hive.tick).toFixed(3)} HIVE per ${config.TOKEN}\n* ${parseFloat(dex.hbd.tick).toFixed(3)} HBD per ${config.TOKEN}\n#### Daily Volume:\n* ${parseFloat(vol / 1000).toFixed(3)} ${config.TOKEN}\n* ${parseFloat(vols / 1000).toFixed(3)} HIVE\n* ${parseFloat(parseInt(volhbd) / 1000).toFixed(3)} HBD\n*****\n`;
                             stats.movingWeight.dailyPool = bals.ra
                             bals.rc = bals.rc + bals.ra;
@@ -466,3 +481,32 @@ function Distro(){
 }
 
 exports.Distro = Distro;
+
+function Liquidity(){
+    return new Promise ((resolve, reject)=>{
+        let Pmarket = getPathObj(['dex'])
+        Promise.all([Pmarket]).then(mem =>{
+            let m = mem[0],
+                hiveh = parseFloat(m.hive.buyBook.split('_')[0]),
+                hbdh = parseFloat(m.hbd.buyBook.split('_')[0]),
+                awards = {}
+            if(!m.liq)m.liq = {}
+            for (var item in m.hive.buyOrders){
+                const acc = m.hive.buyOrders[item].from
+                if(!awards[acc]) awards[acc] = 0
+                awards[acc] += parseInt((parseFloat(m.hive.buyOrders[item].rate)/hiveh)*m.hive.buyOrders[item].hive)
+            }
+            for (var item in m.hbd.buyOrders){
+                const acc = m.hbd.buyOrders[item].from
+                if(!awards[acc]) awards[acc] = 0
+                awards[acc] += parseInt((parseFloat(m.hbd.buyOrders[item].rate)/hbdh)*m.hbd.buyOrders[item].hbd)
+            }
+            for(var acc in awards) {
+                if(!m.liq[acc])m.liq[acc] = 0
+                m.liq[acc] += awards[acc]
+            }
+            store.batch([{type: 'put', path: ['dex', 'liq'], data: m.liq}],[resolve, reject, 'liq_compound'])
+        })
+    })
+}
+exports.Liquidity = Liquidity;

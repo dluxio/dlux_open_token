@@ -65,39 +65,43 @@ const NFT = {
             const seed = parseInt(rand.slice(0, 12), 16)
             console.log({rand, seed})
             Promise.all(promies).then(mem => {
-                var set = mem[0]
+                var set = mem[0],
+                    nft
                 if (set.i === "0")NFT.finalizeFee(set.f)
-                switch (set.t) {
-                    case 1:
-                        const max = Base64.toNumber(set.m)
-                        const len = set.m.split('').length
-                        const min = Base64.toNumber(set.o)
-                        const total = max - min
-                        var select = seed % total
-                        var selected = Base64.fromNumber(min + select)
-                        var inserted = false
-                        if(set.u){
-                            while (!inserted) {
-                                while (selected.split('').length < len) {selected = '0' + selected}
-                                if (set.u.indexOf(`${selected}_`) == -1) {
-                                    set.u = NFT.place(selected, b.for, set.u)
-                                    inserted = true
-                                } else {
-                                    select = (select + 1) % total
-                                    selected = Base64.fromNumber(min + select)
-                                }
-                            }
+                const max = Base64.toNumber(set.m)
+                const len = set.m.split('').length
+                const min = Base64.toNumber(set.o)
+                const total = max - min
+                var select = seed % total
+                var selected = Base64.fromNumber(min + select)
+                var inserted = false
+                if(set.u){
+                    while (!inserted) {
+                        while (selected.split('').length < len) {selected = '0' + selected}
+                        if (set.u.indexOf(`${selected}_`) == -1) {
+                            set.u = NFT.place(selected, b.for, set.u)
+                            inserted = true
                         } else {
-                            while (selected.split('').length < len) {selected = '0' + selected}
-                            set.u = `${selected}_${b.for},`
+                            select = (select + 1) % total
+                            selected = Base64.fromNumber(min + select)
+                        }
+                    }
+                } else {
+                    while (selected.split('').length < len) {selected = '0' + selected}
+                    set.u = `${selected}_${b.for},`
+                }
+                switch (set.t) {
+                    case 4:
+                        nft = {
+                            s: `${Base64.fromNumber(num -1 )},,`
                         }
                     break;
                     default:
+                        nft = {
+                            s: `${Base64.fromNumber(num -1 )},`
+                        }
                 }
                 set.i = Base64.fromNumber(Base64.toNumber(set.i) + 1)
-                let nft = {
-                    s: `${Base64.fromNumber(num -1 )},`
-                }
                 let ops = []
                 ops.push({type:'put', path:['nfts', b.for, `${b.set}:${selected}`], data: nft})
                 ops.push({type:'put', path:['sets', b.set], data: set})
@@ -250,8 +254,20 @@ const NFT = {
                 .then(mem => {
                     let contract = mem[0],
                         set = mem[1],
+                        sales = mem[2],
+                        auc = mem[3],
                         ops = [],
                         promises = []
+                    for(item in sales){
+                        if(item.split(':')[0] == set.n){
+                            contract.m[sales[item].o] = 0
+                        }
+                    }
+                    for(item in auc){
+                        if(item.split(':')[0] == set.n){
+                            contract.m[auc[item].o] = 0
+                        }
+                    }
                     promises = divDistro(contract.b, set.u, contract.m, contract.s, contract.l) //balance, owners, movers, setname(for refund)
                     const msg = `Dividends of ${contract.s}'s ${contract.b? parseFloat(contract.b/Math.pow(10,config.precision)).toFixed(config.precision) : 0} ${config.TOKEN} have been distributed to ${promises.length} accounts`
                     promises.push(chronAssign(num + contract.p, {op:"div", set:contract.s}))

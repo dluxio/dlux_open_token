@@ -28,6 +28,13 @@ exports.node_add = function(json, from, active, pc) {
         if (daoRate > 2000) {
             daoRate = 2000
         }
+        var liquidity = parseInt(json.liquidity) || 0
+        if (liquidity < 0) {
+            liquidity = 100
+        }
+        if (liquidity > 100) {
+            liquidity = 100
+        }
         store.get(['markets', 'node', from], function(e, a) {
             let ops = []
             if (!e) {
@@ -50,7 +57,8 @@ exports.node_add = function(json, from, active, pc) {
                             escrows: 0,
                             lastGood: 0,
                             report: {},
-                            escrow
+                            escrow,
+                            liquidity
                         }
                     }]
                 } else {
@@ -60,6 +68,7 @@ exports.node_add = function(json, from, active, pc) {
                     b.escrow = escrow
                     b.marketingRate = daoRate
                     b.mirror = mirror
+                    b.liquidity = liquidity
                     ops = [{ type: 'put', path: ['markets', 'node', from], data: b }]
                 }
                 const msg = `@${from}| has bid the hive-state node ${json.domain} at ${json.bidRate}`

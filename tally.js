@@ -96,17 +96,12 @@ exports.tally = (num, plasma, isStreaming) => {
                         stats.lastIBlock = num - 100
                         for (node in tally.agreements.hashes) {
                             if (tally.agreements.hashes[node] == consensus) {
-                                if (num < 50500000) {
-                                    new_queue[node] = {
-                                        g: rgov[node] || 0,
-                                        api: nodes[node].domain
-                                    }
-                                } else {
-                                    new_queue[node] = {
-                                        g: rgov[node] || 0,
-                                        api: nodes[node].domain,
-                                    }
+                                new_queue[node] = {
+                                    g: rgov[node] || 0,
+                                    api: nodes[node].domain,
+                                    l: nodes[node].liquidity || 100
                                 }
+                                
                             }
                         }
                         let counting_array = []
@@ -150,9 +145,16 @@ exports.tally = (num, plasma, isStreaming) => {
                             stats.gov_threshhold = "FULL"
                         }
                         let collateral = []
+                        let liq_rewards = []
                         for (node in still_running) {
                             collateral.push(still_running[node].t)
+                            liq_rewards.push(still_running[node].l || 100)
                         }
+                        let liq_rewards_sum = 0
+                        for (var i = 0; i < liq_rewards.length; i++) {
+                            liq_rewards_sum += liq_rewards[i]
+                        }
+                        stats.liq_reward = liq_rewards_sum / liq_rewards.length
                         let MultiSigCollateral = 0
                         for (i = 0; i < collateral.length; i++) {
                             MultiSigCollateral += collateral[i]

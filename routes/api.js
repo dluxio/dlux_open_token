@@ -806,6 +806,7 @@ exports.nfts = (req, res, next) => {
             const set = item.split(':')[0]
             result.push({
                 uid: item.split(':')[1],
+                info: mem[0][item].s,
                 set,
                 script: mem[1][set].s,
                 type: mem[1][set].t,
@@ -870,6 +871,8 @@ exports.sets = (req, res, next) => {
                 name_long: mem[0][set].nl,
                 minted: mem[0][set].i,
                 max: Base64.toNumber(mem[0][set].j),
+                max_exe_length: mem[0][set].x || 0,
+                max_opt_length: mem[0][set].y || 0,
                 total_div: {
                     amount: mem[1][set]?.e || 0,
                     precision: config.precision,
@@ -1350,6 +1353,8 @@ exports.set = (req, res, next) => {
                 name_long: mem[0].nl,
                 minted: Base64.toNumber(mem[0].i),
                 max: Base64.toNumber(mem[0].j),
+                max_opt_length: mem[0].y || 0,
+                max_exe_length: mem[0].x || 0,
                 total_div: {
                     amount: mem[1][set]?.e || 0,
                     precision: config.precision,
@@ -1408,7 +1413,8 @@ exports.item = (req, res, next) => {
                         uid: itemname,
                         set: setname,
                         last_modified: Base64.toNumber(obj.s.split(',')[0]),
-                        string: obj.s || '',
+                        info: obj.s || '',
+                        type: mem[0].t,
                         owner,
                         lien: obj.l || 'No Lien',
                     },

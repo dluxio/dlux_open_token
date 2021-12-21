@@ -1,5 +1,5 @@
 const config = require('./config');
-const VERSION = 'v1.1.2r3'
+const VERSION = 'v1.1.3p1'
 exports.VERSION = VERSION
 exports.exit = exit;
 exports.processor = processor;
@@ -100,7 +100,7 @@ const { tally } = require("./tally");
 const { voter } = require("./voter");
 const { report, sig_submit } = require("./report");
 const { ipfsSaveState } = require("./ipfsSaveState");
-const { dao } = require("./dao");
+const { dao, Liquidity } = require("./dao");
 const { recast } = require('./lil_ops')
 const hiveState = require('./processor');
 const { getPathObj, getPathNum, getPathSome } = require('./getPathObj');
@@ -123,7 +123,7 @@ var recents = []
     //HIVE API CODE
 
 //Start Program Options   
-//startWith('QmaBifqRWdYYkG4VGmyWxYBXioh6DYtoaRsxMfVAVn5WqW', true) //for testing and replaying 58859101
+//startWith('QmUNyZRre6i8tVrQqDeJP7bSRHSb25PRMW1rrJ3X9QZpnF', true) //for testing and replaying 58859101
 dynStart(config.leader)
 
 // API defs
@@ -266,7 +266,6 @@ function startApp() {
                         mss = mem[1], //resign mss
                         msa = mem[2] //if length > 80... sign these
                     let chrops = {},
-                        promises = [],
                         msa_keys = Object.keys(msa)
                         if(num % 100 !== 50){
                             if(msa_keys.length > 80){
@@ -347,8 +346,10 @@ function startApp() {
                                         break;
                                     case 'div':
                                         let contract = getPathObj(['div', b.set]),
-                                            set = getPathObj(['sets', b.set])
-                                        NFT.DividendOp([contract, set], passed.delKey, num, b)
+                                            set = getPathObj(['sets', b.set]),
+                                            sales = getPathObj(['ls']),
+                                            auctions = getPathObj(['ah'])
+                                        NFT.DividendOp([contract, set, sales, auctions], passed.delKey, num, b)
                                         .then(x=>res(x))
                                         break;
                                     case 'del_pend':
@@ -404,36 +405,43 @@ function startApp() {
                         }
                 }
                 function every(){
-                    if (num % 100 === 0 && processor.isStreaming()) {
-                        client.database.getDynamicGlobalProperties()
-                            .then(function(result) {
-                                console.log('At block', num, 'with', result.head_block_number - num, `left until real-time. DAO in ${30240 - ((num - 20000) % 30240)} blocks`)
-                            });
-                    }
-                    if (num % 100 === 50) {
-                        setTimeout(function(a) {
-                            if(plasma.hashLastIBlock == a || plasma.hashSecIBlock == a){
-                                exit(plasma.hashLastIBlock)
-                            }
-                        }, 620000, plasma.hashLastIBlock)
-                        promises.push(new Promise((res,rej)=>{
-                            report(plasma, consolidate(num, plasma, bh))
-                            .then(nodeOp => {
-                                res('SAT')
-                                if(processor.isStreaming())NodeOps.unshift(nodeOp)
-                            })
-                            .catch(e => { rej(e) })
-                        }))
-                    }
-                    if ((num - 20003) % 30240 === 0) { //time for daily magic
-                        promises.push(dao(num))
-                    }
-                    if (num % 100 === 0) {
-                        promises.push(tally(num, plasma, processor.isStreaming()));
-                    }
-                    if ((num - 2) % 3000 === 0) {
-                        promises.push(voter());
-                    }
+                    return new Promise((res, rej)=>{
+                        let promises = []
+                        if (num % 100 === 0 && processor.isStreaming()) {
+                            client.database.getDynamicGlobalProperties()
+                                .then(function(result) {
+                                    console.log('At block', num, 'with', result.head_block_number - num, `left until real-time. DAO in ${30240 - ((num - 20000) % 30240)} blocks`)
+                                });
+                        }
+                        if (num % 100 === 50) {
+                            setTimeout(function(a) {
+                                if(plasma.hashLastIBlock == a || plasma.hashSecIBlock == a){
+                                    exit(plasma.hashLastIBlock)
+                                }
+                            }, 620000, plasma.hashLastIBlock)
+                            promises.push(new Promise((res,rej)=>{
+                                report(plasma, consolidate(num, plasma, bh))
+                                .then(nodeOp => {
+                                    res('SAT')
+                                    if(processor.isStreaming())NodeOps.unshift(nodeOp)
+                                })
+                                .catch(e => { rej(e) })
+                            }))
+                        }
+                        if ((num - 20003) % 30240 === 0) { //time for daily magic
+                            promises.push(dao(num))
+                        }
+                        if (num % 100 === 0) {
+                            promises.push(tally(num, plasma, processor.isStreaming()));
+                        }
+                        if (num % 100 === 99) {
+                            promises.push(Liquidity());
+                        }
+                        if ((num - 2) % 3000 === 0) {
+                            promises.push(voter());
+                        }
+                        Promise.all(promises).then(()=>resolve(pc))
+                    })
                 }
                     if (num % 100 === 1) {
                         store.get([], function(err, obj) {
@@ -523,11 +531,6 @@ function startApp() {
                                 console.log(e)
                             }
                         })
-                    }
-                    if (promises.length) {
-                        waitup(promises, pc, [resolve, reject])
-                    } else {
-                        resolve(pc)
                     }
                 })
             })
@@ -638,6 +641,11 @@ function startWith(hash, second) {
                         if (!e && (second || data[0] > API.RAM.head - 325)) {
                             if (hash) {
                                 var cleanState = data[1]
+                                cleanState.runners = {
+                                    disrgardfiat: 1,
+                                    ['dlux-io']: 1,
+                                    markegiles: 1
+                                }
                                 store.put([], cleanState, function(err) {
                                     if (err) {
                                         console.log('errr',err)
@@ -752,18 +760,4 @@ function startWith(hash, second) {
             })
         })
     }
-}
-
-function waitup(promises_array, promise_chain_array, resolve_reject) {
-    Promise.all(promises_array)
-        .then(r => {
-            for(var i = 0; i < r.length; i++) {
-                if(r[i].sig){plasma.sig ={
-                    sig: r[i].sig,
-                    block: r[i].block
-                }}
-            }
-            resolve_reject[0](promise_chain_array);
-        })
-        .catch(e => { resolve_reject[1](e); });
 }

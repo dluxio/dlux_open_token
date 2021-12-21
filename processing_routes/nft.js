@@ -248,14 +248,19 @@ if (active && (from == 'disregardfiat' || from == 'hivefolks')){
     Promise.all([statsp, balp, setp])
     .then(mem => {
         switch (json.type){
-            case 3:
+            case 4: // executable and additional option
                 if(Object.keys(mem[2]).length || json.name === 'Qm'){ //set exists?
                     console.log('set exists')
+                    pc[0](pc[2])
+                } else if(typeof json.exe_size == 'number' && typeof json.opt_size == 'number'){
+                    console.log('Bad Json Options')
                     pc[0](pc[2])
                 } else {
                     byte_count = 39 // average account bytes x2 plus formatting
                     const name_counter = json.name.split('')
                     byte_count += name_counter.length
+                    byte_count += json.exe_size + 1
+                    byte_count += json.opt_size + 1
                     const start_num = Base64.toNumber(json.start)
                     const end_num = Base64.toNumber(json.end)
                     var total_num = parseInt(json.total) || (end_num - start_num + 1)
@@ -264,7 +269,7 @@ if (active && (from == 'disregardfiat' || from == 'hivefolks')){
                     byte_count += id_counter.length * 2
                     if(total_num){ //checks for error in set size
                         const byte_cost = mem[0].nft_byte_cost
-                        var bond = json.bond || 0
+                        var bond = parseInt(json.bond) || 0
                         if(typeof bond !== 'number') bond = 0
                         const fee = (byte_cost * byte_count * total_num) + mem[0].nft_fee_1 + (total_num * bond)
                         if(json.max_fee >= fee && mem[1][from] >= fee){
@@ -272,31 +277,18 @@ if (active && (from == 'disregardfiat' || from == 'hivefolks')){
                                 "a":from, //the account that pays the set fee, --23 bytes
                                 "s":json.script, //build app hash --53bytes
                                 "i":"0", //issued counter for IDs -6bytes
-                                "j":Base64.fromNumber(total_num),
                                 "m":Base64.fromNumber(end_num), //max issue -6-10bytes
                                 "o":Base64.fromNumber(start_num), //start id -10-16bytes
                                 "n":json.name,
                                 "nl":json.long_name || json.name,
                                 "r":json.royalty || 0, 
-                                "t":1, // type
+                                "t":4, // type
+                                "x":json.exe_size, //executable size
+                                "y":json.opt_size, //option size
                                 "e":json.handling, //encoding
                                 "p":json.permlink, //link
                                 "b":bond, //burn value
                                 "f":fee - (total_num * bond) //fee
-                            }
-                            let pairs = json.ra.split(',')
-                                let total = 0,
-                                    failed = false
-                            if (json.ra){ //string verification
-                                for (let i = 0; i < pairs.length; i++){
-                                    total += parseInt(pairs[i].split('_')[1])
-                                    if(!mem[1][pairs[i].split('_')[0]])failed = true
-                                }
-                                if(!failed && total === 10000){
-                                    set.ra = json.ra
-                                } else {
-                                    set.build_message = 'invalid RA string'
-                                }
                             }
                             const ops = []
                             ops.push({type:'put', path:['balances', from], data: mem[1][from] - fee})
@@ -307,6 +299,7 @@ if (active && (from == 'disregardfiat' || from == 'hivefolks')){
                             ops.push({ type: 'put', path: ['feed', `${json.block_num}:${json.transaction_id}`], data: msg });
                             store.batch(ops, pc)
                         } else {
+                            console.log({byte_cost, byte_count, total_num, fee})
                             let msg = `Cost ${parseFloat(fee/1000).toFixed(3)}. Exceeded Max Fee of(${parseFloat(json.max_fee/1000).toFixed(3)})`
                             if (config.hookurl || config.status) postToDiscord(msg, `${json.block_num}:${json.transaction_id}`)
                             pc[0](pc[2])
@@ -317,6 +310,126 @@ if (active && (from == 'disregardfiat' || from == 'hivefolks')){
                     }
                 }
                 break;
+            case 3: //additional option
+                if(Object.keys(mem[2]).length || json.name === 'Qm'){ //set exists?
+                    console.log('set exists')
+                    pc[0](pc[2])
+                } else if(typeof json.opt_size == 'number'){
+                    console.log('Bad Json Options')
+                    pc[0](pc[2])
+                } else {
+                    byte_count = 39 // average account bytes x2 plus formatting
+                    const name_counter = json.name.split('')
+                    byte_count += name_counter.length
+                    byte_count += json.opt_size + 1
+                    const start_num = Base64.toNumber(json.start)
+                    const end_num = Base64.toNumber(json.end)
+                    var total_num = parseInt(json.total) || (end_num - start_num + 1)
+                    if (json.total && json.total > (end_num - start_num + 1)){total_num = (end_num - start_num + 1)}
+                    const id_counter = json.end.split('')
+                    byte_count += id_counter.length * 2
+                    if(total_num){ //checks for error in set size
+                        const byte_cost = mem[0].nft_byte_cost
+                        var bond = parseInt(json.bond) || 0
+                        if(typeof bond !== 'number') bond = 0
+                        const fee = (byte_cost * byte_count * total_num) + mem[0].nft_fee_1 + (total_num * bond)
+                        if(json.max_fee >= fee && mem[1][from] >= fee){
+                            let set = { //5 plus set name bytes
+                                "a":from, //the account that pays the set fee, --23 bytes
+                                "s":json.script, //build app hash --53bytes
+                                "i":"0", //issued counter for IDs -6bytes
+                                "m":Base64.fromNumber(end_num), //max issue -6-10bytes
+                                "o":Base64.fromNumber(start_num), //start id -10-16bytes
+                                "n":json.name,
+                                "nl":json.long_name || json.name,
+                                "r":json.royalty || 0, 
+                                "t":3, // type
+                                "e":json.handling, //encoding
+                                "y":json.opt_size, //option size
+                                "p":json.permlink, //link
+                                "b":bond, //burn value
+                                "f":fee - (total_num * bond) //fee
+                            }
+                            const ops = []
+                            ops.push({type:'put', path:['balances', from], data: mem[1][from] - fee})
+                            ops.push({type:'put', path:['sets', json.name], data: set})
+                            ops.push({type:'put', path:['rnfts', json.name, from], data: total_num})
+                            let msg = `@${from} defined ${json.name} NFT set. ${parseFloat(fee/1000).toFixed(3)} ${config.TOKEN} paid`
+                            if (config.hookurl || config.status) postToDiscord(msg, `${json.block_num}:${json.transaction_id}`)
+                            ops.push({ type: 'put', path: ['feed', `${json.block_num}:${json.transaction_id}`], data: msg });
+                            store.batch(ops, pc)
+                        } else {
+                            console.log({byte_cost, byte_count, total_num, fee})
+                            let msg = `Cost ${parseFloat(fee/1000).toFixed(3)}. Exceeded Max Fee of(${parseFloat(json.max_fee/1000).toFixed(3)})`
+                            if (config.hookurl || config.status) postToDiscord(msg, `${json.block_num}:${json.transaction_id}`)
+                            pc[0](pc[2])
+                        }
+                    } else {
+                        console.log('set size 0')
+                        pc[0](pc[2])
+                    }
+                }
+                break;
+            case 2: //executable option
+                if(Object.keys(mem[2]).length || json.name === 'Qm'){ //set exists?
+                    console.log('set exists')
+                    pc[0](pc[2])
+                } else if(typeof json.exe_size == 'number'){
+                    console.log('Bad Json Options')
+                    pc[0](pc[2])
+                } else {
+                    byte_count = 39 // average account bytes x2 plus formatting
+                    const name_counter = json.name.split('')
+                    byte_count += name_counter.length
+                    byte_count += json.exe_size + 1
+                    const start_num = Base64.toNumber(json.start)
+                    const end_num = Base64.toNumber(json.end)
+                    var total_num = parseInt(json.total) || (end_num - start_num + 1)
+                    if (json.total && json.total > (end_num - start_num + 1)){total_num = (end_num - start_num + 1)}
+                    const id_counter = json.end.split('')
+                    byte_count += id_counter.length * 2
+                    if(total_num){ //checks for error in set size
+                        const byte_cost = mem[0].nft_byte_cost
+                        var bond = parseInt(json.bond) || 0
+                        if(typeof bond !== 'number') bond = 0
+                        const fee = (byte_cost * byte_count * total_num) + mem[0].nft_fee_1 + (total_num * bond)
+                        if(json.max_fee >= fee && mem[1][from] >= fee){
+                            let set = { //5 plus set name bytes
+                                "a":from, //the account that pays the set fee, --23 bytes
+                                "s":json.script, //build app hash --53bytes
+                                "i":"0", //issued counter for IDs -6bytes
+                                "m":Base64.fromNumber(end_num), //max issue -6-10bytes
+                                "o":Base64.fromNumber(start_num), //start id -10-16bytes
+                                "n":json.name,
+                                "nl":json.long_name || json.name,
+                                "r":json.royalty || 0, 
+                                "t":2, // type
+                                "e":json.handling, //encoding
+                                "x":json.exe_size, //executable size
+                                "p":json.permlink, //link
+                                "b":bond, //burn value
+                                "f":fee - (total_num * bond) //fee
+                            }
+                            const ops = []
+                            ops.push({type:'put', path:['balances', from], data: mem[1][from] - fee})
+                            ops.push({type:'put', path:['sets', json.name], data: set})
+                            ops.push({type:'put', path:['rnfts', json.name, from], data: total_num})
+                            let msg = `@${from} defined ${json.name} NFT set. ${parseFloat(fee/1000).toFixed(3)} ${config.TOKEN} paid`
+                            if (config.hookurl || config.status) postToDiscord(msg, `${json.block_num}:${json.transaction_id}`)
+                            ops.push({ type: 'put', path: ['feed', `${json.block_num}:${json.transaction_id}`], data: msg });
+                            store.batch(ops, pc)
+                        } else {
+                            console.log({byte_cost, byte_count, total_num, fee})
+                            let msg = `Cost ${parseFloat(fee/1000).toFixed(3)}. Exceeded Max Fee of(${parseFloat(json.max_fee/1000).toFixed(3)})`
+                            if (config.hookurl || config.status) postToDiscord(msg, `${json.block_num}:${json.transaction_id}`)
+                            pc[0](pc[2])
+                        }
+                    } else {
+                        console.log('set size 0')
+                        pc[0](pc[2])
+                    }
+                }
+                break;    
             case 1:
                 if(Object.keys(mem[2]).length || json.name === 'Qm'){ //set exists?
                     console.log('set exists')
@@ -343,7 +456,8 @@ if (active && (from == 'disregardfiat' || from == 'hivefolks')){
                                 "i":"0", //issued counter for IDs -6bytes
                                 "m":Base64.fromNumber(end_num), //max issue -6-10bytes
                                 "o":Base64.fromNumber(start_num), //start id -10-16bytes
-                                "n":json.name, 
+                                "n":json.name,
+                                "nl":json.long_name || json.name,
                                 "r":json.royalty || 0, 
                                 "t":1, // type
                                 "e":json.handling, //encoding
@@ -835,6 +949,66 @@ exports.nft_div = function(json, from, active, pc) {
 
         } else {
             let msg = `@${from} doesn't own ${json.set}`
+            if (config.hookurl || config.status) postToDiscord(msg, `${json.block_num}:${json.transaction_id}`)
+            pc[0](pc[2])
+        }
+    })
+    .catch(e => { console.log(e); });
+}
+
+exports.nft_update_exe = function(json, from, active, pc) {
+    let promises = [getPathObj(['sets', json.set]), getPathObj(['nfts', from, `${json.set}:${json.uid}`])]
+    Promise.all(promises)
+    .then(mem => {
+        let set = mem[0], 
+            nft = mem[1],
+            allowed = false
+        if (json.exe && !json.exe.split(',')[1] && set.t == 2 && nft.s && json.exe.length <= set.x){
+            nft.s = `${nft.s.split(',')[0]},${json.exe}`
+            allowed = true
+        } else if (json.exe && !json.exe.split(',')[1] && set.t == 4 && nft.s && json.exe.length <= set.x){
+            nft.s = `${nft.s.split(',')[0]},${json.exe},${nft.s.split(',')[2]}`
+            allowed = true
+        }
+        if (allowed && active){
+            let ops = []
+            ops.push({ type: 'put', path: ['nfts', from, `${json.set}:${json.uid}`], data: nft });
+            let msg = `@${from} modified ${json.set}:${json.uid}`
+            if (config.hookurl || config.status) postToDiscord(msg, `${json.block_num}:${json.transaction_id}`)
+            ops.push({ type: 'put', path: ['feed', `${json.block_num}:${json.transaction_id}`], data: msg });
+            store.batch(ops, pc)
+        } else {
+            let msg = `@${from} can't modify ${json.set}:${json.uid}`
+            if (config.hookurl || config.status) postToDiscord(msg, `${json.block_num}:${json.transaction_id}`)
+            pc[0](pc[2])
+        }
+    })
+    .catch(e => { console.log(e); });
+}
+
+exports.nft_update_opt = function(json, from, active, pc) {
+    let promises = [getPathObj(['sets', json.set]), getPathObj(['nfts', from, `${json.set}:${json.uid}`])]
+    Promise.all(promises)
+    .then(mem => {
+        let set = mem[0], 
+            nft = mem[1],
+            allowed = false
+        if (json.opt && !json.opt.split(',')[1] && set.t == 3 && nft.s && json.opt.length <= set.y){
+            nft.s = `${nft.s.split(',')[0]},${json.opt}`
+            allowed = true
+        } else if (json.opt && !json.opt.split(',')[1] && set.t == 4 && nft.s && json.opt.length <= set.y){
+            nft.s = `${nft.s.split(',')[0]},${nft.s.split(',')[1]},${json.opt}`
+            allowed = true
+        }
+        if (allowed && active){
+            let ops = []
+            ops.push({ type: 'put', path: ['nfts', from, `${json.set}:${json.uid}`], data: nft });
+            let msg = `@${from} modified ${json.set}:${json.uid}`
+            if (config.hookurl || config.status) postToDiscord(msg, `${json.block_num}:${json.transaction_id}`)
+            ops.push({ type: 'put', path: ['feed', `${json.block_num}:${json.transaction_id}`], data: msg });
+            store.batch(ops, pc)
+        } else {
+            let msg = `@${from} can't modify ${json.set}:${json.uid}`
             if (config.hookurl || config.status) postToDiscord(msg, `${json.block_num}:${json.transaction_id}`)
             pc[0](pc[2])
         }
