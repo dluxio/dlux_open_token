@@ -124,7 +124,7 @@ var recents = []
 
 //Start Program Options   
 //startWith('QmW7TR6owZj39JLRqmhiVC48Peb7vsnMT8Z9fzKQmgSSoL', true) //for testing and replaying 58859101
-dynStart(config.leader)
+dynStart(config.follow)
 
 // API defs
 api.use(API.https_redirect);

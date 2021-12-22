@@ -3,6 +3,7 @@ const ENV = process.env;
 
 const username = ENV.account || 'disregardfiat';
 const active = ENV.active || '';
+const follow = ENV.follow || 'disregardfiat';
 const msowner = ENV.msowner || '';
 const memoKey = ENV.memo || '';
 const hookurl = ENV.discordwebhook || '';
@@ -68,6 +69,7 @@ let config = {
     active,
     msowner,
     memoKey,
+    follow,
     NODEDOMAIN,
     hookurl,
     status,
