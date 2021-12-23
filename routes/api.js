@@ -1666,6 +1666,18 @@ exports.coincheck = (state) => {
         let check = `supply check:state:${state.stats.tokenSupply} vs check: ${supply}: ${state.stats.tokenSupply - supply}`
         if (state.stats.tokenSupply != supply) {
             info = { lbal, gov, govt, pow, powt, con, ah, am, bond, div }
+        } else {
+            info = {
+                liquid_supply: lbal - state.balances.rc - state.balances.ra - state.balances.rm - state.balances.rn - state.balances.ri,
+                locked_gov: govt,
+                locked_pow: powt,
+                in_contracts: con,
+                in_auctions: ah,
+                in_market: am,
+                in_NFTS: bond,
+                in_dividends: div
+
+            }
         }
         return {check, info, supply}
 }
