@@ -528,7 +528,7 @@ exports.transfer = (json, pc) => {
                 setname = item.split(':')[0],
                 uid = item.split(':')[1],
                 lsp = getPathObj(['ls', `${setname}:${uid}`]),
-                setp = getPathObj(['sets', set])
+                setp = getPathObj(['sets', setname])
                 amount = parseInt(parseFloat(json.amount.split(' ')[0])*1000)
                 type = json.amount.split(' ')[1]
             Promise.all([lsp, setp])

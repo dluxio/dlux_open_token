@@ -123,8 +123,8 @@ var recents = []
     //HIVE API CODE
 
 //Start Program Options   
-//startWith('QmW7TR6owZj39JLRqmhiVC48Peb7vsnMT8Z9fzKQmgSSoL', true) //for testing and replaying 58859101
-dynStart(config.follow)
+startWith('QmbFdTgWH2BCxG3DSKF7hRceLsBHpXegVDduKYiq1LA75h', true) //for testing and replaying 58859101
+//dynStart(config.follow)
 
 // API defs
 api.use(API.https_redirect);
@@ -261,6 +261,7 @@ function startApp() {
                     lte: "" + (num - 100)
                 }) //resign mss
                 let Pmsa = getPathObj(['msa'])
+                let promises = []
                 Promise.all([Pchron, Pmss, Pmsa]).then(mem => {
                     var a = mem[0],
                         mss = mem[1], //resign mss
@@ -406,7 +407,6 @@ function startApp() {
                 }
                 function every(){
                     return new Promise((res, rej)=>{
-                        let promises = []
                         if (num % 100 === 0 && processor.isStreaming()) {
                             client.database.getDynamicGlobalProperties()
                                 .then(function(result) {
