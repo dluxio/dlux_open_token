@@ -63,7 +63,7 @@ function dao(num) {
                                 dist = v[15]
                             for(var i = 0; i < dist.length;i++){
                                 if(dist[i][0].split('div:')[1]){
-                                    addMT(['div', dist[i][0].split('div:')[1], b], dist[i][1] )
+                                    addMT(['div', dist[i][0].split('div:')[1], 'b'], dist[i][1] )
                                 } else {
                                     bals[dist[i][0]] += dist[i][1]
                                 }
@@ -468,11 +468,11 @@ function Distro(){
                 accounts = set.ra.split(',')
                 out = 0
             for (var i = 0; i < accounts.length - 1; i++) {
-                t = parseInt((bal*accounts[i].split('_')[1])/100)
+                t = parseInt((bal*accounts[i].split('_')[1])/10000)
                 out += t
                 ret.push([accounts[i].split('_')[0] == 'd' ? `div:${set.n}` : accounts[i].split('_')[0], t])
             }
-            ret.push([accounts[accounts.length - 1].split('_')[0], bal - out])
+            ret.push([accounts[accounts.length - 1].split('_')[0] == 'd' ? `div:${set.n}` : accounts[i].split('_')[0], bal - out])
             return ret
         } else {
             return [[set.a, bal]]
