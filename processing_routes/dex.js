@@ -663,6 +663,7 @@ exports.transfer = (json, pc) => {
                                 ops.push({type: 'del', path: ['chrono', next.expire_path]}) //remove the chrono
                             } else if(!next) {
                                 dex.sellBook = DEX.remove(item, dex.sellBook)
+                                console.log('WHERE DID ${item} GO?')
                             } else {
                                 next[order.pair] = next[order.pair] - remaining // modify the contract
                                 const tokenAmount = parseInt(remaining / parseFloat(next.rate))

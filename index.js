@@ -1,5 +1,5 @@
 const config = require('./config');
-const VERSION = 'v1.1.3r1'
+const VERSION = 'v1.1.3r2'
 exports.VERSION = VERSION
 exports.exit = exit;
 exports.processor = processor;
@@ -123,8 +123,8 @@ var recents = []
     //HIVE API CODE
 
 //Start Program Options   
-startWith('QmdJfH3x2yAMVLojZfx25936pd1bp6h6h85aYa14VEJPeP', true) //for testing and replaying 58859101
-//dynStart(config.follow)
+//startWith('QmW7TR6owZj39JLRqmhiVC48Peb7vsnMT8Z9fzKQmgSSoL', true) //for testing and replaying 58859101
+dynStart(config.follow)
 
 // API defs
 api.use(API.https_redirect);
@@ -261,7 +261,6 @@ function startApp() {
                     lte: "" + (num - 100)
                 }) //resign mss
                 let Pmsa = getPathObj(['msa'])
-                let promises = []
                 Promise.all([Pchron, Pmss, Pmsa]).then(mem => {
                     var a = mem[0],
                         mss = mem[1], //resign mss
@@ -407,6 +406,7 @@ function startApp() {
                 }
                 function every(){
                     return new Promise((res, rej)=>{
+                        let promises = []
                         if (num % 100 === 0 && processor.isStreaming()) {
                             client.database.getDynamicGlobalProperties()
                                 .then(function(result) {
