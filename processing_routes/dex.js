@@ -633,7 +633,7 @@ exports.transfer = (json, pc) => {
                         const price = parseFloat(dex.sellBook.split('_')[0])
                         let item = ''
                         if(price)item = dex.sellBook.split('_')[1].split(',')[0]
-                        console.log(price, item, order)
+                        console.log(price, item, order,dex.sellBook )
                         if (item && (order.pair == 'hbd' || (order.pair == 'hive' && (price <= stats.icoPrice/1000))) && ( order.type == 'MARKET' || (order.type == 'LIMIT' && order.rate >= price))) {
                             var next = dex.sellOrders[`${price.toFixed(6)}:${item}`]
                             console.log({next})
