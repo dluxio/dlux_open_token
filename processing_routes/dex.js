@@ -633,11 +633,10 @@ exports.transfer = (json, pc) => {
                         const price = parseFloat(dex.sellBook.split('_')[0])
                         let item = ''
                         if(price)item = dex.sellBook.split('_')[1].split(',')[0]
-                        console.log(price, item, order,dex.sellBook )
                         if (item && (order.pair == 'hbd' || (order.pair == 'hive' && (price <= stats.icoPrice/1000))) && ( order.type == 'MARKET' || (order.type == 'LIMIT' && order.rate >= price))) {
                             var next = dex.sellOrders[`${price.toFixed(6)}:${item}`]
                             console.log({next})
-                            if (next[order.pair] <= remaining){
+                            if (next && next[order.pair] <= remaining){
                                 filled += next.amount - next.fee
                                 bal += next.amount - next.fee //update the balance
                                 fee += next.fee //add the fees
@@ -662,7 +661,8 @@ exports.transfer = (json, pc) => {
                                 ops.push({type: 'del', path: ['dex', order.pair, 'sellOrders', `${price.toFixed(6)}:${item}`]}) //remove the order
                                 ops.push({type: 'del', path: ['contracts', next.from , item]}) //remove the contract
                                 ops.push({type: 'del', path: ['chrono', next.expire_path]}) //remove the chrono
-
+                            } else if(!next) {
+                                dex.sellBook = DEX.remove(item, dex.sellBook)
                             } else {
                                 next[order.pair] = next[order.pair] - remaining // modify the contract
                                 const tokenAmount = parseInt(remaining / parseFloat(next.rate))

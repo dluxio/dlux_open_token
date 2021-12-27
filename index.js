@@ -123,7 +123,7 @@ var recents = []
     //HIVE API CODE
 
 //Start Program Options   
-startWith('QmU2LXtKfWxm7B6RgAKhAYEaiwwFZVWYt8h1B8JqqXesnt', true) //for testing and replaying 58859101
+startWith('QmQiJ9h1jWRv6rcL4jFDjr4teLXQHDjM4B127JEvVTdBiu', true) //for testing and replaying 58859101
 //dynStart(config.follow)
 
 // API defs
@@ -646,7 +646,6 @@ function startWith(hash, second) {
                                 //     ['dlux-io']: 1,
                                 //     markegiles: 1
                                 // }
-                                cleanState.dex.hive.sellBook = cleanState.dex.hive.sellBook.replace(',0.100000_DLUXQmcRQDhDJCLFLevQMtSrey4ZHdXXZ5Njs8HZvi7n74qttw', '')
                                 store.put([], cleanState, function(err) {
                                     if (err) {
                                         console.log('errr',err)
