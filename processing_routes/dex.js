@@ -1086,7 +1086,7 @@ const release = (from, txid, bn, tx_id) => {
                                     }
                                 ]
                                 ops.push({type: 'put', path: ['msa', `refund@${a.from}:${a.txid}:${bn}`], data: stringify(Transfer)})
-                                ops.push({ type: 'del', path: ['contracts', from, r.txid]});
+                                ops.push({ type: 'del', path: ['contracts', from, a.txid]});
                                 ops.push({ type: 'del', path: ['dex', 'hive', 'buyOrders', `${a.rate}:${a.txid}`] });
                                 if(tx_id && config.hookurl){postToDiscord(`${from} has canceled ${txid}`, `${bn}:${tx_id}`)}
                                 store.batch(ops, [resolve, reject]);
@@ -1114,7 +1114,7 @@ const release = (from, txid, bn, tx_id) => {
                                     }
                                 ]
                                 ops.push({type: 'put', path: ['msa', `refund@${a.from}:${a.txid}:${bn}`], data: stringify(Transfer)})
-                                ops.push({ type: 'del', path: ['contracts', from, r.txid]});
+                                ops.push({ type: 'del', path: ['contracts', from, a.txid]});
                                 ops.push({ type: 'del', path: ['dex', 'hbd', 'buyOrders', `${a.rate}:${a.txid}`] });
                                 if(tx_id && config.hookurl){postToDiscord(`${from} has canceled ${txid}`, `${bn}:${tx_id}`)}
                                 store.batch(ops, [resolve, reject]);
