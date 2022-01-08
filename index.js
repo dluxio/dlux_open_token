@@ -267,34 +267,6 @@ function startApp() {
                         msa = mem[2] //if length > 80... sign these
                     let chrops = {},
                         msa_keys = Object.keys(msa)
-                        if(num % 100 !== 50){
-                            if(msa_keys.length > 80){
-                                promises.push(new Promise((res,rej)=>{
-                                    sig_submit(consolidate(num, plasma, bh))
-                                    .then(nodeOp => {
-                                        res('SAT')
-                                        NodeOps.unshift(nodeOp)
-                                    })
-                                    .catch(e => { rej(e) })
-                                }))
-                            }
-                            for(var missed = 0; missed < mss.length; missed++){
-                                if(mss[missed].split(':').length == 1){
-                                    missed_num = mss[missed]
-                                    promises.push(new Promise((res,rej)=>{
-                                        sig_submit(sign(num, plasma, missed_num, bh))
-                                        .then(nodeOp => {
-                                            res('SAT')
-                                            if(JSON.parse(nodeOp[1][1].json).sig){
-                                                NodeOps.unshift(nodeOp)
-                                            }
-                                        })
-                                        .catch(e => { rej(e) })
-                                    })) 
-                                    break;
-                                }
-                            }
-                        }
                     for (var i in a) {
                         chrops[a[i]] = a[i]
                     }
@@ -407,6 +379,34 @@ function startApp() {
                 function every(){
                     return new Promise((res, rej)=>{
                         let promises = []
+                        if(num % 100 !== 50){
+                            if(msa_keys.length > 80){
+                                promises.push(new Promise((res,rej)=>{
+                                    sig_submit(consolidate(num, plasma, bh))
+                                    .then(nodeOp => {
+                                        res('SAT')
+                                        NodeOps.unshift(nodeOp)
+                                    })
+                                    .catch(e => { rej(e) })
+                                }))
+                            }
+                            for(var missed = 0; missed < mss.length; missed++){
+                                if(mss[missed].split(':').length == 1){
+                                    missed_num = mss[missed]
+                                    promises.push(new Promise((res,rej)=>{
+                                        sig_submit(sign(num, plasma, missed_num, bh))
+                                        .then(nodeOp => {
+                                            res('SAT')
+                                            if(JSON.parse(nodeOp[1][1].json).sig){
+                                                NodeOps.unshift(nodeOp)
+                                            }
+                                        })
+                                        .catch(e => { rej(e) })
+                                    })) 
+                                    break;
+                                }
+                            }
+                        }
                         if (num % 100 === 0 && processor.isStreaming()) {
                             client.database.getDynamicGlobalProperties()
                                 .then(function(result) {
