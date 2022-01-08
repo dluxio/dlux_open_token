@@ -399,15 +399,15 @@ exports.transfer = (json, pc) => {
                             memo: `${item} traded to ${json.from}.`
                         }]
                     if(royalties){
-                        DEX.buyDluxFromDex(royalties, type, json.block_num, `roy_${json.transaction_id}`, `n:${set.n}`)
+                        DEX.buyDluxFromDex(royalties, type, json.block_num, `roy_${json.transaction_id}`, `n:${set.n}`, json.timestamp)
                         .then(empty=>{
-                            DEX.buyDluxFromDex(fee, type, json.block_num, `fee_${json.transaction_id}`, `rn`)
+                            DEX.buyDluxFromDex(fee, type, json.block_num, `fee_${json.transaction_id}`, `rn`, json.timestamp)
                             .then(emp=>{
                                 finish(set, json, listing, uid, item, Transfer, nft, pc)
                             })
                         })
                     } else {
-                        DEX.buyDluxFromDex(fee, type, json.block_num, `fee_${json.transaction_id}`, `rn`)
+                        DEX.buyDluxFromDex(fee, type, json.block_num, `fee_${json.transaction_id}`, `rn`, json.timestamp)
                         .then(emp=>{
                             finish(set, json, listing, uid, item, Transfer, nft, pc)
                         })
@@ -553,15 +553,15 @@ exports.transfer = (json, pc) => {
                             memo: `${item} sold to ${json.from}.`
                         }]
                     if(royalties){
-                        DEX.buyDluxFromDex(royalties, listing.h, json.block_num, `roy_${json.transaction_id}`, `n:${set.n}`)
+                        DEX.buyDluxFromDex(royalties, listing.h, json.block_num, `roy_${json.transaction_id}`, `n:${set.n}`, json.timestamp)
                         .then(empty=>{
-                            DEX.buyDluxFromDex(fee, listing.h, json.block_num, `fee_${json.transaction_id}`, `rn`)
+                            DEX.buyDluxFromDex(fee, listing.h, json.block_num, `fee_${json.transaction_id}`, `rn`, json.timestamp)
                             .then(emp=>{
                                 finish(set, json, listing, uid, item, Transfer, nft, pc)
                             })
                         })
                     } else {
-                        DEX.buyDluxFromDex(fee, listing.h, json.block_num, `fee_${json.transaction_id}`, `rn`)
+                        DEX.buyDluxFromDex(fee, listing.h, json.block_num, `fee_${json.transaction_id}`, `rn`, json.timestamp)
                         .then(emp=>{
                             finish(set, json, listing, uid, item, Transfer, nft, pc)
                         })

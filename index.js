@@ -1,5 +1,5 @@
 const config = require('./config');
-const VERSION = 'v1.1.3r2'
+const VERSION = 'v1.1.3r3'
 exports.VERSION = VERSION
 exports.exit = exit;
 exports.processor = processor;
@@ -333,7 +333,7 @@ function startApp() {
                                             setahhp = ''
                                         if (b.item.split(':')[0] != 'Qm') setahhp = getPathObj(['sets', b.item.split(':')[0]])
                                         else setahhp = getPathObj(['sets', `Qm${b.item.split(':')[1]}`])
-                                        NFT.AHHEOp([ahhp, setahhp], passed.delKey, num, b)
+                                        NFT.AHHEOp([ahhp, setahhp], passed.delKey, num, b, bh.timestamp)
                                         .then(x=>res(x))
                                         break;
                                     case 'ame':

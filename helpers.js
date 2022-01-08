@@ -151,7 +151,7 @@ const NFT = {
                 .catch(e => { console.log(e) })
         })
     },
-    AHHEOp : function (promies, delkey, num, b) {
+    AHHEOp : function (promies, delkey, num, b, ts) {
         return new Promise((resolve, reject) => { //NEEDS no bids
             Promise.all(promies)
                 .then(mem => {
@@ -175,15 +175,15 @@ const NFT = {
                                 memo: `${b.item} sold at auction.`
                             }]
                         if(royalties){
-                            DEX.buyDluxFromDex(royalties, listing.h, num, `roy_${delkey.split(':')[1]}`, `n:${set.n}`, 'royalty')
+                            DEX.buyDluxFromDex(royalties, listing.h, num, `roy_${delkey.split(':')[1]}`, `n:${set.n}`, ts, 'royalty')
                             .then(empty=>{
-                                DEX.buyDluxFromDex(fee, listing.h, num, `fee_${delkey.split(':')[1]}`, `rn`, 'fee')
+                                DEX.buyDluxFromDex(fee, listing.h, num, `fee_${delkey.split(':')[1]}`, `rn`, ts, 'fee')
                                 .then(emp=>{
                                     finish()
                                 })
                             })
                         } else {
-                            DEX.buyDluxFromDex(fee, listing.h, num, `fee_${delkey.split(':')[1]}`, `rn`)
+                            DEX.buyDluxFromDex(fee, listing.h, num, `fee_${delkey.split(':')[1]}`, `rn`, ts)
                             .then(emp=>{
                                 finish()
                             })
@@ -570,7 +570,7 @@ const DEX = {
             }
         }
     },
-    buyDluxFromDex : (amount, type, num, txid, to, memo = '') =>{
+    buyDluxFromDex : (amount, type, num, txid, to, timestamp, memo = '') =>{
         return new Promise((resolve, reject) => {
             require('./processing_routes/dex').transfer({
                 from: to,
@@ -578,7 +578,8 @@ const DEX = {
                 amount: `${parseFloat(amount/1000).toFixed(3)} ${type}`,
                 memo,
                 block_num: num,
-                transaction_id: txid
+                transaction_id: txid,
+                timestamp
             }, [resolve, reject, memo])
         })
     }

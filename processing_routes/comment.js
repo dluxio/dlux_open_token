@@ -164,7 +164,7 @@ exports.comment_options = (json, pc) => {
                                 }
                             }
                     }
-                    ops.push({ type: 'put', path: ['ipfs', 'unbundled', `${json.author}:${json.permlink}`], data: pins })
+                    if(Object.keys(pins).length)ops.push({ type: 'put', path: ['ipfs', 'unbundled', `${json.author}:${json.permlink}`], data: pins })
                     if(config.pintoken){
                         //ipfsVerify(`${json.author}:${json.permlink}`, pins)
                     }
