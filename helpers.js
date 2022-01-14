@@ -258,6 +258,7 @@ const NFT = {
                         auc = mem[3],
                         ops = [],
                         promises = []
+                    if(!contract.m)contract.m = {}
                     for(item in sales){
                         if(item.split(':')[0] == set.n){
                             contract.m[sales[item].o] = 0
