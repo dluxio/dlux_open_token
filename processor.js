@@ -96,7 +96,7 @@ module.exports = function(client, steem, currentBlockNumber = 1, blockComputeSpe
                                 })
                             } else {
                                 console.log('failed at stopping')
-                                setTimeout(stopCallback, 1000);
+                                //setTimeout(stopCallback, 1000);
                                 cycleapi()
                             }
                         })
