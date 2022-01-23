@@ -54,12 +54,16 @@ exports.dex_sell = (json, from, active, pc) => {
                 i = 0,
                 path = 0,
                 contract = ''
-            while(remaining){
+            sell_loop: while(remaining){
                 let price = parseFloat(dex.buyBook.split('_')[0])
                 let item = dex.buyBook.split('_')[1].split(',')[0]
                 if(price)item = dex.buyBook.split('_')[1].split(',')[0]
                 if (item && (order.type == 'MARKET' || parseFloat(price) >= order.rate)){
                     let next = dex.buyOrders[`${price.toFixed(6)}:${item}`]
+                    if(!next){
+                        dex.buyBook = DEX.remove(item, dex.buyBook)
+                        continue sell_loop
+                    }
                     if (next.amount <= remaining){
                             filled += next.amount
                             adds.push([next.from, next.amount - next.fee])
