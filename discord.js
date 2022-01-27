@@ -25,10 +25,10 @@ exports.contentToDiscord = (author, permlink) => {
         .then(result => {
             r = result.result
             const embed = new MessageBuilder()
-                .setTitle('New DLUX content!')
-                .setAuthor(author, 'https://cdn.discordapp.com/embed/avatars/0.png', `https://www.dlux.io/@${author}`)
-                .setURL(`https://www.dlux.io/dlux/@${author}/${permlink}`)
-                .addField(r.title, (JSON.parse(r.json_metadata).description || 'View this on dlux.io'), true)
+                .setTitle(`New ${config.TOKEN} content!`)
+                .setAuthor(author, 'https://cdn.discordapp.com/embed/avatars/0.png', `https://${config.mainFE}/@${author}`)
+                .setURL(`https://${config.mainFE}/${config.tag}/@${author}/${permlink}`)
+                .addField(r.title, (JSON.parse(r.json_metadata).description || `View this on ${config.mainFE}`), true)
                 //.addField('Second field', 'this is not inline')
                 .setColor('#00b0f4')
                 //.setThumbnail('https://cdn.discordapp.com/embed/avatars/0.png')
@@ -46,14 +46,14 @@ exports.contentToDiscord = (author, permlink) => {
 exports.renderNFTtoDiscord = (script, uid, owner, set) => {
     const embed = new MessageBuilder()
                 .setTitle(`New ${set} NFT minted!`)
-                .setAuthor(owner, 'https://cdn.discordapp.com/embed/avatars/0.png', `https://www.dlux.io/@${owner}`)
-                .setURL(`https://www.dlux.io/@${owner}#inventory/`)
-                .addField(`${set}:${uid}`, 'View this on dlux.io', true)
+                .setAuthor(owner, 'https://cdn.discordapp.com/embed/avatars/0.png', `https://${config.mainFE}/@${owner}`)
+                .setURL(`https://${config.mainFE}/@${owner}#inventory/`)
+                .addField(`${set}:${uid}`, `View this on ${config.mainFE}`, true)
                 //.addField('Second field', 'this is not inline')
                 .setColor('#00b0f4')
                 //.setThumbnail('https://cdn.discordapp.com/embed/avatars/0.png')
                 //.setDescription('Oh look a description :)')
-                .setImage(`https://dluxdata.herokuapp.com/render/${script}/${uid}`)
+                .setImage(`https://${config.mainRender}/render/${script}/${uid}`)
                 //.setFooter('Hey its a footer', 'https://cdn.discordapp.com/embed/avatars/0.png')
                 .setTimestamp();
 

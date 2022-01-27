@@ -1,11 +1,11 @@
 const { onStreamingStart } = require('./onStreamingStart')
-const { send } = require('./send')
+const { send, claim } = require('./send')
 const { gov_up, gov_down } = require('./gov')
 const { power_up, power_down, power_grant } = require('./power')
 const { delegate_vesting_shares } = require('./delegate_vesting_shares')
 const { vote } = require('./vote')
 const { cert } = require('./cert')
-const { sig_submit } = require('./sig')
+const { sig_submit, account_update } = require('./sig')
 const { cjv } = require('./cjv')
 const { nomention } = require('./nomention')
 const { q4d } = require('./q4d')
@@ -76,6 +76,7 @@ module.exports = {
     cjv,
     comment,
     comment_options,
+    account_update,
     delegate_vesting_shares,
     dex_clear,
     dex_sell,
@@ -91,6 +92,7 @@ module.exports = {
     q4d,
     report,
     send,
+    claim,
     sig_submit,
     transfer,
     vote

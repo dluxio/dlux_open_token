@@ -1,6 +1,6 @@
 const fetch = require('node-fetch');
 const { Base64 } = require('./helpers');
-module.exports = function(client, steem, currentBlockNumber = 1, blockComputeSpeed = 1000, prefix = '', mode = 'latest', cycleapi) {
+module.exports = function(client, hive, currentBlockNumber = 1, blockComputeSpeed = 1000, prefix = '', mode = 'latest', cycleapi) {
     var onCustomJsonOperation = {}; // Stores the function to be run for each operation id.
     var onOperation = {};
 
@@ -52,24 +52,25 @@ module.exports = function(client, steem, currentBlockNumber = 1, blockComputeSpe
             if (currentBlockNumber >= result) {
                 callback(true);
             } else {
-                callback(false);
+                callback(result - currentBlockNumber);
             }
         })
     }
 
     function beginBlockComputing() {
-        function computeBlock() {
+        function computeBlock(behind) {
 
             var blockNum = currentBlockNumber; // Helper variable to prevent race condition
             // in getBlock()
             var vops = getVops(blockNum)
             function getBlock(bn){
                 return new Promise ((resolve, reject)=>{
-                    gb(bn, 0)
+                    if(behind)gbr(bn, behind > 100 ? 100 : behind, 0)
+                    else gb(bn, 0)
                     function gb (bln, at){
                         client.database.getBlock(bln)
                     .then((result) => {
-                        resolve(result)
+                        resolve([result])
                     })
                     .catch((err) => {
                         if (at < 3){
@@ -79,21 +80,72 @@ module.exports = function(client, steem, currentBlockNumber = 1, blockComputeSpe
                         }
                     })
                     }
+                    function gbr (bln, count, at){
+                        fetch("https://api.hive.blog", {
+                            body: `{"jsonrpc":"2.0", "method":"block_api.get_block_range", "params":{"starting_block_num": ${bln}, "count": ${count}}, "id":1}`,
+                            headers: {
+                                "Content-Type": "application/x-www-form-urlencoded"
+                            },
+                            method: "POST"
+                            })
+                    .then(res => res.json())
+                    .then((result) => {
+                        var blocks =result.result.blocks
+                        for (var i = 0; i < blocks.length; i++){
+                            const bkn = parseInt(blocks[i].block_id.slice(0, 8), 16);
+                            for (var j = 0; j < blocks[i].transactions.length; j++){
+                                blocks[i].transactions[j].block_num = bkn
+                                blocks[i].transactions[j].transaction_id = blocks[i].transaction_ids[j]
+                                blocks[i].transactions[j].transaction_num = j
+                                var ops = []
+                                for(var k = 0; k < blocks[i].transactions[j].operations.length; k++){
+                                    ops.push([blocks[i].transactions[j].operations[k].type.replace('_operation', ''), blocks[i].transactions[j].operations[k].value])
+                                }
+                                blocks[i].transactions[j].operations = ops
+                            }
+                        }
+                        resolve(blocks)
+                    })
+                    .catch((err) => {
+                        if (at < 3){
+                                gb(bn,at)
+                        } else {
+                            reject(err)
+                        }
+                    })
+                    }
                 })
             }
             getBlock(blockNum)
                 .then((result) => {
-                    processBlock(result, blockNum, vops)
+                    pl(result)
+                    function pl (range){
+                        pb(range.shift(), range.length)
+                        .then(res =>{
+                            if(res == 'NEXT'){
+                                blockNum++
+                                pl(range)
+                            }
+                        })
+                    }
+                    function pb(bl, remaining) {
+                    return new Promise((resolve, reject) => {
+                    processBlock(bl, blockNum, vops)
                         .then(r => {
                             currentBlockNumber++;
-                            if (!stopping) {
+                            if (!stopping && !remaining) {
                                 isAtRealTime(function(result) {
-                                    if (!result) {
-                                        setTimeout(computeBlock, blockComputeSpeed);
-                                    } else {
+                                    if (result === true) {
                                         beginBlockStreaming();
+                                        //setTimeout(computeBlock, blockComputeSpeed);
+                                    } else {
+                                        //computeBlock()
+                                        computeBlock(result)
+                                        resolve('DONE')
                                     }
                                 })
+                            } else if (remaining){
+                                resolve('NEXT')
                             } else {
                                 console.log('failed at stopping')
                                 //setTimeout(stopCallback, 1000);
@@ -101,6 +153,8 @@ module.exports = function(client, steem, currentBlockNumber = 1, blockComputeSpe
                             }
                         })
                         .catch(e => { console.log('failed at catch:', e) })
+                    })
+                    }
                 })
                 .catch((err) => {
                     console.log('get block catch:' + err)
@@ -115,7 +169,7 @@ module.exports = function(client, steem, currentBlockNumber = 1, blockComputeSpe
         isStreaming = true;
         onStreamingStart();
         if (mode === 'latest') {
-            stream = client.blockchain.getBlockStream({ mode: steem.BlockchainMode.Latest });
+            stream = client.blockchain.getBlockStream({ mode: hive.BlockchainMode.Latest });
         } else {
             stream = client.blockchain.getBlockStream();
         }
@@ -140,7 +194,6 @@ module.exports = function(client, steem, currentBlockNumber = 1, blockComputeSpe
 
     function transactional(ops, i, pc, num, block, vops) {
         if (ops.length) {
-            
             doOp(ops[i], [ops, i, pc, num, block, vops])
                 .then(v => {
                     if (ops.length > i + 1) {
@@ -226,11 +279,13 @@ module.exports = function(client, steem, currentBlockNumber = 1, blockComputeSpe
     function processBlock(block, num, Pvops) {
         return new Promise((resolve, reject) => {
             var transactions = block.transactions;
+            //console.log(transactions[0])
             let ops = []
             for (var i = 0; i < transactions.length; i++) {
                 for (var j = 0; j < transactions[i].operations.length; j++) {
                     var op = transactions[i].operations[j];
                     if (op[0] === 'custom_json') {
+                        //console.log('check')
                         if (typeof onCustomJsonOperation[op[1].id] === 'function') {
                             var ip = JSON.parse(op[1].json),
                                 from = op[1].required_posting_auths[0],

@@ -31,8 +31,8 @@ var ipfshost = ENV.ipfshost || 'ipfs.infura.io' //IPFS upload/download provider 
 const bidRate = ENV.BIDRATE || 2500 //
 
 //HIVE CONFIGS
-var startURL = ENV.STARTURL || "https://api.deathwing.me/"
-var clientURL = ENV.APIURL || "https://api.deathwing.me/"
+var startURL = ENV.STARTURL || "https://rpc.ecency.com/"
+var clientURL = ENV.APIURL || "https://rpc.ecency.com/"
 const clients = ENV.clients || [
     "https://api.deathwing.me/",
     //"https://api.c0ff33a.uk/",
@@ -56,11 +56,22 @@ const delegation = 'dlux-io' //account people can delegate to for rewards
 const delegationWeight = 1000 //when to trigger community rewards with bens
 const msaccount = 'dlux-cc' //account controlled by community leaders
 const mainAPI = 'token.dlux.io' //leaders API probably
+const mainRender = 'dluxdata.herokuapp.com' //data and render server
 const mainFE = 'dlux.io' //frontend for content
 const mainIPFS = 'a.ipfs.dlux.io' //IPFS service
 const mainICO = 'robotolux' //Account collecting ICO HIVE
 const footer = `\n[Find us on Discord](https://discord.gg/Beeb38j)`
 const hive_service_fee = 100 //HIVE service fee for transactions in Hive/HBD in centipercents (1% = 100)
+const features = {
+    pob: true, //proof of brain
+    delegate: true, //delegation
+    liquidity: true, //liquidity
+    ico: true, //ico
+    dex: true, //dex
+    nft: true, //nfts
+    state: true, //api dumps
+    claimdrop: false //claim drops
+}
 
 //Aditionally on your branch, look closely at dao, this is where tokenomics happen and custom status posts are made
 
@@ -102,10 +113,12 @@ let config = {
     mainAPI,
     jsonTokenName,
     mainFE,
+    mainRender,
     mainIPFS,
     mainICO,
     footer,
-    hive_service_fee
+    hive_service_fee,
+    features
 };
 
 module.exports = config;

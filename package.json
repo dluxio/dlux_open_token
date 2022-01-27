@@ -10,9 +10,10 @@
     },
     "keywords": [
         "dlux",
-        "steem",
-        "steem-state",
-        "token"
+        "hive",
+        "nft",
+        "token",
+        "dex"
     ],
     "author": "disregardfiat",
     "license": "MIT",

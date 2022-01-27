@@ -206,7 +206,7 @@ exports.dex_sell = (json, from, active, pc) => {
 }
 
 exports.transfer = (json, pc) => {
-    if (json.to == config.mainICO && json.amount.split(' ')[1] == 'HIVE' && json.from != config.msaccount) { //the ICO disribution... should be in multi sig account
+    if (config.features.ico && json.to == config.mainICO && json.amount.split(' ')[1] == 'HIVE' && json.from != config.msaccount) { //the ICO disribution... should be in multi sig account
         const amount = parseInt(parseFloat(json.amount) * 1000)
         var purchase,
             Pstats = getPathObj(['stats']),
@@ -260,7 +260,7 @@ exports.transfer = (json, pc) => {
                 store.batch(ops, pc)
             }
         })
-    } else if (json.to == config.msaccount && json.from != config.mainICO) {
+    } else if ((config.features.dex || config.features.nft) && json.to == config.msaccount && json.from != config.mainICO) {
         if(json.memo.split(' ').length > 1 && json.memo.split(' ')[0] == 'NFT'){
             /*
                     lth[`set:hash`]{
@@ -834,7 +834,7 @@ exports.transfer = (json, pc) => {
                 store.batch(ops, pc)
             }
         }
-    } else if (json.from == config.msaccount){
+    } else if (config.features.dex && json.from == config.msaccount){
         getPathObj(['mss']).then(mss => {
             var done = false
             for (var block in mss){

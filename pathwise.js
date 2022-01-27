@@ -5,7 +5,7 @@ var type = require('component-type');
 var after = require('after');
 var streamToArray = require('stream-to-array');
 const stringify = require('json-stable-stringify');
-
+var { block } = require('./index')
 module.exports = Pathwise;
 
 function Pathwise(db) {
@@ -60,6 +60,7 @@ Pathwise.prototype.batch = function(ops, pc) { // promise chain[resolve(), rejec
         }
     });
     ops.forEach(function(op) {
+        block.ops.push(stringify({type: op.type, path: op.path, data: op.data}))
         if (op.type == 'put') self.put(op.path, op.data, { batch: batch }, next)
         else if (op.type == 'del') self.del(op.path, { batch: batch }, next);
     });
