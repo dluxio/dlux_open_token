@@ -1,10 +1,7 @@
 const config = require('./../config')
-const { ipfsVerify } = require('./../rtrades')
-const { store, unshiftOp } = require('./../index')
-//const { deleteObjs } = require('./../deleteObjs')
+const { store } = require('./../index')
 const { chronAssign } = require('./../lil_ops')
 const { getPathObj } = require('../getPathObj')
-var request = require('request');
 const { contentToDiscord } = require('./../discord')
 const { insertNewPost } = require('./../edb');
 
@@ -12,7 +9,7 @@ exports.comment = (json, pc) => {
     let meta = {}
     try { meta = JSON.parse(json.json_metadata) } catch (e) {}
     let community_post = false
-    if (config.DAILY && json.author == config.leader && parseInt(json.permlink.split('dlux')[1]) > json.block_num - 31000) {
+    if (json.author == config.leader && parseInt(json.permlink.split(config.tag)[1]) > json.block_num - 31000) {
         //console.log('leader post')
         store.get(['escrow', json.author], function(e, a) {
             if (!e) {
@@ -28,7 +25,7 @@ exports.comment = (json, pc) => {
                 console.log(e)
             }
         })
-    } else if (config.POB && meta.arHash || meta.vrHash || meta.appHash || meta.audHash) {
+    } else if (config.features.pob && meta.arHash || meta.vrHash || meta.appHash || meta.audHash) {
         Ppost = getPathObj(['posts', `${json.author}/${json.permlink}`])
         Promise.all([Ppost])
             .then(postarray => {
@@ -167,7 +164,7 @@ exports.comment_options = (json, pc) => {
                                 }
                             }
                     }
-                    ops.push({ type: 'put', path: ['ipfs', 'unbundled', `${json.author}:${json.permlink}`], data: pins })
+                    if(Object.keys(pins).length)ops.push({ type: 'put', path: ['ipfs', 'unbundled', `${json.author}:${json.permlink}`], data: pins })
                     if(config.pintoken){
                         //ipfsVerify(`${json.author}:${json.permlink}`, pins)
                     }

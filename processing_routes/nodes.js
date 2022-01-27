@@ -1,7 +1,6 @@
 const config = require('./../config')
 const { store } = require('./../index')
-const { getPathObj } = require('./../getPathObj')
-const { deleteObjs } = require('./../deleteObjs')
+const { getPathObj, deleteObjs } = require('./../getPathObj')
 const { isEmpty } = require('./../lil_ops')
 const { postToDiscord } = require('./../discord')
 
@@ -29,6 +28,13 @@ exports.node_add = function(json, from, active, pc) {
         if (daoRate > 2000) {
             daoRate = 2000
         }
+        var liquidity = parseInt(json.liquidity) || 0
+        if (liquidity < 0) {
+            liquidity = 100
+        }
+        if (liquidity > 100) {
+            liquidity = 100
+        }
         store.get(['markets', 'node', from], function(e, a) {
             let ops = []
             if (!e) {
@@ -51,7 +57,8 @@ exports.node_add = function(json, from, active, pc) {
                             escrows: 0,
                             lastGood: 0,
                             report: {},
-                            escrow
+                            escrow,
+                            liquidity
                         }
                     }]
                 } else {
@@ -61,10 +68,11 @@ exports.node_add = function(json, from, active, pc) {
                     b.escrow = escrow
                     b.marketingRate = daoRate
                     b.mirror = mirror
+                    b.liquidity = liquidity
                     ops = [{ type: 'put', path: ['markets', 'node', from], data: b }]
                 }
                 const msg = `@${from}| has bid the hive-state node ${json.domain} at ${json.bidRate}`
-                if (config.hookurl) postToDiscord(msg)
+                if (config.hookurl || config.status) postToDiscord(msg, `${json.block_num}:${json.transaction_id}`)
                 ops.push({ type: 'put', path: ['feed', `${json.block_num}:${json.transaction_id}`], data: msg })
             } else {
                 console.log(e)
@@ -106,7 +114,9 @@ exports.node_delete = function(json, from, active, pc) {
                         delete b.marketingRate
                         ops.push({ type: 'del', path: ['runners', from] })
                         ops.push({ type: 'put', path: ['markets', 'node', from], data: b })
-                        ops.push({ type: 'put', path: ['feed', `${json.block_num}:${json.transaction_id}`], data: `@${from}| has signed off their ${config.TOKEN} node` })
+                        const msg = `@${from}| has signed off their ${config.TOKEN} node`
+                        if (config.hookurl || config.status) postToDiscord(msg, `${json.block_num}:${json.transaction_id}`)
+                        ops.push({ type: 'put', path: ['feed', `${json.block_num}:${json.transaction_id}`], data: msg })
                         store.batch(ops, pc)
                     } else {
                         pc[0](pc[2])

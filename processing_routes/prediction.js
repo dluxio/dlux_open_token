@@ -1,7 +1,6 @@
 const config = require('./../config')
 const { store } = require("./../index");
-const { getPathNum } = require("./../getPathNum");
-const { getPathObj } = require("./../getPathObj");
+const { getPathObj, getPathNum } = require("./../getPathObj");
 const { postToDiscord } = require('./../discord')
 
 // the oracle problem is notoriously dificult, several options exist but this is an

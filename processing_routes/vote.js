@@ -1,8 +1,6 @@
 const config = require('./../config')
 const { store } = require("./../index");
-const { getPathNum } = require('./../getPathNum')
-const { getPathObj } = require('./../getPathObj')
-const { deleteObjs } = require('./../deleteObjs');
+const { getPathObj, getPathNum, deleteObjs } = require('./../getPathObj')
 const { updatePostVotes } = require('./../edb');
 
 exports.vote = (json, pc) => {

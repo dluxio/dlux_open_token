@@ -1,7 +1,6 @@
 const config = require('./../config')
 const { store } = require("../index");
-const { getPathNum } = require("../getPathNum");
-const { getPathObj } = require('../getPathObj')
+const { getPathObj, getPathNum } = require('../getPathObj')
 const { chronAssign } = require('../lil_ops')
 const { postToDiscord } = require('./../discord')
 
@@ -22,7 +21,7 @@ exports.gov_up = (json, from, active, pc) => {
                 ops.push({ type: 'put', path: ['gov', from], data: gbal + amount });
                 ops.push({ type: 'put', path: ['gov', 't'], data: govt + amount });
                 const msg = `@${from}| Locked ${parseFloat(json.amount / 1000).toFixed(3)} ${config.TOKEN} for Governance`
-                if (config.hookurl) postToDiscord(msg)
+                if (config.hookurl || config.status) postToDiscord(msg, `${json.block_num}:${json.transaction_id}`)
                 ops.push({ type: 'put', path: ['feed', `${json.block_num}:${json.transaction_id}`], data: msg });
             } else {
                 ops.push({ type: 'put', path: ['feed', `${json.block_num}:${json.transaction_id}`], data: `@${from}| Invalid gov up` });
@@ -69,7 +68,7 @@ exports.gov_down = (json, from, active, pc) => {
                             ops.push({ type: 'del', path: ['chrono', downs[i]] });
                         }
                         const msg = `@${from}| Set withdrawl of ${parseFloat(amount / 1000).toFixed(3)} ${config.TOKEN} from Governance`
-                        if (config.hookurl) postToDiscord(msg)
+                        if (config.hookurl || config.status) postToDiscord(msg, `${json.block_num}:${json.transaction_id}`)
                         ops.push({ type: 'put', path: ['feed', `${json.block_num}:${json.transaction_id}`], data: msg });
                         if (process.env.npm_lifecycle_event == 'test') pc[2] = ops
                         store.batch(ops, pc);
@@ -78,7 +77,9 @@ exports.gov_down = (json, from, active, pc) => {
                 for (i in downs) {
                     ops.push({ type: 'del', path: ['chrono', i] });
                 }
-                ops.push({ type: 'put', path: ['feed', `${json.block_num}:${json.transaction_id}`], data: `@${from}| Canceled Governance withdrawl` });
+                const msg = `@${from}| Canceled Governance withdrawl`
+                ops.push({ type: 'put', path: ['feed', `${json.block_num}:${json.transaction_id}`], data: msg });
+                if (config.hookurl || config.status) postToDiscord(msg, `${json.block_num}:${json.transaction_id}`)
                 if (process.env.npm_lifecycle_event == 'test') pc[2] = ops
                 store.batch(ops, pc);
             } else {

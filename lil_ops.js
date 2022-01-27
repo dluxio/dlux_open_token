@@ -1,11 +1,21 @@
 const { store } = require('./index')
-const { getPathNum } = require('./getPathNum')
-const { getPathObj } = require('./getPathObj')
+const { getPathObj, getPathNum } = require('./getPathObj')
 const crypto = require('crypto');
 const bs58 = require('bs58');
 const hashFunction = Buffer.from('12', 'hex');
 const stringify = require('json-stable-stringify');
+const { postToDiscord } = require('./discord');
+const config = require('./config');
 
+const burn = (amount) => {
+    return new Promise((resolve, reject) => {
+        getPathNum(['stats', 'tokenSupply'])
+        .then(sup => {
+            store.batch([{ type: 'put', path: ['stats', 'tokenSupply'], data: sup - amount }], [resolve, reject, 1])
+        })
+    })
+}
+exports.burn = burn
 const forceCancel = (rate, type, block_num) => {
     return new Promise((resolve, reject) => {
         const price = parseFloat(rate)
@@ -43,9 +53,9 @@ const add = (node, amount) => {
     return new Promise((resolve, reject) => {
         store.get(['balances', node], function(e, a) {
             if (!e) {
-                console.log(amount)
+                console.log(amount + ' to ' + node)
                 const a2 = typeof a != 'number' ? amount : a + amount
-                console.log(a2)
+                console.log('final balance ' +a2)
                 store.batch([{ type: 'put', path: ['balances', node], data: a2 }], [resolve, reject, 1])
             } else {
                 console.log(e)
@@ -54,6 +64,37 @@ const add = (node, amount) => {
     })
 }
 exports.add = add
+
+const addc = (node, amount) => {
+    return new Promise((resolve, reject) => {
+        store.get(['cbalances', node], function(e, a) {
+            if (!e) {
+                console.log(amount + ' to ' + node)
+                const a2 = typeof a != 'number' ? amount : a + amount
+                console.log('final balance ' +a2)
+                store.batch([{ type: 'put', path: ['cbalances', node], data: a2 }], [resolve, reject, 1])
+            } else {
+                console.log(e)
+            }
+        })
+    })
+}
+exports.addc = addc
+
+const addMT = (path, amount) => {
+    return new Promise((resolve, reject) => {
+        store.get(path, function(e, a) {
+            if (!e) {
+                const a2 = typeof a != 'number' ? parseInt(amount) : parseInt(a) + parseInt(amount)
+                console.log(`MTo:${a},add:${amount},final:${a2}`, )
+                store.batch([{ type: 'put', path, data: a2 }], [resolve, reject, 1])
+            } else {
+                console.log(e)
+            }
+        })
+    })
+}
+exports.addMT = addMT
 
 const addCol = (node, amount) => {
     return new Promise((resolve, reject) => {
@@ -183,78 +224,6 @@ const chronAssign = (block, op) => {
     })
 }
 exports.chronAssign = chronAssign
-
-const release = (from, txid, bn) => {
-    return new Promise((resolve, reject) => {
-        store.get(['contracts', from, txid], function(er, a) {
-            if (er) { console.log(er); } else {
-                var ops = [];
-                switch (a.type) {
-                    case 'ss':
-                        store.get(['dex', 'hive', 'sellOrders', `${a.rate}:${a.txid}`], function(e, r) {
-                            if (e) { console.log(e); } else if (isEmpty(r)) { console.log('Nothing here' + a.txid); } else {
-                                add(r.from, r.amount).then(empty => {
-                                    ops.push({ type: 'del', path: ['contracts', from, txid] });
-                                    ops.push({ type: 'del', path: ['chrono', a.expire_path] });
-                                    ops.push({ type: 'del', path: ['dex', 'hive', 'sellOrders', `${a.rate}:${a.txid}`] });
-                                    store.batch(ops, [resolve, reject]);
-                                }).catch(e => { reject(e); });
-                            }
-                        });
-                        break;
-                    case 'ds':
-                        store.get(['dex', 'hbd', 'sellOrders', `${a.rate}:${a.txid}`], function(e, r) {
-                            if (e) { console.log(e); } else if (isEmpty(r)) { console.log('Nothing here' + a.txid); } else {
-                                add(r.from, r.amount).then(empty => {
-                                    ops.push({ type: 'del', path: ['contracts', from, txid] });
-                                    ops.push({ type: 'del', path: ['chrono', a.expire_path] });
-                                    ops.push({ type: 'del', path: ['dex', 'hbd', 'sellOrders', `${a.rate}:${a.txid}`] });
-                                    store.batch(ops, [resolve, reject]);
-                                }).catch(e => { reject(e); });
-
-                            }
-                        });
-                        break;
-                    case 'sb':
-                        store.get(['dex', 'hive', 'buyOrders', `${a.rate}:${a.txid}`], function(e, r) {
-                            if (e) { console.log(e); } else if (isEmpty(r)) { console.log('Nothing here' + a.txid); } else {
-                                a.cancel = true;
-                                chronAssign(bn + 200, { op: 'check', agent: r.reject[0], txid: r.txid + ':cancel', acc: from, id: txid })
-                                    .then(empty => {
-                                        ops.push({ type: 'put', path: ['escrow', r.reject[0], r.txid + ':cancel'], data: r.reject[1] });
-                                        ops.push({ type: 'put', path: ['contracts', from, r.txid], data: a });
-                                        ops.push({ type: 'del', path: ['dex', 'hive', 'buyOrders', `${a.rate}:${a.txid}`] });
-                                        store.batch(ops, [resolve, reject]);
-                                    }).catch(e => { reject(e); });
-                            }
-                        });
-                        break;
-                    case 'db':
-                        store.get(['dex', 'hbd', 'buyOrders', `${a.rate}:${a.txid}`], function(e, r) {
-                            if (e) {
-                                console.log(e);
-                            } else if (isEmpty(r)) {
-                                console.log('Nothing here' + a.txid);
-                            } else {
-                                a.cancel = true;
-                                chronAssign(bn + 200, { op: 'check', agent: r.reject[0], txid: r.txid + ':cancel', acc: from, id: txid })
-                                    .then(empty => {
-                                        ops.push({ type: 'put', path: ['contracts', from, r.txid], data: a });
-                                        ops.push({ type: 'put', path: ['escrow', r.reject[0], r.txid + ':cancel'], data: r.reject[1] });
-                                        ops.push({ type: 'del', path: ['dex', 'hbd', 'buyOrders', `${a.rate}:${a.txid}`] });
-                                        store.batch(ops, [resolve, reject]);
-                                    }).catch(e => { reject(e); });
-                            }
-                        });
-                        break;
-                    default:
-                        resolve();
-                }
-            }
-        });
-    })
-}
-exports.release = release
 
 function hashThis(data) {
     const digest = crypto.createHash('sha256').update(data).digest()

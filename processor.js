@@ -1,4 +1,6 @@
-module.exports = function(client, steem, currentBlockNumber = 1, blockComputeSpeed = 1000, prefix = '', mode = 'latest', cycleapi) {
+const fetch = require('node-fetch');
+const { Base64 } = require('./helpers');
+module.exports = function(client, hive, currentBlockNumber = 1, blockComputeSpeed = 1000, prefix = '', mode = 'latest', cycleapi) {
     var onCustomJsonOperation = {}; // Stores the function to be run for each operation id.
     var onOperation = {};
 
@@ -6,7 +8,7 @@ module.exports = function(client, steem, currentBlockNumber = 1, blockComputeSpe
     var onStreamingStart = function() {};
 
     var isStreaming;
-    var block_header;
+    var block_header = {};
     var stream;
 
     var stopping = false;
@@ -24,45 +26,135 @@ module.exports = function(client, steem, currentBlockNumber = 1, blockComputeSpe
         })
     }
 
+    function getVops (bn){
+        return new Promise((resolve, reject) => {
+            fetch(client.currentAddress, {
+                body: `{"jsonrpc":"2.0", "method":"condenser_api.get_ops_in_block", "params":[${bn},true], "id":1}`,
+                headers: {
+                    "Content-Type": "application/x-www-form-urlencoded"
+                },
+                method: "POST"
+            })
+            .then(res => res.json())
+            .then(json => {
+                if (!json.result) {
+                    resolve([])
+                } else {
+                    resolve(json.result)
+                }
+            })
+            .catch(err => {reject(err)})
+        });
+    }
+
     function isAtRealTime(callback) {
         getHeadOrIrreversibleBlockNumber(function(result) {
             if (currentBlockNumber >= result) {
                 callback(true);
             } else {
-                callback(false);
+                callback(result - currentBlockNumber);
             }
         })
     }
 
     function beginBlockComputing() {
-        function computeBlock() {
+        function computeBlock(behind) {
 
             var blockNum = currentBlockNumber; // Helper variable to prevent race condition
             // in getBlock()
-            client.database.getBlock(blockNum)
-                .then((result) => {
-                    block_header = {
-                        timestamp: result.timestamp,
-                        block_id: result.block_id,
-                        block_number: blockNum
+            var vops = getVops(blockNum)
+            function getBlock(bn){
+                return new Promise ((resolve, reject)=>{
+                    if(behind)gbr(bn, behind > 100 ? 100 : behind, 0)
+                    else gb(bn, 0)
+                    function gb (bln, at){
+                        client.database.getBlock(bln)
+                    .then((result) => {
+                        resolve([result])
+                    })
+                    .catch((err) => {
+                        if (at < 3){
+                                gb(bn, at+1)
+                        } else {
+                            reject(err)
+                        }
+                    })
                     }
-                    processBlock(result, blockNum)
+                    function gbr (bln, count, at){
+                        fetch("https://api.hive.blog", {
+                            body: `{"jsonrpc":"2.0", "method":"block_api.get_block_range", "params":{"starting_block_num": ${bln}, "count": ${count}}, "id":1}`,
+                            headers: {
+                                "Content-Type": "application/x-www-form-urlencoded"
+                            },
+                            method: "POST"
+                            })
+                    .then(res => res.json())
+                    .then((result) => {
+                        var blocks =result.result.blocks
+                        for (var i = 0; i < blocks.length; i++){
+                            const bkn = parseInt(blocks[i].block_id.slice(0, 8), 16);
+                            for (var j = 0; j < blocks[i].transactions.length; j++){
+                                blocks[i].transactions[j].block_num = bkn
+                                blocks[i].transactions[j].transaction_id = blocks[i].transaction_ids[j]
+                                blocks[i].transactions[j].transaction_num = j
+                                var ops = []
+                                for(var k = 0; k < blocks[i].transactions[j].operations.length; k++){
+                                    ops.push([blocks[i].transactions[j].operations[k].type.replace('_operation', ''), blocks[i].transactions[j].operations[k].value])
+                                }
+                                blocks[i].transactions[j].operations = ops
+                            }
+                        }
+                        resolve(blocks)
+                    })
+                    .catch((err) => {
+                        if (at < 3){
+                                gb(bn,at)
+                        } else {
+                            reject(err)
+                        }
+                    })
+                    }
+                })
+            }
+            getBlock(blockNum)
+                .then((result) => {
+                    pl(result)
+                    function pl (range){
+                        pb(range.shift(), range.length)
+                        .then(res =>{
+                            if(res == 'NEXT'){
+                                blockNum++
+                                pl(range)
+                            }
+                        })
+                    }
+                    function pb(bl, remaining) {
+                    return new Promise((resolve, reject) => {
+                    processBlock(bl, blockNum, vops)
                         .then(r => {
                             currentBlockNumber++;
-                            if (!stopping) {
+                            if (!stopping && !remaining) {
                                 isAtRealTime(function(result) {
-                                    if (!result) {
-                                        setTimeout(computeBlock, blockComputeSpeed);
-                                    } else {
+                                    if (result === true) {
                                         beginBlockStreaming();
+                                        //setTimeout(computeBlock, blockComputeSpeed);
+                                    } else {
+                                        //computeBlock()
+                                        computeBlock(result)
+                                        resolve('DONE')
                                     }
                                 })
+                            } else if (remaining){
+                                resolve('NEXT')
                             } else {
                                 console.log('failed at stopping')
-                                setTimeout(stopCallback, 1000);
+                                //setTimeout(stopCallback, 1000);
+                                cycleapi()
                             }
                         })
                         .catch(e => { console.log('failed at catch:', e) })
+                    })
+                    }
                 })
                 .catch((err) => {
                     console.log('get block catch:' + err)
@@ -77,7 +169,7 @@ module.exports = function(client, steem, currentBlockNumber = 1, blockComputeSpe
         isStreaming = true;
         onStreamingStart();
         if (mode === 'latest') {
-            stream = client.blockchain.getBlockStream({ mode: steem.BlockchainMode.Latest });
+            stream = client.blockchain.getBlockStream({ mode: hive.BlockchainMode.Latest });
         } else {
             stream = client.blockchain.getBlockStream();
         }
@@ -100,18 +192,51 @@ module.exports = function(client, steem, currentBlockNumber = 1, blockComputeSpe
     }
 
 
-    function transactional(ops, i, pc, num, block) {
+    function transactional(ops, i, pc, num, block, vops) {
         if (ops.length) {
-            doOp(ops[i], [ops, i, pc, num, block])
+            doOp(ops[i], [ops, i, pc, num, block, vops])
                 .then(v => {
                     if (ops.length > i + 1) {
-                        transactional(v[0], v[1] + 1, v[2], v[3], v[4])
+                        transactional(v[0], v[1] + 1, v[2], v[3], v[4], v[5])
                     } else {
-                        onNewBlock(num, v)
+                        if(vops){
+                            var Vops = []
+                            vops.then(vo=>{
+                                for(var j = 0; j < vo.length; j++){
+                                    if(onOperation[vo[j].op[0]] !== undefined){
+                                    var json = vo[j].op[1]
+                                    json.block_num = vo[j].block
+                                    //json.timestamp = vo[j].timestamp
+                                    json.txid = vo[j].trx_id
+                                    Vops.push([vo[j].op[0],json])
+                                    }
+                                }
+                                if(Vops.length){
+                                    transactional(Vops, 0, v[2], v[3], v[4])
+                                } else {
+                                    onNewBlock(num, v, v[4].witness_signature, {
+                                                                                timestamp: v[4].timestamp,
+                                                                                block_id: v[4].block_id,
+                                                                                block_number: num
+                                                                            })
+                                        .then(r => {
+                                            pc[0](pc[2])
+                                        })
+                                        .catch(e => { console.log(e) })
+                                }
+                            })
+                            .catch(e=>{console.log(e);cycleapi()})
+                        } else {
+                            onNewBlock(num, v, v[4].witness_signature, {
+                                                                        timestamp: v[4].timestamp,
+                                                                        block_id: v[4].block_id,
+                                                                        block_number: num
+                                                                    })
                             .then(r => {
                                 pc[0](pc[2])
                             })
                             .catch(e => { console.log(e) })
+                        }
                     }
                 })
                 .catch(e => {
@@ -119,7 +244,11 @@ module.exports = function(client, steem, currentBlockNumber = 1, blockComputeSpe
                     pc[1](e)
                 })
         } else {
-            onNewBlock(num, pc)
+            onNewBlock(num, pc, block.witness_signature,  {
+                                                            timestamp: block.timestamp,
+                                                            block_id: block.block_id,
+                                                            block_number: num
+                                                        })
                 .then(r => {
                     r[0]()
                 })
@@ -138,16 +267,25 @@ module.exports = function(client, steem, currentBlockNumber = 1, blockComputeSpe
                 }
             })
         }
+
+        function doVop(op, pc) {
+            return new Promise((resolve, reject) => {
+                console.log(op, pc)
+                onVOperation[op[0]](op[1], [resolve, reject, pc]);
+            })
+        }
     }
 
-    function processBlock(block, num) {
+    function processBlock(block, num, Pvops) {
         return new Promise((resolve, reject) => {
             var transactions = block.transactions;
+            //console.log(transactions[0])
             let ops = []
             for (var i = 0; i < transactions.length; i++) {
                 for (var j = 0; j < transactions[i].operations.length; j++) {
                     var op = transactions[i].operations[j];
                     if (op[0] === 'custom_json') {
+                        //console.log('check')
                         if (typeof onCustomJsonOperation[op[1].id] === 'function') {
                             var ip = JSON.parse(op[1].json),
                                 from = op[1].required_posting_auths[0],
@@ -155,6 +293,7 @@ module.exports = function(client, steem, currentBlockNumber = 1, blockComputeSpe
                             ip.transaction_id = transactions[i].transaction_id
                             ip.block_num = transactions[i].block_num
                             ip.timestamp = block.timestamp
+                            ip.prand = block.witness_signature
                             if (!from) {
                                 from = op[1].required_auths[0];
                                 active = true
@@ -165,11 +304,12 @@ module.exports = function(client, steem, currentBlockNumber = 1, blockComputeSpe
                         op[1].transaction_id = transactions[i].transaction_id
                         op[1].block_num = transactions[i].block_num
                         op[1].timestamp = block.timestamp
+                        op[1].prand = block.witness_signature
                         ops.push([op[0], op[1]]) //onOperation[op[0]](op[1]);
                     }
                 }
             }
-            transactional(ops, 0, [resolve, reject], num, block)
+            transactional(ops, 0, [resolve, reject], num, block, Pvops)
         })
     }
 
@@ -209,11 +349,6 @@ module.exports = function(client, steem, currentBlockNumber = 1, blockComputeSpe
         isStreaming: function() {
             return isStreaming;
         },
-
-        getBlockHeader: function() {
-            return block_header;
-        },
-
         onStreamingStart: function(callback) {
             onStreamingStart = callback;
         },

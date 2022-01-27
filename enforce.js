@@ -1,5 +1,4 @@
-const { getPathNum } = require("./getPathNum");
-const { getPathObj } = require("./getPathObj");
+const { getPathObj, getPathNum } = require("./getPathObj");
 const { store } = require("./index");
 const { chronAssign, penalty, add, nodeUpdate, deletePointer, addCol, addGov } = require('./lil_ops')
 

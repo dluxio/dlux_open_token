@@ -1,9 +1,11 @@
 const config = require('./config');
-const { getPathNum } = require("./getPathNum");
-const { getPathObj } = require("./getPathObj");
-const { deleteObjs } = require('./deleteObjs')
-const { store, exit } = require("./index");
+const { getPathObj, getPathNum, deleteObjs } = require("./getPathObj");
+const { store, exit, hiveClient, plasma } = require("./index");
 const { updatePost } = require('./edb');
+const { 
+    //add, addCol, addGov, deletePointer, credit, chronAssign, hashThis, isEmpty, 
+    addMT } = require('./lil_ops')
+const stringify = require('json-stable-stringify');
 
 //determine consensus... needs some work with memory management
 exports.tally = (num, plasma, isStreaming) => {
@@ -15,8 +17,9 @@ exports.tally = (num, plasma, isStreaming) => {
             Prcol = getPathObj(['col']),
             Prpow = getPathObj(['gov']),
             Prqueue = getPathObj(['queue']),
-            Ppending = getPathObj(['pendingpayment'])
-        Promise.all([Prunners, Pnode, Pstats, Prb, Prcol, Prpow, Prqueue, Ppending]).then(function(v) {
+            Ppending = getPathObj(['pendingpayment']),
+            Pmss = getPathObj(['mss'])
+        Promise.all([Prunners, Pnode, Pstats, Prb, Prcol, Prpow, Prqueue, Ppending, Pmss]).then(function(v) {
             deleteObjs([
                     ['runners'],
                     ['queue'],
@@ -30,6 +33,9 @@ exports.tally = (num, plasma, isStreaming) => {
                         rcol = v[4],
                         rgov = v[5],
                         pending = v[7],
+                        mssp = v[8],
+                        ms = [9],
+                        signatures = [],
                         tally = {
                             agreements: {
                                 hashes: {},
@@ -38,19 +44,35 @@ exports.tally = (num, plasma, isStreaming) => {
                                 votes: 0
                             }
                         },
-                        consensus = undefined
+                        consensus = undefined,
+                        mss = {},
+                        mssb = 0,
+                        oracleArr = []
+                    for(var block in mssp){
+                        if (block == num - 50){
+                            mss = JSON.parse(mssp[block])
+                            mssb = block
+                        }
+                    }
                     for (node in nodes) {
                         var hash = '',
-                            when = 0,
-                            online = 0
-                        try { hash = nodes[node].report.hash } catch (e) { console.log({ node }) }
-                        try { when = nodes[node].report.block_num } catch { console.log({ node }) }
-                        try { online = hash && nodes[node].escrow } catch { console.log({ node }) }
-                        if (when > (num - 50) && hash && online) {
+                            when = 0
+                        try { 
+                            if(stats.ms.active_account_auths[node] && nodes[node].report.sig && nodes[node].report.sig_block == mssb){
+                                signatures.push(nodes[node].report.sig)
+                            }
+                        } catch (e) {}
+                        try { hash = nodes[node].report.hash } catch (e) {}
+                        try { if(nodes[node].report.oracle)oracleArr.push(nodes[node].report.oracle) } catch (e) {}
+                        try { hash = nodes[node].report.hash } catch (e) {}
+                        try { when = nodes[node].report.block_num } catch(e) {}
+                        if (when > (num - 50) && hash) {
                             tally.agreements.hashes[node] = hash
                             tally.agreements.tally[hash] = 0
                         } //recent and signing
                     }
+                    var promises = []//[oracle(oracleArr, num)]
+                    if(runners[config.username] && mss.expiration)verify(mss, signatures, stats.ms.active_threshold)
                     for (runner in runners) {
                         tally.agreements.votes++
                             if (tally.agreements.hashes[runner]) {
@@ -65,37 +87,27 @@ exports.tally = (num, plasma, isStreaming) => {
                             break;
                         }
                     }
-                    let still_running = {}
-                    let election = {}
-                    let new_queue = {}
+                    let still_running = {},
+                        election = {},
+                        new_queue = {}
                     console.log('Consensus: ' + consensus)
                     if (consensus) {
                         stats.hashLastIBlock = consensus;
                         stats.lastIBlock = num - 100
+                        let counting_array = []
                         for (node in tally.agreements.hashes) {
                             if (tally.agreements.hashes[node] == consensus) {
-                                if (num < 50500000) {
-                                    new_queue[node] = {
-                                        t: (rbal[node] || 0) + (rcol[node] || 0) + (rgov[node] || 0),
-                                        l: rbal[node] || 0,
-                                        c: rcol[node] || 0,
-                                        g: rgov[node] || 0
-                                    }
-                                } else {
-                                    new_queue[node] = {
-                                        t: (rcol[node] || 0) + (rgov[node] || 0),
-                                        l: rbal[node] || 0,
-                                        c: rcol[node] || 0,
-                                        g: rgov[node] || 0
-                                    }
+                                new_queue[node] = {
+                                    g: rgov[node] || 0,
+                                    api: nodes[node].domain,
+                                    l: nodes[node].liquidity || 100
                                 }
+                            counting_array.push(new_queue[node].g)
                             }
                         }
-                        let counting_array = []
                         for (node in new_queue) {
                             if (runners.hasOwnProperty(node)) {
                                 still_running[node] = new_queue[node]
-                                counting_array.push(new_queue[node].t)
                             } else {
                                 election[node] = new_queue[node]
                             }
@@ -103,36 +115,55 @@ exports.tally = (num, plasma, isStreaming) => {
                         //concerns, size of multi-sig transactions
                         //minimum to outweight large initial stake holders
                         //adjust size of runners group based on stake
-                        let low_sum = 0
-                        let last_bal = 0
-                        counting_array.sort((a, b) => a - b)
-                        for (i = 0; i < parseInt(counting_array.length / 2) + 1; i++) {
-                            low_sum += counting_array[i]
-                            last_bal = counting_array[i]
+                        let low_sum = 0,
+                            last_bal = 0,
+                            highest_low_sum = 0,
+                            optimal_number = 0
+                        counting_array.sort((a, b) => b - a)
+                        for (var j = 9; j < counting_array.length || j == 25; j++) {
+                            low_sum = 0
+                            for (i = parseInt(j / 2) + 1; i < j; i++) {
+                                low_sum += counting_array[i]
+                                last_bal = counting_array[i]
+                            }
+                            if (low_sum > highest_low_sum) {
+                                highest_low_sum = low_sum
+                                optimal_number = j
+                                stats.gov_threshhold  = last_bal
+                            }
                         }
                         if (Object.keys(still_running).length < 25) {
                             let winner = {
                                 node: '',
-                                t: 0
-                            }
+                                g: 0,
+                                api: ''
+                                }
                             for (node in election) {
-                                if (election[node].t > winner.t) { //disallow 0 bals in governance
+                                if (election[node].g > winner.g) { //disallow 0 bals in governance
                                     winner.node = node
-                                    winner.t = election[node].t
+                                    winner.g = election[node].g
+                                    winner.api = election[node].domain
                                 }
                             }
                             //console.log({counting_array, low_sum, last_bal, still_running})
                             stats.gov_threshhold = parseInt((low_sum - last_bal) / (Object.keys(still_running).length / 2)) 
-                            if (winner.node && (winner.t > stats.gov_threshhold || Object.keys(still_running).length < 9)) { //simple test to see if the election will benifit the runners collateral totals
+                            if (winner.node && (winner.g > stats.gov_threshhold || Object.keys(still_running).length < 9)) { //simple test to see if the election will benifit the runners collateral totals
                                 still_running[winner.node] = new_queue[winner.node]
                             }
                         } else {
                             stats.gov_threshhold = "FULL"
                         }
                         let collateral = []
+                        let liq_rewards = []
                         for (node in still_running) {
-                            collateral.push(still_running[node].t)
+                            collateral.push(still_running[node].g)
+                            liq_rewards.push(still_running[node].l || 100)
                         }
+                        let liq_rewards_sum = 0
+                        for (var i = 0; i < liq_rewards.length; i++) {
+                            liq_rewards_sum += liq_rewards[i]
+                        }
+                        stats.liq_reward = liq_rewards_sum / liq_rewards.length
                         let MultiSigCollateral = 0
                         for (i = 0; i < collateral.length; i++) {
                             MultiSigCollateral += collateral[i]
@@ -160,13 +191,14 @@ exports.tally = (num, plasma, isStreaming) => {
                         new_queue = v[6]
                         still_running = runners
                     }
-                    let newPlasma = {
-                        consensus: consensus || 0,
-                        new_queue,
-                        still_running,
-                        stats
-                    };
-                    
+                    let newPlasma = plasma
+                    plasma.consensus = consensus || 0,
+                    plasma.new_queue = new_queue
+                    plasma.still_running = still_running
+                    plasma.stats = stats
+                    if(!consensus) {
+                        newPlasma.potential = tally
+                    }
                     let weights = 0
                     for (post in pending) {
                         weights += pending[post].t.totalWeight
@@ -182,21 +214,23 @@ exports.tally = (num, plasma, isStreaming) => {
                     let this_weight = parseInt(weights / 2016),
                         this_payout = parseInt((((rbal.rc / 200) + stats.movingWeight.dailyPool) / 304) * (this_weight / running_weight)) //subtract this from the rc account... 13300 is 70% of inflation
                         stats.movingWeight.running = parseInt(((stats.movingWeight.running * 2015) / 2016) + (weights / 2016)) //7 day average at 5 minute intervals
-                    payout(this_payout, weights, pending, num)
-                        .then(change => {
+                    promises.unshift(payout(this_payout, weights, pending, num))
+                    Promise.all(promises).then(change => {
                             const mint = parseInt(stats.tokenSupply / stats.interestRate);
                             stats.tokenSupply += mint;
                             rbal.ra += mint;
                             let ops = [
                                 { type: 'put', path: ['stats'], data: stats },
-                                { type: 'put', path: ['runners'], data: still_running },
                                 { type: 'put', path: ['markets', 'node'], data: nodes },
                                 { type: 'put', path: ['balances', 'ra'], data: rbal.ra },
-                                { type: 'put', path: ['balances', 'rc'], data: rbal.rc - (this_payout - change) }
+                                { type: 'put', path: ['balances', 'rc'], data: rbal.rc - (this_payout - change[0]) }
                             ]
+                            if(Object.keys(still_running).length > 1) ops.push(
+                                { type: 'put', path: ['runners'], data: still_running })
+                            else ops.push({ type: 'put', path: ['runners'], data: runners })
                             if (Object.keys(new_queue).length) ops.push({ type: 'put', path: ['queue'], data: new_queue })
                                 //if (process.env.npm_lifecycle_event == 'test') newPlasma = ops
-                                //console.log({ stats, still_running, nodes, new_queue })
+                                //console.log(ops)
                             store.batch(ops, [resolve, reject, newPlasma]);
                             if (process.env.npm_lifecycle_event != 'test') {
                                 if (consensus && (consensus != plasma.hashLastIBlock || consensus != nodes[config.username].report.hash && nodes[config.username].report.block_num > num - 100) && isStreaming) {
@@ -215,7 +249,86 @@ exports.tally = (num, plasma, isStreaming) => {
     })
 }
 
+function oracle(oracleArr, num){
+    console.log(oracleArr[0])
+    return new Promise((resolve, reject) => {
+        var promises = [getPathObj(['pcon']), getPathObj(['lth'])]
+        Promise.all(promises).then(mem =>{
+            let results = {},
+                pcon = mem[0],
+                lth = mem[1],
+                del = [],
+                ops = []
+            for(var i = 0; i < oracleArr.length; i++){
+                for(var item in oracleArr[i]){
+                    try{
+                    if(oracleArr[i][item].split(':')[0] == 'lth'){
+                        results[item] = results[item] || 0
+                        results[item] += oracleArr[i][item].split(':')[1] == 'true' ? 1 : -1
+                        
+                    }
+                } catch (e){}
+                }
+            }
+            for ( var item in results){
+                let addr = `${item.split(':')[0]}:${item.split(':')[1]}`,
+                    listing = lth[addr],
+                    setname = item.split(':')[0],
+                    from = item.split(':')[2],
+                    qty = 0
+                    try{qty = parseInt(pcon.lth[addr][from])}catch(e){} 
+                if(results[item] > 0){
+                    var transfers = [...buildSplitTransfers(qty*listing.h+qty*listing.b, listing.h ? 'HIVE' : 'HBD', listing.d, `${setname} mint token sale - ${from}:vop:${num}`)]
+                    addMT(['rnfts', setname, from], parseInt(qty))
+                    for(var i = 0; i < transfers.length; i++){
+                        ops.push({type: 'put', path: ['msa', `${item}:${i}:${num}`], data: stringify(transfers[i])})
+                    }
+                    ops.push({type:'del',path:['pcon','lth', addr, from]})
+                    del.push(item)
+                    try{
+                    delete plasma.oracle[`${addr}:${from}`]
+                    } catch(e){}
+                } else if (results[item] < 0){
+                    addMT(['lth', addr, 'q'], parseInt(qty))
+                    ops.push({type: 'put', path: ['msa', `${item}:${num}`], data: stringify([
+                        'transfer',
+                        {from: config.msaccount,
+                        to:from,
+                        amount:`${parseFloat((qty*listing.h+qty*listing.b)/1000).toFixed(3)} ${listing.h ? 'HIVE' : 'HBD'}`,
+                        memo:`Refund: ${from} is not authorized to buy this NFT`}
+                    ])})
+                    ops.push({type:'del',path:['pcon','lth', addr, from]})
+                    del.push(item)
+                    try{
+                    delete plasma.oracle[`${addr}:${from}`]
+                    }catch(e){}
+                }
+                cleanOracle(del)
+            }
+            console.log(ops)
+            store.batch(ops,[resolve,reject,'PCON'])
+        })
+    });
+}
+function cleanOracle(oracleArr){
+    return new Promise((resolve, reject) => {
+        let ops = [],
+            pn = getPathObj(['markets', 'node'])
+        Promise.all([pn]).then(mem=>{
+            let nodes = mem[0]
+            for(var node in nodes){
+                for(var i = 0; i < oracleArr.length; i++){
+                    ops.push({type: 'del', path:['markets', 'node', node, 'report', 'oracle', oracleArr[i]]})
+                }
+            }
+            store.batch(ops, [resolve, reject, 'DEL'])
+        })
+        
+    })
+}
+
 function payout(this_payout, weights, pending, num) {
+    console.log(this_payout, weights, pending, num)
     return new Promise((resolve, reject) => {
         let payments = {},
             out = 0
@@ -268,72 +381,81 @@ function payout(this_payout, weights, pending, num) {
     })
 }
 
-/*
-function check() { //is this needed at all? -not until doing oracle checks i think
-    plasma.markets = {
-        nodes: {},
-        ipfss: {},
-        relays: {}
-    }
-    let sp = getPathObj(['stats']),
-        ap = getPathObj(['markets', 'node'])
-    Promise.all([sp, ap])
-        .then(ps => {
-            let s = ps[0],
-                b = ps[1]
-            for (var account in b) {
-                var self = b[account].self
-                plasma.markets.nodes[self] = {
-                    self: self,
-                    agreement: false,
-                }
-                var domain = b[self] ? b[self].domain : 0
-                if (domain && domain != config.NODEDOMAIN) {
-                    var domain = b[self].domain
-                    if (domain.slice(-1) == '/') {
-                        domain = domain.substring(0, domain.length - 1)
+function verify(trx, sig, at){
+    console.log(sig,at)
+    return new Promise((resolve, reject) => {
+        
+        sendit(trx, sig, at, 0)
+
+        function sendit(tx, sg, t, j){
+            const perm = [
+                [[0]],
+                [[0],[1]],//sigs 0 then 1
+                [[0,1],[0,2],[1,2]] //sigs, 2 /3 ... a three out of 4 and also a 3 / 5 >cry<
+            ]
+            if(perm[t][j]){
+                tx.signatures = []
+                for(var i = 0; i < t; i++){
+                    if(sg[perm[t][j][i]]){
+                        tx.signatures.push(sg[perm[t][j][i]])
                     }
-                    fetch(`${domain}/stats`)
-                        .then(function(response) {
-                            return response.json();
-                        })
-                        .then(function(myJson) {
-                            if (s.hashLastIBlock === myJson.stats.hashLastIBlock) {
-                                plasma.markets.nodes[myJson.node].agreement = true
+                }
+                if(tx.signatures.length >= t && tx.operations.length){
+                    hiveClient.api.verifyAuthority(tx, function(err, result) {
+                        if(err){
+                            if(err.data.code == 4030100){
+                                console.log('EXPIRED')
+                                resolve('EXPIRED')
+                            } else if (err.data.code == 3010000) { //missing authority
+                                console.log('MISSING')
+                                sendit(tx, sg, t, j+1)
+                            } else if (err.data.code == 10) { //duplicate transaction
+                                console.log('SENT:Verifier')
+                                resolve('SENT')
+                            } else {
+                                console.log(err.data)
+                                sendit(tx, sg, t, j+1)
                             }
-                        }).catch(e => {})
-                }
-            }
-        })
-        .catch(e => { console.log(e) })
-    store.get(['stats'], function(e, s) {
-        store.get(['markets', 'node'], function(e, a) {
-            var b = a
-            for (var account in b) {
-                var self = b[account].self
-                plasma.markets.nodes[self] = {
-                    self: self,
-                    agreement: false,
-                }
-                var domain = b[self] ? b[self].domain : 0
-                if (domain && domain != config.NODEDOMAIN) {
-                    var domain = b[self].domain
-                    if (domain.slice(-1) == '/') {
-                        domain = domain.substring(0, domain.length - 1)
-                    }
-                    fetch(`${domain}/stats`)
-                        .then(function(response) {
-                            //console.log(response)
-                            return response.json();
-                        })
-                        .then(function(myJson) {
-                            if (s.hashLastIBlock === myJson.stats.hashLastIBlock) {
-                                plasma.markets.nodes[myJson.node].agreement = true
+                        } else {
+                            hiveClient.api.broadcastTransactionSynchronous(tx, function(err, result) {
+                            if (err && err.data.code == 4030100){
+                                console.log('EXPIRED')
+                                resolve('EXPIRED')
+                            } else if (err && err.data.code == 3010000) { //missing authority
+                                console.log('MISSING')
+                            } else if (err && err.data.code == 10) { //duplicate transaction
+                                console.log('SENT:Signer')
+                                resolve('SENT')
+                            } else {
+                                console.log(err)
                             }
-                        }).catch(e => {})
+                            })
+                        }
+                    });
+
                 }
-            }
-        })
+            } else {resolve('FAIL');console.log('FAIL')}
+        }
     })
 }
-*/
+exports.verify_broadcast = verify
+
+function buildSplitTransfers(amount, pair, ds, memos){
+    console.log({amount, pair, ds, memos})
+    let tos = ds.split(',') || 0
+    if (!tos)return []
+    let ops = [],
+        total = 0
+    for(var i = tos.length - 1; i >= 0; i--) {
+        let dis = parseInt((amount*parseInt(tos[i].split('_')[1])/10000))
+        if(!i)dis = amount - total    
+        total += dis
+        ops.push(['transfer',{
+            to: tos[i].split('_')[0],
+            from: config.msaccount,
+            amount: `${parseFloat(dis/1000).toFixed(3)} ${pair.toUpperCase()}`,
+            memo: memos + `:${parseFloat(parseInt(tos[i].split('_')[1])/100).toFixed(2)}%`
+        }])
+    }
+    return ops
+}

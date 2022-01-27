@@ -1,5 +1,4 @@
-const { getPathObj } = require("./getPathObj");
-const { deleteObjs } = require('./deleteObjs');
+const { getPathObj, deleteObjs } = require("./getPathObj");
 const { store } = require("./index");
 const config = require('./config');
 
