@@ -1,4 +1,4 @@
-# comb
+# HoneyComb
 
 This is a Decentralized Autonomous Organization built on the HIVE ecosystem.
 
@@ -77,7 +77,7 @@ Deploy from heroku or similar and set ENV variables with a hive name and active 
 
 * Clone this repository
 
-`git clone https://github.com/disregardfiat/comb.git`
+`git clone https://github.com/disregardfiat/honeycomb.git`
 
 * Navigate to the root directory of token
 
