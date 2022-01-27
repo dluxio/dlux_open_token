@@ -411,7 +411,7 @@ function dao(num) {
             daops.push({ type: 'put', path: ['posts'], data: cpost });
             daops.push({ type: 'put', path: ['markets', 'node'], data: mnode });
             daops.push({ type: 'put', path: ['delegations'], data: deles });
-            daops.push({ type: 'put', path: ['escrow', config.leader, 'comment'], data: op });
+            if(config.DAILY)daops.push({ type: 'put', path: ['escrow', config.leader, 'comment'], data: op });
             for (var i = daops.length - 1; i >= 0; i--) {
                 if (daops[i].type == 'put' && Object.keys(daops[i].data).length == 0 && typeof daops[i].data != 'number' && typeof daops[i].data != 'string') {
                     daops.splice(i, 1);
