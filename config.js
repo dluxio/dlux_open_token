@@ -72,6 +72,16 @@ const features = {
     state: true, //api dumps
     claimdrop: false //claim drops
 }
+const detail = {
+                name: 'Decentralized Limitless User eXperiences',
+                symbol: TOKEN,
+                icon: 'https://www.dlux.io/img/dlux-hive-logo-alpha.svg',
+                supply:'5% Fixed Inflation, No Cap.',
+                wp:`https://docs.google.com/document/d/1_jHIJsX0BRa5ujX0s-CQg3UoQC2CBW4wooP2lSSh3n0/edit?usp=sharing`,
+                ws:`https://www.dlux.io`,
+                be:`https://hiveblockexplorer.com/`,
+                text: `DLUX is a Web3.0 technology that is focused on providing distribution of eXtended (Virtual and Augmented) Reality. It supports any browser based applications that can be statically delivered through IPFS. The DLUX Token Architecture is Proof of Stake as a layer 2 technology on the HIVE blockchain to take advantage of free transactions. With the first WYSIWYG VR Builder of any blockchain environment and the first Decentralized Exchange on the Hive Blockchain, DLUX is committed to breaking any boundaries for adoption of world changing technologies.`
+            }
 
 //Aditionally on your branch, look closely at dao, this is where tokenomics happen and custom status posts are made
 
@@ -116,6 +126,7 @@ let config = {
     mainRender,
     mainIPFS,
     mainICO,
+    detail,
     footer,
     hive_service_fee,
     features

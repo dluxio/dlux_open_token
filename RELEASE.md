@@ -1,17 +1,17 @@
 ## 1.2
-   * Updated consensus mechanism for scaling. X
-   * Updated restarts for scaling mechanism. X
-   * New witness promotion routine. X
-   * Fast Replay. O
-   * Autonomous Multi-sig Account Management. 1/2 --needs dao account update
-   * Accurate Tracking of collateralized safety margins X
-   * Enforcement of safety margins. O
-   * Added a claim routine to ease tax reporting. X
-   * Half of claims locked in gov or power. X
-   * Opened NFT minting to all accounts. X
-   * Fixed DEX history. X
-   * Fixed DEX sell loop for expired trades X 
-   * Implemented multiple hive-js node selection X
+   * Updated consensus mechanism for scaling
+   * Updated restarts for scaling mechanism
+   * New witness promotion routine
+   * Fast Replay
+   * Autonomous Multi-sig Account Management.
+   * Accurate Tracking of collateralized safety margins
+   * Enforcement of safety margins
+   * Added a claim routine to ease tax reporting
+   * Half of claims locked in gov or power
+   * Opened NFT minting to all accounts
+   * Fixed DEX history
+   * Fixed DEX sell loop for expired trades
+   * Implemented multiple hive-js node selection
 
 ### 1.1.3 
 * r6
