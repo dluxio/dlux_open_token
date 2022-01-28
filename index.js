@@ -876,6 +876,7 @@ function ipfspromise(hash){
             }
         })
         fetch(`https://ipfs.infura.io/ipfs/${hash}`)
+        .then(r=>r.text())
         .then(res => resolve(res))
         .catch(e=>console.log(e))
     })
