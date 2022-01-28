@@ -496,7 +496,7 @@ function startApp() {
                     } else if (num % 100 === 1) {
                         const blockState = Buffer.from(stringify([num, block]))
                             block.ops = []
-                            ipfsSaveState(num, blockState, ipfsp)
+                            ipfsSaveState(num, blockState, ipfs)
                                 .then(pla => {
                                     block.chain.push({hash: pla.hashLastIBlock, hive_block: num})
                                     plasma.hashSecIBlock = plasma.hashLastIBlock
