@@ -870,10 +870,13 @@ function ipfspromise(hash){
     return new Promise((resolve, reject) => {
         ipfs.cat(hash, function(err, data) {
             if (err) {
-                reject(null)
+                console.log(err)
             } else {
                 resolve(data)
             }
         })
+        fetch(`https://ipfs.infura.io/ipfs/${hash}`)
+        .then(res => resolve(res))
+        .catch(e=>console.log(e))
     })
 }
