@@ -212,15 +212,9 @@ if (config.rta && config.rtp) {
 
 //starts block processor after memory has been loaded
 function startApp() {
-    const ipfsp = config.ipfshost == 'ipfs' ? new IPFS({
-        host: config.ipfshost,
-        port: config.ipfsport,
-        protocol: config.ipfsprotocol
-    }) : ipfs
-    if(config.ipfshost == 'ipfs')ipfsp.id(function (err, res) {
+    if(config.ipfshost == 'ipfs')ipfs.id(function (err, res) {
         if(err){}
         if(res)plasma.id = res.id
-        console.log(res)
     })
     processor = hiveState(client, hive, startingBlock, 10, config.prefix, streamMode, cycleAPI);
     processor.on('send', HR.send);
@@ -685,12 +679,14 @@ function startWith(hash, second) {
         console.log(`Attempting to start from IPFS save state ${hash}`);
         ipfspromise(hash).then(blockInfo=>{
             var blockinfo = JSON.parse(blockInfo);
-            ipfspromise(blockinfo[1].root ? blockinfo[1].root : hash, (file) => {
-            if (!err) {
+            console.log('here')
+            ipfspromise(blockinfo[1].root ? blockinfo[1].root : hash).then( file => {
+                console.log('there')
                 var data = JSON.parse(file);
+                console.log('there')
                 startingBlock = data[0]
                 block.root = blockinfo[1].root ? blockinfo[1].root : hash
-                block.prev_root = data[1].prev_root ? data[1].prev_root : data[1].stats.root
+                block.prev_root = data[1].prev_root ? data[1].prev_root : data[1].stats.root || ''
                 console.log('root', block.root)
                 if (!startingBlock) {
                     startWith(sh)
@@ -800,10 +796,6 @@ function startWith(hash, second) {
                         }
                     })
                 }
-            } else {
-                startWith(config.engineCrank)
-                console.log(`${hash} failed to load, Replaying from genesis.\nYou may want to set the env var STARTHASH\nFind it at any token API such as ${config.mainAPI}`)
-            }
         });
         })
         .catch(e=>{
@@ -867,6 +859,7 @@ function unwrapOps(arr){
 }
 
 function ipfspromise(hash){
+    console.log('ipfs', hash)
     return new Promise((resolve, reject) => {
         ipfs.cat(hash, function(err, data) {
             if (err) {
@@ -877,7 +870,7 @@ function ipfspromise(hash){
         })
         fetch(`https://ipfs.infura.io/ipfs/${hash}`)
         .then(r=>r.text())
-        .then(res => resolve(res))
+        .then(res => {resolve(res)})
         .catch(e=>console.log(e))
     })
 }
