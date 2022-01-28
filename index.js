@@ -679,11 +679,8 @@ function startWith(hash, second) {
         console.log(`Attempting to start from IPFS save state ${hash}`);
         ipfspromise(hash).then(blockInfo=>{
             var blockinfo = JSON.parse(blockInfo);
-            console.log('here')
             ipfspromise(blockinfo[1].root ? blockinfo[1].root : hash).then( file => {
-                console.log('there')
                 var data = JSON.parse(file);
-                console.log('there')
                 startingBlock = data[0]
                 block.root = blockinfo[1].root ? blockinfo[1].root : hash
                 block.prev_root = data[1].prev_root ? data[1].prev_root : data[1].stats.root || ''
@@ -859,7 +856,6 @@ function unwrapOps(arr){
 }
 
 function ipfspromise(hash){
-    console.log('ipfs', hash)
     return new Promise((resolve, reject) => {
         ipfs.cat(hash, function(err, data) {
             if (err) {

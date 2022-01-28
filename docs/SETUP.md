@@ -12,6 +12,9 @@
 * `git clone https://github.com/disregardfiat/honeycomb.git` --download this repo
 * `cd honeycomb` --change working directory
 * Edit your node specifics in `touch .env && nano .env`
+   * ```account="hiveaccount"
+active=5JactivePrivateKey
+msowner=5KadditionalPrivateKey```
 * `sudo docker-compose build` --Build Docker environment
 * `sudo docker-compose up` --Deploy Docker environment
 
