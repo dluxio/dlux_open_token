@@ -685,7 +685,7 @@ function startWith(hash, second) {
         console.log(`Attempting to start from IPFS save state ${hash}`);
         ipfspromise(hash).then(blockInfo=>{
             var blockinfo = JSON.parse(blockInfo);
-            ipfs.cat(blockinfo[1].root ? blockinfo[1].root : hash, (err, file) => {
+            ipfspromise(blockinfo[1].root ? blockinfo[1].root : hash, (file) => {
             if (!err) {
                 var data = JSON.parse(file);
                 startingBlock = data[0]
