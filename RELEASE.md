@@ -2,6 +2,7 @@
    * Updated consensus mechanism for scaling
    * Updated restarts for scaling mechanism
    * New witness promotion routine
+   * Dockerized with own IPFS dependencies.
    * Fast Replay
    * Autonomous Multi-sig Account Management.
    * Accurate Tracking of collateralized safety margins

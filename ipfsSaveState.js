@@ -1,6 +1,6 @@
-const { ipfs } = require("./index");
+//const { ipfs } = require("./index");
 
-exports.ipfsSaveState = (blocknum, buffer) => {
+exports.ipfsSaveState = (blocknum, buffer, ipfs) => {
     return new Promise((resolve, reject) => {
         ipfs.add(buffer, (err, ipfs_return) => {
             if (!err) {

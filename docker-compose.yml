@@ -1,7 +1,6 @@
 version: '3'
 services:
-  node-1:
-    node-1:
+  ipfs:
     # docker run -d --name ipfs_host -v $ipfs_staging:/export -v $ipfs_data:/data/ipfs -p 4001:4001 -p 127.0.0.1:8080:8080 -p 127.0.0.1:5001:5001 ipfs/go-ipfs:latest
     image: ipfs/go-ipfs:latest
     ports:
@@ -17,34 +16,47 @@ services:
       #   target: /data/ipfs
       - ./staging_dir:/export
       # - ./data_dir:/data/ipfs
-      - node-1:/data/ipfs
-  node-2:
-      image: ipfs/go-ipfs:latest
-    build:
-      context: private-network
-    environment:
-      LIBP2P_FORCE_PNET: '1'
-      # SWARM_KEY: "/key/swarm/psk/1.0.0/\n/base16/\ne0e7b1394fb6e928eecf2f8db77eaa99d3657684dc939519f285cb902bd93e22"
-    volumes:
-      - node-2:/data/ipfs
-      - ./private-network/.ipfs/swarm.key:/data/ipfs/swarm.key
-      - ./private-network/init.sh:/usr/local/bin/start_ipfs
+      - ipfs:/data/ipfs
+  honeycomb:
+    # depends_on:
+    #   - ipfs
+    build: .
+    restart: unless-stopped
     ports:
-      - 8080
-  node-3:
-    build:
-      context: private-network
+      - "3001:80"
     environment:
-      LIBP2P_FORCE_PNET: '1'
-      # SWARM_KEY: "/key/swarm/psk/1.0.0/\n/base16/\ne0e7b1394fb6e928eecf2f8db77eaa99d3657684dc939519f285cb902bd93e22"
-      SWARM_PEER: /ip4/172.18.0.2/tcp/4001/ipfs/QmUrp1E4ArW1ZDdFHnQrKfdH8tgGxM38hmPyjXEEoTmfto
-    volumes:
-      - node-3:/data/ipfs
-      - ./private-network/.ipfs/swarm.key:/data/ipfs/swarm.key
-      - ./private-network/init.sh:/usr/local/bin/start_ipfs
-    ports:
-      - 8080
+      - ipfshost=ipfs
+      - ipfsprotocol=http
+      - ipfsport=5001
+    stdin_open: true
+    tty: true
+  # node-2:
+  #   image: ipfs/go-ipfs:latest
+  #   build:
+  #     context: private-network
+  #   environment:
+  #     LIBP2P_FORCE_PNET: '1'
+  #     # SWARM_KEY: "/key/swarm/psk/1.0.0/\n/base16/\ne0e7b1394fb6e928eecf2f8db77eaa99d3657684dc939519f285cb902bd93e22"
+  #   volumes:
+  #     - node-2:/data/ipfs
+  #     - ./private-network/.ipfs/swarm.key:/data/ipfs/swarm.key
+  #     - ./private-network/init.sh:/usr/local/bin/start_ipfs
+  #   ports:
+  #     - 8080
+  # node-3:
+  #   build:
+  #     context: private-network
+  #   environment:
+  #     LIBP2P_FORCE_PNET: '1'
+  #     # SWARM_KEY: "/key/swarm/psk/1.0.0/\n/base16/\ne0e7b1394fb6e928eecf2f8db77eaa99d3657684dc939519f285cb902bd93e22"
+  #     SWARM_PEER: /ip4/172.18.0.2/tcp/4001/ipfs/QmUrp1E4ArW1ZDdFHnQrKfdH8tgGxM38hmPyjXEEoTmfto
+  #   volumes:
+  #     - node-3:/data/ipfs
+  #     - ./private-network/.ipfs/swarm.key:/data/ipfs/swarm.key
+  #     - ./private-network/init.sh:/usr/local/bin/start_ipfs
+  #   ports:
+  #     - 8080
 volumes:
-  node-1:
-  node-2:
-  node-3:
+  ipfs:
+  # node-2:
+  # node-3:

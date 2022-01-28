@@ -25,8 +25,9 @@ const engineCrank = ENV.startingHash || '' //but this state will be inserted bef
 const rta = ENV.rta || '' //rtrades account : IPFS pinning interface
 const rtp = ENV.rtp || '' //rtrades password : IPFS pinning interface
 
-var ipfshost = ENV.ipfshost || 'ipfs.infura.io' //IPFS upload/download provider provider
-
+const ipfshost = ENV.ipfshost || 'ipfs.infura.io' //IPFS upload/download provider provider
+const ipfsport = ENV.ipfsport || '5001' //IPFS upload/download provider provider
+const ipfsprotocol = ENV.ipfsprotocol || 'https' //IPFS upload/download protocol
 //node market config > 2500 is 25% inflation to node operators, this is currently not used
 const bidRate = ENV.BIDRATE || 2500 //
 
@@ -110,6 +111,8 @@ let config = {
     rtp,
     override,
     ipfshost,
+    ipfsprotocol,
+    ipfsport,
     starting_block,
     prefix,
     leader,

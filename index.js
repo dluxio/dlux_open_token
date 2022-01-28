@@ -17,11 +17,13 @@ const args = require('minimist')(process.argv.slice(2));
 const express = require('express');
 const stringify = require('json-stable-stringify');
 const IPFS = require('ipfs-api'); //ipfs-http-client doesn't work
-const ipfs = new IPFS({
+const fetch = require('node-fetch');
+var ipfs = new IPFS({    
     host: config.ipfshost,
-    port: 5001,
-    protocol: 'https'
-});
+    port: config.ipfsport,
+    protocol: config.ipfsprotocol
+})
+console.log(`IPFS: ${config.ipfshost == 'ipfs' ? 'DockerIPFS' : config.ipfshost}:${config.ipfsport}`)
 exports.ipfs = ipfs;
 const rtrades = require('./rtrades');
 var Pathwise = require('./pathwise');
@@ -110,7 +112,8 @@ const { dao, Liquidity } = require("./dao");
 const { recast } = require('./lil_ops')
 const hiveState = require('./processor');
 const { getPathObj, getPathNum, getPathSome } = require('./getPathObj');
-const { consolidate, sign, createAccount, updateAccount } = require('./msa')
+const { consolidate, sign, createAccount, updateAccount } = require('./msa');
+const { resolve } = require('path');
 const api = express()
 var http = require('http').Server(api);
 var escrow = false;
@@ -128,9 +131,10 @@ var live_dex = {}, //for feedback, unused currently
 var recents = []
     //HIVE API CODE
 
-//Start Program Options   
+    //Start Program Options   
 startWith('QmfYdmSKpy1SBR9w6qUpUGNUpfvo2Gezg86bXnsrPznpDg', true) //for testing and replaying 58859101
 //dynStart(config.follow)
+
 
 // API defs
 api.use(API.https_redirect);
@@ -208,6 +212,16 @@ if (config.rta && config.rtp) {
 
 //starts block processor after memory has been loaded
 function startApp() {
+    const ipfsp = config.ipfshost == 'ipfs' ? new IPFS({
+        host: config.ipfshost,
+        port: config.ipfsport,
+        protocol: config.ipfsprotocol
+    }) : ipfs
+    if(config.ipfshost == 'ipfs')ipfsp.id(function (err, res) {
+        if(err){}
+        if(res)plasma.id = res.id
+        console.log(res)
+    })
     processor = hiveState(client, hive, startingBlock, 10, config.prefix, streamMode, cycleAPI);
     processor.on('send', HR.send);
     processor.on('claim', HR.claim);
@@ -475,7 +489,7 @@ function startApp() {
                         block.ops = []
                         store.get([], function(err, obj) {
                             const blockState = Buffer.from(stringify([num, obj]))
-                            ipfsSaveState(num, blockState)
+                            ipfsSaveState(num, blockState, ipfsp)
                                 .then(pla => {
                                     block.root = pla.hashLastIBlock
                                     plasma.hashSecIBlock = plasma.hashLastIBlock
@@ -488,7 +502,7 @@ function startApp() {
                     } else if (num % 100 === 1) {
                         const blockState = Buffer.from(stringify([num, block]))
                             block.ops = []
-                            ipfsSaveState(num, blockState)
+                            ipfsSaveState(num, blockState, ipfsp)
                                 .then(pla => {
                                     block.chain.push({hash: pla.hashLastIBlock, hive_block: num})
                                     plasma.hashSecIBlock = plasma.hashLastIBlock
@@ -793,7 +807,8 @@ function startWith(hash, second) {
         });
         })
         .catch(e=>{
-
+            console.log('error in ipfs', e)
+            process.exit()
         })
     } else {
         startingBlock = config.starting_block
@@ -855,7 +870,6 @@ function ipfspromise(hash){
     return new Promise((resolve, reject) => {
         ipfs.cat(hash, function(err, data) {
             if (err) {
-                console.log(err)
                 reject(null)
             } else {
                 resolve(data)

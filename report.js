@@ -8,7 +8,8 @@ function report(plas, con) {
             let report = {
                 hash: plas.hashLastIBlock,
                 block: plas.hashBlock,
-                stash: plas.privHash
+                stash: plas.privHash,
+                ipfs_id: plas.id,
             }
         try {if(r.block > report.block){
                 report.sig = r.sig,
