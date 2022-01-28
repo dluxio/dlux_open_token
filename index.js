@@ -132,7 +132,7 @@ var recents = []
     //HIVE API CODE
 
     //Start Program Options   
-//startWith('QmfYdmSKpy1SBR9w6qUpUGNUpfvo2Gezg86bXnsrPznpDg', true) //for testing and replaying 58859101
+//startWith('QmWHnL3KcRwJj3WMqRg9vEDBshp2hRew6wwZohX8qBYH4Q', true) //for testing and replaying 58859101
 dynStart(config.follow)
 
 
@@ -469,7 +469,7 @@ function startApp() {
                             promises.push(tally(num, plasma, processor.isStreaming()));
                         }
                         if (num % 100 === 99) {
-                            promises.push(Liquidity());
+                            if(config.features.liquidity)promises.push(Liquidity());
                         }
                         if ((num - 2) % 3000 === 0) {
                             promises.push(voter());
@@ -483,7 +483,7 @@ function startApp() {
                         block.ops = []
                         store.get([], function(err, obj) {
                             const blockState = Buffer.from(stringify([num, obj]))
-                            ipfsSaveState(num, blockState, ipfsp)
+                            ipfsSaveState(num, blockState, ipfs)
                                 .then(pla => {
                                     block.root = pla.hashLastIBlock
                                     plasma.hashSecIBlock = plasma.hashLastIBlock
@@ -665,7 +665,7 @@ function dynStart(account) {
                 }
             } else {
                 startWith(config.engineCrank)
-                console.log('I did it')
+                console.log('IPFS load Failed: Genesis or Backup Replay...')
             }
         }
     });
@@ -688,14 +688,12 @@ function startWith(hash, second) {
                 if (!startingBlock) {
                     startWith(sh)
                 } else {
-                    /*
-                    plasma.hashBlock = data[0]
-                    plasma.hashLastIBlock = hash
-                    */
                     store.del([], function(e) {
                         if (!e && (second || data[0] > API.RAM.head - 325)) {
                             if (hash) {
                                 var cleanState = data[1]
+                                delete cleanState.stats.HiveVWMA
+                                delete cleanState.stats.HbdVWMA //remove when dynamic
                                 store.put([], cleanState, function(err) {
                                     if (err) {
                                         console.log('errr',err)
@@ -711,7 +709,9 @@ function startWith(hash, second) {
                                             }
                                         })
                                         if(blockinfo[1].chain){rundelta(blockinfo[1].chain, blockinfo[1].ops, blockinfo[0], blockinfo[1].prev_root)
-                                        .then(empty=>startApp())
+                                        .then(empty=>{
+                                            startApp()
+                                            getPathNum(['balances', 'ra']).then(r=>console.log(r))})
                                         .catch(e=>console.log('Failure of rundelta'))
                                         } else {
                                             startApp()
@@ -833,13 +833,18 @@ function rundelta(arr, ops, sb, pr){
                 if(a.length){
                     const b = JSON.parse(a.shift())
                     startingBlock = b[0]
-                    store.batch(unwrapOps(b[1].ops), [delta, reject, a ? a : []])
+                    delsfirst(b[1].ops).then(emp=>store.batch(unwrapOps(b[1].ops)[1], [delta, reject, a ? a : []]))
                 } else {
                     block.ops = []
                     block.chain = arr
                     block.prev_root = pr
                     startingBlock = sb
-                    store.batch(unwrapOps(ops), [resolve, reject, 'OK'])
+                    delsfirst(ops).then(emp=>store.batch(unwrapOps(ops)[1], [resolve, reject, a ? a : []]))
+                }
+                function delsfirst(b){
+                    return new Promise((resolv, rejec) => {
+                        store.batch(unwrapOps(b)[0], [resolv, rejec, 'OK'])
+                    })
                 }
             }
         })
@@ -848,11 +853,14 @@ function rundelta(arr, ops, sb, pr){
 }
 
 function unwrapOps(arr){
-    var c = []
+    var c = [],
+        d = []
     for(var i = 0; i < arr.length; i++){
-        c.push(JSON.parse(arr[i]))
+        const e = JSON.parse(arr[i])
+        if (e.type != 'del')c.push(e)
+        else d.push(e)
     }
-    return c
+    return [d,c]
 }
 
 function ipfspromise(hash){

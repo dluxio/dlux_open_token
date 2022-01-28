@@ -18,5 +18,26 @@ msowner=5KadditionalPrivateKey```
 * `sudo docker-compose build` --Build Docker environment
 * `sudo docker-compose up` --Deploy Docker environment
 
+#### nginx setup
+* `sudo apt install nginx certbot python3-certbot-nginx`
+    Select `nginx-full`
+* `sudo nano /etc/nginx/sites-availible/default`
+Enter:
+```
+server{
+server_name location.yourdomain.io;
+
+        location / {
+                proxy_pass http://127.0.0.1:3001;
+                proxy_http_version 1.1;
+                proxy_set_header Upgrade $http_upgrade;
+                proxy_set_header Connection 'upgrade';
+                proxy_set_header Host $host;
+        }
+}
+```
+Save and
+* `sudo systemctl relaod nginx`
+* Ensure your DNS information points to your server and run `sudo certbot`
 
 ## Build A Token
