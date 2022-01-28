@@ -23,7 +23,7 @@ services:
     build: .
     restart: unless-stopped
     ports:
-      - "3001:80"
+      - "3001:3001"
     environment:
       - ipfshost=ipfs
       - ipfsprotocol=http
