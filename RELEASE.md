@@ -2,11 +2,11 @@
    * Updated consensus mechanism for scaling
    * Updated restarts for scaling mechanism
    * New witness promotion routine
-   * Dockerized with own IPFS dependencies.
+   * Dockerized with own IPFS dependencies
    * Fast Replay
-   * Autonomous Multi-sig Account Management.
+   * Autonomous Multi-sig Account Management DO IT
    * Accurate Tracking of collateralized safety margins
-   * Enforcement of safety margins
+   * Enforcement of safety margins DO IT
    * Added a claim routine to ease tax reporting
    * Half of claims locked in gov or power
    * Opened NFT minting to all accounts

@@ -1,7 +1,7 @@
 {
-    "name": "dlux-token-node",
-    "version": "1.2.0",
-    "description": "dlux token hive-state instance",
+    "name": "honeycomb",
+    "version": "1.0.0",
+    "description": "A Honeycomb for Hive Layer 2",
     "main": "index.js",
     "scripts": {
         "test": "mocha || true",
