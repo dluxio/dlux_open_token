@@ -48,7 +48,6 @@ exports.tally = (num, plasma, isStreaming) => {
                         mss = {},
                         mssb = 0,
                         oracleArr = []
-                    console.log(runners)
                     for(var block in mssp){
                         if (block == num - 50){
                             mss = JSON.parse(mssp[block])
@@ -200,6 +199,7 @@ exports.tally = (num, plasma, isStreaming) => {
                     if(!consensus) {
                         newPlasma.potential = tally
                     }
+                    let this_payout
                     if(config.features.pob){
                         let weights = 0
                         for (post in pending) {
@@ -213,7 +213,7 @@ exports.tally = (num, plasma, isStreaming) => {
                         if (num < 50700000) {
                             stats.movingWeight.dailyPool = 700000
                         }
-                        let this_weight = parseInt(weights / 2016),
+                        let this_weight = parseInt(weights / 2016)
                             this_payout = parseInt((((rbal.rc / 200) + stats.movingWeight.dailyPool) / 304) * (this_weight / running_weight)) //subtract this from the rc account... 13300 is 70% of inflation
                             stats.movingWeight.running = parseInt(((stats.movingWeight.running * 2015) / 2016) + (weights / 2016)) //7 day average at 5 minute intervals
                         promises.unshift(payout(this_payout, weights, pending, num))
@@ -228,7 +228,6 @@ exports.tally = (num, plasma, isStreaming) => {
                                 { type: 'put', path: ['balances', 'ra'], data: rbal.ra }
                             ]
                             if(config.features.pob)ops.push({ type: 'put', path: ['balances', 'rc'], data: rbal.rc - (this_payout - change[0]) })
-                            console.log(still_running, runners)
                             if(Object.keys(still_running).length > 1) ops.push(
                                 { type: 'put', path: ['runners'], data: still_running })
                             else ops.push({ type: 'put', path: ['runners'], data: runners })

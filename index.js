@@ -133,6 +133,9 @@ var recents = []
 
     //Start Program Options   
 //startWith('QmWHnL3KcRwJj3WMqRg9vEDBshp2hRew6wwZohX8qBYH4Q', true) //for testing and replaying 58859101
+// QmbD4ifzxdQF4h3NDsVpiqB3BpLvGMCJ9LqLt3UEfgbrmy
+// QmcDdunVgo6g5sVSdgE1AegEAoxZX5snh6gS3FYG3gqyQR
+// 
 dynStart(config.follow)
 
 
