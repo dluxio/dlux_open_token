@@ -219,7 +219,7 @@ exports.tally = (num, plasma, isStreaming) => {
                         promises.unshift(payout(this_payout, weights, pending, num))
                     }
                     Promise.all(promises).then(change => {
-                            const mint = parseInt(stats.tokenSupply / stats.interestRate);
+                            const mint = config.features.inflation ? parseInt(stats.tokenSupply / stats.interestRate) : 0
                             stats.tokenSupply += mint;
                             rbal.ra += mint;
                             let ops = [
