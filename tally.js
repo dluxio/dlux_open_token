@@ -236,7 +236,7 @@ exports.tally = (num, plasma, isStreaming) => {
                                 //console.log(ops)
                             store.batch(ops, [resolve, reject, newPlasma]);
                             if (process.env.npm_lifecycle_event != 'test') {
-                                if (consensus && (consensus != plasma.hashLastIBlock || consensus != nodes[config.username].report.hash && nodes[config.username].report.block_num > num - 100) && isStreaming) {
+                                if (consensus && (consensus != plasma.hashLastIBlock || consensus != nodes[config.username]?.report.hash && nodes[config.username]?.report.block_num > num - 100) && isStreaming) {
                                     exit(consensus);
                                     //var errors = ['failed Consensus'];
                                     //const blockState = Buffer.from(JSON.stringify([num, state]))

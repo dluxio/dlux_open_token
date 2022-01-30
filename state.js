@@ -68,6 +68,10 @@ module.exports = {
         "lastBlock": "",
         "marketingRate": 2500,
         "maxBudget": 1000000000,
+        "MSHeld":{
+            "HIVE": 0,
+            "HBD": 0
+        }, 
         "nodeRate": 2000,
         "outOnBlock": 0, //amm ICO pricing
         "savingsRate": 1000,

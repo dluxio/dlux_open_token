@@ -106,7 +106,7 @@ const { release } = require('./processing_routes/dex')
 const { enforce } = require("./enforce");
 const { tally } = require("./tally");
 const { voter } = require("./voter");
-const { report, sig_submit } = require("./report");
+const { report, sig_submit, osig_submit } = require("./report");
 const { ipfsSaveState } = require("./ipfsSaveState");
 const { dao, Liquidity } = require("./dao");
 const { recast } = require('./lil_ops')
@@ -132,10 +132,7 @@ var recents = []
     //HIVE API CODE
 
     //Start Program Options   
-//startWith('QmWHnL3KcRwJj3WMqRg9vEDBshp2hRew6wwZohX8qBYH4Q', true) //for testing and replaying 58859101
-// QmbD4ifzxdQF4h3NDsVpiqB3BpLvGMCJ9LqLt3UEfgbrmy
-// QmcDdunVgo6g5sVSdgE1AegEAoxZX5snh6gS3FYG3gqyQR
-// 
+//startWith('QmaRAerHzwBbE5kxU5ntB755YnSX7w9LTEtC7Nidm7MjTv', true) //for testing and replaying 58859101
 dynStart(config.follow)
 
 
@@ -296,12 +293,15 @@ function startApp() {
                     lte: "" + (num - 100)
                 }) //resign mss
                 let Pmsa = getPathObj(['msa'])
-                Promise.all([Pchron, Pmss, Pmsa]).then(mem => {
+                let Pmso = getPathObj(['mso'])
+                Promise.all([Pchron, Pmss, Pmsa, Pmso]).then(mem => {
                     var a = mem[0],
                         mss = mem[1], //resign mss
                         msa = mem[2] //if length > 80... sign these
+                        mso = mem[3]
                     let chrops = {},
                         msa_keys = Object.keys(msa)
+                        mso_keys = Object.keys(mso)
                     for (var i in a) {
                         chrops[a[i]] = a[i]
                     }
@@ -413,9 +413,18 @@ function startApp() {
                 }
                 function every(){
                     return new Promise((res, rej)=>{
-                        let promises = []
+                        let promises = [HR.margins()]
                         if(num % 100 !== 50){
-                            if(msa_keys.length > 80){
+                            if(mso_keys.length){
+                                promises.push(new Promise((res,rej)=>{
+                                    osig_submit(consolidate(num, plasma, bh, 'owner'))
+                                    .then(nodeOp => {
+                                        res('SAT')
+                                        NodeOps.unshift(nodeOp)
+                                    })
+                                    .catch(e => { rej(e) })
+                                }))
+                            } else if(msa_keys.length > 80){
                                 promises.push(new Promise((res,rej)=>{
                                     sig_submit(consolidate(num, plasma, bh))
                                     .then(nodeOp => {
@@ -697,6 +706,10 @@ function startWith(hash, second) {
                                 var cleanState = data[1]
                                 delete cleanState.stats.HiveVWMA
                                 delete cleanState.stats.HbdVWMA //remove when dynamic
+                                cleanState.stats.MSHeld = {
+                                    "HIVE": 0,
+                                    "HBD": 0
+                                }
                                 store.put([], cleanState, function(err) {
                                     if (err) {
                                         console.log('errr',err)

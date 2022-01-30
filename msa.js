@@ -5,9 +5,13 @@ const stringify = require('json-stable-stringify');
 //const privateKey = hiveClient.PrivateKey.fromString(config.msprivatekey);
 
 
-exports.consolidate = (num, plasma, bh) => {
+exports.consolidate = (num, plasma, bh, owner) => {
     return new Promise((resolve, reject) => {
-        store.get(['msa'], (err, result) => {
+        var query = 'msa'
+        if(owner == 'owner')query = 'mso'
+        const queryf = query == 'msa' ? 'mss' : 'msso'
+        const sel_key = query == 'msa' ? config.active : config.msowner
+        store.get([query], (err, result) => {
             if (err || Object.keys(result).length === 0) {
                 resolve('NONE')
             } else {
@@ -67,7 +71,7 @@ exports.consolidate = (num, plasma, bh) => {
                         }
                     }
                 }
-                ops.push({type: 'del', path: ['msa']})
+                ops.push({type: 'del', path: [query]})
                 let txs = []
                 for (var tx in result){
                     txs.push(result[tx])
@@ -84,9 +88,9 @@ exports.consolidate = (num, plasma, bh) => {
                     operations: txs,
                     extensions: [],
                 }
-                ops.push({type: 'put', path: ['mss', `${num}`], data: stringify(op)})
+                ops.push({type: 'put', path: [queryf, `${num}`], data: stringify(op)})
                 if(config.msowner && config.active && txs.length){
-                    const stx = hiveClient.auth.signTransaction(op, [config.active])
+                    const stx = hiveClient.auth.signTransaction(op, [sel_key])
                     sig.sig = stx.signatures[0]
                 }
                 store.batch(ops, [resolve, reject, sig])

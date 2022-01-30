@@ -56,3 +56,24 @@ function sig_submit(sign) {
     })
 }
 exports.sig_submit = sig_submit;
+
+function osig_submit(sign) {
+    return new Promise((resolve, reject) => {
+        sign.then(r =>{
+            let report = {
+                sig: r.sig,
+                sig_block: r.block
+            }
+        var op = ["custom_json", {
+            required_auths: [config.username],
+            required_posting_auths: [],
+            id: `${config.prefix}osig_submit`,
+            json: JSON.stringify(report)
+        }];
+        resolve([
+            [0, 0], op
+        ])
+        })
+    })
+}
+exports.osig_submit = osig_submit;
