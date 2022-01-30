@@ -74,6 +74,8 @@ Deploy from heroku or similar and set ENV variables with a hive name and active 
 * Node.js and git are required
 
 ### Server Installation
+Detailed Instructions also at /docs/setup.md
+Which include Docker and IPFS linking
 
 * Clone this repository
 
@@ -81,7 +83,7 @@ Deploy from heroku or similar and set ENV variables with a hive name and active 
 
 * Navigate to the root directory of token
 
-`cd dlux_open_token`
+`cd honeycomb`
 
 * Set configuration variables
 
