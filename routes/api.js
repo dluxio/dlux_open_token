@@ -1714,14 +1714,6 @@ exports.user = (req, res, next) => {
             res.send(JSON.stringify({
                 balance: v[0],
                 claim: v[9],
-                drop: {
-                    availible: {
-                        "amount": 10000,
-                        "precision": 3,
-                        "token": "LARYNX"
-                    },
-                    last_claim: 12
-               },//v[10],
                 poweredUp: v[1],
                 granted: v[2],
                 granting: v[8],

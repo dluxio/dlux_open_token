@@ -1,5 +1,6 @@
 const config = require('./../config')
 const { store } = require("./../index");
+const { ipfsPeerConnect } = require("./../ipfsSaveState");
 
 exports.report = (json, from, active, pc) => {
     store.get(['markets', 'node', from], function(e, a) {
@@ -11,6 +12,7 @@ exports.report = (json, from, active, pc) => {
                 var ops = [
                     { type: 'put', path: ['markets', 'node', from], data: b }
                 ]
+                if(json.ipfs_id && config.ipfshost == 'ipfs')ipfsPeerConnect(json.ipfs_id)
                 if (process.env.npm_lifecycle_event == 'test') pc[2] = ops
                 store.batch(ops, pc)
             } else {
@@ -22,3 +24,4 @@ exports.report = (json, from, active, pc) => {
         }
     })
 }
+

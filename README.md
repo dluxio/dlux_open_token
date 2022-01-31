@@ -1,10 +1,10 @@
-# dlux_open_token
+# HoneyComb
 
 This is a Decentralized Autonomous Organization built on the HIVE ecosystem.
 
 THIS BUILD IS PASSING BUT SEVERAL FEATURES ARE UNTESTED. DO NOT RECOMMEND USING ON ACCOUNT WITH HIGH BALANCES
 
-This software builds a network of peers that use HIVE to post and interpret transactions. This allows these peers to come to a consensus and elect peers to run tasks. Distributing computing in this way allows a vast amount of potential applications, DeFi, and oracle services. By distributing authority to perform transactions we can have a frictionless(no intermediate tokens, no central authority, no intrinsic fees) way to cross asset boundaries(HIVE/OPEN_TOKEN) with no information asymmetries, ie Finance without securities by definition... just free speech: As no party is required to perfom any function, or prevented from performing any function, no promises are made by peers. Network Incentives (OPEN-TOKEN) alone are enough to maintain trust.
+This software builds a network of peers that use HIVE to post and interpret transactions. This allows these peers to come to a consensus and elect peers to run tasks. Distributing computing in this way allows a vast amount of potential applications, DeFi, and oracle services. By distributing authority to perform transactions we can have a frictionless(no intermediate tokens, no central authority, no intrinsic fees) way to cross asset boundaries(HIVE/COMB) with no information asymmetries, ie Finance without securities by definition... just free speech: As no party is required to perfom any function, or prevented from performing any function, no promises are made by peers. Network Incentives (COMB) alone are enough to maintain trust.
 
 These features are currently working and being tested for `0.9.0a`:
 
@@ -49,28 +49,6 @@ These features are works in progress:
 * Smart contract to build account creation token market `1.1`
 * NFT/smart contract system with fetch and consensus ie. distributed computer `1.1`
 
-### Bounty and PenTest
-If you're tech savvy help us test this. 
-There are currently roughly 12M Tokens in DLUX
-Any major breach will be rolled back and/or corrected with the breacher earning a maximum of 5,000 DLUX. 
-Gains that can be made less than 5000 DLUX can be kept.
-Any users accounts are guaranteed. 
-All tokens distributed from this bounty will be from already minted tokens.
-Any critical(balance altering) pull requests will earn 2500 DLUX.
-Any non-critical(halting - other) pull requests accepted by the deadline can earn upto 1000 DLUX.
-1 bounty per bug (please fix all instances of found bug)
-Bounty ends on Feb 15th or the first 3 day period with no critical errors found.
-There are up to 750,000 DLUX up for bounties. (currently located in `rc` and `rm`, your pull request can alter these) in the following fashion:
-
->index.js:
-```
-var cleanState = data[1]
-cleanState.balances.rc = cleanState.balances.rc - 2500000 //add these 2 lines
-cleanState.balances.yourhiveaccount = cleanState.balances.yourhiveaccount + 2500000
-store.put([], cleanState, function(err) {
-```
-After merge and 10 minutes the above lines will be removed, but your name will remain in the code forever.
-
 ***
 
 This software is meant to be run as a public API for decentralized token data.
@@ -96,14 +74,16 @@ Deploy from heroku or similar and set ENV variables with a hive name and active 
 * Node.js and git are required
 
 ### Server Installation
+Detailed Instructions also at /docs/setup.md
+Which include Docker and IPFS linking
 
 * Clone this repository
 
-`git clone https://github.com/dluxio/dlux_open_token.git`
+`git clone https://github.com/disregardfiat/honeycomb.git`
 
 * Navigate to the root directory of token
 
-`cd dlux_open_token`
+`cd honeycomb`
 
 * Set configuration variables
 
@@ -592,6 +572,4 @@ This action enters an auction bid for a token.
 #### example:
 
 Not implemented
-
-
 

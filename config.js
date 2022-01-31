@@ -5,6 +5,7 @@ const username = ENV.account || 'disregardfiat';
 const active = ENV.active || '';
 const follow = ENV.follow || 'disregardfiat';
 const msowner = ENV.msowner || '';
+const mspublic = ENV.mspublic || '';
 const memoKey = ENV.memo || '';
 const hookurl = ENV.discordwebhook || '';
 const NODEDOMAIN = ENV.domain || 'http://dlux-token.herokuapp.com' //where your API lives
@@ -25,14 +26,15 @@ const engineCrank = ENV.startingHash || '' //but this state will be inserted bef
 const rta = ENV.rta || '' //rtrades account : IPFS pinning interface
 const rtp = ENV.rtp || '' //rtrades password : IPFS pinning interface
 
-var ipfshost = ENV.ipfshost || 'ipfs.infura.io' //IPFS upload/download provider provider
-
+const ipfshost = ENV.ipfshost || 'ipfs.infura.io' //IPFS upload/download provider provider
+const ipfsport = ENV.ipfsport || '5001' //IPFS upload/download provider provider
+const ipfsprotocol = ENV.ipfsprotocol || 'https' //IPFS upload/download protocol
 //node market config > 2500 is 25% inflation to node operators, this is currently not used
 const bidRate = ENV.BIDRATE || 2500 //
 
 //HIVE CONFIGS
-var startURL = ENV.STARTURL || "https://rpc.ecency.com/"
-var clientURL = ENV.APIURL || "https://rpc.ecency.com/"
+var startURL = ENV.STARTURL || "https://api.deathwing.me/"
+var clientURL = ENV.APIURL || "https://api.deathwing.me/"
 const clients = ENV.clients || [
     "https://api.deathwing.me/",
     //"https://api.c0ff33a.uk/",
@@ -55,6 +57,7 @@ const ben = 'dlux-io' //Account where comment benifits trigger token action
 const delegation = 'dlux-io' //account people can delegate to for rewards
 const delegationWeight = 1000 //when to trigger community rewards with bens
 const msaccount = 'dlux-cc' //account controlled by community leaders
+const msPubMemo = 'STM5se9o2oZwY7ztpo2scyvf12RR41zaYa6rozBtetwfr1DmH1J5k' //memo key for msaccount
 const mainAPI = 'token.dlux.io' //leaders API probably
 const mainRender = 'dluxdata.herokuapp.com' //data and render server
 const mainFE = 'dlux.io' //frontend for content
@@ -72,6 +75,9 @@ const features = {
     state: true, //api dumps
     claimdrop: false //claim drops
 }
+const adverts = [
+    'https://camo.githubusercontent.com/954558e3ca2d68e0034cae13663d9807dcce3fcf/68747470733a2f2f697066732e627573792e6f72672f697066732f516d64354b78395548366a666e5a6748724a583339744172474e6b514253376359465032357a3467467132576f50'
+]
 const detail = {
                 name: 'Decentralized Limitless User eXperiences',
                 symbol: TOKEN,
@@ -89,6 +95,7 @@ let config = {
     username,
     active,
     msowner,
+    mspublic,
     memoKey,
     follow,
     NODEDOMAIN,
@@ -110,11 +117,15 @@ let config = {
     rtp,
     override,
     ipfshost,
+    ipfsprotocol,
+    ipfsport,
     starting_block,
     prefix,
     leader,
     msaccount,
+    msPubMemo,
     ben,
+    adverts,
     delegation,
     delegationWeight,
     TOKEN,

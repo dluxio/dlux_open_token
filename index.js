@@ -17,11 +17,13 @@ const args = require('minimist')(process.argv.slice(2));
 const express = require('express');
 const stringify = require('json-stable-stringify');
 const IPFS = require('ipfs-api'); //ipfs-http-client doesn't work
-const ipfs = new IPFS({
+const fetch = require('node-fetch');
+var ipfs = new IPFS({    
     host: config.ipfshost,
-    port: 5001,
-    protocol: 'https'
-});
+    port: config.ipfsport,
+    protocol: config.ipfsprotocol
+})
+console.log(`IPFS: ${config.ipfshost == 'ipfs' ? 'DockerIPFS' : config.ipfshost}:${config.ipfsport}`)
 exports.ipfs = ipfs;
 const rtrades = require('./rtrades');
 var Pathwise = require('./pathwise');
@@ -104,13 +106,14 @@ const { release } = require('./processing_routes/dex')
 const { enforce } = require("./enforce");
 const { tally } = require("./tally");
 const { voter } = require("./voter");
-const { report, sig_submit } = require("./report");
+const { report, sig_submit, osig_submit } = require("./report");
 const { ipfsSaveState } = require("./ipfsSaveState");
 const { dao, Liquidity } = require("./dao");
 const { recast } = require('./lil_ops')
 const hiveState = require('./processor');
 const { getPathObj, getPathNum, getPathSome } = require('./getPathObj');
-const { consolidate, sign, createAccount, updateAccount } = require('./msa')
+const { consolidate, sign, createAccount, updateAccount } = require('./msa');
+const { resolve } = require('path');
 const api = express()
 var http = require('http').Server(api);
 var escrow = false;
@@ -128,9 +131,10 @@ var live_dex = {}, //for feedback, unused currently
 var recents = []
     //HIVE API CODE
 
-//Start Program Options   
-startWith('QmfYdmSKpy1SBR9w6qUpUGNUpfvo2Gezg86bXnsrPznpDg', true) //for testing and replaying 58859101
+    //Start Program Options   
+startWith('QmNpsXTdcY8PyDGrQNVN49ADaKtzheUTi9CgDAHG9SmoSz', true) //for testing and replaying 58859101
 //dynStart(config.follow)
+
 
 // API defs
 api.use(API.https_redirect);
@@ -208,6 +212,10 @@ if (config.rta && config.rtp) {
 
 //starts block processor after memory has been loaded
 function startApp() {
+    if(config.ipfshost == 'ipfs')ipfs.id(function (err, res) {
+        if(err){}
+        if(res)plasma.id = res.id
+    })
     processor = hiveState(client, hive, startingBlock, 10, config.prefix, streamMode, cycleAPI);
     processor.on('send', HR.send);
     processor.on('claim', HR.claim);
@@ -285,12 +293,15 @@ function startApp() {
                     lte: "" + (num - 100)
                 }) //resign mss
                 let Pmsa = getPathObj(['msa'])
-                Promise.all([Pchron, Pmss, Pmsa]).then(mem => {
+                let Pmso = getPathObj(['mso'])
+                Promise.all([Pchron, Pmss, Pmsa, Pmso]).then(mem => {
                     var a = mem[0],
                         mss = mem[1], //resign mss
                         msa = mem[2] //if length > 80... sign these
+                        mso = mem[3]
                     let chrops = {},
                         msa_keys = Object.keys(msa)
+                        mso_keys = Object.keys(mso)
                     for (var i in a) {
                         chrops[a[i]] = a[i]
                     }
@@ -402,9 +413,18 @@ function startApp() {
                 }
                 function every(){
                     return new Promise((res, rej)=>{
-                        let promises = []
+                        let promises = [HR.margins()]
                         if(num % 100 !== 50){
-                            if(msa_keys.length > 80){
+                            if(mso_keys.length){
+                                promises.push(new Promise((res,rej)=>{
+                                    osig_submit(consolidate(num, plasma, bh, 'owner'))
+                                    .then(nodeOp => {
+                                        res('SAT')
+                                        NodeOps.unshift(nodeOp)
+                                    })
+                                    .catch(e => { rej(e) })
+                                }))
+                            } else if(msa_keys.length > 80){
                                 promises.push(new Promise((res,rej)=>{
                                     sig_submit(consolidate(num, plasma, bh))
                                     .then(nodeOp => {
@@ -461,7 +481,7 @@ function startApp() {
                             promises.push(tally(num, plasma, processor.isStreaming()));
                         }
                         if (num % 100 === 99) {
-                            promises.push(Liquidity());
+                            if(config.features.liquidity)promises.push(Liquidity());
                         }
                         if ((num - 2) % 3000 === 0) {
                             promises.push(voter());
@@ -475,7 +495,7 @@ function startApp() {
                         block.ops = []
                         store.get([], function(err, obj) {
                             const blockState = Buffer.from(stringify([num, obj]))
-                            ipfsSaveState(num, blockState)
+                            ipfsSaveState(num, blockState, ipfs)
                                 .then(pla => {
                                     block.root = pla.hashLastIBlock
                                     plasma.hashSecIBlock = plasma.hashLastIBlock
@@ -488,7 +508,7 @@ function startApp() {
                     } else if (num % 100 === 1) {
                         const blockState = Buffer.from(stringify([num, block]))
                             block.ops = []
-                            ipfsSaveState(num, blockState)
+                            ipfsSaveState(num, blockState, ipfs)
                                 .then(pla => {
                                     block.chain.push({hash: pla.hashLastIBlock, hive_block: num})
                                     plasma.hashSecIBlock = plasma.hashLastIBlock
@@ -657,7 +677,7 @@ function dynStart(account) {
                 }
             } else {
                 startWith(config.engineCrank)
-                console.log('I did it')
+                console.log('IPFS load Failed: Genesis or Backup Replay...')
             }
         }
     });
@@ -671,24 +691,25 @@ function startWith(hash, second) {
         console.log(`Attempting to start from IPFS save state ${hash}`);
         ipfspromise(hash).then(blockInfo=>{
             var blockinfo = JSON.parse(blockInfo);
-            ipfs.cat(blockinfo[1].root ? blockinfo[1].root : hash, (err, file) => {
-            if (!err) {
+            ipfspromise(blockinfo[1].root ? blockinfo[1].root : hash).then( file => {
                 var data = JSON.parse(file);
                 startingBlock = data[0]
                 block.root = blockinfo[1].root ? blockinfo[1].root : hash
-                block.prev_root = data[1].prev_root ? data[1].prev_root : data[1].stats.root
+                block.prev_root = data[1].prev_root ? data[1].prev_root : data[1].stats.root || ''
                 console.log('root', block.root)
                 if (!startingBlock) {
                     startWith(sh)
                 } else {
-                    /*
-                    plasma.hashBlock = data[0]
-                    plasma.hashLastIBlock = hash
-                    */
                     store.del([], function(e) {
                         if (!e && (second || data[0] > API.RAM.head - 325)) {
                             if (hash) {
                                 var cleanState = data[1]
+                                delete cleanState.stats.HiveVWMA
+                                delete cleanState.stats.HbdVWMA //remove when dynamic
+                                cleanState.stats.MSHeld = {
+                                    "HIVE": 0,
+                                    "HBD": 0
+                                }
                                 store.put([], cleanState, function(err) {
                                     if (err) {
                                         console.log('errr',err)
@@ -704,7 +725,9 @@ function startWith(hash, second) {
                                             }
                                         })
                                         if(blockinfo[1].chain){rundelta(blockinfo[1].chain, blockinfo[1].ops, blockinfo[0], blockinfo[1].prev_root)
-                                        .then(empty=>startApp())
+                                        .then(empty=>{
+                                            startApp()
+                                            getPathNum(['balances', 'ra']).then(r=>console.log(r))})
                                         .catch(e=>console.log('Failure of rundelta'))
                                         } else {
                                             startApp()
@@ -786,14 +809,11 @@ function startWith(hash, second) {
                         }
                     })
                 }
-            } else {
-                startWith(config.engineCrank)
-                console.log(`${hash} failed to load, Replaying from genesis.\nYou may want to set the env var STARTHASH\nFind it at any token API such as ${config.mainAPI}`)
-            }
         });
         })
         .catch(e=>{
-
+            console.log('error in ipfs', e)
+            process.exit()
         })
     } else {
         startingBlock = config.starting_block
@@ -829,13 +849,18 @@ function rundelta(arr, ops, sb, pr){
                 if(a.length){
                     const b = JSON.parse(a.shift())
                     startingBlock = b[0]
-                    store.batch(unwrapOps(b[1].ops), [delta, reject, a ? a : []])
+                    delsfirst(b[1].ops).then(emp=>store.batch(unwrapOps(b[1].ops)[1], [delta, reject, a ? a : []]))
                 } else {
                     block.ops = []
                     block.chain = arr
                     block.prev_root = pr
                     startingBlock = sb
-                    store.batch(unwrapOps(ops), [resolve, reject, 'OK'])
+                    delsfirst(ops).then(emp=>store.batch(unwrapOps(ops)[1], [resolve, reject, a ? a : []]))
+                }
+                function delsfirst(b){
+                    return new Promise((resolv, rejec) => {
+                        store.batch(unwrapOps(b)[0], [resolv, rejec, 'OK'])
+                    })
                 }
             }
         })
@@ -844,11 +869,14 @@ function rundelta(arr, ops, sb, pr){
 }
 
 function unwrapOps(arr){
-    var c = []
+    var c = [],
+        d = []
     for(var i = 0; i < arr.length; i++){
-        c.push(JSON.parse(arr[i]))
+        const e = JSON.parse(arr[i])
+        if (e.type != 'del')c.push(e)
+        else d.push(e)
     }
-    return c
+    return [d,c]
 }
 
 function ipfspromise(hash){
@@ -856,10 +884,13 @@ function ipfspromise(hash){
         ipfs.cat(hash, function(err, data) {
             if (err) {
                 console.log(err)
-                reject(null)
             } else {
                 resolve(data)
             }
         })
+        fetch(`https://ipfs.infura.io/ipfs/${hash}`)
+        .then(r=>r.text())
+        .then(res => {resolve(res)})
+        .catch(e=>console.log(e))
     })
 }

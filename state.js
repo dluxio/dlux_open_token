@@ -1,14 +1,14 @@
 const config = require('./config');
 module.exports = {
     "balances": {
-        [config.leader]: 1000000,
-        "community.member": 1000000, //additional distributions
+        [config.leader]: 0,
+        "spk-cc": 0, //additional distributions
         "ra": 0,
         "rb": 0,
         "rc": 0,
         "rd": 0,
         "re": 0,
-        "ri": 100000000, //in ICO account for fixed price
+        "ri": 0, //in ICO account for fixed price
         "rm": 0,
         "rn": 0,
         "rr": 0
@@ -16,11 +16,17 @@ module.exports = {
     "delegations": {}, //these need to be preloaded if already on account before starting block
     "dex": {
         "hbd": {
-            "tick": "0.012500" //ICO price
+            "tick": "0.012500", //ICO price
+            "buyBook": ""
         },
         "hive": {
-            "tick": "0.100000" //ICO Price
+            "tick": "0.100000", //ICO Price
+            "buyBook": ""
         }
+    },
+    "gov": {
+        [config.leader]: 1,
+        "t": 1 //total in other accounts
     },
     "markets": {
         "node": {
@@ -40,16 +46,15 @@ module.exports = {
         }
     },
     "pow": {
-        [config.leader]: 100000000,
-        "t": 100000000 //total in other accounts
+        [config.leader]: 0,
+        "t": 0 //total in other accounts
     },
     "queue": {
         "0": [config.leader]
     },
     "runners": {
         [config.leader]: { //config.leader
-            "domain": config.mainAPI, //config.mainAPI
-            "self": config.leader //config.leader
+            "g": 1, //config.mainAPI
         }
     },
     "stats": {
@@ -58,15 +63,18 @@ module.exports = {
         "currationRate": 2000,
         "delegationRate": 2000,
         "hashLastIBlock": "Genesis",
-        "icoPrice": 100, //in millihive
-        "interestRate": 2100000, //mints 1 millitoken per this many millitokens in your DAO period
+        "icoPrice": 0, //in millihive
+        "interestRate": 999999999999, //mints 1 millitoken per this many millitokens in your DAO period
         "lastBlock": "",
         "marketingRate": 2500,
         "maxBudget": 1000000000,
+        "MSHeld":{
+            "HIVE": 0,
+            "HBD": 0
+        }, 
         "nodeRate": 2000,
         "outOnBlock": 0, //amm ICO pricing
-        "reblogReward": 10000, //unused
         "savingsRate": 1000,
-        "tokenSupply": 202000000 //your starting token supply
+        "tokenSupply": 1 //your starting token supply
     }
 }

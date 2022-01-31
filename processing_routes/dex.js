@@ -277,10 +277,12 @@ exports.transfer = (json, pc) => {
             let item = json.memo.split(' ')[1],
                 setname = item.split(':')[0],
                 Pset = getPathObj(['sets', setname]),
+                Pstats = getPathObj(['stats']),
                 Pitem = getPathObj(['lth', item])
-            Promise.all([Pset, Pitem]).then(mem =>{
+            Promise.all([Pset, Pitem, Pstats]).then(mem =>{
                 let set = mem[0],
                     listing = mem[1],
+                    stats = mem[2],
                     amount = parseInt(json.amount.split(' ')[0] * 1000),
                     type = json.amount.split(' ')[1],
                     ops = [],
@@ -291,6 +293,7 @@ exports.transfer = (json, pc) => {
                     allowed = 9999999,
                     whoBoughtIndex,
                     whoBoughtAmount = 0
+                    stats.MSHeld[type] += refund_amount
                 if(listing){
                     if(!listing.s)listing.s = ''
                     if(enf.max){
@@ -360,6 +363,7 @@ exports.transfer = (json, pc) => {
                             path: ['feed', `${json.block_num}:${json.transaction_id}`],
                             data: msg
                         })
+                    ops.push({type: 'put', path: ['stats'], data: stats})
                     store.batch(ops, pc)
                 } else {
                     ops.push({type: 'put', path: ['msa', `${i}:${json.transaction_id}:${json.block_num}`], data: stringify(['transfer',{
@@ -382,12 +386,18 @@ exports.transfer = (json, pc) => {
             let item = json.memo.split(' ')[1],
                 setname = item.split(":")[0],
                 uid = item.split(':')[1],
+                Pstats = getPathObj(['stats']),
                 fnftp = getPathObj(['nfts', 't', item]),
                 setp = getPathObj(['sets', setname])
-            Promise.all([fnftp, setp])
+            Promise.all([fnftp, setp, Pstats])
             .then(nfts => {
-                var to, price, type
-                try{ to = nfts[0].t.split('_')[1];price = parseInt(nfts[0].t.split('_')[2]), type = nfts[0].t.split('_')[3]} catch (e){console.log(nfts[0])}
+                var to, price, type, stats = nfts[2]
+                try{ 
+                    to = nfts[0].t.split('_')[1]
+                    price = parseInt(nfts[0].t.split('_')[2])
+                    type = nfts[0].t.split('_')[3]
+                    stats.MSHeld[json.amount.split(' ')[1]] += parseInt(json.amount.split(' ')[0] * 1000)
+                } catch (e){console.log(nfts[0])}
                 if(nfts[0].s !== undefined && to == json.from && parseInt(parseFloat(json.amount.split(' ')[0])*1000) == price && type == json.amount.split(' ')[1]) {
                     let ops = [],
                         nft = nfts[0],
@@ -429,6 +439,7 @@ exports.transfer = (json, pc) => {
                         let msg = `@${json.from} completed NFT: ${setname}:${uid} transfer`
                         if (config.hookurl || config.status) postToDiscord(msg, `${json.block_num}:${json.transaction_id}`)
                         ops.push({ type: 'put', path: ['feed', `${json.block_num}:${json.transaction_id}`], data: msg });
+                        ops.push({type:'put', path:['stats'], data: stats})
                         store.batch(ops, promise)
                     }
                     
@@ -443,6 +454,7 @@ exports.transfer = (json, pc) => {
                     ops.push({type:'put', path:['msa', `Failed:${setname}:${uid}:${json.transaction_id}`], data: stringify(transfer)})
                     let msg = `@${json.from} trade of ${setname}:${uid} didn't go well.`
                     if (config.hookurl || config.status) postToDiscord(msg, `${json.block_num}:${json.transaction_id}`)
+                    ops.push({type:'put', path:['stats'], data: stats})
                     store.batch(ops, pc)
                 }
             })
@@ -451,11 +463,14 @@ exports.transfer = (json, pc) => {
             let item = json.memo.split(' ')[1],
                 set = item.split(':')[0],
                 uid = item.split(':')[1]
-                ahp = getPathObj(['ahh', `${set}:${uid}`])
+                ahp = getPathObj(['ahh', `${set}:${uid}`]),
+                Pstats = getPathObj(['stats'])
                 amount = parseInt(parseFloat(json.amount.split(' ')[0])*1000)
                 type = json.amount.split(' ')[1]
-            Promise.all([ahp])
+            Promise.all([ahp, Pstats])
             .then(mem => {
+                var stats = mem[1]
+                stats.MSHeld[json.amount.split(' ')[1]] += parseInt(json.amount.split(' ')[0] * 1000)
                 if(mem[0].h == type){ // && json.from != mem[0].f){ //check for item and type
                     var listing = mem[0]
                     if(listing.b){
@@ -467,6 +482,7 @@ exports.transfer = (json, pc) => {
                                 memo: `Outbid on ${set}:${uid}. ${json.transaction_id.substr(0,8)}`
                             }]
                             var ops = []
+                            ops.push({type:'put', path:['stats'], data: stats})
                             ops.push({type:'put', path:['msa', `Outbid:${set}:${uid}:${json.transaction_id}`], data: stringify(transfer)})
                             listing.f = json.from
                             listing.b = amount
@@ -484,6 +500,7 @@ exports.transfer = (json, pc) => {
                                 memo: `Underbid on ${set}:${uid}. ${json.transaction_id.substr(0,8)}`
                             }]
                             var ops = []
+                            ops.push({type:'put', path:['stats'], data: stats})
                             ops.push({type:'put', path:['msa', `Underbid:${set}:${uid}:${json.transaction_id}`], data: stringify(transfer)})
                             let msg = `@${json.from} hasn't outbid on ${set}:${uid}`
                             if (config.hookurl || config.status) postToDiscord(msg, `${json.block_num}:${json.transaction_id}`)
@@ -494,6 +511,7 @@ exports.transfer = (json, pc) => {
                         listing.b = amount
                         listing.c = 1
                         var ops = []
+                        ops.push({type:'put', path:['stats'], data: stats})
                         ops.push({type:'put', path:['ahh', `${set}:${uid}`], data: listing})
                         let msg = `@${json.from} bid ${parseFloat(amount/1000).toFixed(3)} ${type} on ${set}:${uid}'s auction`
                         if (config.hookurl || config.status) postToDiscord(msg, `${json.block_num}:${json.transaction_id}`)
@@ -507,6 +525,7 @@ exports.transfer = (json, pc) => {
                                 memo: `Underbid on ${set}:${uid}. ${json.transaction_id.substr(0,8)}`
                             }]
                         var ops = []
+                        ops.push({type:'put', path:['stats'], data: stats})
                         ops.push({type:'put', path:['msa', `Underbid:${set}:${uid}:${json.transaction_id}`], data: stringify(transfer)})
                         let msg = `@${json.from} hasn't outbid on ${set}:${uid}`
                         if (config.hookurl || config.status) postToDiscord(msg, `${json.block_num}:${json.transaction_id}`)
@@ -520,6 +539,7 @@ exports.transfer = (json, pc) => {
                                 memo: `Underbid on ${set}:${uid}. ${json.transaction_id.substr(0,8)}`
                             }]
                     var ops = []
+                    ops.push({type:'put', path:['stats'], data: stats})
                     ops.push({type:'put', path:['msa', `Underbid:${set}:${uid}:${json.transaction_id}`], data: stringify(transfer)})
                     let msg = `@${json.from} bid on ${set}:${uid} didn't go well.`
                     if (config.hookurl || config.status) postToDiscord(msg, `${json.block_num}:${json.transaction_id}`)
@@ -532,11 +552,14 @@ exports.transfer = (json, pc) => {
                 setname = item.split(':')[0],
                 uid = item.split(':')[1],
                 lsp = getPathObj(['ls', `${setname}:${uid}`]),
-                setp = getPathObj(['sets', setname])
+                setp = getPathObj(['sets', setname]),
+                Pstats = getPathObj(['stats'])
                 amount = parseInt(parseFloat(json.amount.split(' ')[0])*1000)
                 type = json.amount.split(' ')[1]
-            Promise.all([lsp, setp])
+            Promise.all([lsp, setp, Pstats])
             .then(mem => {
+                var stats = mem[2]
+                stats.MSHeld[json.amount.split(' ')[1]] += parseInt(json.amount.split(' ')[0] * 1000)
                 if(mem[0].h == type && json.from != mem[0].o && amount == mem[0].p){ //check for item and type
                     let listing = mem[0],
                         set = mem[1],
@@ -572,6 +595,7 @@ exports.transfer = (json, pc) => {
                     }
                     function finish(set, json, listing, uid, item, Transfer, nft, promise){
                         var ops = []
+                        ops.push({type:'put', path:['stats'], data: stats})
                         if(set != 'Qm') set.u = NFT.move(uid, json.from, set.u)//update set
                         else set.u = json.from
                         ops.push({ type: 'put', path: ['nfts', json.from, item], data: nft }) //update nft
@@ -592,6 +616,7 @@ exports.transfer = (json, pc) => {
                                 memo: `Failed to buy ${setname}:${uid}. ${json.transaction_id.substr(0,8)}`
                             }]
                     var ops = []
+                    ops.push({type:'put', path:['stats'], data: stats})
                     ops.push({type:'put', path:['msa', `FailedBuy:${set}:${uid}:${json.transaction_id}`], data: stringify(transfer)})
                     let msg = `@${json.from} buy of ${set}:${uid} didn't go well.`
                     if (config.hookurl || config.status) postToDiscord(msg, `${json.block_num}:${json.transaction_id}`)
@@ -599,7 +624,7 @@ exports.transfer = (json, pc) => {
                 }
             })
             .catch(e => { console.log(e); })
-        }else {
+        } else {
             let order = {
                 type: 'LIMIT'
             },
@@ -632,6 +657,7 @@ exports.transfer = (json, pc) => {
                         his = {},
                         fee = 0,
                         i = 0
+                        stats.MSHeld[json.amount.split(' ')[1]] += parseInt(json.amount.split(' ')[0] * 1000)
                     while (remaining){
                         i++
                         const price = parseFloat(dex.sellBook.split('_')[0])
@@ -735,7 +761,6 @@ exports.transfer = (json, pc) => {
                                         const msg = `@${json.from}| bought ALL ${parseFloat(parseInt(purchase - left)).toFixed(3)} ${config.TOKEN} with ${parseFloat(parseInt(amount) / 1000).toFixed(3)} HIVE. And bid in the over-auction`
                                         ops.push({ type: 'put', path: ['ico', `${json.block_num}`, json.from], data: parseInt(amount * left / purchase) },
                                             { type: 'put', path: ['balances', 'ri'], data: 0 },
-                                            { type: 'put', path: ['stats'], data: stats },
                                             { type: 'put', path: ['feed', `${json.block_num}:${json.transaction_id}`], data: msg })
                                     }
                                     remaining = 0
@@ -747,6 +772,7 @@ exports.transfer = (json, pc) => {
                                         { type: 'put', path: ['feed', `${json.block_num}:${json.transaction_id}`], data: msg }
                                     ]
                                     if (process.env.npm_lifecycle_event == 'test') pc[2] = ops
+                                    ops.push({ type: 'put', path: ['stats'], data: stats })
                                     store.batch(ops, pc)
                                 }
                             } else {
@@ -798,8 +824,9 @@ exports.transfer = (json, pc) => {
                     if(!path){
                         Promise.all([waiting]).then(empty=>{
                             ops.push({type: 'put', path: ['dex', order.pair], data: dex})
-                        if (process.env.npm_lifecycle_event == 'test') pc[2] = ops
-                        store.batch(ops, pc) 
+                            ops.push({ type: 'put', path: ['stats'], data: stats })
+                            if (process.env.npm_lifecycle_event == 'test') pc[2] = ops
+                            store.batch(ops, pc) 
                         })
                     } else {
                         Promise.all([path,waiting]).then(expPath => {
@@ -813,6 +840,7 @@ exports.transfer = (json, pc) => {
                             let msg = `@${json.from} is buying ${parseFloat(parseInt(contract.amount)/1000).toFixed(3)} ${config.TOKEN} for ${parseFloat(parseInt(contract[order.pair])/1000).toFixed(3)} ${order.pair.toUpperCase()}(${contract.rate}:${contract.txid})`
                             ops.push({type: 'put', path: ['dex', order.pair], data: dex})
                             ops.push({type: 'put', path: ['feed', `${json.block_num}:${json.transaction_id}.${i}`], data: msg})
+                            ops.push({ type: 'put', path: ['stats'], data: stats })
                             if (process.env.npm_lifecycle_event == 'test') pc[2] = ops
                             store.batch(ops, pc)
                         })
@@ -831,15 +859,22 @@ exports.transfer = (json, pc) => {
                 let msg = `@${json.from} sent a weird transaction to ${config.msaccount}: refunding`
                 ops.push({type: 'put', path: ['feed', `${json.block_num}:${json.transaction_id}.${i}`], data: msg})
                 ops.push({type: 'put', path: ['msa', `refund@${json.from}:${json.transaction_id}:${json.block_num}`], data: stringify(transfer)})
+                ops.push({ type: 'put', path: ['stats'], data: stats })
                 store.batch(ops, pc)
             }
         }
     } else if (config.features.dex && json.from == config.msaccount){
-        getPathObj(['mss']).then(mss => {
+        var Pmss = getPathObj(['mss']),
+            Pstats = getPathObj(['stats'])
+        
+        Promise.all([Pmss, Pstats]).then(mem => {
+            var mss = mem[0],
+                stats = mem[1]
+                stats.MSHeld[json.amount.split(' ')[1]] -= parseInt(json.amount.split(' ')[0] * 1000)
             var done = false
             for (var block in mss){
                 if(block.split(':').length < 2 && mss[block].indexOf(json.memo) > 0){
-                    store.batch([{type:'del', path:['mss', `${block}`]}, {type:'del', path:['mss', `${block}:sigs`]}],pc)
+                    store.batch([{ type: 'put', path: ['stats'], data: stats },{type:'del', path:['mss', `${block}`]}, {type:'del', path:['mss', `${block}:sigs`]}],pc)
                     done = true
                 }
             }
@@ -1133,3 +1168,72 @@ const release = (from, txid, bn, tx_id) => {
     })
 }
 exports.release = release
+
+//change stats to msheld {}
+
+exports.margins = function(bn) {
+    return new Promise((resolve, reject) => {
+        var Pstats = getPathObj(['stats']),
+            Pdex = getPathObj(['dex']),
+            Pmsa = getPathObj(['msa']),
+            Pmss = getPathObj(['mss'])
+        Promise.all([Pstats, Pdex, Pmsa, Pmss]).then(mem =>{
+            var stats = mem[0],
+                dex = mem[1],
+                msa = mem[2],
+                mss = mem[3],
+                ops = [],
+                status = {}
+            if(Object.keys(msa).length)for (var x of msa){
+                msa[x].split('amount\":\"').forEach(y => {
+                    const amount = y.split('\"')[0],
+                        type = amount.split(' ')[1],
+                        mt = parseInt(parseFloat(amount.split(' ')[0]) * 1000)
+                    if(type == 'HIVE'){
+                        stats.MSHeld.HIVE -= mt
+                    } else if (type == 'HBD'){
+                        stats.MSHeld.HBD -= mt
+                    }
+                })
+            }
+            if(Object.keys(mss).length)for (var x of mss){
+                mss[x].split('amount\":\"').forEach(y => {
+                    const amount = y.split('\"')[0],
+                        type = amount.split(' ')[1],
+                        mt = parseInt(parseFloat(amount.split(' ')[0]) * 1000)
+                    if(type == 'HIVE'){
+                        stats.MSHeld.HIVE -= mt
+                    } else if (type == 'HBD'){
+                        stats.MSHeld.HBD -= mt
+                    }
+                })
+            }
+            var allowedHive = parseInt(stats.multiSigCollateral * parseFloat(dex.hive.tick)),
+                allowedHBD = parseInt(stats.multiSigCollateral * parseFloat(dex.hbd.tick)),
+                promises = []
+            if(stats.MSHeld.HIVE > allowedHive){
+                var p = dex.hive.buyBook.split(','),
+                    price = p.split('_')[0],
+                    items = p.split('_')
+                for(var i = 1; i < items.length; i++){
+                    promises.push(release(dex.hive.buyOrders[`${price}:${items[i]}`].from, items[i], bn, `${bn}_hive_collateral_vop`))
+                }
+            }
+            if(stats.MSHeld.HBD > allowedHBD){
+                var p = dex.hbd.buyBook.split(','),
+                    price = p.split('_')[0],
+                    items = p.split('_')
+                for(var i = 1; i < items.length; i++){
+                    promises.push(release(dex.hbd.buyOrders[`${price}:${items[i]}`].from, items[i], bn, `${bn}_hbd_collateral_vop`))
+                }
+            }
+            if(promises.length > 0){
+                Promise.all(promises).then(() => {
+                    resolve('Pruned')
+                })
+            } else {
+                resolve('No pruning')
+            }
+        })
+    })
+}

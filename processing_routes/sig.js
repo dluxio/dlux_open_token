@@ -34,12 +34,12 @@ exports.account_update = (json, pc) => {
             if(json.posting.weight_threshold) ops.push({type:'put', path:['stats', 'ms', 'posting_threshold'], data: json.posting.weight_threshold})
         }
         if(json.memo_key) ops.push({type:'put', path:['stats', 'ms', 'memo_key'], data: json.memo_key})
-        getPathObj(['mss']).then(mss => {
+        getPathObj(['msso']).then(mss => {
             var done = false
             for (var block in mss){
                 if([block].indexOf('account_update') > 0){
-                    ops.push({type:'del', path:['mss', `${block}`]})
-                    ops.push({type:'del', path:['mss', `${block}:sigs`]})
+                    ops.push({type:'del', path:['msso', `${block}`]})
+                    ops.push({type:'del', path:['msso', `${block}:sigs`]})
                     store.batch(ops, pc)
                     done = true
                 }
@@ -99,6 +99,38 @@ exports.sig_submit = (json, from, active, pc) => {
                         sigarr.push(sigs[i])
                     }
                     verify_broadcast(msop, sigarr, stats.ms.active_threshold)
+                }
+                ops.push({ type: 'put', path: ['mss', `${json.sig_block}:sigs`], data: sigs })
+                store.batch(ops, pc);
+                //try to sign
+            } else {
+                pc[0](pc[2])
+            }
+        })
+        .catch(e => { console.log(e); });
+}
+
+exports.osig_submit = (json, from, active, pc) => {
+    var Pop = getPathObj(['msso', `${json.sig_block}`]),
+        Psigs = getPathObj(['msso', `${json.sig_block}:sigs`]),
+        Pstats = getPathObj(['stats'])
+    Promise.all([Pop, Pstats, Psigs])
+        .then(got => {
+            let msop = got[0],
+                stats = got[1],
+                sigs = got[2]
+                ops = []
+                try{
+                    msop = JSON.parse(msop)
+                } catch (e){}
+            if (active && stats.ms.active_account_auths[from] && msop.expiration) {
+                sigs[from] = json.sig
+                if(Object.keys(sigs).length >= stats.ms.active_threshold){
+                    let sigarr = []
+                    for(var i in sigs){
+                        sigarr.push(sigs[i])
+                    }
+                    verify_broadcast(msop, sigarr, stats.ms.owner_threshold)
                 }
                 ops.push({ type: 'put', path: ['mss', `${json.sig_block}:sigs`], data: sigs })
                 store.batch(ops, pc);

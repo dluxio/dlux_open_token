@@ -44,12 +44,14 @@ exports.claim = (json, from, active, pc) => {
         tbp = getPathNum(['balances', from]),
         splitp = getPathNum([json.gov ? 'gov': 'pow', from]),
         totp = getPathNum([json.gov ? 'gov': 'pow', 't']);
-    Promise.all([fbalp, tbp, splitp, totp])
+        claimp = getPathNum(['claim', from]);
+    Promise.all([fbalp, tbp, splitp, totp, claimp])
         .then(bals => {
             let fbal = bals[0],
                 tbal = bals[1],
                 split = bals[2],
                 tot = bals[3],
+                claims = bals[4],
                 ops = [],
                 claim = parseInt(fbal);
             if (claim > 0) {
