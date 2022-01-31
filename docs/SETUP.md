@@ -40,7 +40,7 @@ server_name location.yourdomain.io;
         }
 }
 ```
-* `sudo systemctl relaod nginx`
+* `sudo systemctl reload nginx`
 * Ensure your DNS information points to your server and run `sudo certbot`
 
 ## Build A Token

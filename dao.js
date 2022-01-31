@@ -112,7 +112,7 @@ function dao(num) {
             }
             stats.marketingRate = parseInt(b / i);
             stats.nodeRate = parseInt(j / i);
-            post = `![${config.TOKEN} Advert](${config.adverts[num.toString().split('').reduce((a, c) => parseInt(a) + c, 0) % config.adverts.length - 1]})\n#### Daily Accounting\n`;
+            post = `![${config.TOKEN} Advert](${config.adverts[num.toString().split('').reduce((a, c) => parseInt(a) + c, 0) % config.adverts.length]})\n#### Daily Accounting\n`;
             post = post + `Total Supply: ${parseFloat(parseInt(stats.tokenSupply) / 1000).toFixed(3)} ${config.TOKEN}\n* ${parseFloat(parseInt(stats.tokenSupply - powBal - (bals.ra + bals.rc + bals.rd + bals.ri + bals.rn + bals.rm)) / 1000).toFixed(3)} ${config.TOKEN} liquid\n`;
             post = post + `* ${parseFloat(parseInt(powBal) / 1000).toFixed(3)} ${config.TOKEN} Powered up for Voting\n`;
             post = post + `* ${parseFloat(parseInt(bals.ra + bals.rc + bals.rd + bals.ri + bals.rn + bals.rm) / 1000).toFixed(3)} ${config.TOKEN} in distribution accounts\n`;
@@ -160,9 +160,9 @@ function dao(num) {
                 }
             }
             for(var node in newOwners){
-                newOwners[node].g = runners[node].g
+                newOwners[node].g = runners[node]?.g ? runners[node].g : 0;
             }
-            var up_op = accountUpdate( pick(newOwners) )
+            var up_op = accountUpdate( stats, mnode, pick(newOwners) )
             function pick(noobj){
                 var top = 0
                 var topwin = 0
@@ -174,16 +174,19 @@ function dao(num) {
                     if(noobj[node].wins > topwin){
                         topwin = noobj[node].wins
                     }
-                    tops.push(noobj[node].g )
+                    if(noobj[node].wins)tops.push(noobj[node].g )
                 }
-                tops.sort()
-                tops.reverse()
+                tops.sort((a,b)=>{return b-a})
                 var thresh = tops[parseInt(tops.length/2) - 1]
-                var out = []
+                var sorting = [], out = []
                 for (var node in noobj){
-                    if(noobj[node].g >= thresh && noobj[node].wins >= (topwin * 100 / 90)){
-                        out.push(node)
+                    if(noobj[node].g >= thresh && noobj[node].wins >= (topwin * 90 / 100)){
+                        sorting.push({node, g: noobj[node].g})
                     }
+                }
+                sorting.sort((a,b)=>{return b.g - a.g})
+                for (var i = 0; i < sorting.length; i++){
+                    out.push(sorting[i].node)
                 }
                 return out
             }
@@ -442,7 +445,7 @@ function dao(num) {
                     })
                 }
             ];
-            if(up_op)daops.push({ type: 'put', path: ['mso'], data: stringify(['account_update', up_op]) });
+            if(up_op)daops.push({ type: 'put', path: ['mso', `${num}:ac`], data: stringify(['account_update', up_op]) });
             daops.push({ type: 'put', path: ['dex'], data: dex });
             daops.push({ type: 'put', path: ['stats'], data: stats });
             daops.push({ type: 'put', path: ['balances'], data: bals });
@@ -585,12 +588,11 @@ function accountUpdate(stats, nodes, arr){
       "account_auths": [[config.leader, 1]],
       "key_auths": []
     },
-    "memo_key": config.msPubMemo,
-    "json_metadata": ""
+    "memo_key": config.msPubMemo
   }
   for (var i = 0; i < arr.length; i++) {
     updateOp.active.account_auths.push([arr[i], 1])
-    updateOp.owner.key_auths.push(nodes[[arr[i]].mskey, 1])
+    updateOp.owner.key_auths.push([nodes[arr[i]].mskey, 1])
   }
   return updateOp
 }
