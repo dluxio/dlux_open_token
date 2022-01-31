@@ -65,6 +65,22 @@ const add = (node, amount) => {
 }
 exports.add = add
 
+const addc = (node, amount) => {
+    return new Promise((resolve, reject) => {
+        store.get(['cbalances', node], function(e, a) {
+            if (!e) {
+                console.log(amount + ' to ' + node)
+                const a2 = typeof a != 'number' ? amount : a + amount
+                console.log('final balance ' +a2)
+                store.batch([{ type: 'put', path: ['cbalances', node], data: a2 }], [resolve, reject, 1])
+            } else {
+                console.log(e)
+            }
+        })
+    })
+}
+exports.addc = addc
+
 const addMT = (path, amount) => {
     return new Promise((resolve, reject) => {
         store.get(path, function(e, a) {

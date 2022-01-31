@@ -94,6 +94,7 @@ exports.tally = (num, plasma, isStreaming) => {
                     if (consensus) {
                         stats.hashLastIBlock = consensus;
                         stats.lastIBlock = num - 100
+                        let counting_array = []
                         for (node in tally.agreements.hashes) {
                             if (tally.agreements.hashes[node] == consensus) {
                                 new_queue[node] = {
@@ -101,14 +102,12 @@ exports.tally = (num, plasma, isStreaming) => {
                                     api: nodes[node].domain,
                                     l: nodes[node].liquidity || 100
                                 }
-                                
+                            counting_array.push(new_queue[node].g)
                             }
                         }
-                        let counting_array = []
                         for (node in new_queue) {
                             if (runners.hasOwnProperty(node)) {
                                 still_running[node] = new_queue[node]
-                                counting_array.push(new_queue[node].g)
                             } else {
                                 election[node] = new_queue[node]
                             }
@@ -117,11 +116,21 @@ exports.tally = (num, plasma, isStreaming) => {
                         //minimum to outweight large initial stake holders
                         //adjust size of runners group based on stake
                         let low_sum = 0,
-                            last_bal = 0
-                        counting_array.sort((a, b) => a - b)
-                        for (i = 0; i < parseInt(counting_array.length / 2) + 1; i++) {
-                            low_sum += counting_array[i]
-                            last_bal = counting_array[i]
+                            last_bal = 0,
+                            highest_low_sum = 0,
+                            optimal_number = 0
+                        counting_array.sort((a, b) => b - a)
+                        for (var j = 9; j < counting_array.length || j == 25; j++) {
+                            low_sum = 0
+                            for (i = parseInt(j / 2) + 1; i < j; i++) {
+                                low_sum += counting_array[i]
+                                last_bal = counting_array[i]
+                            }
+                            if (low_sum > highest_low_sum) {
+                                highest_low_sum = low_sum
+                                optimal_number = j
+                                stats.gov_threshhold  = last_bal
+                            }
                         }
                         if (Object.keys(still_running).length < 25) {
                             let winner = {
@@ -147,7 +156,7 @@ exports.tally = (num, plasma, isStreaming) => {
                         let collateral = []
                         let liq_rewards = []
                         for (node in still_running) {
-                            collateral.push(still_running[node].t)
+                            collateral.push(still_running[node].g)
                             liq_rewards.push(still_running[node].l || 100)
                         }
                         let liq_rewards_sum = 0
@@ -190,32 +199,35 @@ exports.tally = (num, plasma, isStreaming) => {
                     if(!consensus) {
                         newPlasma.potential = tally
                     }
-                    let weights = 0
-                    for (post in pending) {
-                        weights += pending[post].t.totalWeight
+                    let this_payout
+                    if(config.features.pob){
+                        let weights = 0
+                        for (post in pending) {
+                            weights += pending[post].t.totalWeight
+                        }
+                        let inflation_floor = parseInt((stats.movingWeight.running + (weights/140)) / 2016) //minimum payout in time period
+                            running_weight = parseInt(stats.movingWeight.running / 2016)
+                        if (running_weight < inflation_floor){
+                            running_weight = inflation_floor
+                        }
+                        if (num < 50700000) {
+                            stats.movingWeight.dailyPool = 700000
+                        }
+                        let this_weight = parseInt(weights / 2016)
+                            this_payout = parseInt((((rbal.rc / 200) + stats.movingWeight.dailyPool) / 304) * (this_weight / running_weight)) //subtract this from the rc account... 13300 is 70% of inflation
+                            stats.movingWeight.running = parseInt(((stats.movingWeight.running * 2015) / 2016) + (weights / 2016)) //7 day average at 5 minute intervals
+                        promises.unshift(payout(this_payout, weights, pending, num))
                     }
-                    let inflation_floor = parseInt((stats.movingWeight.running + (weights/140)) / 2016) //minimum payout in time period
-                        running_weight = parseInt(stats.movingWeight.running / 2016)
-                    if (running_weight < inflation_floor){
-                        running_weight = inflation_floor
-                    }
-                    if (num < 50700000) {
-                        stats.movingWeight.dailyPool = 700000
-                    }
-                    let this_weight = parseInt(weights / 2016),
-                        this_payout = parseInt((((rbal.rc / 200) + stats.movingWeight.dailyPool) / 304) * (this_weight / running_weight)) //subtract this from the rc account... 13300 is 70% of inflation
-                        stats.movingWeight.running = parseInt(((stats.movingWeight.running * 2015) / 2016) + (weights / 2016)) //7 day average at 5 minute intervals
-                    promises.unshift(payout(this_payout, weights, pending, num))
                     Promise.all(promises).then(change => {
-                            const mint = parseInt(stats.tokenSupply / stats.interestRate);
+                            const mint = config.features.inflation ? parseInt(stats.tokenSupply / stats.interestRate) : 0
                             stats.tokenSupply += mint;
                             rbal.ra += mint;
                             let ops = [
                                 { type: 'put', path: ['stats'], data: stats },
                                 { type: 'put', path: ['markets', 'node'], data: nodes },
-                                { type: 'put', path: ['balances', 'ra'], data: rbal.ra },
-                                { type: 'put', path: ['balances', 'rc'], data: rbal.rc - (this_payout - change[0]) }
+                                { type: 'put', path: ['balances', 'ra'], data: rbal.ra }
                             ]
+                            if(config.features.pob)ops.push({ type: 'put', path: ['balances', 'rc'], data: rbal.rc - (this_payout - change[0]) })
                             if(Object.keys(still_running).length > 1) ops.push(
                                 { type: 'put', path: ['runners'], data: still_running })
                             else ops.push({ type: 'put', path: ['runners'], data: runners })
@@ -224,7 +236,7 @@ exports.tally = (num, plasma, isStreaming) => {
                                 //console.log(ops)
                             store.batch(ops, [resolve, reject, newPlasma]);
                             if (process.env.npm_lifecycle_event != 'test') {
-                                if (consensus && (consensus != plasma.hashLastIBlock || consensus != nodes[config.username].report.hash && nodes[config.username].report.block_num > num - 100) && isStreaming) {
+                                if (consensus && (consensus != plasma.hashLastIBlock || consensus != nodes[config.username]?.report.hash && nodes[config.username]?.report.block_num > num - 100) && isStreaming) {
                                     exit(consensus);
                                     //var errors = ['failed Consensus'];
                                     //const blockState = Buffer.from(JSON.stringify([num, state]))

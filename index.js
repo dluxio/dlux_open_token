@@ -1,21 +1,29 @@
 const config = require('./config');
-const VERSION = 'v1.1.3r6'
+const VERSION = 'v1.2.0'
 exports.VERSION = VERSION
 exports.exit = exit;
 exports.processor = processor;
 const hive = require('@hiveio/dhive');
 var client = new hive.Client(config.clientURL);
 exports.client = client
-
+var block = {
+    ops:[],
+    root: '',
+    prev_root: '',
+    chain:[]
+}
+exports.block = block
 const args = require('minimist')(process.argv.slice(2));
 const express = require('express');
 const stringify = require('json-stable-stringify');
 const IPFS = require('ipfs-api'); //ipfs-http-client doesn't work
-const ipfs = new IPFS({
+const fetch = require('node-fetch');
+var ipfs = new IPFS({    
     host: config.ipfshost,
-    port: 5001,
-    protocol: 'https'
-});
+    port: config.ipfsport,
+    protocol: config.ipfsprotocol
+})
+console.log(`IPFS: ${config.ipfshost == 'ipfs' ? 'DockerIPFS' : config.ipfshost}:${config.ipfsport}`)
 exports.ipfs = ipfs;
 const rtrades = require('./rtrades');
 var Pathwise = require('./pathwise');
@@ -98,13 +106,14 @@ const { release } = require('./processing_routes/dex')
 const { enforce } = require("./enforce");
 const { tally } = require("./tally");
 const { voter } = require("./voter");
-const { report, sig_submit } = require("./report");
+const { report, sig_submit, osig_submit } = require("./report");
 const { ipfsSaveState } = require("./ipfsSaveState");
 const { dao, Liquidity } = require("./dao");
 const { recast } = require('./lil_ops')
 const hiveState = require('./processor');
 const { getPathObj, getPathNum, getPathSome } = require('./getPathObj');
-const { consolidate, sign, createAccount, updateAccount } = require('./msa')
+const { consolidate, sign, createAccount, updateAccount } = require('./msa');
+const { resolve } = require('path');
 const api = express()
 var http = require('http').Server(api);
 var escrow = false;
@@ -122,9 +131,10 @@ var live_dex = {}, //for feedback, unused currently
 var recents = []
     //HIVE API CODE
 
-//Start Program Options   
-//startWith('QmaiS2MmGG1w3Ub914nTbeMiTE6CLppC1FNpeUfCMXWmcT', true) //for testing and replaying 58859101
-dynStart(config.follow)
+    //Start Program Options   
+startWith('Qmaj1XL2T7GsSsNRM5qywtz2kGNSedgaRFrSgqhb9ZSGEd', true) //for testing and replaying 58859101
+//dynStart(config.follow)
+
 
 // API defs
 api.use(API.https_redirect);
@@ -132,57 +142,65 @@ api.use(cors())
 api.get('/', API.root);
 api.get('/stats', API.root);
 api.get('/coin', API.coin);
-api.get('/state', API.state); //Do not recommend having a state dump in a production API
-api.get('/dex', API.dex);
-api.get('/api/tickers', API.tickers);
-api.get('/api/orderbook', API.orderbook);
-api.get('/api/orderbook/:ticker_id', API.orderbook);
-api.get('/api/pairs', API.pairs);
-api.get('/api/historical', API.historical_trades);
-api.get('/api/historical/:ticker_id', API.historical_trades);
-api.get('/api/recent/:ticker_id', API.chart);
+api.get('/@:un', API.user);
 api.get('/api/mirrors', API.mirrors);
 api.get('/api/coin_detail', API.detail);
-api.get('/api/nfts/:user', API.nfts);
-api.get('/api/nft/:set/:item', API.item);
-api.get('/api/sets', API.sets);
-api.get('/api/set/:set', API.set);
-api.get('/api/auctions', API.auctions);
-api.get('/api/auctions/:set', API.auctions);
-api.get('/api/mintauctions', API.mint_auctions);
-api.get('/api/mintauctions/:set', API.mint_auctions);
-api.get('/api/sales', API.sales);
-api.get('/api/sales/:set', API.sales);
-api.get('/api/mintsales', API.mint_sales);
-api.get('/api/mintsales/:set', API.mint_sales);
-api.get('/api/mintsupply', API.mint_supply);
-api.get('/api/mintsupply/:set', API.mint_supply);
-api.get('/api/pfp/:user', API.official);
-api.get('/api/trades/:kind/:user', API.limbo);
-api.get('/@:un', API.user);
-api.get('/blog/@:un', API.blog);
-api.get('/dapps/@:author', API.getAuthorPosts);
-api.get('/dapps/@:author/:permlink', API.getPost);
-api.get('/new', API.getNewPosts);
-api.get('/trending', API.getTrendingPosts);
-api.get('/promoted', API.getPromotedPosts);
 api.get('/report/:un', API.report); // probably not needed
 api.get('/markets', API.markets); //for finding node runner and tasks information
-api.get('/posts/:author/:permlink', API.PostAuthorPermlink);
-api.get('/posts', API.posts); //votable posts
 api.get('/feed', API.feed); //all side-chain transaction in current day
 api.get('/runners', API.runners); //list of accounts that determine consensus... will also be the multi-sig accounts
 api.get('/queue', API.queue);
 api.get('/api/protocol', API.protocol);
 api.get('/api/status/:txid', API.status);
-api.get('/pending', API.pending); // The transaction signer now can sign multiple actions per block and this is nearly always empty, still good for troubleshooting
-// Some HIVE APi is wrapped here to support a stateless frontend built on the cheap with dreamweaver
-// None of these functions are required for token functionality and should likely be removed from the community version
-api.get('/api/:api_type/:api_call', API.hive_api);
-api.get('/hapi/:api_type/:api_call', API.hive_api);
-api.get('/getwrap', API.getwrap);
-api.get('/getauthorpic/:un', API.getpic);
-api.get('/getblog/:un', API.getblog);
+if(config.features.state){
+    api.get('/state', API.state); //Do not recommend having a state dump in a production API
+    api.get('/pending', API.pending); // The transaction signer now can sign multiple actions per block and this is nearly always empty, still good for troubleshooting
+    // Some HIVE APi is wrapped here to support a stateless frontend built on the cheap with dreamweaver
+    // None of these functions are required for token functionality and should likely be removed from the community version
+    api.get('/api/:api_type/:api_call', API.hive_api);
+    api.get('/hapi/:api_type/:api_call', API.hive_api);
+    api.get('/getwrap', API.getwrap);
+    api.get('/getauthorpic/:un', API.getpic);
+    api.get('/getblog/:un', API.getblog);
+}
+if(config.features.dex){
+    api.get('/dex', API.dex);
+    api.get('/api/tickers', API.tickers);
+    api.get('/api/orderbook', API.orderbook);
+    api.get('/api/orderbook/:ticker_id', API.orderbook);
+    api.get('/api/pairs', API.pairs);
+    api.get('/api/historical', API.historical_trades);
+    api.get('/api/historical/:ticker_id', API.historical_trades);
+    api.get('/api/recent/:ticker_id', API.chart);
+}
+if(config.features.nft){
+    api.get('/api/nfts/:user', API.nfts);
+    api.get('/api/nft/:set/:item', API.item);
+    api.get('/api/sets', API.sets);
+    api.get('/api/set/:set', API.set);
+    api.get('/api/auctions', API.auctions);
+    api.get('/api/auctions/:set', API.auctions);
+    api.get('/api/mintauctions', API.mint_auctions);
+    api.get('/api/mintauctions/:set', API.mint_auctions);
+    api.get('/api/sales', API.sales);
+    api.get('/api/sales/:set', API.sales);
+    api.get('/api/mintsales', API.mint_sales);
+    api.get('/api/mintsales/:set', API.mint_sales);
+    api.get('/api/mintsupply', API.mint_supply);
+    api.get('/api/mintsupply/:set', API.mint_supply);
+    api.get('/api/pfp/:user', API.official);
+    api.get('/api/trades/:kind/:user', API.limbo);
+}
+if(config.features.pob){
+    api.get('/blog/@:un', API.blog);
+    api.get('/dapps/@:author', API.getAuthorPosts);
+    api.get('/dapps/@:author/:permlink', API.getPost);
+    api.get('/new', API.getNewPosts);
+    api.get('/trending', API.getTrendingPosts);
+    api.get('/promoted', API.getPromotedPosts);
+    api.get('/posts/:author/:permlink', API.PostAuthorPermlink);
+    api.get('/posts', API.posts); //votable posts
+}
 
 http.listen(config.port, function() {
     console.log(`${config.TOKEN} token API listening on port ${config.port}`);
@@ -194,58 +212,72 @@ if (config.rta && config.rtp) {
 
 //starts block processor after memory has been loaded
 function startApp() {
+    if(config.ipfshost == 'ipfs')ipfs.id(function (err, res) {
+        if(err){}
+        if(res)plasma.id = res.id
+    })
     processor = hiveState(client, hive, startingBlock, 10, config.prefix, streamMode, cycleAPI);
     processor.on('send', HR.send);
-    processor.on('power_up', HR.power_up); // power up tokens for vote power in layer 2 token proof of brain
-    processor.on('power_down', HR.power_down);
-    processor.on('power_grant', HR.power_grant);
-    processor.on('vote_content', HR.vote_content);
-    processor.on('dex_sell', HR.dex_sell);
-    processor.on('dex_clear', HR.dex_clear);
-    processor.on('gov_down', HR.gov_down);
-    processor.on('gov_up', HR.gov_up);
+    processor.on('claim', HR.claim);
     processor.on('node_add', HR.node_add);
     processor.on('node_delete', HR.node_delete);
     processor.on('report', HR.report);
+    processor.on('gov_down', HR.gov_down);
+    processor.on('gov_up', HR.gov_up);
+    processor.onOperation('account_update', HR.account_update);
+    processor.onOperation('comment', HR.comment);
     processor.on('queueForDaily', HR.q4d)
     processor.on('nomention', HR.nomention)
-    processor.on('ft_bid', HR.ft_bid)
-    processor.on('ft_auction', HR.ft_auction)
-    processor.on('ft_sell_cancel', HR.ft_sell_cancel)
-    processor.on('ft_buy', HR.ft_buy)
-    processor.on('ft_sell', HR.ft_sell)
-    processor.on('ft_escrow_cancel', HR.ft_escrow_cancel)
-    processor.on('ft_escrow_complete', HR.ft_escrow_complete)
-    processor.on('ft_escrow', HR.ft_escrow)
-    processor.on('fts_sell_h', HR.fts_sell_h)
-    processor.on('fts_sell_hcancel', HR.fts_sell_hcancel)
-    processor.on('nft_buy', HR.nft_buy)
-    processor.on('nft_sell', HR.nft_sell)
-    processor.on('nft_sell_cancel', HR.nft_sell_cancel)
-    processor.on('ft_transfer', HR.ft_transfer)
-    processor.on('ft_airdrop', HR.ft_airdrop)
-    processor.on('nft_transfer', HR.nft_transfer)
-    processor.on('nft_auction', HR.nft_auction)
-    processor.on('nft_hauction', HR.nft_hauction)
-    processor.on('nft_bid', HR.nft_bid)
-    processor.on('nft_transfer_cancel', HR.nft_transfer_cancel)
-    processor.on('nft_reserve_transfer', HR.nft_reserve_transfer)
-    processor.on('nft_reserve_complete', HR.nft_reserve_complete)
-    processor.on('nft_define', HR.nft_define)
-    processor.on('nft_add_roy', HR.nft_add_roy)
-    processor.on('nft_div', HR.nft_div)
-    processor.on('nft_define_delete', HR.nft_define_delete)
-    processor.on('nft_melt', HR.nft_delete)
-    processor.on('nft_mint', HR.nft_mint)
-    processor.on('nft_pfp', HR.nft_pfp)
-    processor.onOperation('comment_options', HR.comment_options);
-    processor.on('cjv', HR.cjv);
-    processor.on('sig_submit', HR.sig_submit); //dlux is for putting executable programs into IPFS... this is for additional accounts to sign the code as non-malicious
-    processor.on('cert', HR.cert); // json.cert is an open ended hope to interact with executable posts... unexplored
-    processor.onOperation('vote', HR.vote) //layer 2 voting
-    processor.onOperation('transfer', HR.transfer);
-    processor.onOperation('delegate_vesting_shares', HR.delegate_vesting_shares);
-    processor.onOperation('comment', HR.comment);
+    if(config.features.pob){
+        processor.on('power_up', HR.power_up); // power up tokens for vote power in layer 2 token proof of brain
+        processor.on('power_down', HR.power_down);
+        processor.on('power_grant', HR.power_grant);
+        processor.on('vote_content', HR.vote_content);
+        processor.onOperation('vote', HR.vote) //layer 2 voting
+        processor.onOperation('delegate_vesting_shares', HR.delegate_vesting_shares);
+        processor.onOperation('comment_options', HR.comment_options);
+        processor.on('cjv', HR.cjv);
+        processor.on('cert', HR.cert); // json.cert is an open ended hope to interact with executable posts... unexplored
+    }
+    if(config.features.dex){
+        processor.on('dex_sell', HR.dex_sell);
+        processor.on('dex_clear', HR.dex_clear);
+        processor.on('sig_submit', HR.sig_submit); //dlux is for putting executable programs into IPFS... this is for additional accounts to sign the code as non-malicious
+    }
+    if(config.features.dex || config.features.nft || config.features.ico){
+        processor.onOperation('transfer', HR.transfer);
+    }
+    if(config.features.nft){
+        processor.on('ft_bid', HR.ft_bid)
+        processor.on('ft_auction', HR.ft_auction)
+        processor.on('ft_sell_cancel', HR.ft_sell_cancel)
+        processor.on('ft_buy', HR.ft_buy)
+        processor.on('ft_sell', HR.ft_sell)
+        processor.on('ft_escrow_cancel', HR.ft_escrow_cancel)
+        processor.on('ft_escrow_complete', HR.ft_escrow_complete)
+        processor.on('ft_escrow', HR.ft_escrow)
+        processor.on('fts_sell_h', HR.fts_sell_h)
+        processor.on('fts_sell_hcancel', HR.fts_sell_hcancel)
+        processor.on('nft_buy', HR.nft_buy)
+        processor.on('nft_sell', HR.nft_sell)
+        processor.on('nft_sell_cancel', HR.nft_sell_cancel)
+        processor.on('ft_transfer', HR.ft_transfer)
+        processor.on('ft_airdrop', HR.ft_airdrop)
+        processor.on('nft_transfer', HR.nft_transfer)
+        processor.on('nft_auction', HR.nft_auction)
+        processor.on('nft_hauction', HR.nft_hauction)
+        processor.on('nft_bid', HR.nft_bid)
+        processor.on('nft_transfer_cancel', HR.nft_transfer_cancel)
+        processor.on('nft_reserve_transfer', HR.nft_reserve_transfer)
+        processor.on('nft_reserve_complete', HR.nft_reserve_complete)
+        processor.on('nft_define', HR.nft_define)
+        processor.on('nft_add_roy', HR.nft_add_roy)
+        processor.on('nft_div', HR.nft_div)
+        processor.on('nft_define_delete', HR.nft_define_delete)
+        processor.on('nft_melt', HR.nft_delete)
+        processor.on('nft_mint', HR.nft_mint)
+        processor.on('nft_pfp', HR.nft_pfp)
+    }
     //do things in cycles based on block time
     processor.onBlock(
         function (num, pc, prand, bh) {
@@ -261,12 +293,15 @@ function startApp() {
                     lte: "" + (num - 100)
                 }) //resign mss
                 let Pmsa = getPathObj(['msa'])
-                Promise.all([Pchron, Pmss, Pmsa]).then(mem => {
+                let Pmso = getPathObj(['mso'])
+                Promise.all([Pchron, Pmss, Pmsa, Pmso]).then(mem => {
                     var a = mem[0],
                         mss = mem[1], //resign mss
                         msa = mem[2] //if length > 80... sign these
+                        mso = mem[3]
                     let chrops = {},
                         msa_keys = Object.keys(msa)
+                        mso_keys = Object.keys(mso)
                     for (var i in a) {
                         chrops[a[i]] = a[i]
                     }
@@ -378,9 +413,18 @@ function startApp() {
                 }
                 function every(){
                     return new Promise((res, rej)=>{
-                        let promises = []
+                        let promises = [HR.margins()]
                         if(num % 100 !== 50){
-                            if(msa_keys.length > 80){
+                            if(mso_keys.length){
+                                promises.push(new Promise((res,rej)=>{
+                                    osig_submit(consolidate(num, plasma, bh, 'owner'))
+                                    .then(nodeOp => {
+                                        res('SAT')
+                                        NodeOps.unshift(nodeOp)
+                                    })
+                                    .catch(e => { rej(e) })
+                                }))
+                            } else if(msa_keys.length > 80){
                                 promises.push(new Promise((res,rej)=>{
                                     sig_submit(consolidate(num, plasma, bh))
                                     .then(nodeOp => {
@@ -430,12 +474,14 @@ function startApp() {
                         }
                         if ((num - 20003) % 30240 === 0) { //time for daily magic
                             promises.push(dao(num))
+                            block.prev_root = block.root
+                            block.root = ''
                         }
                         if (num % 100 === 0) {
                             promises.push(tally(num, plasma, processor.isStreaming()));
                         }
                         if (num % 100 === 99) {
-                            promises.push(Liquidity());
+                            if(config.features.liquidity)promises.push(Liquidity());
                         }
                         if ((num - 2) % 3000 === 0) {
                             promises.push(voter());
@@ -443,11 +489,15 @@ function startApp() {
                         Promise.all(promises).then(()=>resolve(pc))
                     })
                 }
-                    if (num % 100 === 1) {
+                    if (num % 100 === 1 && !block.root) {
+                        block.root = 'pending'
+                        block.chain = []
+                        block.ops = []
                         store.get([], function(err, obj) {
                             const blockState = Buffer.from(stringify([num, obj]))
-                            ipfsSaveState(num, blockState)
+                            ipfsSaveState(num, blockState, ipfs)
                                 .then(pla => {
+                                    block.root = pla.hashLastIBlock
                                     plasma.hashSecIBlock = plasma.hashLastIBlock
                                     plasma.hashLastIBlock = pla.hashLastIBlock
                                     plasma.hashBlock = pla.hashBlock
@@ -455,6 +505,17 @@ function startApp() {
                                 .catch(e => { console.log(e) })
 
                         })
+                    } else if (num % 100 === 1) {
+                        const blockState = Buffer.from(stringify([num, block]))
+                            block.ops = []
+                            ipfsSaveState(num, blockState, ipfs)
+                                .then(pla => {
+                                    block.chain.push({hash: pla.hashLastIBlock, hive_block: num})
+                                    plasma.hashSecIBlock = plasma.hashLastIBlock
+                                    plasma.hashLastIBlock = pla.hashLastIBlock
+                                    plasma.hashBlock = pla.hashBlock
+                                })
+                                .catch(e => { console.log(e) })
                     }
                     if (config.active && processor.isStreaming() ) {
                         store.get(['escrow', config.username], function(e, a) {
@@ -616,7 +677,7 @@ function dynStart(account) {
                 }
             } else {
                 startWith(config.engineCrank)
-                console.log('I did it')
+                console.log('IPFS load Failed: Genesis or Backup Replay...')
             }
         }
     });
@@ -628,24 +689,27 @@ function startWith(hash, second) {
     console.log(`${hash} inserted`)
     if (hash) {
         console.log(`Attempting to start from IPFS save state ${hash}`);
-        ipfs.cat(hash, (err, file) => {
-            if (!err) {
+        ipfspromise(hash).then(blockInfo=>{
+            var blockinfo = JSON.parse(blockInfo);
+            ipfspromise(blockinfo[1].root ? blockinfo[1].root : hash).then( file => {
                 var data = JSON.parse(file);
                 startingBlock = data[0]
+                block.root = blockinfo[1].root ? blockinfo[1].root : hash
+                block.prev_root = data[1].prev_root ? data[1].prev_root : data[1].stats.root || ''
+                console.log('root', block.root)
                 if (!startingBlock) {
                     startWith(sh)
                 } else {
-                    plasma.hashBlock = data[0]
-                    plasma.hashLastIBlock = hash
                     store.del([], function(e) {
                         if (!e && (second || data[0] > API.RAM.head - 325)) {
                             if (hash) {
                                 var cleanState = data[1]
-                                // cleanState.runners = {
-                                //     disrgardfiat: 1,
-                                //     ['dlux-io']: 1,
-                                //     markegiles: 1
-                                // }
+                                delete cleanState.stats.HiveVWMA
+                                delete cleanState.stats.HbdVWMA //remove when dynamic
+                                cleanState.stats.MSHeld = {
+                                    "HIVE": 0,
+                                    "HBD": 0
+                                }
                                 store.put([], cleanState, function(err) {
                                     if (err) {
                                         console.log('errr',err)
@@ -660,7 +724,14 @@ function startWith(hash, second) {
                                                 }
                                             }
                                         })
-                                        startApp()
+                                        if(blockinfo[1].chain){rundelta(blockinfo[1].chain, blockinfo[1].ops, blockinfo[0], blockinfo[1].prev_root)
+                                        .then(empty=>{
+                                            startApp()
+                                            getPathNum(['balances', 'ra']).then(r=>console.log(r))})
+                                        .catch(e=>console.log('Failure of rundelta'))
+                                        } else {
+                                            startApp()
+                                        }
                                     }
                                 })
                             } else {
@@ -680,13 +751,13 @@ function startWith(hash, second) {
                             for( var runner in data[1].runners) {
                                     promises.push(new Promise((resolve, reject) => {
                                         console.log('runner', runner)
+                                        hiveClient.api.setOptions({ url: config.startURL });
                                         hiveClient.api.getAccountHistory(runner, -1, 100, ...walletOperationsBitmask, function(err, result) {
                                             var recents = {block:0}
                                             if (err) {
                                                 console.log('error in retrieval')
                                                 resolve({hash:null,block:null})
                                             } else {
-                                                //hiveClient.api.setOptions({ url: config.clientURL });
                                                 let ebus = result.filter(tx => tx[1].op[1].id === `${config.prefix}report`)
                                                 for (i = ebus.length - 1; i >= 0; i--) {
                                                     if (JSON.parse(ebus[i][1].op[1].json).hash) {
@@ -713,6 +784,7 @@ function startWith(hash, second) {
                                     }))
                                 }
                             Promise.all(promises).then(values =>{
+                                hiveClient.api.setOptions({ url: config.clientURL });
                                 var newest = 0, votes = {}, blocks = {}
                                 for(var acc in values){
                                     if(values[acc].block >= newest && !votes[values[acc].hash]){
@@ -737,11 +809,12 @@ function startWith(hash, second) {
                         }
                     })
                 }
-            } else {
-                startWith(config.engineCrank)
-                console.log(`${hash} failed to load, Replaying from genesis.\nYou may want to set the env var STARTHASH\nFind it at any token API such as ${config.mainAPI}`)
-            }
         });
+        })
+        .catch(e=>{
+            console.log('error in ipfs', e)
+            process.exit()
+        })
     } else {
         startingBlock = config.starting_block
         store.del([], function(e) {
@@ -760,4 +833,64 @@ function startWith(hash, second) {
             })
         })
     }
+}
+
+function rundelta(arr, ops, sb, pr){
+    return new Promise((resolve, reject) => {
+        var promises = []
+        for (var i = 0; i < arr.length; i++){
+            promises.push(ipfspromise(arr[i].hash))
+            plasma.hashBlock = arr[i].hive_block
+            plasma.hashLastIBlock = arr[i].hash
+        }
+        Promise.all(promises).then(values => {
+            delta(values)
+            function delta(a){
+                if(a.length){
+                    const b = JSON.parse(a.shift())
+                    startingBlock = b[0]
+                    delsfirst(b[1].ops).then(emp=>store.batch(unwrapOps(b[1].ops)[1], [delta, reject, a ? a : []]))
+                } else {
+                    block.ops = []
+                    block.chain = arr
+                    block.prev_root = pr
+                    startingBlock = sb
+                    delsfirst(ops).then(emp=>store.batch(unwrapOps(ops)[1], [resolve, reject, a ? a : []]))
+                }
+                function delsfirst(b){
+                    return new Promise((resolv, rejec) => {
+                        store.batch(unwrapOps(b)[0], [resolv, rejec, 'OK'])
+                    })
+                }
+            }
+        })
+        .catch(e=>reject(e))
+    })
+}
+
+function unwrapOps(arr){
+    var c = [],
+        d = []
+    for(var i = 0; i < arr.length; i++){
+        const e = JSON.parse(arr[i])
+        if (e.type != 'del')c.push(e)
+        else d.push(e)
+    }
+    return [d,c]
+}
+
+function ipfspromise(hash){
+    return new Promise((resolve, reject) => {
+        ipfs.cat(hash, function(err, data) {
+            if (err) {
+                console.log(err)
+            } else {
+                resolve(data)
+            }
+        })
+        fetch(`https://ipfs.infura.io/ipfs/${hash}`)
+        .then(r=>r.text())
+        .then(res => {resolve(res)})
+        .catch(e=>console.log(e))
+    })
 }

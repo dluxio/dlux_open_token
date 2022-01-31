@@ -602,18 +602,9 @@ exports.detail = (req, res, next) => {
     Promise.all([stats, hiveStats])
         .then(function(v) {
             console.log(RAM.hiveDyn)
-            const DLUX = {
-                name: 'Decentralized Limitless User eXperiences',
-                symbol: 'DLUX',
-                icon: 'https://www.dlux.io/img/dlux-hive-logo-alpha.svg',
-                supply:'5% Fixed Inflation, No Cap.',
-                incirc: parseFloat(v[0].tokenSupply / 1000).toFixed(3),
-                wp:`https://docs.google.com/document/d/1_jHIJsX0BRa5ujX0s-CQg3UoQC2CBW4wooP2lSSh3n0/edit?usp=sharing`,
-                ws:`https://www.dlux.io`,
-                be:`https://hiveblockexplorer.com/`,
-                text: `DLUX is a Web3.0 technology that is focused on providing distribution of eXtended (Virtual and Augmented) Reality. It supports any browser based applications that can be statically delivered through IPFS. The DLUX Token Architecture is Proof of Stake as a layer 2 technology on the HIVE blockchain to take advantage of free transactions. With the first WYSIWYG VR Builder of any blockchain environment and the first Decentralized Exchange on the Hive Blockchain, DLUX is committed to breaking any boundaries for adoption of world changing technologies.`
-            },
-                HIVE ={
+            var TOKEN = config.detail
+                TOKEN.incirc = parseFloat(v[0].tokenSupply / 1000).toFixed(3)
+            const HIVE ={
                 name: 'HIVE',
                 symbol: 'HIVE',
                 icon: 'https://www.dlux.io/img/hextacular.svg',
@@ -637,7 +628,7 @@ exports.detail = (req, res, next) => {
             }
 
             res.send(JSON.stringify({
-                coins: [DLUX,HIVE,HBD],
+                coins: [TOKEN,HIVE,HBD],
                 node: config.username,
                 behind: RAM.behind,
                 VERSION
@@ -1609,6 +1600,11 @@ exports.coincheck = (state) => {
             supply += state.balances[bal]
             lbal += state.balances[bal]
         }
+        cbal = 0
+        for (bal in state.cbalances) {
+            supply += state.cbalances[bal]
+            cbal += state.cbalances[bal]
+        }
         var gov = 0,
             govt = 0
         var con = 0
@@ -1675,8 +1671,8 @@ exports.coincheck = (state) => {
                 in_auctions: ah,
                 in_market: am,
                 in_NFTS: bond,
-                in_dividends: div
-
+                in_dividends: div,
+                in_claims: cbal
             }
         }
         return {check, info, supply}
@@ -1700,6 +1696,8 @@ exports.coin = (req, res, next) => {
 exports.user = (req, res, next) => {
     let un = req.params.un,
         bal = getPathNum(['balances', un]),
+        cbal = getPathNum(['cbalances', un]),
+        claims = getPathObj(['claims', un]),
         pb = getPathNum(['pow', un]),
         lp = getPathNum(['granted', un, 't']),
         lg = getPathNum(['granting', un, 't']),
@@ -1709,12 +1707,13 @@ exports.user = (req, res, next) => {
         pup = getPathObj(['up', un]),
         pdown = getPathObj(['down', un])
     res.setHeader('Content-Type', 'application/json');
-    Promise.all([bal, pb, lp, contracts, incol, gp, pup, pdown, lg])
+    Promise.all([bal, pb, lp, contracts, incol, gp, pup, pdown, lg, cbal, claims])
         .then(function(v) {
             var arr = []
             for (var i in v[3]) {arr.push(v[3][i])}
             res.send(JSON.stringify({
                 balance: v[0],
+                claim: v[9],
                 poweredUp: v[1],
                 granted: v[2],
                 granting: v[8],

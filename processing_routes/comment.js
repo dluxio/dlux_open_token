@@ -9,7 +9,7 @@ exports.comment = (json, pc) => {
     let meta = {}
     try { meta = JSON.parse(json.json_metadata) } catch (e) {}
     let community_post = false
-    if (json.author == config.leader && parseInt(json.permlink.split('dlux')[1]) > json.block_num - 31000) {
+    if (json.author == config.leader && parseInt(json.permlink.split(config.tag)[1]) > json.block_num - 31000) {
         //console.log('leader post')
         store.get(['escrow', json.author], function(e, a) {
             if (!e) {
@@ -25,7 +25,7 @@ exports.comment = (json, pc) => {
                 console.log(e)
             }
         })
-    } else if (meta.arHash || meta.vrHash || meta.appHash || meta.audHash) {
+    } else if (config.features.pob && meta.arHash || meta.vrHash || meta.appHash || meta.audHash) {
         Ppost = getPathObj(['posts', `${json.author}/${json.permlink}`])
         Promise.all([Ppost])
             .then(postarray => {

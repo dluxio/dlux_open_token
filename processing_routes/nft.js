@@ -241,7 +241,7 @@ json:nft_define: {
 }
 */
 exports.nft_define = function(json, from, active, pc) {
-if (active && (from == 'disregardfiat' || from == 'hivefolks')){
+if (active){
     let statsp = getPathObj(['stats']),
         balp = getPathObj(['balances']),
         setp = getPathObj(['sets', json.name])

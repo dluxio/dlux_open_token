@@ -5,6 +5,7 @@ const username = ENV.account || 'disregardfiat';
 const active = ENV.active || '';
 const follow = ENV.follow || 'disregardfiat';
 const msowner = ENV.msowner || '';
+const mspublic = ENV.mspublic || '';
 const memoKey = ENV.memo || '';
 const hookurl = ENV.discordwebhook || '';
 const NODEDOMAIN = ENV.domain || 'http://dlux-token.herokuapp.com' //where your API lives
@@ -25,8 +26,9 @@ const engineCrank = ENV.startingHash || '' //but this state will be inserted bef
 const rta = ENV.rta || '' //rtrades account : IPFS pinning interface
 const rtp = ENV.rtp || '' //rtrades password : IPFS pinning interface
 
-var ipfshost = ENV.ipfshost || 'ipfs.infura.io' //IPFS upload/download provider provider
-
+const ipfshost = ENV.ipfshost || 'ipfs.infura.io' //IPFS upload/download provider provider
+const ipfsport = ENV.ipfsport || '5001' //IPFS upload/download provider provider
+const ipfsprotocol = ENV.ipfsprotocol || 'https' //IPFS upload/download protocol
 //node market config > 2500 is 25% inflation to node operators, this is currently not used
 const bidRate = ENV.BIDRATE || 2500 //
 
@@ -55,12 +57,37 @@ const ben = 'dlux-io' //Account where comment benifits trigger token action
 const delegation = 'dlux-io' //account people can delegate to for rewards
 const delegationWeight = 1000 //when to trigger community rewards with bens
 const msaccount = 'dlux-cc' //account controlled by community leaders
+const msPubMemo = 'STM5se9o2oZwY7ztpo2scyvf12RR41zaYa6rozBtetwfr1DmH1J5k' //memo key for msaccount
 const mainAPI = 'token.dlux.io' //leaders API probably
+const mainRender = 'dluxdata.herokuapp.com' //data and render server
 const mainFE = 'dlux.io' //frontend for content
 const mainIPFS = 'a.ipfs.dlux.io' //IPFS service
 const mainICO = 'robotolux' //Account collecting ICO HIVE
 const footer = `\n[Find us on Discord](https://discord.gg/Beeb38j)`
 const hive_service_fee = 100 //HIVE service fee for transactions in Hive/HBD in centipercents (1% = 100)
+const features = {
+    pob: true, //proof of brain
+    delegate: true, //delegation
+    liquidity: true, //liquidity
+    ico: true, //ico
+    dex: true, //dex
+    nft: true, //nfts
+    state: true, //api dumps
+    claimdrop: false //claim drops
+}
+const adverts = [
+    'https://camo.githubusercontent.com/954558e3ca2d68e0034cae13663d9807dcce3fcf/68747470733a2f2f697066732e627573792e6f72672f697066732f516d64354b78395548366a666e5a6748724a583339744172474e6b514253376359465032357a3467467132576f50'
+]
+const detail = {
+                name: 'Decentralized Limitless User eXperiences',
+                symbol: TOKEN,
+                icon: 'https://www.dlux.io/img/dlux-hive-logo-alpha.svg',
+                supply:'5% Fixed Inflation, No Cap.',
+                wp:`https://docs.google.com/document/d/1_jHIJsX0BRa5ujX0s-CQg3UoQC2CBW4wooP2lSSh3n0/edit?usp=sharing`,
+                ws:`https://www.dlux.io`,
+                be:`https://hiveblockexplorer.com/`,
+                text: `DLUX is a Web3.0 technology that is focused on providing distribution of eXtended (Virtual and Augmented) Reality. It supports any browser based applications that can be statically delivered through IPFS. The DLUX Token Architecture is Proof of Stake as a layer 2 technology on the HIVE blockchain to take advantage of free transactions. With the first WYSIWYG VR Builder of any blockchain environment and the first Decentralized Exchange on the Hive Blockchain, DLUX is committed to breaking any boundaries for adoption of world changing technologies.`
+            }
 
 //Aditionally on your branch, look closely at dao, this is where tokenomics happen and custom status posts are made
 
@@ -68,6 +95,7 @@ let config = {
     username,
     active,
     msowner,
+    mspublic,
     memoKey,
     follow,
     NODEDOMAIN,
@@ -89,11 +117,15 @@ let config = {
     rtp,
     override,
     ipfshost,
+    ipfsprotocol,
+    ipfsport,
     starting_block,
     prefix,
     leader,
     msaccount,
+    msPubMemo,
     ben,
+    adverts,
     delegation,
     delegationWeight,
     TOKEN,
@@ -102,10 +134,13 @@ let config = {
     mainAPI,
     jsonTokenName,
     mainFE,
+    mainRender,
     mainIPFS,
     mainICO,
+    detail,
     footer,
-    hive_service_fee
+    hive_service_fee,
+    features
 };
 
 module.exports = config;

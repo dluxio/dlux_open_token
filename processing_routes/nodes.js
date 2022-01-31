@@ -3,6 +3,7 @@ const { store } = require('./../index')
 const { getPathObj, deleteObjs } = require('./../getPathObj')
 const { isEmpty } = require('./../lil_ops')
 const { postToDiscord } = require('./../discord')
+const { decode, encode } = require('@hiveio/hive-js').memo
 
 exports.node_add = function(json, from, active, pc) {
     if (json.domain && typeof json.domain === 'string') {
@@ -13,6 +14,15 @@ exports.node_add = function(json, from, active, pc) {
         var mirror = false
         if (json.mirror == 'true') {
             mirror = true
+        }
+        var mskey
+        if (json.mskey && json.mschallenge){ //shared keypair to verify good data: 5KDZ9fzihXJbiLqUCMU2Z2xU8VKb9hCggyRPZP37aprD2kVKiuL	STM5GNM3jpjWh7Msts5Z37eM9UPfGwTMU7Ksats3RdKeRaP5SveR9
+            try {
+                const verifyKey = decode('5KDZ9fzihXJbiLqUCMU2Z2xU8VKb9hCggyRPZP37aprD2kVKiuL', json.mschallenge) //verifies it was signed
+                const nowhammies = encode('5KDZ9fzihXJbiLqUCMU2Z2xU8VKb9hCggyRPZP37aprD2kVKiuL', 'STM5GNM3jpjWh7Msts5Z37eM9UPfGwTMU7Ksats3RdKeRaP5SveR9', verifyKey) //verifies it wasn't signed by this key
+                const isValid = encode('5KDZ9fzihXJbiLqUCMU2Z2xU8VKb9hCggyRPZP37aprD2kVKiuL', json.mskey, '#try') //verifies it is a public key
+                if (typeof isValid == 'string' && verifyKey == `#${json.mskey}` && nowhammies != json.mschallenge)mskey = json.mskey
+            } catch (e) {}
         }
         var bid = parseInt(json.bidRate) || 0
         if (bid < 1) {
@@ -58,7 +68,8 @@ exports.node_add = function(json, from, active, pc) {
                             lastGood: 0,
                             report: {},
                             escrow,
-                            liquidity
+                            liquidity,
+                            mskey
                         }
                     }]
                 } else {
@@ -69,6 +80,7 @@ exports.node_add = function(json, from, active, pc) {
                     b.marketingRate = daoRate
                     b.mirror = mirror
                     b.liquidity = liquidity
+                    if(mskey)b.mskey = mskey
                     ops = [{ type: 'put', path: ['markets', 'node', from], data: b }]
                 }
                 const msg = `@${from}| has bid the hive-state node ${json.domain} at ${json.bidRate}`
