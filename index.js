@@ -152,17 +152,6 @@ api.get('/runners', API.runners); //list of accounts that determine consensus...
 api.get('/queue', API.queue);
 api.get('/api/protocol', API.protocol);
 api.get('/api/status/:txid', API.status);
-if(config.features.state){
-    api.get('/state', API.state); //Do not recommend having a state dump in a production API
-    api.get('/pending', API.pending); // The transaction signer now can sign multiple actions per block and this is nearly always empty, still good for troubleshooting
-    // Some HIVE APi is wrapped here to support a stateless frontend built on the cheap with dreamweaver
-    // None of these functions are required for token functionality and should likely be removed from the community version
-    api.get('/api/:api_type/:api_call', API.hive_api);
-    api.get('/hapi/:api_type/:api_call', API.hive_api);
-    api.get('/getwrap', API.getwrap);
-    api.get('/getauthorpic/:un', API.getpic);
-    api.get('/getblog/:un', API.getblog);
-}
 if(config.features.dex){
     api.get('/dex', API.dex);
     api.get('/api/tickers', API.tickers);
@@ -200,6 +189,17 @@ if(config.features.pob){
     api.get('/promoted', API.getPromotedPosts);
     api.get('/posts/:author/:permlink', API.PostAuthorPermlink);
     api.get('/posts', API.posts); //votable posts
+}
+if(config.features.state){
+    api.get('/state', API.state); //Do not recommend having a state dump in a production API
+    api.get('/pending', API.pending); // The transaction signer now can sign multiple actions per block and this is nearly always empty, still good for troubleshooting
+    // Some HIVE APi is wrapped here to support a stateless frontend built on the cheap with dreamweaver
+    // None of these functions are required for token functionality and should likely be removed from the community version
+    api.get('/api/:api_type/:api_call', API.hive_api);
+    api.get('/hapi/:api_type/:api_call', API.hive_api);
+    api.get('/getwrap', API.getwrap);
+    api.get('/getauthorpic/:un', API.getpic);
+    api.get('/getblog/:un', API.getblog);
 }
 
 http.listen(config.port, function() {
@@ -855,7 +855,11 @@ function rundelta(arr, ops, sb, pr){
                     block.chain = arr
                     block.prev_root = pr
                     startingBlock = sb
-                    delsfirst(ops).then(emp=>store.batch(unwrapOps(ops)[1], [resolve, reject, a ? a : []]))
+                    delsfirst(ops).then(emp=>store.batch(unwrapOps(ops)[1], [reorderOps, reject, a ? a : []]))
+                }
+                function reorderOps(){
+                    block.ops = ops
+                    resolve([])
                 }
                 function delsfirst(b){
                     return new Promise((resolv, rejec) => {
