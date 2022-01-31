@@ -132,7 +132,7 @@ var recents = []
     //HIVE API CODE
 
     //Start Program Options   
-startWith('QmNpsXTdcY8PyDGrQNVN49ADaKtzheUTi9CgDAHG9SmoSz', true) //for testing and replaying 58859101
+startWith('Qmaj1XL2T7GsSsNRM5qywtz2kGNSedgaRFrSgqhb9ZSGEd', true) //for testing and replaying 58859101
 //dynStart(config.follow)
 
 

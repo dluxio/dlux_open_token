@@ -1,4 +1,4 @@
-# HoneyComb
+### DLUX Token - Via Honeycomb
 
 This is a Decentralized Autonomous Organization built on the HIVE ecosystem.
 
@@ -78,9 +78,6 @@ Detailed Instructions also at /docs/setup.md
 Which include Docker and IPFS linking
 
 * Clone this repository
-
-`git clone https://github.com/disregardfiat/honeycomb.git`
-
 * Navigate to the root directory of token
 
 `cd honeycomb`
