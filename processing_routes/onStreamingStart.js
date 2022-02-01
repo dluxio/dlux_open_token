@@ -10,7 +10,7 @@ exports.onStreamingStart = () => {
             var mskey, mschallenge
             if(config.msowner && config.mspublic){
                 mskey = config.mspublic
-                mschallenge = encode(config.msowner, 'STM5GNM3jpjWh7Msts5Z37eM9UPfGwTMU7Ksats3RdKeRaP5SveR9', `#${config.mspublic}`)
+                mschallenge = encode(config.msowner, config.msPubMemo, `#${config.mspublic}`)
             }
             var op = ["custom_json", {
                 required_auths: [config.username],
