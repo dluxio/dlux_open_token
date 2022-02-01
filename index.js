@@ -876,8 +876,10 @@ function unwrapOps(arr){
         d = []
     for(var i = 0; i < arr.length; i++){
         const e = JSON.parse(arr[i])
-        if (e.type != 'del')c.push(e)
-        else d.push(e)
+        if (e.type != 'del' && e.path[0] != 'chrono')c.push(e)
+        else {
+            d.push(e)
+        }
     }
     return [d,c]
 }
