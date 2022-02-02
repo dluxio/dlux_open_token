@@ -132,8 +132,8 @@ var recents = []
     //HIVE API CODE
 
     //Start Program Options   
-//startWith('QmcVV6peBM2xvTUzxConmP6NpA9DWuBMBa5mp1N7jjpusA', true) //for testing and replaying 58859101
-dynStart(config.follow)
+startWith('QmccsAkWKQcCTMYQu5imYXjEG1vKdsD5tWTXrfVmmsindc', true) //for testing and replaying 58859101
+//dynStart(config.follow)
 
 
 // API defs
@@ -848,22 +848,17 @@ function rundelta(arr, ops, sb, pr){
                 if(a.length){
                     const b = JSON.parse(a.shift())
                     startingBlock = b[0]
-                    delsfirst(b[1].ops).then(emp=>store.batch(unwrapOps(b[1].ops)[1], [delta, reject, a ? a : []]))
+                    store.batch(unwrapOps(b[1].ops), [delta, reject, a ? a : []])
                 } else {
                     block.ops = []
                     block.chain = arr
                     block.prev_root = pr
                     startingBlock = sb
-                    delsfirst(ops).then(emp=>store.batch(unwrapOps(ops)[1], [reorderOps, reject, a ? a : []]))
+                    store.batch(unwrapOps(ops), [reorderOps, reject, a ? a : []])
                 }
                 function reorderOps(){
                     block.ops = ops
                     resolve([])
-                }
-                function delsfirst(b){
-                    return new Promise((resolv, rejec) => {
-                        store.batch(unwrapOps(b)[0], [resolv, rejec, 'OK'])
-                    })
                 }
             }
         })
@@ -872,16 +867,15 @@ function rundelta(arr, ops, sb, pr){
 }
 
 function unwrapOps(arr){
-    var c = [],
-        d = []
-    for(var i = 0; i < arr.length; i++){
-        const e = JSON.parse(arr[i])
-        if (e.type != 'del' && e.path[0] != 'chrono')c.push(e)
-        else {
-            d.push(e)
+    function write (int){
+    var    d = []
+    for(var i = int; i < arr.length; i++){
+            const e = JSON.parse(arr[i])
+            if (e == 'W' && i != arr.length -1)store.batch(d, [write, i+1])
+            else d.push(e)
         }
     }
-    return [d,c]
+    return d
 }
 
 function ipfspromise(hash){
