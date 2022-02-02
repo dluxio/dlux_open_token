@@ -132,8 +132,8 @@ var recents = []
     //HIVE API CODE
 
     //Start Program Options   
-startWith('QmaLTXzDSp6RyXrhEoMSG9Hu88j8ZimhK5fxEZDfA1pVD7', true) //for testing and replaying 58859101
-//dynStart(config.follow)
+//startWith('QmaLTXzDSp6RyXrhEoMSG9Hu88j8ZimhK5fxEZDfA1pVD7', true) //for testing and replaying 58859101
+dynStart(config.follow)
 
 
 // API defs
