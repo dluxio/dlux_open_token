@@ -1,5 +1,5 @@
 const config = require('./config');
-const VERSION = 'v1.2.0b1'
+const VERSION = 'v1.2.0b1f'
 exports.VERSION = VERSION
 exports.exit = exit;
 exports.processor = processor;
@@ -727,7 +727,7 @@ function startWith(hash, second) {
                                         .then(empty=>{
                                             startApp()
                                             getPathNum(['balances', 'ra']).then(r=>console.log(r))})
-                                        .catch(e=>console.log('Failure of rundelta'))
+                                        .catch(e=>console.log('Failure of rundelta', e))
                                         } else {
                                             startApp()
                                         }
@@ -846,15 +846,25 @@ function rundelta(arr, ops, sb, pr){
             delta(values)
             function delta(a){
                 if(a.length){
+                    console.log('Blocks to apply:', a.length)
                     const b = JSON.parse(a.shift())
                     startingBlock = b[0]
-                    store.batch(unwrapOps(b[1].ops), [delta, reject, a ? a : []])
+                    unwrapOps(b[1].ops).then(last=>{
+                        if(last.length){
+                        store.batch(last, [delta, reject, a ? a : []])
+                    } else delta(a ? a : [])
+                    })
                 } else {
+                    console.log('Current Block')
                     block.ops = []
                     block.chain = arr
                     block.prev_root = pr
                     startingBlock = sb
-                    store.batch(unwrapOps(ops), [reorderOps, reject, a ? a : []])
+                    unwrapOps(ops).then(last=>{
+                    if(last.length){
+                        store.batch(last, [reorderOps, reject, a ? a : []])
+                    } else reorderOps()
+                    })
                 }
                 function reorderOps(){
                     block.ops = ops
@@ -867,15 +877,26 @@ function rundelta(arr, ops, sb, pr){
 }
 
 function unwrapOps(arr){
-    function write (int){
-    var    d = []
-    for(var i = int; i < arr.length; i++){
-            const e = JSON.parse(arr[i])
-            if (e == 'W' && i != arr.length -1)store.batch(d, [write, i+1])
-            else d.push(e)
+    return new Promise((resolve, reject) => {
+        var d = []
+        write(0)
+        function write (int){
+        d = []
+        for(var i = int; i < arr.length; i++){
+                var e = arr[i]
+                try {
+                    e = JSON.parse(e)
+                } catch(e){e = arr[i]}
+                if (e == 'W' && d.length && i != arr.length -1){
+                    store.batch(d, [write, null, i+1])
+                    break
+                } else if (e == 'W' && i == arr.length -1){
+                    resolve(d)
+                } else if (e == 'W'){
+                } else d.push(e)
+            }
         }
-    }
-    return d
+})
 }
 
 function ipfspromise(hash){
@@ -887,9 +908,12 @@ function ipfspromise(hash){
                 resolve(data)
             }
         })
-        fetch(`https://ipfs.infura.io/ipfs/${hash}`)
+        fetch(`https://ipfs.io/ipfs/${hash}`)
         .then(r=>r.text())
         .then(res => {resolve(res)})
-        .catch(e=>console.log(e))
+        .catch(e=>{fetch(`https://ipfs.infura.io/ipfs/${hash}`)
+        .then(r=>r.text())
+        .then(res => {resolve(res)})
+        .catch(e=>reject(e))})
     })
 }
