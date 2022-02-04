@@ -69,6 +69,7 @@ const hive_service_fee = 100 //HIVE service fee for transactions in Hive/HBD in 
 const features = {
     pob: true, //proof of brain
     delegate: true, //delegation
+    daily: true, // daily post
     liquidity: true, //liquidity
     ico: true, //ico
     dex: true, //dex
