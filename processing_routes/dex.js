@@ -1196,7 +1196,7 @@ exports.margins = function(bn) {
                     }
                 })
             }
-            if(Object.keys(mss).length)for (var x of mss){
+            if(Object.keys(mss).length)for (var x in mss){
                 mss[x].split('amount\":\"').forEach(y => {
                     const amount = y.split('\"')[0],
                         type = amount.split(' ')[1],
