@@ -1184,8 +1184,8 @@ exports.margins = function(bn) {
                 mss = mem[3],
                 ops = [],
                 status = {}
-            if(Object.keys(msa).length)for (var x in msa){
-                msa[x].split('amount\":\"').forEach(y => {
+            if(Object.keys(msa).length)for (var x of msa){
+                if(typeof msa[x] == 'string')msa[x].split('amount\":\"').forEach(y => {
                     const amount = y.split('\"')[0],
                         type = amount.split(' ')[1],
                         mt = parseInt(parseFloat(amount.split(' ')[0]) * 1000)
@@ -1197,7 +1197,7 @@ exports.margins = function(bn) {
                 })
             }
             if(Object.keys(mss).length)for (var x in mss){
-                mss[x].split('amount\":\"').forEach(y => {
+                if(typeof mss[x] == 'string')mss[x].split('amount\":\"').forEach(y => {
                     const amount = y.split('\"')[0],
                         type = amount.split(' ')[1],
                         mt = parseInt(parseFloat(amount.split(' ')[0]) * 1000)
