@@ -16,11 +16,11 @@ exports.node_add = function(json, from, active, pc) {
             mirror = true
         }
         var mskey
-        if (json.mskey && json.mschallenge){ //shared keypair to verify good data: 5KDZ9fzihXJbiLqUCMU2Z2xU8VKb9hCggyRPZP37aprD2kVKiuL	STM5GNM3jpjWh7Msts5Z37eM9UPfGwTMU7Ksats3RdKeRaP5SveR9
+        if (json.mskey && json.mschallenge){
             try {
-                const verifyKey = decode('5KDZ9fzihXJbiLqUCMU2Z2xU8VKb9hCggyRPZP37aprD2kVKiuL', json.mschallenge) //verifies it was signed
-                const nowhammies = encode('5KDZ9fzihXJbiLqUCMU2Z2xU8VKb9hCggyRPZP37aprD2kVKiuL', 'STM5GNM3jpjWh7Msts5Z37eM9UPfGwTMU7Ksats3RdKeRaP5SveR9', verifyKey) //verifies it wasn't signed by this key
-                const isValid = encode('5KDZ9fzihXJbiLqUCMU2Z2xU8VKb9hCggyRPZP37aprD2kVKiuL', json.mskey, '#try') //verifies it is a public key
+                const verifyKey = decode(config.msPriMemo, json.mschallenge)
+                const nowhammies = encode(config.msPriMemo, config.msPubMemo, verifyKey)
+                const isValid = encode(config.msPriMemo, json.mskey, '#try')
                 if (typeof isValid == 'string' && verifyKey == `#${json.mskey}` && nowhammies != json.mschallenge)mskey = json.mskey
             } catch (e) {}
         }
@@ -49,10 +49,7 @@ exports.node_add = function(json, from, active, pc) {
             let ops = []
             if (!e) {
                 if (isEmpty(a)) {
-                    ops = [{
-                        type: 'put',
-                        path: ['markets', 'node', from],
-                        data: {
+                    data = {
                             domain: json.domain,
                             self: from,
                             bidRate: bid,
@@ -68,9 +65,13 @@ exports.node_add = function(json, from, active, pc) {
                             lastGood: 0,
                             report: {},
                             escrow,
-                            liquidity,
-                            mskey
+                            liquidity
                         }
+                    if(mskey)data.mskey = mskey
+                    ops = [{
+                        type: 'put',
+                        path: ['markets', 'node', from],
+                        data
                     }]
                 } else {
                     var b = a;

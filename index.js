@@ -847,24 +847,29 @@ function rundelta(arr, ops, sb, pr){
             delta(values)
             function delta(a){
                 if(a.length){
+                    console.log('Blocks to apply:', a.length)
                     const b = JSON.parse(a.shift())
                     startingBlock = b[0]
-                    delsfirst(b[1].ops).then(emp=>store.batch(unwrapOps(b[1].ops)[1], [delta, reject, a ? a : []]))
+                    unwrapOps(b[1].ops).then(last=>{
+                        if(last.length){
+                        store.batch(last, [delta, reject, a ? a : []])
+                    } else delta(a ? a : [])
+                    })
                 } else {
+                    console.log('Current Block')
                     block.ops = []
                     block.chain = arr
                     block.prev_root = pr
                     startingBlock = sb
-                    delsfirst(ops).then(emp=>store.batch(unwrapOps(ops)[1], [reorderOps, reject, a ? a : []]))
+                    unwrapOps(ops).then(last=>{
+                    if(last.length){
+                        store.batch(last, [reorderOps, reject, a ? a : []])
+                    } else reorderOps()
+                    })
                 }
                 function reorderOps(){
                     block.ops = ops
                     resolve([])
-                }
-                function delsfirst(b){
-                    return new Promise((resolv, rejec) => {
-                        store.batch(unwrapOps(b)[0], [resolv, rejec, 'OK'])
-                    })
                 }
             }
         })
@@ -873,14 +878,26 @@ function rundelta(arr, ops, sb, pr){
 }
 
 function unwrapOps(arr){
-    var c = [],
+    return new Promise((resolve, reject) => {
+        var d = []
+        write(0)
+        function write (int){
         d = []
-    for(var i = 0; i < arr.length; i++){
-        const e = JSON.parse(arr[i])
-        if (e.type != 'del')c.push(e)
-        else d.push(e)
-    }
-    return [d,c]
+        for(var i = int; i < arr.length; i++){
+                var e = arr[i]
+                try {
+                    e = JSON.parse(e)
+                } catch(e){e = arr[i]}
+                if (e == 'W' && d.length && i != arr.length -1){
+                    store.batch(d, [write, null, i+1])
+                    break
+                } else if (e == 'W' && i == arr.length -1){
+                    resolve(d)
+                } else if (e == 'W'){
+                } else d.push(e)
+            }
+        }
+})
 }
 
 function ipfspromise(hash){
@@ -892,9 +909,12 @@ function ipfspromise(hash){
                 resolve(data)
             }
         })
-        fetch(`https://ipfs.infura.io/ipfs/${hash}`)
+        fetch(`https://ipfs.io/ipfs/${hash}`)
         .then(r=>r.text())
         .then(res => {resolve(res)})
-        .catch(e=>console.log(e))
+        .catch(e=>{fetch(`https://ipfs.infura.io/ipfs/${hash}`)
+        .then(r=>r.text())
+        .then(res => {resolve(res)})
+        .catch(e=>reject(e))})
     })
 }

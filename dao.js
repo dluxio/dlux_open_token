@@ -344,7 +344,7 @@ function dao(num) {
                         dex.hbd.days = {};
                     dex.hbd.days[num] = hib;
                 }
-                let liqt = parseInt((bal.rm/365)*(stats.liq_reward/100))
+                let liqt = config.features.liquidity ? parseInt((bals.rm/365)*(stats.liq_reward/100)) : 0
                 if (liqt > 0){
                     let liqa = 0
                     for (var acc in dex.liq){
@@ -453,7 +453,7 @@ function dao(num) {
             daops.push({ type: 'put', path: ['posts'], data: cpost });
             daops.push({ type: 'put', path: ['markets', 'node'], data: mnode });
             daops.push({ type: 'put', path: ['delegations'], data: deles });
-            if(config.DAILY)daops.push({ type: 'put', path: ['escrow', config.leader, 'comment'], data: op });
+            if(config.features.daily)daops.push({ type: 'put', path: ['escrow', config.leader, 'comment'], data: op });
             for (var i = daops.length - 1; i >= 0; i--) {
                 if (daops[i].type == 'put' && Object.keys(daops[i].data).length == 0 && typeof daops[i].data != 'number' && typeof daops[i].data != 'string') {
                     daops.splice(i, 1);

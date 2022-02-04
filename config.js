@@ -57,7 +57,8 @@ const ben = 'dlux-io' //Account where comment benifits trigger token action
 const delegation = 'dlux-io' //account people can delegate to for rewards
 const delegationWeight = 1000 //when to trigger community rewards with bens
 const msaccount = 'dlux-cc' //account controlled by community leaders
-const msPubMemo = 'STM5se9o2oZwY7ztpo2scyvf12RR41zaYa6rozBtetwfr1DmH1J5k' //memo key for msaccount
+const msPubMemo = 'STM5GNM3jpjWh7Msts5Z37eM9UPfGwTMU7Ksats3RdKeRaP5SveR9' //memo key for msaccount
+const msPriMemo = '5KDZ9fzihXJbiLqUCMU2Z2xU8VKb9hCggyRPZP37aprD2kVKiuL'
 const mainAPI = 'token.dlux.io' //leaders API probably
 const mainRender = 'dluxdata.herokuapp.com' //data and render server
 const mainFE = 'dlux.io' //frontend for content
@@ -68,6 +69,7 @@ const hive_service_fee = 100 //HIVE service fee for transactions in Hive/HBD in 
 const features = {
     pob: true, //proof of brain
     delegate: true, //delegation
+    daily: true,
     liquidity: true, //liquidity
     ico: true, //ico
     dex: true, //dex
@@ -124,6 +126,7 @@ let config = {
     leader,
     msaccount,
     msPubMemo,
+    msPriMemo,
     ben,
     adverts,
     delegation,
