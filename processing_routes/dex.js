@@ -206,8 +206,8 @@ exports.dex_sell = (json, from, active, pc) => {
 }
 
 exports.transfer = (json, pc) => {
-    if (config.features.ico && json.to == config.mainICO && json.amount.split(' ')[1] == 'HIVE' && json.from != config.msaccount) { //the ICO disribution... should be in multi sig account
-        const amount = parseInt(parseFloat(json.amount) * 1000)
+    if (config.features.ico && json.to == config.mainICO && json.amount.nai == '@@000000021' && json.from != config.msaccount) { //the ICO disribution... should be in multi sig account
+        const amount = parseInt(json.amount.amount)
         var purchase,
             Pstats = getPathObj(['stats']),
             Pbal = getPathNum(['balances', json.from]),
@@ -283,8 +283,8 @@ exports.transfer = (json, pc) => {
                 let set = mem[0],
                     listing = mem[1],
                     stats = mem[2],
-                    amount = parseInt(json.amount.split(' ')[0] * 1000),
-                    type = json.amount.split(' ')[1],
+                    amount = parseInt(json.amount.amount),
+                    type = json.amount.nai == '@@000000021' ? 'HIVE' : 'HBD',
                     ops = [],
                     qty = 0,
                     refund_amount = amount,
@@ -396,9 +396,9 @@ exports.transfer = (json, pc) => {
                     to = nfts[0].t.split('_')[1]
                     price = parseInt(nfts[0].t.split('_')[2])
                     type = nfts[0].t.split('_')[3]
-                    stats.MSHeld[json.amount.split(' ')[1]] += parseInt(json.amount.split(' ')[0] * 1000)
+                    stats.MSHeld[json.amount.nai == '@@000000021' ? 'HIVE' : 'HBD'] += parseInt(json.amount.amount)
                 } catch (e){console.log(nfts[0])}
-                if(nfts[0].s !== undefined && to == json.from && parseInt(parseFloat(json.amount.split(' ')[0])*1000) == price && type == json.amount.split(' ')[1]) {
+                if(nfts[0].s !== undefined && to == json.from && parseInt(json.amount.amount) == price && type == json.amount.nai == '@@000000021' ? 'HIVE' : 'HBD') {
                     let ops = [],
                         nft = nfts[0],
                         set = nfts[1]
@@ -465,12 +465,12 @@ exports.transfer = (json, pc) => {
                 uid = item.split(':')[1]
                 ahp = getPathObj(['ahh', `${set}:${uid}`]),
                 Pstats = getPathObj(['stats'])
-                amount = parseInt(parseFloat(json.amount.split(' ')[0])*1000)
-                type = json.amount.split(' ')[1]
+                amount = parseInt(json.amount.amount)
+                type = json.amount.nai == '@@000000021' ? 'HIVE' : 'HBD'
             Promise.all([ahp, Pstats])
             .then(mem => {
                 var stats = mem[1]
-                stats.MSHeld[json.amount.split(' ')[1]] += parseInt(json.amount.split(' ')[0] * 1000)
+                stats.MSHeld[json.amount.nai == '@@000000021' ? 'HIVE' : 'HBD'] += parseInt(json.amount.amount)
                 if(mem[0].h == type){ // && json.from != mem[0].f){ //check for item and type
                     var listing = mem[0]
                     if(listing.b){
@@ -554,12 +554,12 @@ exports.transfer = (json, pc) => {
                 lsp = getPathObj(['ls', `${setname}:${uid}`]),
                 setp = getPathObj(['sets', setname]),
                 Pstats = getPathObj(['stats'])
-                amount = parseInt(parseFloat(json.amount.split(' ')[0])*1000)
-                type = json.amount.split(' ')[1]
+                amount = parseInt(json.amount.amount)
+                type = json.amount.nai == '@@000000021' ? 'HIVE' : 'HBD'
             Promise.all([lsp, setp, Pstats])
             .then(mem => {
                 var stats = mem[2]
-                stats.MSHeld[json.amount.split(' ')[1]] += parseInt(json.amount.split(' ')[0] * 1000)
+                stats.MSHeld[type] += amount
                 if(mem[0].h == type && json.from != mem[0].o && amount == mem[0].p){ //check for item and type
                     let listing = mem[0],
                         set = mem[1],
@@ -599,7 +599,7 @@ exports.transfer = (json, pc) => {
                         if(set != 'Qm') set.u = NFT.move(uid, json.from, set.u)//update set
                         else set.u = json.from
                         ops.push({ type: 'put', path: ['nfts', json.from, item], data: nft }) //update nft
-                        const msg = `Sell of ${listing.o}'s ${item} finalized for ${json.amount} to ${json.from}`
+                        const msg = `Sell of ${listing.o}'s ${item} finalized for ${nai(json.amount)} to ${json.from}`
                         ops.push({ type: 'put', path: ['feed', `${json.block_num}:vop_${json.transaction_id}`], data: msg })
                         ops.push({ type: 'put', path: ['msa', `${json.block_num}:vop_${json.transaction_id}`], data: stringify(Transfer) })
                         if(config.hookurl)postToDiscord(msg, `${json.block_num}:vop_${json.transaction_id}`)
@@ -639,8 +639,8 @@ exports.transfer = (json, pc) => {
                 order.type = 'LIMIT'
                 order.rate = parseFloat(order.rate) || 0
             }
-            order.pair = json.amount.split(' ')[1].toLowerCase()
-            order.amount = parseInt(parseFloat(json.amount.split(' ')[0] * 1000))
+            order.pair = json.amount.nai == '@@000000021' ? 'hive' : 'hbd'
+            order.amount = parseInt(json.amount.amount)
             if (order.type == 'MARKET' || order.type == 'LIMIT') {
                 let pDEX = getPathObj(['dex', order.pair]),
                     pBal = getPathNum(['balances', json.from]),
@@ -657,7 +657,7 @@ exports.transfer = (json, pc) => {
                         his = {},
                         fee = 0,
                         i = 0
-                        stats.MSHeld[json.amount.split(' ')[1]] += parseInt(json.amount.split(' ')[0] * 1000)
+                        stats.MSHeld[json.amount.nai == '@@000000021' ? 'HIVE' : 'HBD'] += parseInt(json.amount.amount)
                     while (remaining){
                         i++
                         const price = parseFloat(dex.sellBook.split('_')[0])
@@ -870,7 +870,7 @@ exports.transfer = (json, pc) => {
         Promise.all([Pmss, Pstats]).then(mem => {
             var mss = mem[0],
                 stats = mem[1]
-                stats.MSHeld[json.amount.split(' ')[1]] -= parseInt(json.amount.split(' ')[0] * 1000)
+                stats.MSHeld[json.amount.nai == '@@000000021' ? 'HIVE' : 'HBD'] -= parseInt(json.amount.amount)
             var done = false
             for (var block in mss){
                 if(block.split(':').length < 2 && mss[block].indexOf(json.memo) > 0){
@@ -895,7 +895,7 @@ exports.transfer = (json, pc) => {
                 }
                 console.log('authed ' + auth)
                 if (auth) {
-                    const msg = `@${json.from}| sent @${json.to} ${json.amount} for ${json.memo.split(' ')[0]}`
+                    const msg = `@${json.from}| sent @${json.to} ${nai(json.amount)} for ${json.memo.split(' ')[0]}`
                     if (config.hookurl || config.status) postToDiscord(msg, `${json.block_num}:${json.transaction_id}`)
                     ops.push({
                         type: 'put',
@@ -1184,7 +1184,7 @@ exports.margins = function(bn) {
                 mss = mem[3],
                 ops = [],
                 status = {}
-            if(Object.keys(msa).length)for (var x of msa){
+            if(Object.keys(msa).length)for (var x in msa){
                 if(typeof msa[x] == 'string')msa[x].split('amount\":\"').forEach(y => {
                     const amount = y.split('\"')[0],
                         type = amount.split(' ')[1],
@@ -1236,4 +1236,8 @@ exports.margins = function(bn) {
             }
         })
     })
+}
+
+function nai (obj){
+    return `${parseFloat(obj.amount.amount/Math.pow(10, obj.precision))} ${obj.amount.nai == '@@000000021' ? 'HIVE' : 'HBD'}`
 }
