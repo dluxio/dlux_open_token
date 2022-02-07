@@ -1,5 +1,5 @@
 const config = require('./config');
-const { plasma } = require('./index');
+const { plasma, VERSION } = require('./index');
 
 //tell the hive your state, this is asynchronous with IPFS return... 
 function report(plas, con) {
@@ -10,6 +10,7 @@ function report(plas, con) {
                 block: plas.hashBlock,
                 stash: plas.privHash,
                 ipfs_id: plas.id,
+                version: VERSION
             }
         try {if(r.block > report.block){
                 report.sig = r.sig,
