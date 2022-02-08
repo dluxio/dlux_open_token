@@ -507,14 +507,24 @@ function startApp() {
                     } else if (num % 100 === 1) {
                         const blockState = Buffer.from(stringify([num, block]))
                             block.ops = []
-                            ipfsSaveState(num, blockState, ipfs)
+                            issc(num, blockState, ipfs)
+                            function issc(n,b,i,r = 0){
+                                ipfsSaveState(n,b,i,r)
                                 .then(pla => {
-                                    block.chain.push({hash: pla.hashLastIBlock, hive_block: num})
-                                    plasma.hashSecIBlock = plasma.hashLastIBlock
-                                    plasma.hashLastIBlock = pla.hashLastIBlock
-                                    plasma.hashBlock = pla.hashBlock
+                                    for(var j = 0; j < block.chain.length; j++){
+                                        if(num > block.chain[j].hive_block){
+                                            block.chain.splice(j,0, {hash: pla.hashLastIBlock, hive_block: num})
+                                            if (j == block.chain.length -1){
+                                                plasma.hashSecIBlock = plasma.hashLastIBlock
+                                                plasma.hashLastIBlock = pla.hashLastIBlock
+                                                plasma.hashBlock = pla.hashBlock
+                                            }
+                                            break;
+                                        }
+                                    }
                                 })
-                                .catch(e => { console.log(e) })
+                                .catch(e => { issc(n,b,i, r++) })
+                            }
                     }
                     if (config.active && processor.isStreaming() ) {
                         store.get(['escrow', config.username], function(e, a) {
@@ -835,9 +845,14 @@ function startWith(hash, second) {
 
 function rundelta(arr, ops, sb, pr){
     return new Promise((resolve, reject) => {
-        var promises = []
+        var promises = [], fb = arr[0].hive_block -100
         for (var i = 0; i < arr.length; i++){
-            promises.push(ipfspromise(arr[i].hash))
+            if(fb + 100 == arr[i].hive_block){
+                fb += 100
+                promises.push(ipfspromise(arr[i].hash))
+            } else {
+                break
+            }
             plasma.hashBlock = arr[i].hive_block
             plasma.hashLastIBlock = arr[i].hash
         }
