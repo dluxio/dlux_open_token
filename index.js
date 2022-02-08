@@ -888,7 +888,8 @@ function rundelta(arr, ops, sb, pr){
 function unwrapOps(arr){
     return new Promise((resolve, reject) => {
         var d = []
-        write(0)
+        if(arr.length)write(0)
+        else resolve([])
         function write (int){
         d = []
         for(var i = int; i < arr.length; i++){
