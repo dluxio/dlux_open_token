@@ -132,7 +132,7 @@ var recents = []
     //HIVE API CODE
 
     //Start Program Options   
-startWith('QmSNHE6kvPK4cM6KjsGWtqV5Mn1ipQ8vP17Cb395aq2bGm', true) //for testing and replaying 58859101 QmU6DPfCrk7RKBuvDQLAiNmoFAte1KzuE3RVqDX3krcWiw
+startWith('QmR32maBXF8Gn1y9G4YNZFCSebVqSY9VSm4gFKRpvKjvau', true) //for testing and replaying 58859101 QmU6DPfCrk7RKBuvDQLAiNmoFAte1KzuE3RVqDX3krcWiw
 //dynStart(config.follow)
 
 
@@ -685,7 +685,6 @@ function dynStart(account) {
 
 //pulls state from IPFS, loads it into memory, starts the block processor
 function startWith(hash, second) {
-    console.log(`${hash} inserted`)
     if (hash) {
         console.log(`Attempting to start from IPFS save state ${hash}`);
         ipfspromise(hash).then(blockInfo=>{
@@ -887,7 +886,8 @@ function rundelta(arr, ops, sb, pr){
 function unwrapOps(arr){
     return new Promise((resolve, reject) => {
         var d = []
-        write(0)
+        if(arr.length)write(0)
+        else resolve([])
         function write (int){
         d = []
         for(var i = int; i < arr.length; i++){
