@@ -1,5 +1,5 @@
 const config = require('./config');
-const VERSION = 'v1.2.0r2r'
+const VERSION = 'v1.2.0r3r'
 exports.VERSION = VERSION
 exports.exit = exit;
 exports.processor = processor;
@@ -132,7 +132,7 @@ var recents = []
     //HIVE API CODE
 
     //Start Program Options   
-startWith('QmX3QwvKKVT5JVdDv8MPtticixfpe89SFqainz8puNLNze', true) //for testing and replaying 58859101
+startWith('QmSNHE6kvPK4cM6KjsGWtqV5Mn1ipQ8vP17Cb395aq2bGm', true) //for testing and replaying 58859101 QmU6DPfCrk7RKBuvDQLAiNmoFAte1KzuE3RVqDX3krcWiw
 //dynStart(config.follow)
 
 
@@ -847,13 +847,21 @@ function rundelta(arr, ops, sb, pr){
             function delta(a){
                 if(a.length){
                     console.log('Blocks to apply:', a.length)
-                    const b = JSON.parse(a.shift())
-                    startingBlock = b[0]
-                    unwrapOps(b[1].ops).then(last=>{
-                        if(last.length){
-                        store.batch(last, [delta, reject, a ? a : []])
-                    } else delta(a ? a : [])
-                    })
+                    var b
+                    try {
+                        b = JSON.parse(a.shift())
+                        block.ops = []
+                        block.chain = b[1].chain
+                        block.prev_root = pr
+                        startingBlock = b[0]
+                        unwrapOps(b[1].ops).then(last=>{
+                            if(last.length){
+                            store.batch(last, [delta, reject, a ? a : []])
+                        } else delta(a ? a : [])
+                        })
+                    } catch(e) {
+                        resolve([])
+                    }
                 } else {
                     console.log('Current Block')
                     block.ops = []
@@ -887,12 +895,12 @@ function unwrapOps(arr){
                 try {
                     e = JSON.parse(e)
                 } catch(e){e = arr[i]}
-                if (e == 'W' && d.length && i != arr.length -1){
+                if (e == 'W' && i == arr.length - 1){
+                    store.batch(d, [resolve, null, i+1])
+                    break
+                } else if (e == 'W'){
                     store.batch(d, [write, null, i+1])
                     break
-                } else if (e == 'W' && i == arr.length -1){
-                    resolve(d)
-                } else if (e == 'W'){
                 } else d.push(e)
             }
         }
@@ -903,7 +911,7 @@ function ipfspromise(hash){
     return new Promise((resolve, reject) => {
         ipfs.cat(hash, function(err, data) {
             if (err) {
-                console.log(err)
+                //console.log(err)
             } else {
                 resolve(data)
             }
