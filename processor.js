@@ -65,8 +65,8 @@ module.exports = function(client, hive, currentBlockNumber = 1, blockComputeSpee
             var vops = getVops(blockNum)
             function getBlock(bn){
                 return new Promise ((resolve, reject)=>{
-                    if(behind)gbr(bn, behind > 100 ? 100 : behind, 0)
-                    else gb(bn, 0)
+                    if(behind && !stopping)gbr(bn, behind > 100 ? 100 : behind, 0)
+                    else if (!stopping)gb(bn, 0)
                     function gb (bln, at){
                         client.database.getBlock(bln)
                     .then((result) => {
