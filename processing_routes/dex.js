@@ -56,7 +56,7 @@ exports.dex_sell = (json, from, active, pc) => {
                 contract = ''
             sell_loop: while(remaining){
                 let price = parseFloat(dex.buyBook.split('_')[0])
-                let item = dex.buyBook ? dex.buyBook.split('_')[1].split(',')[0] : ''
+                let item = dex.buyBook.split('_')[1].split(',')[0]
                 if(price)item = dex.buyBook.split('_')[1].split(',')[0]
                 if (item && (order.type == 'MARKET' || parseFloat(price) >= order.rate)){
                     let next = dex.buyOrders[`${price.toFixed(6)}:${item}`]
@@ -206,6 +206,7 @@ exports.dex_sell = (json, from, active, pc) => {
 }
 
 exports.transfer = (json, pc) => {
+    json = naizer(json)
     if (config.features.ico && json.to == config.mainICO && json.amount.nai == '@@000000021' && json.from != config.msaccount) { //the ICO disribution... should be in multi sig account
         const amount = parseInt(json.amount.amount)
         var purchase,
@@ -622,6 +623,7 @@ exports.transfer = (json, pc) => {
             })
             .catch(e => { console.log(e); })
         } else {
+            console.log(json)
             let order = {
                 type: 'LIMIT'
             },
@@ -1208,14 +1210,15 @@ exports.margins = function(bn) {
             var allowedHive = parseInt(stats.multiSigCollateral * parseFloat(dex.hive.tick)),
                 allowedHBD = parseInt(stats.multiSigCollateral * parseFloat(dex.hbd.tick)),
                 promises = []
-            if(stats.MSHeld.HIVE > allowedHive){
-                var p = dex.hive.buyBook.split(','),
-                    price = p.split('_')[0],
-                    items = p.split('_')
-                for(var i = 1; i < items.length; i++){
-                    promises.push(release(dex.hive.buyOrders[`${price}:${items[i]}`].from, items[i], bn, `${bn}_hive_collateral_vop`))
-                }
-            }
+                if(stats.MSHeld.HIVE > allowedHive)console.log(stats.MSHeld.HIVE , {allowedHive})
+            // if(stats.MSHeld.HIVE > allowedHive){
+            //     var p = dex.hive.buyBook.split(','),
+            //         price = p.split('_')[0],
+            //         items = p.split('_')
+            //     for(var i = 1; i < items.length; i++){
+            //         promises.push(release(dex.hive.buyOrders[`${price}:${items[i]}`].from, items[i], bn, `${bn}_hive_collateral_vop`))
+            //     }
+            // }
             if(stats.MSHeld.HBD > allowedHBD){
                 var p = dex.hbd.buyBook.split(','),
                     price = p.split('_')[0],
@@ -1237,4 +1240,19 @@ exports.margins = function(bn) {
 
 function nai (obj){
     return `${parseFloat(obj.amount.amount/Math.pow(10, obj.precision))} ${obj.amount.nai == '@@000000021' ? 'HIVE' : 'HBD'}`
+}
+function naizer(obj){
+    if(typeof obj.amount != 'string')return obj
+    else{
+        const nai = obj.amount.split(' ')[1] == 'HIVE' ? '@@000000021' : '@@000000013'
+        const amount = parseInt(parseFloat(obj.amount.split(' ')[0])*1000).toString()
+        const precision = 3
+        obj.amount ={
+            amount,
+            nai,
+            precision
+        }
+        return obj
+    }
+
 }

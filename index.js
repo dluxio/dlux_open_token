@@ -212,6 +212,7 @@ if (config.rta && config.rtp) {
 
 //starts block processor after memory has been loaded
 function startApp() {
+    TXID.blocknumber = 0
     if(config.ipfshost == 'ipfs')ipfs.id(function (err, res) {
         if(err){}
         if(res)plasma.id = res.id
