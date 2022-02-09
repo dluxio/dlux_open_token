@@ -15,9 +15,6 @@ exports.ipfsSaveState = (blocknum, buffer, ipfsc, tries) => {
                     hashBlock: blocknum
                 })
             } else {
-                console.log({
-                    //cycle
-                }, 'IPFS Error', err);
                 reject(err)
                     /*
                     cycleipfs(cycle++)

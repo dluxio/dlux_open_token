@@ -1,5 +1,5 @@
 const config = require('./config');
-const VERSION = 'v1.2.0r5r'
+const VERSION = 'v1.2.0r6r'
 exports.VERSION = VERSION
 exports.exit = exit;
 exports.processor = processor;
@@ -132,7 +132,7 @@ var recents = []
     //HIVE API CODE
 
     //Start Program Options   
-startWith('Qmdni1AZcSURHPNjqzazDbr3LrRctNwxJgCEc8ptwH5BXm', true) //for testing and replaying 58859101 QmU6DPfCrk7RKBuvDQLAiNmoFAte1KzuE3RVqDX3krcWiw
+startWith('QmPcZhsRhAntz6WSduTQitdCrTqeyP2WaqZmHzgyNxwzSP', true) //for testing and replaying 58859101 QmU6DPfCrk7RKBuvDQLAiNmoFAte1KzuE3RVqDX3krcWiw
 //dynStart(config.follow)
 
 
@@ -523,7 +523,7 @@ function startApp() {
                                         }
                                     }
                                 })
-                                .catch(e => { issc(n,b,i, r++) })
+                                .catch(e => { if(r<2){issc(n,b,i, r++)}else{exit(plasma.hashLastIBlock)} })
                             }
                     }
                     if (config.active && processor.isStreaming() ) {
