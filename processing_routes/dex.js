@@ -206,6 +206,7 @@ exports.dex_sell = (json, from, active, pc) => {
 }
 
 exports.transfer = (json, pc) => {
+    json = naizer(json)
     if (config.features.ico && json.to == config.mainICO && json.amount.nai == '@@000000021' && json.from != config.msaccount) { //the ICO disribution... should be in multi sig account
         const amount = parseInt(json.amount.amount)
         var purchase,
@@ -622,6 +623,7 @@ exports.transfer = (json, pc) => {
             })
             .catch(e => { console.log(e); })
         } else {
+            console.log(json)
             let order = {
                 type: 'LIMIT'
             },
@@ -1238,4 +1240,19 @@ exports.margins = function(bn) {
 
 function nai (obj){
     return `${parseFloat(obj.amount.amount/Math.pow(10, obj.precision))} ${obj.amount.nai == '@@000000021' ? 'HIVE' : 'HBD'}`
+}
+function naizer(obj){
+    if(typeof obj.amount != 'string')return obj
+    else{
+        const nai = obj.amount.split(' ')[1] == 'HIVE' ? '@@000000021' : '@@000000013'
+        const amount = parseInt(parseFloat(obj.amount.split(' ')[0])*1000)
+        const precision = 3
+        obj.amount ={
+            amount,
+            nai,
+            precision
+        }
+        return obj
+    }
+
 }

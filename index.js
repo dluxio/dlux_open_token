@@ -1,5 +1,5 @@
 const config = require('./config');
-const VERSION = 'v1.2.0r7r'
+const VERSION = 'v1.2.0r8r'
 exports.VERSION = VERSION
 exports.exit = exit;
 exports.processor = processor;
@@ -132,7 +132,7 @@ var recents = []
     //HIVE API CODE
 
     //Start Program Options   
-startWith('QmRafZKNbQ7Kn567CQnQXYK6FiDqhQfZ4HEFDRgAoGSim2', true) //for testing and replaying 
+startWith('QmfBJYxRwAXGsvJ3a4L9P4VeUttUgkVmtm8qJih1V3yNWA', true) //for testing and replaying 
 //dynStart(config.follow)
 
 
