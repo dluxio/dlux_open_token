@@ -219,36 +219,33 @@ exports.transfer = (json, pc) => {
                 ops = []
             if (!stats.outOnBlock) {
                 purchase = parseInt(amount / stats.icoPrice * 1000)
-                .then(empty => {
-                    if (purchase < i) {
-                        i -= purchase
-                        b += purchase
-                        const msg = `@${json.from}| bought ${parseFloat(purchase / 1000).toFixed(3)} ${config.TOKEN} with ${parseFloat(amount / 1000).toFixed(3)} HIVE`
-                        if (config.hookurl || config.status) postToDiscord(msg, `${json.block_num}:${json.transaction_id}`)
-                        ops = [{ type: 'put', path: ['feed', `${json.block_num}:${json.transaction_id}`], data: msg },
-                            { type: 'put', path: ['balances', json.from], data: b },
-                            { type: 'put', path: ['balances', 'ri'], data: i }
-                        ]
-                        if (process.env.npm_lifecycle_event == 'test') pc[2] = ops
-                        store.batch(ops, pc)
-                    } else {
-                        b += i
-                        const left = purchase - i
-                        stats.outOnBlock = json.block_num
-                        const msg = `@${json.from}| bought ALL ${parseFloat(parseInt(purchase - left)).toFixed(3)} ${config.TOKEN} with ${parseFloat(parseInt(amount) / 1000).toFixed(3)} HIVE. And bid in the over-auction`
-                        if (config.hookurl || config.status) postToDiscord(msg, `${json.block_num}:${json.transaction_id}`)
-                        ops = [
-                            { type: 'put', path: ['ico', `${json.block_num}`, json.from], data: parseInt(amount * left / purchase) },
-                            { type: 'put', path: ['balances', json.from], data: b },
-                            { type: 'put', path: ['balances', 'ri'], data: 0 },
-                            { type: 'put', path: ['stats'], data: stats },
-                            { type: 'put', path: ['feed', `${json.block_num}:${json.transaction_id}`], data: msg }
-                        ]
-                        if (process.env.npm_lifecycle_event == 'test') pc[2] = ops
-                        store.batch(ops, pc)
-                    }
-                })
-                .catch(e => { console.log(e) })
+                if (purchase < i) {
+                    i -= purchase
+                    b += purchase
+                    const msg = `@${json.from}| bought ${parseFloat(purchase / 1000).toFixed(3)} ${config.TOKEN} with ${parseFloat(amount / 1000).toFixed(3)} HIVE`
+                    if (config.hookurl || config.status) postToDiscord(msg, `${json.block_num}:${json.transaction_id}`)
+                    ops = [{ type: 'put', path: ['feed', `${json.block_num}:${json.transaction_id}`], data: msg },
+                        { type: 'put', path: ['balances', json.from], data: b },
+                        { type: 'put', path: ['balances', 'ri'], data: i }
+                    ]
+                    if (process.env.npm_lifecycle_event == 'test') pc[2] = ops
+                    store.batch(ops, pc)
+                } else {
+                    b += i
+                    const left = purchase - i
+                    stats.outOnBlock = json.block_num
+                    const msg = `@${json.from}| bought ALL ${parseFloat(parseInt(purchase - left)).toFixed(3)} ${config.TOKEN} with ${parseFloat(parseInt(amount) / 1000).toFixed(3)} HIVE. And bid in the over-auction`
+                    if (config.hookurl || config.status) postToDiscord(msg, `${json.block_num}:${json.transaction_id}`)
+                    ops = [
+                        { type: 'put', path: ['ico', `${json.block_num}`, json.from], data: parseInt(amount * left / purchase) },
+                        { type: 'put', path: ['balances', json.from], data: b },
+                        { type: 'put', path: ['balances', 'ri'], data: 0 },
+                        { type: 'put', path: ['stats'], data: stats },
+                        { type: 'put', path: ['feed', `${json.block_num}:${json.transaction_id}`], data: msg }
+                    ]
+                    if (process.env.npm_lifecycle_event == 'test') pc[2] = ops
+                    store.batch(ops, pc)
+                }
             } else {
                 const msg = `@${json.from}| bought ALL ${parseFloat(parseInt(purchase - left)).toFixed(3)} ${config.TOKEN} with ${parseFloat(parseInt(amount) / 1000).toFixed(3)} HIVE. And bid in the over-auction`
                 if (config.hookurl || config.status) postToDiscord(msg, `${json.block_num}:${json.transaction_id}`)
