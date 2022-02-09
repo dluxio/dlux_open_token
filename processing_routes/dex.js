@@ -1245,7 +1245,7 @@ function naizer(obj){
     if(typeof obj.amount != 'string')return obj
     else{
         const nai = obj.amount.split(' ')[1] == 'HIVE' ? '@@000000021' : '@@000000013'
-        const amount = parseInt(parseFloat(obj.amount.split(' ')[0])*1000)
+        const amount = parseInt(parseFloat(obj.amount.split(' ')[0])*1000).toString()
         const precision = 3
         obj.amount ={
             amount,
