@@ -1208,14 +1208,15 @@ exports.margins = function(bn) {
             var allowedHive = parseInt(stats.multiSigCollateral * parseFloat(dex.hive.tick)),
                 allowedHBD = parseInt(stats.multiSigCollateral * parseFloat(dex.hbd.tick)),
                 promises = []
-            if(stats.MSHeld.HIVE > allowedHive){
-                var p = dex.hive.buyBook.split(','),
-                    price = p.split('_')[0],
-                    items = p.split('_')
-                for(var i = 1; i < items.length; i++){
-                    promises.push(release(dex.hive.buyOrders[`${price}:${items[i]}`].from, items[i], bn, `${bn}_hive_collateral_vop`))
-                }
-            }
+                if(stats.MSHeld.HIVE > allowedHive)console.log(stats.MSHeld.HIVE , {allowedHive})
+            // if(stats.MSHeld.HIVE > allowedHive){
+            //     var p = dex.hive.buyBook.split(','),
+            //         price = p.split('_')[0],
+            //         items = p.split('_')
+            //     for(var i = 1; i < items.length; i++){
+            //         promises.push(release(dex.hive.buyOrders[`${price}:${items[i]}`].from, items[i], bn, `${bn}_hive_collateral_vop`))
+            //     }
+            // }
             if(stats.MSHeld.HBD > allowedHBD){
                 var p = dex.hbd.buyBook.split(','),
                     price = p.split('_')[0],
