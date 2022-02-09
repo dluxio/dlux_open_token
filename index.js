@@ -1,5 +1,5 @@
 const config = require('./config');
-const VERSION = 'v1.2.0r8r'
+const VERSION = 'v1.2.0r9'
 exports.VERSION = VERSION
 exports.exit = exit;
 exports.processor = processor;
@@ -132,7 +132,7 @@ var recents = []
     //HIVE API CODE
 
     //Start Program Options   
-startWith('QmYx4AZaR8ehTGnSstes8FbWopbdciQcYH4DDutMmxXQFz', true) //for testing and replaying 
+startWith('QmW1W4U5GjqcfPGiM6eDMZStPhwWdXfKC6fwnWbFUxznUf', true) //for testing and replaying 
 //dynStart(config.follow)
 
 
@@ -713,6 +713,16 @@ function startWith(hash, second) {
                         if (!e && (second || data[0] > API.RAM.head - 325)) {
                             if (hash) {
                                 var cleanState = data[1]
+                                // cleanState.runners = {
+                                //     ["disregardfiat"]: {
+                                //         ["g"]: 1,
+                                //         ["l"]: 100
+                                //         },
+                                //         ["dlux-io"]: {
+                                //             ["g"]: 1,
+                                //             ["l"]: 100
+                                //         }
+                                //     }
                                 store.put([], cleanState, function(err) {
                                     if (err) {
                                         console.log('errr',err)

@@ -72,6 +72,7 @@ const features = {
     daily: true, // daily post
     liquidity: true, //liquidity
     ico: true, //ico
+    inflation: true,
     dex: true, //dex
     nft: true, //nfts
     state: true, //api dumps
