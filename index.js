@@ -508,14 +508,24 @@ function startApp() {
                     } else if (num % 100 === 1) {
                         const blockState = Buffer.from(stringify([num, block]))
                             block.ops = []
-                            ipfsSaveState(num, blockState, ipfs)
+                            issc(num, blockState, ipfs)
+                            function issc(n,b,i,r = 0){
+                                ipfsSaveState(n,b,i,r)
                                 .then(pla => {
-                                    block.chain.push({hash: pla.hashLastIBlock, hive_block: num})
-                                    plasma.hashSecIBlock = plasma.hashLastIBlock
-                                    plasma.hashLastIBlock = pla.hashLastIBlock
-                                    plasma.hashBlock = pla.hashBlock
+                                    for(var j = 0; j < block.chain.length; j++){
+                                        if(num > block.chain[j].hive_block){
+                                            block.chain.splice(j,0, {hash: pla.hashLastIBlock, hive_block: num})
+                                            if (j == block.chain.length -1){
+                                                plasma.hashSecIBlock = plasma.hashLastIBlock
+                                                plasma.hashLastIBlock = pla.hashLastIBlock
+                                                plasma.hashBlock = pla.hashBlock
+                                            }
+                                            break;
+                                        }
+                                    }
                                 })
-                                .catch(e => { console.log(e) })
+                                .catch(e => { if(r<2){issc(n,b,i, r++)}else{exit(plasma.hashLastIBlock)} })
+                            }
                     }
                     if (config.active && processor.isStreaming() ) {
                         store.get(['escrow', config.username], function(e, a) {
