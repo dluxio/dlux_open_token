@@ -132,7 +132,7 @@ var recents = []
     //HIVE API CODE
 
     //Start Program Options   
-startWith('QmcBHf1MWuE7nWUYDqU1LMg5YNoz5qQTt3fWT5gX1RoAZ3', true) //for testing and replaying 58859101 QmU6DPfCrk7RKBuvDQLAiNmoFAte1KzuE3RVqDX3krcWiw
+startWith('Qme1CbxBBMJf246YJatrKR3pR9v48yR4GJcvwpEhaJCTbR', true) //QmYWKfgdUnLknYjTzHp7P3FgX6bDC1PedaU8dDwx1gTYmE', true) //for testing and replaying 58859101 QmU6DPfCrk7RKBuvDQLAiNmoFAte1KzuE3RVqDX3krcWiw
 //dynStart(config.follow)
 
 
@@ -281,7 +281,9 @@ function startApp() {
     processor.onBlock(
         function (num, pc, prand, bh) {
             console.log(num)
-            TXID.clean(num)
+            if(num < TXID.blocknumber){
+                require('process').exit(1)
+            } else {TXID.clean(num)}
             return new Promise((resolve, reject) => {
                 let Pchron = getPathSome(['chrono'],{
                     gte: "" + num - 1,
@@ -433,10 +435,12 @@ function startApp() {
                                     .catch(e => { rej(e) })
                                 }))
                             }
+                            var resign = false, fortx = {}
                             for(var missed = 0; missed < mss.length; missed++){
                                 if(mss[missed].split(':').length == 1){
                                     missed_num = mss[missed]
-                                    promises.push(new Promise((res,rej)=>{
+                                    //fortx[]
+                                    if(!resign)promises.push(new Promise((res,rej)=>{
                                         sig_submit(sign(num, plasma, missed_num, bh))
                                         .then(nodeOp => {
                                             res('SAT')
@@ -446,6 +450,7 @@ function startApp() {
                                         })
                                         .catch(e => { rej(e) })
                                     })) 
+                                    resign = true
                                     break;
                                 }
                             }
@@ -511,16 +516,12 @@ function startApp() {
                             function issc(n,b,i,r = 0){
                                 ipfsSaveState(n,b,i,r)
                                 .then(pla => {
-                                    for(var j = 0; j < block.chain.length; j++){
-                                        if(num > block.chain[j].hive_block){
-                                            block.chain.splice(j,0, {hash: pla.hashLastIBlock, hive_block: num})
-                                            if (j == block.chain.length -1){
-                                                plasma.hashSecIBlock = plasma.hashLastIBlock
-                                                plasma.hashLastIBlock = pla.hashLastIBlock
-                                                plasma.hashBlock = pla.hashBlock
-                                            }
-                                            break;
-                                        }
+                                    block.chain.push({hash: pla.hashLastIBlock, hive_block: num})
+                                    plasma.hashSecIBlock = plasma.hashLastIBlock
+                                    plasma.hashLastIBlock = pla.hashLastIBlock
+                                    plasma.hashBlock = pla.hashBlock
+                                    if(block.chain.length > 2 && block.chain[block.chain.length - 2].hive_block < block.chain[block.chain.length - 1].hive_block - 100){
+                                        exit(block.chain[block.chain.length - 2].hash)
                                     }
                                 })
                                 .catch(e => { if(r<2){issc(n,b,i, r++)}else{exit(plasma.hashLastIBlock)} })
@@ -712,12 +713,6 @@ function startWith(hash, second) {
                         if (!e && (second || data[0] > API.RAM.head - 325)) {
                             if (hash) {
                                 var cleanState = data[1]
-                                delete cleanState.stats.HiveVWMA
-                                delete cleanState.stats.HbdVWMA //remove when dynamic
-                                cleanState.stats.MSHeld = {
-                                    "HIVE": 0,
-                                    "HBD": 0
-                                }
                                 store.put([], cleanState, function(err) {
                                     if (err) {
                                         console.log('errr',err)
