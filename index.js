@@ -132,8 +132,8 @@ var recents = []
     //HIVE API CODE
 
     //Start Program Options   
-startWith('QmW1W4U5GjqcfPGiM6eDMZStPhwWdXfKC6fwnWbFUxznUf', true) //for testing and replaying 
-//dynStart(config.follow)
+//startWith('QmW1W4U5GjqcfPGiM6eDMZStPhwWdXfKC6fwnWbFUxznUf', true) //for testing and replaying 
+dynStart(config.follow)
 
 
 // API defs
@@ -713,16 +713,6 @@ function startWith(hash, second) {
                         if (!e && (second || data[0] > API.RAM.head - 325)) {
                             if (hash) {
                                 var cleanState = data[1]
-                                // cleanState.runners = {
-                                //     ["disregardfiat"]: {
-                                //         ["g"]: 1,
-                                //         ["l"]: 100
-                                //         },
-                                //         ["dlux-io"]: {
-                                //             ["g"]: 1,
-                                //             ["l"]: 100
-                                //         }
-                                //     }
                                 store.put([], cleanState, function(err) {
                                     if (err) {
                                         console.log('errr',err)
