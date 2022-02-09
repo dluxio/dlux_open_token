@@ -1,6 +1,6 @@
-//const { ipfs } = require("./index");
+const { ipfs } = require("./index");
 
-exports.ipfsSaveState = (blocknum, buffer, ipfs, tries) => {
+exports.ipfsSaveState = (blocknum, buffer, ipfsc, tries) => {
     return new Promise((resolve, reject) => {
         if(tries)console.log('Retry IPFS Save:', tries)
         ipfs.add(buffer, (err, ipfs_return) => {
