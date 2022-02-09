@@ -28,22 +28,12 @@ services:
       - ipfshost=ipfs
       - ipfsprotocol=http
       - ipfsport=5001
+    logging:
+      options:
+        max-size: "10m"
+        max-file: "3"
     # stdin_open: true
     # tty: true
-  # node-2:
-  #   image: ipfs/go-ipfs:latest
-  #   build:
-  #     context: private-network
-  #   environment:
-  #     LIBP2P_FORCE_PNET: '1'
-  #     # SWARM_KEY: "/key/swarm/psk/1.0.0/\n/base16/\ne0e7b1394fb6e928eecf2f8db77eaa99d3657684dc939519f285cb902bd93e22"
-  #   volumes:
-  #     - node-2:/data/ipfs
-  #     - ./private-network/.ipfs/swarm.key:/data/ipfs/swarm.key
-  #     - ./private-network/init.sh:/usr/local/bin/start_ipfs
-  #   ports:
-  #     - 8080
-  
 volumes:
   ipfs:
   # node-2:
