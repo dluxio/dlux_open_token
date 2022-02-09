@@ -132,7 +132,7 @@ var recents = []
     //HIVE API CODE
 
     //Start Program Options   
-startWith('QmWKK8iTZa33DF9crV52AKWz9MEQM4fGmPMQeeFLYBi57v', true) //for testing and replaying 58859101 QmU6DPfCrk7RKBuvDQLAiNmoFAte1KzuE3RVqDX3krcWiw
+startWith('QmR32maBXF8Gn1y9G4YNZFCSebVqSY9VSm4gFKRpvKjvau', true) //for testing and replaying 58859101 QmU6DPfCrk7RKBuvDQLAiNmoFAte1KzuE3RVqDX3krcWiw
 //dynStart(config.follow)
 
 
@@ -845,14 +845,9 @@ function startWith(hash, second) {
 
 function rundelta(arr, ops, sb, pr){
     return new Promise((resolve, reject) => {
-        var promises = [], fb = arr[0].hive_block -100
+        var promises = []
         for (var i = 0; i < arr.length; i++){
-            if(fb + 100 == arr[i].hive_block){
-                fb += 100
-                promises.push(ipfspromise(arr[i].hash))
-            } else {
-                break
-            }
+            promises.push(ipfspromise(arr[i].hash))
             plasma.hashBlock = arr[i].hive_block
             plasma.hashLastIBlock = arr[i].hash
         }
