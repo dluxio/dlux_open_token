@@ -132,8 +132,8 @@ var recents = []
     //HIVE API CODE
 
     //Start Program Options   
-//startWith('Qma7CCDvtLzH9kTtLyogKCSpzbEaTwAmSsWduXaGc6Af1J', true) //for testing and replaying 
-dynStart(config.follow)
+startWith('QmRDw81H4aqpw3yUVmEEytnbLEU2H8FBCyeRReVSG5Ru1q', true) //for testing and replaying 
+//dynStart(config.follow)
 
 
 // API defs
@@ -211,6 +211,7 @@ if (config.rta && config.rtp) {
 
 //starts block processor after memory has been loaded
 function startApp() {
+    TXID.blocknumber = 0
     if(config.ipfshost == 'ipfs')ipfs.id(function (err, res) {
         if(err){}
         if(res)plasma.id = res.id
