@@ -205,7 +205,7 @@ exports.tally = (num, plasma, isStreaming) => {
                         for (post in pending) {
                             weights += pending[post].t.totalWeight
                         }
-                        let inflation_floor = parseInt((stats.movingWeight.running + (weights/140)) / 2016) //minimum payout in time period
+                        let inflation_floor = parseInt((stats.movingWeight.running + (weights/140)) / 2016) + 1 //minimum payout in time period
                             running_weight = parseInt(stats.movingWeight.running / 2016)
                         if (running_weight < inflation_floor){
                             running_weight = inflation_floor
@@ -331,7 +331,7 @@ function cleanOracle(oracleArr){
 }
 
 function payout(this_payout, weights, pending, num) {
-    console.log(this_payout, weights, pending, num)
+    if(this_payout)console.log(this_payout, weights, pending, num)
     return new Promise((resolve, reject) => {
         let payments = {},
             out = 0

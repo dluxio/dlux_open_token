@@ -522,8 +522,8 @@ function distro(payingAccount, recievingAccount, price, royalty_per, author, roy
 exports.distro = distro
 
 const DEX = {
-    insert : function ( item, price, string, type) {
-        let price_location = string.indexOf(price)
+    insert : function ( item, price, string = '', type) {
+        let price_location = string ? string.indexOf(price) : -1
         if (price_location === -1) {
             let prices = string.split(',')
             if (string !== ''){
@@ -576,7 +576,11 @@ const DEX = {
             require('./processing_routes/dex').transfer({
                 from: to,
                 to: config.msaccount,
-                amount: `${parseFloat(amount/1000).toFixed(3)} ${type}`,
+                amount: {
+                    amount,
+                    precision: 3,
+                    nai: type == 'HIVE' ? '@@000000021' : '@@000000013'
+                },
                 memo,
                 block_num: num,
                 transaction_id: txid,
@@ -586,3 +590,26 @@ const DEX = {
     }
 }
 exports.DEX = DEX
+
+const Watchdog = {
+    current : 0,
+    timeout: 120000, // 120 seconds to init with up to 288 blocks
+    monitor : function(){
+        if(!this.current)console.log('Watchdog: Monitoring...')
+        setTimeout(() => {
+            if(this.current == TXID.blocknumber){
+                console.log('Watchdog: TIMEOUT')
+                require('process').exit(3)
+            } else if(!this.current){
+                this.timeout = 30000
+                this.current = TXID.blocknumber
+                this.monitor()
+            } else {
+                this.current = TXID.blocknumber
+                this.monitor()
+            }
+        }, this.timeout)
+    }
+}
+
+exports.Watchdog = Watchdog

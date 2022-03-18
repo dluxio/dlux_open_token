@@ -8,15 +8,16 @@ exports.gov_up = (json, from, active, pc) => {
     var amount = parseInt(json.amount),
         Pliquid = getPathNum(['balances', from]),
         Pgovt = getPathNum(['gov', 't']),
-        Pgov = getPathNum(['gov', from]);
+        Pgov = getPathNum(['gov', from]),
+        Pnode = getPathObj(['markets', 'node', from])
 
-    Promise.all([Pliquid, Pgovt, Pgov])
+    Promise.all([Pliquid, Pgovt, Pgov, Pnode])
         .then(bals => {
             let lbal = bals[0],
                 govt = bals[1],
                 gbal = bals[2],
                 ops = [];
-            if (amount <= lbal && active) {
+            if (amount <= lbal && active && bals[3].self == from) {
                 ops.push({ type: 'put', path: ['balances', from], data: lbal - amount });
                 ops.push({ type: 'put', path: ['gov', from], data: gbal + amount });
                 ops.push({ type: 'put', path: ['gov', 't'], data: govt + amount });

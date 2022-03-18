@@ -59,6 +59,7 @@ const delegationWeight = 1000 //when to trigger community rewards with bens
 const msaccount = 'dlux-cc' //account controlled by community leaders
 const msPubMemo = 'STM5GNM3jpjWh7Msts5Z37eM9UPfGwTMU7Ksats3RdKeRaP5SveR9' //memo key for msaccount
 const msPriMemo = '5KDZ9fzihXJbiLqUCMU2Z2xU8VKb9hCggyRPZP37aprD2kVKiuL'
+const msmeta = ''
 const mainAPI = 'token.dlux.io' //leaders API probably
 const mainRender = 'dluxdata.herokuapp.com' //data and render server
 const mainFE = 'dlux.io' //frontend for content
@@ -128,6 +129,7 @@ let config = {
     msaccount,
     msPubMemo,
     msPriMemo,
+    msmeta,
     ben,
     adverts,
     delegation,

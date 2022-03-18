@@ -14,6 +14,7 @@
    * Fixed DEX history
    * Fixed DEX sell loop for expired trades
    * Implemented multiple hive-js node selection
+   * Only Node operators can lock Gov 
 
 ### 1.1.3 
 * r6

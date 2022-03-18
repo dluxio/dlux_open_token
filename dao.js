@@ -131,7 +131,7 @@ function dao(num) {
             
             i = 0, j = 0;
             if(bals.rm)post = post + `${parseFloat(parseInt(bals.rm) / 1000).toFixed(3)} ${config.TOKEN} is in the Marketing Allocation.\n##### Node Rewards for Elected Reports and Escrow Transfers\n`;
-            console.log(num + `:${bals.rm} is availible in the marketing account\n${bals.rn} ${config.TOKEN} set asside to distribute to nodes`);
+            console.log(num + `:${bals.rm} is availible in the marketing account\n${bals.rn} ${config.TOKEN} set aside to distribute to nodes`);
             for (var node in mnode) { //tally the wins
                 j = j + parseInt(mnode[node].wins);
             }
@@ -156,7 +156,10 @@ function dao(num) {
                         console.log(num + `:@${node} awarded ${parseFloat(i / 1000).toFixed(3)} ${config.TOKEN} for ${mnode[node].wins} credited transaction(s)`);
                     }
                     newOwners[node] = {wins:mnode[node].wins}
-                    mnode[node].wins = 0;
+                    mnode[node].tw += mnode[node].wins
+                    mnode[node].wins = 0
+                    mnode[node].ty += mnode[node].yays
+                    mnode[node].yays = 0
                 }
             }
             for(var node in newOwners){
@@ -588,7 +591,8 @@ function accountUpdate(stats, nodes, arr){
       "account_auths": [[config.leader, 1]],
       "key_auths": []
     },
-    "memo_key": config.msPubMemo
+    "memo_key": config.msPubMemo,
+    "json_metadata": stringify(config.msmeta)
   }
   for (var i = 0; i < arr.length; i++) {
     updateOp.active.account_auths.push([arr[i], 1])

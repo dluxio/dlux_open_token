@@ -75,12 +75,12 @@ exports.node_add = function(json, from, active, pc) {
                     }]
                 } else {
                     var b = a;
-                    b.domain = json.domain
-                    b.bidRate = bid
-                    b.escrow = escrow
-                    b.marketingRate = daoRate
-                    b.mirror = mirror
-                    b.liquidity = liquidity
+                    b.domain = json.domain ? json.domain : b.domain;
+                    b.bidRate = bid ? bid : b.bidRate;
+                    b.escrow = escrow ? escrow : b.escrow;
+                    b.marketingRate = daoRate ? daoRate : b.marketingRate;
+                    b.mirror = mirror ? mirror : b.mirror;
+                    b.liquidity = liquidity ? liquidity : b.liquidity;
                     if(mskey)b.mskey = mskey
                     ops = [{ type: 'put', path: ['markets', 'node', from], data: b }]
                 }

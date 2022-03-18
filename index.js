@@ -1,5 +1,5 @@
 const config = require('./config');
-const VERSION = 'v1.2.0r10'
+const VERSION = 'v1.0.0b13r'
 exports.VERSION = VERSION
 exports.exit = exit;
 exports.processor = processor;
@@ -101,7 +101,7 @@ let TXID = {
 exports.TXID = TXID
 const API = require('./routes/api');
 const HR = require('./processing_routes/index')
-const { Base64, NFT, Chron } = require('./helpers');
+const { NFT, Chron, Watchdog } = require('./helpers');
 const { release } = require('./processing_routes/dex')
 const { enforce } = require("./enforce");
 const { tally } = require("./tally");
@@ -113,7 +113,7 @@ const { recast } = require('./lil_ops')
 const hiveState = require('./processor');
 const { getPathObj, getPathNum, getPathSome } = require('./getPathObj');
 const { consolidate, sign, createAccount, updateAccount } = require('./msa');
-const { resolve } = require('path');
+//const { resolve } = require('path');
 const api = express()
 var http = require('http').Server(api);
 var escrow = false;
@@ -131,10 +131,11 @@ var live_dex = {}, //for feedback, unused currently
 var recents = []
     //HIVE API CODE
 
-    //Start Program Options   
-//startWith('QmRDw81H4aqpw3yUVmEEytnbLEU2H8FBCyeRReVSG5Ru1q', true) //for testing and replaying 
-dynStart(config.follow)
+//Start Program Options   
+//dynStart(config.msaccount)
+startWith("QmPnnw3ri7bVuyChdToahNRvdwVaZxokfW5HeKjZQKpkY7", true) //for testing and replaying 58859101
 
+Watchdog.monitor()
 
 // API defs
 api.use(API.https_redirect);
@@ -201,6 +202,7 @@ if(config.features.state){
     api.get('/getauthorpic/:un', API.getpic);
     api.get('/getblog/:un', API.getblog);
 }
+
 http.listen(config.port, function() {
     console.log(`${config.TOKEN} token API listening on port ${config.port}`);
 });
@@ -218,7 +220,7 @@ function startApp() {
     })
     processor = hiveState(client, hive, startingBlock, 10, config.prefix, streamMode, cycleAPI);
     processor.on('send', HR.send);
-    processor.on('claim', HR.claim);
+    processor.on('claim', HR.drop_claim);
     processor.on('node_add', HR.node_add);
     processor.on('node_delete', HR.node_delete);
     processor.on('report', HR.report);
@@ -283,7 +285,7 @@ function startApp() {
         function (num, pc, prand, bh) {
             console.log(num)
             if(num < TXID.blocknumber){
-                require('process').exit(1)
+                require('process').exit(2)
             } else {TXID.clean(num)}
             return new Promise((resolve, reject) => {
                 let Pchron = getPathSome(['chrono'],{
@@ -436,12 +438,10 @@ function startApp() {
                                     .catch(e => { rej(e) })
                                 }))
                             }
-                            var resign = false, fortx = {}
                             for(var missed = 0; missed < mss.length; missed++){
                                 if(mss[missed].split(':').length == 1){
                                     missed_num = mss[missed]
-                                    //fortx[]
-                                    if(!resign)promises.push(new Promise((res,rej)=>{
+                                    promises.push(new Promise((res,rej)=>{
                                         sig_submit(sign(num, plasma, missed_num, bh))
                                         .then(nodeOp => {
                                             res('SAT')
@@ -451,7 +451,6 @@ function startApp() {
                                         })
                                         .catch(e => { rej(e) })
                                     })) 
-                                    resign = true
                                     break;
                                 }
                             }
@@ -463,11 +462,6 @@ function startApp() {
                                 });
                         }
                         if (num % 100 === 50) {
-                            setTimeout(function(a) {
-                                if(plasma.hashLastIBlock == a || plasma.hashSecIBlock == a){
-                                    exit(plasma.hashLastIBlock)
-                                }
-                            }, 620000, plasma.hashLastIBlock)
                             promises.push(new Promise((res,rej)=>{
                                 report(plasma, consolidate(num, plasma, bh))
                                 .then(nodeOp => {
@@ -477,7 +471,7 @@ function startApp() {
                                 .catch(e => { rej(e) })
                             }))
                         }
-                        if ((num - 20003) % 30240 === 0) { //time for daily magic
+                        if ((num - 18500) % 28800 === 0) { //time for daily magic
                             promises.push(dao(num))
                             block.prev_root = block.root
                             block.root = ''
@@ -499,7 +493,7 @@ function startApp() {
                         block.chain = []
                         block.ops = []
                         store.get([], function(err, obj) {
-                            const blockState = Buffer.from(stringify([num, obj]))
+                            const blockState = Buffer.from(stringify([num + 1, obj]))
                             ipfsSaveState(num, blockState, ipfs)
                                 .then(pla => {
                                     block.root = pla.hashLastIBlock
@@ -511,22 +505,9 @@ function startApp() {
 
                         })
                     } else if (num % 100 === 1) {
-                        const blockState = Buffer.from(stringify([num, block]))
-                            block.ops = []
-                            issc(num, blockState, ipfs)
-                            function issc(n,b,i,r = 0){
-                                ipfsSaveState(n,b,i,r)
-                                .then(pla => {
-                                    block.chain.push({hash: pla.hashLastIBlock, hive_block: num})
-                                    plasma.hashSecIBlock = plasma.hashLastIBlock
-                                    plasma.hashLastIBlock = pla.hashLastIBlock
-                                    plasma.hashBlock = pla.hashBlock
-                                    if(block.chain.length > 2 && block.chain[block.chain.length - 2].hive_block < block.chain[block.chain.length - 1].hive_block - 100){
-                                        exit(block.chain[block.chain.length - 2].hash)
-                                    }
-                                })
-                                .catch(e => { if(r<2){issc(n,b,i, r++)}else{exit(plasma.hashLastIBlock)} })
-                            }
+                        const blockState = Buffer.from(stringify([num + 1, block]))
+                        block.ops = []
+                        issc(num, blockState, null, 0, 0)
                     }
                     if (config.active && processor.isStreaming() ) {
                         store.get(['escrow', config.username], function(e, a) {
@@ -535,7 +516,7 @@ function startApp() {
                                     if (!plasma.pending[b]) {
                                         NodeOps.push([
                                             [0, 0],
-                                            a[b]
+                                            JSON.parse(a[b])
                                         ]);
                                         plasma.pending[b] = true
                                     }
@@ -614,14 +595,14 @@ function startApp() {
     }, 3000);
 }
 
-function exit(consensus) {
-    console.log(`Restarting with ${consensus}...`);
+function exit(consensus, reason) {
+    console.log(`Restarting with ${consensus}. Reason: ${reason}`);
 
-    processor.stop(function() {});
+    if(processor)processor.stop(function() {});
         if (consensus) {
             startWith(consensus, true)
         } else {
-            dynStart(config.leader)
+            dynStart(config.msaccount)
         }
 }
 
@@ -656,7 +637,7 @@ function cycleAPI() {
     config.clientURL = config.clients[c + 1]
     console.log('Using APIURL: ', config.clientURL)
     client = new hive.Client(config.clientURL)
-    exit(plasma.hashLastIBlock)
+    exit(plasma.hashLastIBlock, 'API Changed')
 }
 
 //pulls the latest activity of an account to find the last state put in by an account to dynamically start the node. 
@@ -669,7 +650,7 @@ function dynStart(account) {
     hiveClient.api.getAccountHistory(accountToQuery, -1, 100, ...walletOperationsBitmask, function(err, result) {
         if (err) {
             console.log('errr', err)
-            dynStart(config.leader)
+            dynStart(config.msaccount)
         } else {
             hiveClient.api.setOptions({ url: config.clientURL });
             let ebus = result.filter(tx => tx[1].op[1].id === `${config.prefix}report`)
@@ -697,7 +678,8 @@ function dynStart(account) {
 
 //pulls state from IPFS, loads it into memory, starts the block processor
 function startWith(hash, second) {
-    if (hash) {
+    console.log(`${hash} inserted`)
+    if (hash && hash != 'pending') {
         console.log(`Attempting to start from IPFS save state ${hash}`);
         ipfspromise(hash).then(blockInfo=>{
             var blockinfo = JSON.parse(blockInfo);
@@ -718,21 +700,24 @@ function startWith(hash, second) {
                                     if (err) {
                                         console.log('errr',err)
                                     } else {
-                                        store.get(['stats', 'lastBlock'], function(error, returns) {
-                                            if (!error) {
-                                                console.log(`State Check:  ${returns}\nAccount: ${config.username}\nKey: ${config.active.substr(0,3)}...`)
-                                                let info = API.coincheck(cleanState)
-                                                console.log('check', info.check)
-                                                if (cleanState.stats.tokenSupply != info.supply) {
-                                                    console.log('check',info.info)
-                                                }
-                                            }
-                                        })
                                         if(blockinfo[1].chain){rundelta(blockinfo[1].chain, blockinfo[1].ops, blockinfo[0], blockinfo[1].prev_root)
                                         .then(empty=>{
-                                            startApp()
-                                            getPathNum(['balances', 'ra']).then(r=>console.log(r))})
-                                        .catch(e=>console.log('Failure of rundelta', e))
+                                            const blockState = Buffer.from(stringify([startingBlock, block]))
+                                                block.ops = []
+                                            issc(startingBlock, blockState, startApp, 0, 1)
+                                            store.get(['stats', 'lastBlock'], function(error, returns) {
+                                                if (!error) {
+                                                    console.log(`State Check:  ${returns}\nAccount: ${config.username}\nKey: ${config.active.substr(0,3)}...`)
+                                                    let info = API.coincheck(cleanState)
+                                                    console.log('check', info.check)
+                                                    if (cleanState.stats.tokenSupply != info.supply) {
+                                                        console.log('check',info.info)
+                                                    }
+                                                }
+                                            })
+                                            //getPathNum(['balances', 'ra']).then(r=>console.log(r))
+                                            })  
+                                        .catch(e=>console.log('Failure of rundelta'))
                                         } else {
                                             startApp()
                                         }
@@ -817,7 +802,7 @@ function startWith(hash, second) {
         })
         .catch(e=>{
             console.log('error in ipfs', e)
-            process.exit()
+            process.exit(4)
         })
     } else {
         startingBlock = config.starting_block
@@ -930,4 +915,18 @@ function ipfspromise(hash){
         .then(res => {resolve(res)})
         .catch(e=>reject(e))})
     })
+}
+
+function issc(n,b,i,r,a){
+    ipfsSaveState(n,b,i,r,a)
+    .then(pla => {
+        block.chain.push({hash: pla.hashLastIBlock, hive_block: n - a})
+        plasma.hashSecIBlock = plasma.hashLastIBlock
+        plasma.hashLastIBlock = pla.hashLastIBlock
+        plasma.hashBlock = pla.hashBlock
+        if(block.chain.length > 2 && block.chain[block.chain.length - 2].hive_block < block.chain[block.chain.length - 1].hive_block - 100){
+            exit(block.chain[block.chain.length - 2].hash, 'Chain Out Of Order')
+        } else if (typeof i == 'function'){i()}
+    })
+    .catch(e => { if(r<2){console.log('Retrying IPFS Save');issc(n,b,i,r++, a)}else{exit(plasma.hashLastIBlock, 'IPFS Save Failed')} })
 }
