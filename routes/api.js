@@ -1827,6 +1827,9 @@ exports.hive_api = (req, res, next) => {
         case 'get_content_replies':
             params = [params.author, params.permlink];
             break;
+        case 'get_dynamic_global_properties':
+            params = []
+            break;
         default:
     }
     res.setHeader('Content-Type', 'application/json');
