@@ -1,5 +1,5 @@
 const config = require('./config');
-const VERSION = 'v1.0.0b13r'
+const VERSION = 'v1.0.0b13'
 exports.VERSION = VERSION
 exports.exit = exit;
 exports.processor = processor;
@@ -133,7 +133,7 @@ var recents = [], writeBack = false
 
 //Start Program Options   
 //dynStart(config.msaccount)
-startWith(config.engineCrank, true);writeBack = true //for testing and replaying 58859101
+startWith(config.engineCrank, true)//writeBack = true //for testing and replaying 58859101
 
 Watchdog.monitor()
 
