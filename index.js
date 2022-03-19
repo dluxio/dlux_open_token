@@ -132,8 +132,8 @@ var recents = [], writeBack = false
     //HIVE API CODE
 
 //Start Program Options   
-//dynStart(config.msaccount)
-startWith(config.engineCrank, true)//writeBack = true //for testing and replaying 58859101
+//dynStart(config.leader)
+startWith(config.engineCrank, true)//;writeBack = true //for testing and replaying 58859101
 
 Watchdog.monitor()
 
@@ -513,10 +513,11 @@ function startApp() {
                         store.get(['escrow', config.username], function(e, a) {
                             if (!e) {
                                 for (b in a) {
+                                    console.log({a,b})
                                     if (!plasma.pending[b]) {
                                         NodeOps.push([
                                             [0, 0],
-                                            JSON.parse(a[b])
+                                            typeof a[b] == 'string' ? JSON.parse(a[b]) : a[b]
                                         ]);
                                         plasma.pending[b] = true
                                     }
@@ -534,8 +535,9 @@ function startApp() {
                                             ops.push(NodeOps[i][1])
                                             NodeOps[i][0][1] = 1
                                             cjbool = true
-                                        } else if (NodeOps[i][1][0] == 'custom_json'){
-                                            // don't send two jsons at once
+                                        } else if (NodeOps[i][1][0] == 'comment' && !votebool && !cjbool){
+                                            ps.push(NodeOps[i][1])
+                                            NodeOps[i][0][1] = 1
                                         } else if (NodeOps[i][1][0] == 'vote' && !votebool){
                                             ops.push(NodeOps[i][1])
                                             NodeOps[i][0][1] = 1
