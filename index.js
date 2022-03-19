@@ -1,5 +1,5 @@
 const config = require('./config');
-const VERSION = 'v1.0.0b13'
+const VERSION = 'v1.0.0b14'
 exports.VERSION = VERSION
 exports.exit = exit;
 exports.processor = processor;
@@ -132,8 +132,8 @@ var recents = [], writeBack = false
     //HIVE API CODE
 
 //Start Program Options   
-//dynStart(config.leader)
-startWith(config.engineCrank, true)//;writeBack = true //for testing and replaying 58859101
+dynStart()
+//startWith(config.engineCrank, true)//;writeBack = true //for testing and replaying 58859101
 
 Watchdog.monitor()
 
@@ -513,7 +513,6 @@ function startApp() {
                         store.get(['escrow', config.username], function(e, a) {
                             if (!e) {
                                 for (b in a) {
-                                    console.log({a,b})
                                     if (!plasma.pending[b]) {
                                         NodeOps.push([
                                             [0, 0],
@@ -644,38 +643,79 @@ function cycleAPI() {
 
 //pulls the latest activity of an account to find the last state put in by an account to dynamically start the node. 
 //this will include other accounts that are in the node network and the consensus state will be found if this is the wrong chain
+
 function dynStart(account) {
     API.start()
-    let accountToQuery = account || config.username
-    hiveClient.api.setOptions({ url: config.startURL });
-    console.log('Starting URL: ', config.startURL)
-    hiveClient.api.getAccountHistory(accountToQuery, -1, 100, ...walletOperationsBitmask, function(err, result) {
-        if (err) {
-            console.log('errr', err)
-            dynStart(config.msaccount)
-        } else {
-            hiveClient.api.setOptions({ url: config.clientURL });
-            let ebus = result.filter(tx => tx[1].op[1].id === `${config.prefix}report`)
-            for (i = ebus.length - 1; i >= 0; i--) {
-                if (JSON.parse(ebus[i][1].op[1].json).hash && parseInt(JSON.parse(ebus[i][1].op[1].json).block) > parseInt(config.override)) {
-                    recents.push(JSON.parse(ebus[i][1].op[1].json).hash)
-                }
-            }
-            if (recents.length) {
-                const mostRecent = recents.shift()
-                console.log({mostRecent})
-                if (recents.length === 0) {
-                    startWith(config.engineCrank)
-                } else {
-                    startWith(mostRecent)
-                }
-            } else {
-                startWith(config.engineCrank)
-                console.log('IPFS load Failed: Genesis or Backup Replay...')
-            }
+    const { Hive } = require('./hive')
+    Hive.getOwners(config.msaccount).then(oa =>{
+        console.log('Starting URL: ', config.startURL)
+        let consensus_init = {
+            accounts: oa,
+            reports: [],
+            hash: {},
+            start: false,
+            first: config.engineCrank
         }
-    });
+        for(i in oa){
+            consensus_init.reports.push(Hive.getRecentReport(oa[i][0], walletOperationsBitmask))
+        }
+        Promise.all(consensus_init.reports).then(r =>{
+            for(i = 0; i < r.length; i++){
+                if(!i)consensus_init.first = r[i][0]
+                if(consensus_init.hash[r[i][0]]){
+                    consensus_init.hash[r[i][0]]++
+                } else {
+                    consensus_init.hash[r[i][0]] = 1
+                }
+            }
+            for (var i in consensus_init.hash) {
+                if (consensus_init.hash[i] > consensus_init.reports.length/2) {
+                    console.log('Starting with: ', i)
+                    startWith(i, true)
+                    consensus_init.start = true
+                    break
+                }
+            }
+            if(!consensus_init.start){
+                console.log('Starting with: ', consensus_init.first)
+                startWith(consensus_init.first, false)
+            }
+        })
+    })
 }
+
+// function dynStart(account) {
+//     API.start()
+//     let accountToQuery = account || config.username
+//     hiveClient.api.setOptions({ url: config.startURL });
+//     console.log('Starting URL: ', config.startURL)
+//     hiveClient.api.getAccountHistory(accountToQuery, -1, 100, ...walletOperationsBitmask, function(err, result) {
+//         if (err) {
+//             console.log('errr', err)
+//             dynStart(config.msaccount)
+//         } else {
+//             hiveClient.api.setOptions({ url: config.clientURL });
+//             let ebus = result.filter(tx => tx[1].op[1].id === `${config.prefix}report`)
+//             for (i = ebus.length - 1; i >= 0; i--) {
+//                 if (JSON.parse(ebus[i][1].op[1].json).hash && parseInt(JSON.parse(ebus[i][1].op[1].json).block) > parseInt(config.override)) {
+//                     recents.push(JSON.parse(ebus[i][1].op[1].json).hash)
+//                 }
+//             }
+//             if (recents.length) {
+//                 const mostRecent = recents.shift()
+//                 console.log({mostRecent})
+//                 if (recents.length === 0) {
+//                     startWith(config.engineCrank)
+//                 } else {
+//                     startWith(mostRecent)
+//                 }
+//             } else {
+//                 startWith(config.engineCrank)
+//                 console.log('IPFS load Failed: Genesis or Backup Replay...')
+//             }
+//         }
+//     });
+// }
 
 
 //pulls state from IPFS, loads it into memory, starts the block processor
