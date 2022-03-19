@@ -128,12 +128,12 @@ var processor;
 exports.processor = processor
 var live_dex = {}, //for feedback, unused currently
     pa = []
-var recents = []
+var recents = [], writeBack = false
     //HIVE API CODE
 
 //Start Program Options   
 //dynStart(config.msaccount)
-startWith(config.engineCrank, true) //for testing and replaying 58859101
+startWith(config.engineCrank, true);writeBack = true //for testing and replaying 58859101
 
 Watchdog.monitor()
 
@@ -494,7 +494,7 @@ function startApp() {
                         block.ops = []
                         store.get([], function(err, obj) {
                             const blockState = Buffer.from(stringify([num + 1, obj]))
-                            ipfsSaveState(num, blockState, ipfs)
+                            ipfsSaveState(num, blockState, writeBack)
                                 .then(pla => {
                                     block.root = pla.hashLastIBlock
                                     plasma.hashSecIBlock = plasma.hashLastIBlock
@@ -918,7 +918,7 @@ function ipfspromise(hash){
 }
 
 function issc(n,b,i,r,a){
-    ipfsSaveState(n,b,i,r,a)
+    ipfsSaveState(n,b,writeBack,r,a)
     .then(pla => {
         block.chain.push({hash: pla.hashLastIBlock, hive_block: n - a})
         plasma.hashSecIBlock = plasma.hashLastIBlock
