@@ -33,8 +33,8 @@ const ipfsprotocol = ENV.ipfsprotocol || 'https' //IPFS upload/download protocol
 const bidRate = ENV.BIDRATE || 2500 //
 
 //HIVE CONFIGS
-var startURL = ENV.STARTURL || "https://api.deathwing.me/"
-var clientURL = ENV.APIURL || "https://api.deathwing.me/"
+var startURL = ENV.STARTURL || "https://rpc.ecency.com/"
+var clientURL = ENV.APIURL || "https://rpc.ecency.com/"
 const clients = ENV.clients || [
     "https://api.deathwing.me/",
     //"https://api.c0ff33a.uk/",
