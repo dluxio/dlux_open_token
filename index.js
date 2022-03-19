@@ -133,7 +133,7 @@ var recents = []
 
 //Start Program Options   
 //dynStart(config.msaccount)
-startWith("Qmee7kPJv4RrLiFYU5v2LMjZnWCvBFczBHBgAsFTTxpueM", true) //for testing and replaying 58859101
+startWith("QmRtjwP9VAmYqYyHyZPTb9hdWmQLF2uXSx7NRQFrjQSBrm", true) //for testing and replaying 58859101
 
 Watchdog.monitor()
 
@@ -471,7 +471,7 @@ function startApp() {
                                 .catch(e => { rej(e) })
                             }))
                         }
-                        if ((num - 18500) % 28800 === 0) { //time for daily magic
+                        if ((num - 18507) % 28800 === 0) { //time for daily magic
                             promises.push(dao(num))
                             block.prev_root = block.root
                             block.root = ''

@@ -124,6 +124,7 @@ function dao(num) {
             if(stats.marketingRate)post = post + `${parseFloat(parseInt(t * stats.marketingRate / 10000) / 1000).toFixed(3)} ${config.TOKEN} moved to Marketing Allocation.\n`;
             if (bals.rm > 1000000000) {
                 bals.rc += bals.rm - 1000000000;
+                console.log('1000000000 reached: ', bals.rm - 1000000000, ' moved to rc');
                 post = post + `${parseFloat((bals.rm - 1000000000) / 1000).toFixed(3)} moved from Marketing Allocation to Content Allocation due to Marketing Holdings Cap of 1,000,000.000 ${config.TOKEN}\n`;
                 bals.rm = 1000000000;
             }
@@ -365,14 +366,18 @@ function dao(num) {
                 post = post + `*****\n### DEX Report\n#### Prices:\n* ${parseFloat(dex.hive.tick).toFixed(3)} HIVE per ${config.TOKEN}\n* ${parseFloat(dex.hbd.tick).toFixed(3)} HBD per ${config.TOKEN}\n#### Daily Volume:\n* ${parseFloat(vol / 1000).toFixed(3)} ${config.TOKEN}\n* ${parseFloat(vols / 1000).toFixed(3)} HIVE\n* ${parseFloat(parseInt(volhbd) / 1000).toFixed(3)} HBD\n*****\n`;
             }
             stats.movingWeight.dailyPool = bals.ra
-            if(config.features.pob)bals.rc = bals.rc + bals.ra;
-            else bals.rn = bals.rn + bals.ra
-            bals.ra = 0;
+            if(config.features.pob){
+                console.log('POB allocation. RC start: ', bals.rc)
+                bals.rc = bals.rc + bals.ra;
+                console.log('POB allocation. RC end: ', bals.rc)
+            } else bals.rn = bals.rn + bals.ra
+            bals.ra = 0
             var q = 0,
                 r = bals.rc;
             for (var i in br) {
                 q += br[i].post.totalWeight;
             }
+            console.log({br})
             var contentRewards = ``,
                 vo = [];
             if (Object.keys(br).length) {
@@ -398,6 +403,7 @@ function dao(num) {
                     delete cpost[i];
                     contentRewards = contentRewards + `* [${br[i].post.title || `${config.TOKEN} Content`}](https://www.${config.mainFE}/@${br[i].post.author}/${br[i].post.permlink}) by @${br[i].post.author} awarded ${parseFloat(parseInt(dif - bucket) / 1000).toFixed(3)} ${config.TOKEN}\n`;
                 }
+                console.log({bucket})
                 bals.rc += bucket;
                 contentRewards = contentRewards + `\n*****\n`;
             }
