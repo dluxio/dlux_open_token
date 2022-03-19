@@ -20,7 +20,7 @@ const history = ENV.history || 3600
 
 // testing configs for replays
 const override = ENV.override || 0 //69116600 //will use standard restarts after this blocknumber
-const engineCrank = ENV.startingHash || '' //but this state will be inserted before
+const engineCrank = ENV.startingHash || 'QmZbVT7K2sLPyx23aauiyykSAtLjVTX7xnrThmcQmEgS36' //but this state will be inserted before
 
 // third party configs
 const rta = ENV.rta || '' //rtrades account : IPFS pinning interface
