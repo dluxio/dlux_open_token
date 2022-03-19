@@ -57,7 +57,8 @@ exports.dex_sell = (json, from, active, pc) => {
             sell_loop: while(remaining){
                 let price = dex.buyBook ? parseFloat(dex.buyBook.split('_')[0]) : dex.tick
                 let item = dex.buyBook ? dex.buyBook.split('_')[1].split(',')[0] : ''
-                if (item && (order.type == 'MARKET' || parseFloat(price) >= order.rate)){
+                console.log({json, item, price, order})
+                if (item && (order.type == 'MARKET' || parseFloat(price) >= parseFloat(order.rate))){
                     let next = dex.buyOrders[`${price.toFixed(6)}:${item}`]
                     if(!next){
                         dex.buyBook = DEX.remove(item, dex.buyBook)
@@ -120,7 +121,7 @@ exports.dex_sell = (json, from, active, pc) => {
                 } else {
                     console.log('else')
                     let txid = config.TOKEN + hashThis(from + json.transaction_id),
-                        crate = typeof parseFloat((order.target - pair)/remaining).toFixed(6) == 'number' ? parseFloat((order.target - pair)/remaining).toFixed(6) : dex.tick,
+                        crate = typeof parseFloat(order.rate) == 'number' ? parseFloat((order.target - pair)/remaining).toFixed(6) : dex.tick,
                         cfee = typeof stats.dex_fee == 'number' ? parseInt(parseInt(remaining / crate) * parseFloat(stats.dex_fee)) : parseInt(parseInt(remaining / crate) * 0.005),
                         hours = 720
                     contract = {
@@ -622,7 +623,7 @@ exports.transfer = (json, pc) => {
             })
             .catch(e => { console.log(e); })
         } else {
-            console.log(json)
+            //console.log(json)
             let order = {
                 type: 'LIMIT'
             },
@@ -632,13 +633,14 @@ exports.transfer = (json, pc) => {
             try {order = JSON.parse(json.memo)} catch (e) {}
             if (!order.rate) {
                 order.type = 'MARKET'
-                order.rate = parseFloat(order.rate).toFixed(6) || 0
+                order.rate = 0
             } else {
                 order.type = 'LIMIT'
-                order.rate = parseFloat(order.rate).toFixed(6) || 0
+                order.rate = parseFloat(order.rate).toFixed(6)
             }
             order.pair = json.amount.nai == '@@000000021' ? 'hive' : 'hbd'
             order.amount = parseInt(json.amount.amount)
+            //console.log({order})
             if (order.type == 'MARKET' || order.type == 'LIMIT') {
                 let pDEX = getPathObj(['dex', order.pair]),
                     pBal = getPathNum(['balances', json.from]),
@@ -655,6 +657,7 @@ exports.transfer = (json, pc) => {
                         his = {},
                         fee = 0,
                         i = 0
+                        if(typeof order.rate != 'string') order.rate = dex.tick
                         stats.MSHeld[json.amount.nai == '@@000000021' ? 'HIVE' : 'HBD'] += parseInt(json.amount.amount)
                     while (remaining){
                         i++
@@ -691,7 +694,8 @@ exports.transfer = (json, pc) => {
                                 ops.push({type: 'del', path: ['dex', order.pair, 'sellOrders', `${price}:${item}`]}) //remove the order
                                 ops.push({type: 'del', path: ['contracts', next.from , item]}) //remove the contract
                                 ops.push({type: 'del', path: ['chrono', next.expire_path]}) //remove the chrono
-                            } else if(!next) {
+                            } else if(!next && dex.sellBook.indexOf(item) > -1) {
+                                console.log(dex.sellBook)
                                 dex.sellBook = DEX.remove(item, dex.sellBook)
                             } else {
                                 next[order.pair] = next[order.pair] - remaining // modify the contract
@@ -776,10 +780,24 @@ exports.transfer = (json, pc) => {
                                 }
                             } else {
                                 const txid = config.TOKEN + hashThis(json.from + json.transaction_id),
-                                    crate = order.rate,
-                                    cfee = typeof stats.dex_fee == 'number' ? parseInt(parseInt(remaining / crate) * parseFloat(stats.dex_fee)) : parseInt(parseInt(remaining / crate) * 0.005),
+                                    crate = parseFloat(order.rate) > 0 ? order.rate : dex.tick,
+                                    cfee = typeof stats.dex_fee == 'number' ? parseInt(parseInt(remaining / crate) * parseFloat(stats.dex_fee)) + 1 : parseInt(parseInt(remaining / crate) * 0.005) + 1,
                                     hours = 720,
-                                    expBlock = json.block_num + (hours * 1200)
+                                    expBlock = json.block_num + (hours * 1200),
+                                    toRefund = maxAllowed(stats, dex.tick, remaining, crate)
+                                if (toRefund){
+                                    const transfer = [
+                                        "transfer",
+                                        {
+                                            "from": config.msaccount,
+                                            "to": json.from,
+                                            "amount": parseFloat(toRefund/1000).toFixed(3) + ' ' + order.pair.toUpperCase(),
+                                            "memo": `Partial refund due to collateral limits ${json.from}:${json.transaction_id}`
+                                        }
+                                    ]
+                                    remaining -= toRefund
+                                    ops.push({type: 'put', path: ['msa', `Refund@${json.from}:${json.transaction_id}:${json.block_num}`], data: stringify(transfer)})
+                                }
                                 contract = {
                                     txid,
                                     from: json.from,
@@ -1042,6 +1060,7 @@ function enforce(str){
     return enforce
 } 
 
+/*
 function postVerify(str, from, loc){
     fetch("https://api.hive.blog", {
         body: `{"jsonrpc":"2.0", "method":"bridge.get_account_posts", "params":{"sort":"posts", "account": "${from}", "limit": 25}, "id":1}`,
@@ -1066,7 +1085,7 @@ function postVerify(str, from, loc){
         }
     })
 }
-
+*/
 const release = (from, txid, bn, tx_id) => {
     return new Promise((resolve, reject) => {
         store.get(['contracts', from, txid], function(er, a) {
@@ -1253,4 +1272,9 @@ function naizer(obj){
         return obj
     }
 
+}
+
+function maxAllowed(stats, tick, remaining, crate) {
+    const max = stats.safetyLimit * tick * (1 - ((crate/tick) * (stats.dex_slope/100))) * (stats.dex_max/100)
+    return max > remaining ? 0 : parseInt(remaining - max)
 }
