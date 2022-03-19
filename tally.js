@@ -367,9 +367,11 @@ function payout(this_payout, weights, pending, num) {
                 let i = 0,
                     ops = [{ type: 'put', path: ['paid', num.toString()], data: pending }]
                     if(config.dbcs){
-                        for (i in pending){
-                            updatePost(pending[i])
-                        }
+                        try{
+                            for (i in pending){
+                                updatePost(pending[i])
+                            }
+                        } catch (e){console.log('DBCS error: ', e)}
                     }
                 for (account in payments) {
                     ops.push({ type: 'put', path: ['balances', account], data: p[i] + payments[account] })
