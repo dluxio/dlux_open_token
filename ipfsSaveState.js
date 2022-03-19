@@ -14,16 +14,16 @@ exports.ipfsSaveState = (blocknum, buffer, writeBack, tries) => {
                 console.log(blocknum + `:Saved: ${hash}`);
                 if (writeBack) {
                     const sourcePath = '.env'
-                    console.log(envfile.parseFileSync(sourcePath))
-                    let parsedFile = envfile.parseFileSync(sourcePath);
+                    console.log(envfile.parse(sourcePath))
+                    let parsedFile = envfile.parse(sourcePath);
                     if(parsedFile.bb >= blocknum - 100){
                         parsedFile.startingHash = hash
                         parsedFile.bb = blocknum
-                        fs.writeFileSync('./.env', envfile.stringifySync(parsedFile)) 
+                        fs.writeFileSync('./.env', envfile.stringify(parsedFile)) 
                     } else if(!parsedFile.bb || parsedFile.bb < blocknum - 1000){
                         parsedFile.startingHash = hash
-                    parsedFile.bb = blocknum
-                    fs.writeFileSync('./.env', envfile.stringifySync(parsedFile)) 
+                        parsedFile.bb = blocknum
+                        fs.writeFileSync('./.env', envfile.stringify(parsedFile)) 
                     } else {
                         require('process').exit(9)
                     }
