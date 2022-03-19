@@ -536,7 +536,7 @@ function startApp() {
                                             NodeOps[i][0][1] = 1
                                             cjbool = true
                                         } else if (NodeOps[i][1][0] == 'comment' && !votebool && !cjbool){
-                                            ps.push(NodeOps[i][1])
+                                            ops.push(NodeOps[i][1])
                                             NodeOps[i][0][1] = 1
                                         } else if (NodeOps[i][1][0] == 'vote' && !votebool){
                                             ops.push(NodeOps[i][1])
