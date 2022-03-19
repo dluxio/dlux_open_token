@@ -713,7 +713,7 @@ exports.transfer = (json, pc) => {
                                     next.partial[json.transaction_id] = {token: tokenAmount, coin: remaining}
                                 }
                                 dex.tick = next.rate
-                                dex.sellOrders[`${price.toFixed(6)}:${item}`] = next
+                                dex.sellOrders[`${price}:${item}`] = next
                                 const transfer = [
                                         "transfer",
                                         {
