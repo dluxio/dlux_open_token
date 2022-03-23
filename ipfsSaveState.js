@@ -12,21 +12,21 @@ exports.ipfsSaveState = (blocknum, buffer, writeBack, tries) => {
                     hash = ipfs_return[0].hash;
                 } catch (e) { console.log(e); }
                 console.log(blocknum + `:Saved: ${hash}`);
-                if (writeBack) {
-                    const sourcePath = '.env'
-                    let parsedFile = envfile.parseFileSync(sourcePath);
-                    if(parsedFile.bb >= blocknum - 100){
-                        parsedFile.startingHash = hash
-                        parsedFile.bb = blocknum
-                        fs.writeFileSync('./.env', envfile.stringifySync(parsedFile)) 
-                    } else if(!parsedFile.bb || parsedFile.bb < blocknum - 1000){
-                        parsedFile.startingHash = hash
-                        parsedFile.bb = blocknum
-                        fs.writeFileSync('./.env', envfile.stringifySync(parsedFile)) 
-                    } else {
-                        require('process').exit(9)
-                    }
-                }
+                // if (writeBack) {
+                //     const sourcePath = '.env'
+                //     let parsedFile = envfile.parseFileSync(sourcePath);
+                //     if(parsedFile.bb >= blocknum - 100){
+                //         parsedFile.startingHash = hash
+                //         parsedFile.bb = blocknum
+                //         fs.writeFileSync('./.env', envfile.stringifySync(parsedFile)) 
+                //     } else if(!parsedFile.bb || parsedFile.bb < blocknum - 1000){
+                //         parsedFile.startingHash = hash
+                //         parsedFile.bb = blocknum
+                //         fs.writeFileSync('./.env', envfile.stringifySync(parsedFile)) 
+                //     } else {
+                //         require('process').exit(9)
+                //     }
+                // }
                 resolve({
                     hashLastIBlock: hash,
                     hashBlock: blocknum

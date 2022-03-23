@@ -1,5 +1,5 @@
 const config = require('./config');
-const VERSION = 'v1.0.1'
+const VERSION = 'v1.0.2r'
 exports.VERSION = VERSION
 exports.exit = exit;
 exports.processor = processor;
@@ -132,7 +132,7 @@ exports.processor = processor
 
 //Start Program Options   
 //dynStart()
-startWith('QmNnEi16DjsvXsFpvxqCXH3AR1H4QasC642HoDAEkHtbDE', true)
+startWith('QmW4S24ipDvcoJj1mM2FeuwoY17EiuUgabn2f255by9Cp2', true)
 Watchdog.monitor()
 
 // API defs
@@ -423,7 +423,6 @@ function startApp() {
                         let promises = [HR.margins()]
                         if(num % 100 !== 50){
                             if(mso.length){
-                                console.log('mso', mso)
                                 promises.push(new Promise((res,rej)=>{
                                     osig_submit(consolidate(num, plasma, bh, 'owner'))
                                     .then(nodeOp => {
@@ -433,7 +432,6 @@ function startApp() {
                                     .catch(e => { rej(e) })
                                 }))
                             } else if(msso.length){
-                                console.log('msso', msso)
                                 promises.push(new Promise((res,rej)=>{
                                     osig_submit(osign(num, plasma, msso, bh))
                                     .then(nodeOp => {
@@ -443,7 +441,6 @@ function startApp() {
                                     .catch(e => { rej(e) })
                                 }))
                             } else if(msa_keys.length > 80){
-                                console.log('msa_keys', msa_keys)
                                 promises.push(new Promise((res,rej)=>{
                                     sig_submit(consolidate(num, plasma, bh))
                                     .then(nodeOp => {
@@ -454,7 +451,6 @@ function startApp() {
                                 }))
                             }
                             for(var missed = 0; missed < mss.length; missed++){
-                                console.log('mss', mss)
                                 if(mss[missed].split(':').length == 1){
                                     missed_num = mss[missed]
                                     promises.push(new Promise((res,rej)=>{
