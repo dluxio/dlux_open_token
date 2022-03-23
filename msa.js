@@ -99,6 +99,45 @@ exports.consolidate = (num, plasma, bh, owner) => {
     })
 }
 
+exports.osign = (num, plasma, missed, bh) => {
+    return new Promise((resolve, reject) => {
+        if(bh) {
+            let Pmissed = getPathObj(['msso', `${missed[0].replace(':sigs', '')}`]),
+            Pstats = getPathObj(['stats'])
+        Promise.all([Pmissed, Pstats]).then(mem => {
+                let sig = {
+                        block: num,
+                        sig: ''
+                    },
+                    obj = JSON.parse(mem[0]),
+                    ops = [],
+                    now = Date.parse(bh.timestamp + '.000Z'),
+                    op = {
+                        ref_block_num: bh.block_number & 0xffff,
+                        ref_block_prefix: Buffer.from(bh.block_id, 'hex').readUInt32LE(4),
+                        expiration: new Date(now + 3660000).toISOString().slice(0, -5),
+                        operations: obj.operations,
+                        extensions: [],
+                    }
+                    for(var i = 0; i < missed.length; i++){
+                        ops.push({type:'del', path:['msso', `${missed[i]}`]})
+                    }
+                    ops.push({type: 'put', path: ['msso', `${num}`], data: stringify(op)})
+                    if(mem[1].ms.active_account_auths[config.username]  && config.msowner){
+                        const stx = hiveClient.auth.signTransaction(op, [config.msowner])
+                        sig.sig = stx.signatures[0]
+                    }
+                    store.batch(ops, [resolve, reject, sig])
+                
+            })
+        } else {
+            console.log('no BH')
+            resolve('No Sig')
+        }
+        
+    })
+}
+
 exports.sign = (num, plasma, missed, bh) => {
     return new Promise((resolve, reject) => {
         if(bh){

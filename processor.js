@@ -1,5 +1,5 @@
 const fetch = require('node-fetch');
-const { Base64 } = require('./helpers');
+const { TXID } = require('./index');
 module.exports = function(client, hive, currentBlockNumber = 1, blockComputeSpeed = 1000, prefix = '', mode = 'latest', cycleapi) {
     var onCustomJsonOperation = {}; // Stores the function to be run for each operation id.
     var onOperation = {};
@@ -59,7 +59,6 @@ module.exports = function(client, hive, currentBlockNumber = 1, blockComputeSpee
 
     function beginBlockComputing() {
         function computeBlock(behind) {
-
             var blockNum = currentBlockNumber; // Helper variable to prevent race condition
             // in getBlock()
             var vops = getVops(blockNum)
@@ -68,20 +67,25 @@ module.exports = function(client, hive, currentBlockNumber = 1, blockComputeSpee
                     if(behind && !stopping)gbr(bn, behind > 100 ? 100 : behind, 0)
                     else if (!stopping)gb(bn, 0)
                     function gb (bln, at){
-                        client.database.getBlock(bln)
-                    .then((result) => {
-                        resolve([result])
-                    })
-                    .catch((err) => {
-                        if (at < 3){
-                                gb(bn, at+1)
+                        if(bln < TXID.saveNumber + 50){
+                            client.database.getBlock(bln)
+                            .then((result) => {
+                                resolve([result])
+                            })
+                            .catch((err) => {
+                                if (at < 3){
+                                        gb(bn, at+1)
+                                } else {
+                                    reject(err)
+                                }
+                            })
                         } else {
-                            reject(err)
+                            setTimeout(()=>{gb (bln, at)}, 1000)
                         }
-                    })
                     }
                     function gbr (bln, count, at){
-                        fetch("https://api.hive.blog", {
+                        if(bln > TXID.saveNumber + 150)setTimeout(()=>{gbr (bln, count, at)}, 1000)
+                        else fetch(client.currentAddress, {
                             body: `{"jsonrpc":"2.0", "method":"block_api.get_block_range", "params":{"starting_block_num": ${bln}, "count": ${count}}, "id":1}`,
                             headers: {
                                 "Content-Type": "application/x-www-form-urlencoded"
@@ -175,9 +179,23 @@ module.exports = function(client, hive, currentBlockNumber = 1, blockComputeSpee
         }
         stream.on('data', function(block) {
             var blockNum = parseInt(block.block_id.slice(0, 8), 16);
-            if (blockNum >= currentBlockNumber) {
-                processBlock(block, blockNum);
-                currentBlockNumber = blockNum + 1;
+            if (blockNum == currentBlockNumber) {
+                processBlock(block, blockNum).then(() => {
+                    currentBlockNumber = blockNum + 1
+                });
+            } else {
+                streamWait()
+                function streamWait(){
+                    setTimeout(function() {
+                        if (blockNum == currentBlockNumber) {
+                            processBlock(block, blockNum).then(() => {
+                                currentBlockNumber = blockNum + 1;
+                            });
+                        } else {
+                            streamWait();
+                        }
+                    },500)
+                }
             }
         })
         stream.on('end', function() {

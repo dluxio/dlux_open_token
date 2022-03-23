@@ -1,5 +1,5 @@
 const config = require('./config');
-const VERSION = 'v1.0.0b14'
+const VERSION = 'v1.0.1'
 exports.VERSION = VERSION
 exports.exit = exit;
 exports.processor = processor;
@@ -92,9 +92,10 @@ let TXID = {
         return TXID.blocknumber
     },
     blocknumber: 0,
+    saveNumber: 0,
     streaming: false,
     current: function(){TXID.streaming = true},
-    reset: function(){TXID.streaming = false, TXID.blocknumber = 0, status = {
+    reset: function(){TXID.streaming = false, TXID.blocknumber = 0, saveNumber = 0, status = {
     cleaner: [],
 }},
 }
@@ -112,7 +113,7 @@ const { dao, Liquidity } = require("./dao");
 const { recast } = require('./lil_ops')
 const hiveState = require('./processor');
 const { getPathObj, getPathNum, getPathSome } = require('./getPathObj');
-const { consolidate, sign, createAccount, updateAccount } = require('./msa');
+const { consolidate, sign, osign, createAccount, updateAccount } = require('./msa');
 //const { resolve } = require('path');
 const api = express()
 var http = require('http').Server(api);
@@ -122,19 +123,16 @@ exports.escrow = escrow;
 var startingBlock = config.starting_block
     //var current
     //exports.current = current
-const streamMode = args.mode || 'irreversible';
+const streamMode = config.stream || 'irreversible';
 console.log("Streaming using mode", streamMode);
 var processor;
 exports.processor = processor
-var live_dex = {}, //for feedback, unused currently
-    pa = []
-var recents = [], writeBack = false
-    //HIVE API CODE
+
+//HIVE API CODE
 
 //Start Program Options   
-dynStart()
-//startWith(config.engineCrank, true)//;writeBack = true //for testing and replaying 58859101
-
+//dynStart()
+startWith('QmNnEi16DjsvXsFpvxqCXH3AR1H4QasC642HoDAEkHtbDE', true)
 Watchdog.monitor()
 
 // API defs
@@ -245,6 +243,7 @@ function startApp() {
         processor.on('dex_sell', HR.dex_sell);
         processor.on('dex_clear', HR.dex_clear);
         processor.on('sig_submit', HR.sig_submit); //dlux is for putting executable programs into IPFS... this is for additional accounts to sign the code as non-malicious
+        processor.on('osig_submit', HR.osig_submit);
     }
     if(config.features.dex || config.features.nft || config.features.ico){
         processor.onOperation('transfer', HR.transfer);
@@ -296,16 +295,20 @@ function startApp() {
                     gte: "" + (num - 1000000),
                     lte: "" + (num - 100)
                 }) //resign mss
+                let Pmsso = getPathSome(['msso'],{
+                    gte: "" + (num - 1000000),
+                    lte: "" + (num - 100)
+                })
                 let Pmsa = getPathObj(['msa'])
                 let Pmso = getPathObj(['mso'])
-                Promise.all([Pchron, Pmss, Pmsa, Pmso]).then(mem => {
+                Promise.all([Pchron, Pmss, Pmsa, Pmso, Pmsso]).then(mem => {
                     var a = mem[0],
                         mss = mem[1], //resign mss
-                        msa = mem[2] //if length > 80... sign these
-                        mso = mem[3]
+                        msa = mem[2], //if length > 80... sign these
+                        mso = mem[3],
+                        msso = mem[4]
                     let chrops = {},
                         msa_keys = Object.keys(msa)
-                        mso_keys = Object.keys(mso)
                     for (var i in a) {
                         chrops[a[i]] = a[i]
                     }
@@ -419,26 +422,39 @@ function startApp() {
                     return new Promise((res, rej)=>{
                         let promises = [HR.margins()]
                         if(num % 100 !== 50){
-                            if(mso_keys.length){
+                            if(mso.length){
+                                console.log('mso', mso)
                                 promises.push(new Promise((res,rej)=>{
                                     osig_submit(consolidate(num, plasma, bh, 'owner'))
                                     .then(nodeOp => {
                                         res('SAT')
-                                        NodeOps.unshift(nodeOp)
+                                        if(plasma.rep)NodeOps.unshift(nodeOp)
+                                    })
+                                    .catch(e => { rej(e) })
+                                }))
+                            } else if(msso.length){
+                                console.log('msso', msso)
+                                promises.push(new Promise((res,rej)=>{
+                                    osig_submit(osign(num, plasma, msso, bh))
+                                    .then(nodeOp => {
+                                        res('SAT')
+                                        if(plasma.rep)NodeOps.unshift(nodeOp) //check to see if sig
                                     })
                                     .catch(e => { rej(e) })
                                 }))
                             } else if(msa_keys.length > 80){
+                                console.log('msa_keys', msa_keys)
                                 promises.push(new Promise((res,rej)=>{
                                     sig_submit(consolidate(num, plasma, bh))
                                     .then(nodeOp => {
                                         res('SAT')
-                                        NodeOps.unshift(nodeOp)
+                                        if(plasma.rep)NodeOps.unshift(nodeOp)
                                     })
                                     .catch(e => { rej(e) })
                                 }))
                             }
                             for(var missed = 0; missed < mss.length; missed++){
+                                console.log('mss', mss)
                                 if(mss[missed].split(':').length == 1){
                                     missed_num = mss[missed]
                                     promises.push(new Promise((res,rej)=>{
@@ -471,7 +487,7 @@ function startApp() {
                                 .catch(e => { rej(e) })
                             }))
                         }
-                        if ((num - 18507) % 28800 === 0) { //time for daily magic
+                        if ((num - 18505) % 28800 === 0) { //time for daily magic
                             promises.push(dao(num))
                             block.prev_root = block.root
                             block.root = ''
@@ -494,8 +510,9 @@ function startApp() {
                         block.ops = []
                         store.get([], function(err, obj) {
                             const blockState = Buffer.from(stringify([num + 1, obj]))
-                            ipfsSaveState(num, blockState, writeBack)
+                            ipfsSaveState(num, blockState, ipfs)
                                 .then(pla => {
+                                    TXID.saveNumber = pla.hashBlock
                                     block.root = pla.hashLastIBlock
                                     plasma.hashSecIBlock = plasma.hashLastIBlock
                                     plasma.hashLastIBlock = pla.hashLastIBlock
@@ -534,9 +551,8 @@ function startApp() {
                                             ops.push(NodeOps[i][1])
                                             NodeOps[i][0][1] = 1
                                             cjbool = true
-                                        } else if (NodeOps[i][1][0] == 'comment' && !votebool && !cjbool){
-                                            ops.push(NodeOps[i][1])
-                                            NodeOps[i][0][1] = 1
+                                        } else if (NodeOps[i][1][0] == 'custom_json'){
+                                            // don't send two jsons at once
                                         } else if (NodeOps[i][1][0] == 'vote' && !votebool){
                                             ops.push(NodeOps[i][1])
                                             NodeOps[i][0][1] = 1
@@ -624,7 +640,7 @@ function waitfor(promises_array) {
 exports.waitfor = waitfor;
 
 //hopefully handling the HIVE garbage APIs
-function cycleAPI() {
+function cycleAPI(restart) {
     var c = 0
     for (i of config.clients) {
         if (config.clientURL == config.clients[i]) {
@@ -632,18 +648,17 @@ function cycleAPI() {
             break;
         }
     }
-    if (c == config.clients.length - 2) {
+    if (c == config.clients.length - 1) {
         c = -1
     }
     config.clientURL = config.clients[c + 1]
     console.log('Using APIURL: ', config.clientURL)
     client = new hive.Client(config.clientURL)
-    exit(plasma.hashLastIBlock, 'API Changed')
+    if(restart)exit(plasma.hashLastIBlock, 'API Changed')
 }
 
 //pulls the latest activity of an account to find the last state put in by an account to dynamically start the node. 
 //this will include other accounts that are in the node network and the consensus state will be found if this is the wrong chain
-
 function dynStart(account) {
     API.start()
     const { Hive } = require('./hive')
@@ -684,39 +699,6 @@ function dynStart(account) {
     })
 }
 
-// function dynStart(account) {
-//     API.start()
-//     let accountToQuery = account || config.username
-//     hiveClient.api.setOptions({ url: config.startURL });
-//     console.log('Starting URL: ', config.startURL)
-//     hiveClient.api.getAccountHistory(accountToQuery, -1, 100, ...walletOperationsBitmask, function(err, result) {
-//         if (err) {
-//             console.log('errr', err)
-//             dynStart(config.msaccount)
-//         } else {
-//             hiveClient.api.setOptions({ url: config.clientURL });
-//             let ebus = result.filter(tx => tx[1].op[1].id === `${config.prefix}report`)
-//             for (i = ebus.length - 1; i >= 0; i--) {
-//                 if (JSON.parse(ebus[i][1].op[1].json).hash && parseInt(JSON.parse(ebus[i][1].op[1].json).block) > parseInt(config.override)) {
-//                     recents.push(JSON.parse(ebus[i][1].op[1].json).hash)
-//                 }
-//             }
-//             if (recents.length) {
-//                 const mostRecent = recents.shift()
-//                 console.log({mostRecent})
-//                 if (recents.length === 0) {
-//                     startWith(config.engineCrank)
-//                 } else {
-//                     startWith(mostRecent)
-//                 }
-//             } else {
-//                 startWith(config.engineCrank)
-//                 console.log('IPFS load Failed: Genesis or Backup Replay...')
-//             }
-//         }
-//     });
-// }
-
 
 //pulls state from IPFS, loads it into memory, starts the block processor
 function startWith(hash, second) {
@@ -738,15 +720,53 @@ function startWith(hash, second) {
                         if (!e && (second || data[0] > API.RAM.head - 325)) {
                             if (hash) {
                                 var cleanState = data[1]
+                                /*
+                                delete cleanState.msso
+                                cleanState.runners = {
+                                    regardspk: {
+                                        g: 1
+                                    }
+                                }
+                                cleanState.dex.hive.buyBook = '0.100000_LARYNXQma5oc2b9ZdzoopAgwXBSDt3jNL8W82GLXhKhUcduLeHwo'
+                                cleanState.dex.hive.buyOrders = {
+                                    ["0.100000:LARYNXQma5oc2b9ZdzoopAgwXBSDt3jNL8W82GLXhKhUcduLeHwo"]: {
+                                        "amount": 100,
+                                        "block": 62333881,
+                                        "expire_path": "63197881:QmabtCEwsKm9LJmt6WA2N2c8kvnWXaPxoAAvZixrwEP7hs",
+                                        "fee": 1,
+                                        "from": "balvinder294",
+                                        "hbd": 0,
+                                        "hive": 10,
+                                        "rate": "0.100000",
+                                        "txid": "LARYNXQma5oc2b9ZdzoopAgwXBSDt3jNL8W82GLXhKhUcduLeHwo",
+                                        "type": "hive:buy"
+                                    }
+                                }
+                                cleanState.contracts.balvinder294 = {
+                                    "LARYNXQma5oc2b9ZdzoopAgwXBSDt3jNL8W82GLXhKhUcduLeHwo": {
+                                    "amount": 100,
+                                    "block": 62333881,
+                                    "expire_path": "63197881:QmabtCEwsKm9LJmt6WA2N2c8kvnWXaPxoAAvZixrwEP7hs",
+                                    "fee": 1,
+                                    "from": "balvinder294",
+                                    "hbd": 0,
+                                    "hive": 10,
+                                    "rate": "0.100000",
+                                    "txid": "LARYNXQma5oc2b9ZdzoopAgwXBSDt3jNL8W82GLXhKhUcduLeHwo",
+                                    "type": "hive:buy"
+                                    }
+                                }
+                                */
                                 store.put([], cleanState, function(err) {
                                     if (err) {
                                         console.log('errr',err)
                                     } else {
-                                        if(blockinfo[1].chain){rundelta(blockinfo[1].chain, blockinfo[1].ops, blockinfo[0], blockinfo[1].prev_root)
-                                        .then(empty=>{
-                                            const blockState = Buffer.from(stringify([startingBlock, block]))
+                                        if(blockinfo[1].chain){
+                                            rundelta(blockinfo[1].chain, blockinfo[1].ops, blockinfo[0], blockinfo[1].prev_root)
+                                            .then(empty=>{
+                                                const blockState = Buffer.from(stringify([startingBlock, block]))
                                                 block.ops = []
-                                            issc(startingBlock, blockState, startApp, 0, 1)
+                                                issc(startingBlock, blockState, startApp, 0, 1)
                                             store.get(['stats', 'lastBlock'], function(error, returns) {
                                                 if (!error) {
                                                     console.log(`State Check:  ${returns}\nAccount: ${config.username}\nKey: ${config.active.substr(0,3)}...`)
@@ -761,6 +781,8 @@ function startWith(hash, second) {
                                             })  
                                         .catch(e=>console.log('Failure of rundelta'))
                                         } else {
+                                            console.log('No Chain')
+                                            TXID.saveNumber = startingBlock
                                             startApp()
                                         }
                                     }
@@ -859,6 +881,7 @@ function startWith(hash, second) {
                             console.log(`State Check:  ${returns}\nAccount: ${config.username}\nKey: ${config.active.substr(0,3)}...`)
                         }
                     })
+                    TXID.saveNumber = config.starting_block
                     startApp()
                 }
             })
@@ -886,6 +909,7 @@ function rundelta(arr, ops, sb, pr){
                         block.chain = b[1].chain
                         block.prev_root = pr
                         startingBlock = b[0]
+                        TXID.saveNumber = b[0]
                         unwrapOps(b[1].ops).then(last=>{
                             if(last.length){
                             store.batch(last, [delta, reject, a ? a : []])
@@ -900,6 +924,7 @@ function rundelta(arr, ops, sb, pr){
                     block.chain = arr
                     block.prev_root = pr
                     startingBlock = sb
+                    TXID.saveNumber = sb
                     unwrapOps(ops).then(last=>{
                     if(last.length){
                         store.batch(last, [reorderOps, reject, a ? a : []])
@@ -919,6 +944,7 @@ function rundelta(arr, ops, sb, pr){
 function unwrapOps(arr){
     return new Promise((resolve, reject) => {
         var d = []
+        if(arr[arr.length - 1] !== 'W')arr.push('W')
         if(arr.length)write(0)
         else resolve([])
         function write (int){
@@ -960,15 +986,16 @@ function ipfspromise(hash){
 }
 
 function issc(n,b,i,r,a){
-    ipfsSaveState(n,b,writeBack,r,a)
+    ipfsSaveState(n,b,i,r,a)
     .then(pla => {
+        TXID.saveNumber = pla.hashBlock
         block.chain.push({hash: pla.hashLastIBlock, hive_block: n - a})
         plasma.hashSecIBlock = plasma.hashLastIBlock
         plasma.hashLastIBlock = pla.hashLastIBlock
         plasma.hashBlock = pla.hashBlock
         if(block.chain.length > 2 && block.chain[block.chain.length - 2].hive_block < block.chain[block.chain.length - 1].hive_block - 100){
             exit(block.chain[block.chain.length - 2].hash, 'Chain Out Of Order')
-        } else if (typeof i == 'function'){i()}
+        } else if (typeof i == 'function'){console.log('Requesting Blocks from:', config.clientURL);i()}
     })
-    .catch(e => { if(r<2){console.log('Retrying IPFS Save');issc(n,b,i,r++, a)}else{exit(plasma.hashLastIBlock, 'IPFS Save Failed')} })
+    .catch(e => { if(r<2){console.log('Retrying IPFS Save');setTimeout(()=>{issc(n,b,i,r++, a)}, 1000)}else{exit(plasma.hashLastIBlock, 'IPFS Save Failed')} })
 }

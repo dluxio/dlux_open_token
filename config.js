@@ -17,6 +17,8 @@ const pinurl = ENV.pinurl || '';
 const status = ENV.status || true
 const dbcs = ENV.DATABASE_URL || '';
 const history = ENV.history || 3600
+const stream = ENV.stream || 'irreversible'
+const mode = ENV.mode || 'normal'
 
 // testing configs for replays
 const override = ENV.override || 0 //69116600 //will use standard restarts after this blocknumber
@@ -33,8 +35,8 @@ const ipfsprotocol = ENV.ipfsprotocol || 'https' //IPFS upload/download protocol
 const bidRate = ENV.BIDRATE || 2500 //
 
 //HIVE CONFIGS
-var startURL = ENV.STARTURL || "https://rpc.ecency.com/"
-var clientURL = ENV.APIURL || "https://rpc.ecency.com/"
+var startURL = ENV.STARTURL || "https://api.deathwing.me/"
+var clientURL = ENV.APIURL || "https://api.deathwing.me/"
 const clients = ENV.clients || [
     "https://api.deathwing.me/",
     //"https://api.c0ff33a.uk/",
@@ -146,7 +148,9 @@ let config = {
     detail,
     footer,
     hive_service_fee,
-    features
+    features,
+    stream,
+    mode
 };
 
 module.exports = config;

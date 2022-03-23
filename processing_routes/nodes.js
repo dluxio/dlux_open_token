@@ -26,10 +26,26 @@ exports.node_add = function(json, from, active, pc) {
         }
         var bid = parseInt(json.bidRate) || 0
         if (bid < 1) {
+            bid = 500
+        }
+        if (bid > 1000) {
             bid = 1000
         }
-        if (bid > 2000) {
-            bid = 2000
+        var dm = parseInt(json.dm) || 10000 //dex max 10000 = 100.00% / 1 = 0.01%
+        //the max size a dex buy order can be ON the buy book in relation to the safety limit determined by collateral amounts
+        if (dm < 1) {
+            dm = 10000
+        }
+        if (dm > 10000) {
+            dm = 10000
+        }
+        var ds = parseInt(json.ds) || 0 //dex slope 10000 = 100.00% / 1 = 0.01%
+        //the max size a dex buy order can be ON the buy book in relation to the current price. 0 = no slope, only max HIVE, 100% means a buy order at 50% of the current tick can be 50% of the dex max HIVE value.
+        if (ds < 0) {
+            ds = 0
+        }
+        if (ds > 10000) {
+            ds = 10000
         }
         var daoRate = parseInt(json.marketingRate) || 0
         if (daoRate < 1) {
@@ -50,10 +66,9 @@ exports.node_add = function(json, from, active, pc) {
             if (!e) {
                 if (isEmpty(a)) {
                     data = {
-                            domain: json.domain,
+                            domain: json.domain || 'localhost',
                             self: from,
                             bidRate: bid,
-                            marketingRate: daoRate,
                             attempts: 0,
                             yays: 0,
                             wins: 0,
@@ -64,8 +79,8 @@ exports.node_add = function(json, from, active, pc) {
                             escrows: 0,
                             lastGood: 0,
                             report: {},
-                            escrow,
-                            liquidity
+                            dm,
+                            ds
                         }
                     if(mskey)data.mskey = mskey
                     ops = [{
@@ -77,10 +92,6 @@ exports.node_add = function(json, from, active, pc) {
                     var b = a;
                     b.domain = json.domain ? json.domain : b.domain;
                     b.bidRate = bid ? bid : b.bidRate;
-                    b.escrow = escrow ? escrow : b.escrow;
-                    b.marketingRate = daoRate ? daoRate : b.marketingRate;
-                    b.mirror = mirror ? mirror : b.mirror;
-                    b.liquidity = liquidity ? liquidity : b.liquidity;
                     if(mskey)b.mskey = mskey
                     ops = [{ type: 'put', path: ['markets', 'node', from], data: b }]
                 }

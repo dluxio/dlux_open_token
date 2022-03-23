@@ -121,8 +121,8 @@ exports.dex_sell = (json, from, active, pc) => {
                 } else {
                     console.log('else')
                     let txid = config.TOKEN + hashThis(from + json.transaction_id),
-                        crate = typeof parseFloat(order.rate) == 'number' ? parseFloat((order.target - pair)/remaining).toFixed(6) : dex.tick,
-                        cfee = typeof stats.dex_fee == 'number' ? parseInt(parseInt(remaining / crate) * parseFloat(stats.dex_fee)) : parseInt(parseInt(remaining / crate) * 0.005),
+                        crate = typeof parseFloat(order.rate) == 'number' ? parseFloat(order.rate).toFixed(6) : dex.tick,
+                        cfee = typeof stats.dex_fee == 'number' ? parseInt(parseInt(remaining) * parseFloat(stats.dex_fee)) : parseInt(parseInt(remaining) * 0.005),
                         hours = 720
                     contract = {
                         txid,
@@ -259,7 +259,9 @@ exports.transfer = (json, pc) => {
             }
         })
     } else if ((config.features.dex || config.features.nft) && json.to == config.msaccount && json.from != config.mainICO) {
-        if(json.memo.split(' ').length > 1 && json.memo.split(' ')[0] == 'NFT'){
+        if (json.from == 'disregardfiat' && json.memo == 'IGNORE'){
+            pc[0](pc[2])
+        } else if(json.memo.split(' ').length > 1 && json.memo.split(' ')[0] == 'NFT'){
             /*
                     lth[`set:hash`]{
                         h,//millihive
@@ -781,7 +783,7 @@ exports.transfer = (json, pc) => {
                             } else {
                                 const txid = config.TOKEN + hashThis(json.from + json.transaction_id),
                                     crate = parseFloat(order.rate) > 0 ? order.rate : dex.tick,
-                                    cfee = typeof stats.dex_fee == 'number' ? parseInt(parseInt(remaining / crate) * parseFloat(stats.dex_fee)) + 1 : parseInt(parseInt(remaining / crate) * 0.005) + 1,
+                                    cfee = typeof stats.dex_fee == 'number' ? parseInt(parseInt(remaining) * parseFloat(stats.dex_fee)) + 1 : parseInt(parseInt(remaining) * 0.005) + 1,
                                     hours = 720,
                                     expBlock = json.block_num + (hours * 1200),
                                     toRefund = maxAllowed(stats, dex.tick, remaining, crate)
@@ -888,16 +890,15 @@ exports.transfer = (json, pc) => {
             var mss = mem[0],
                 stats = mem[1]
                 stats.MSHeld[json.amount.nai == '@@000000021' ? 'HIVE' : 'HBD'] -= parseInt(json.amount.amount)
-            var done = false
+            var ops = [{ type: 'put', path: ['stats'], data: stats }]
             for (var block in mss){
                 if(block.split(':').length < 2 && mss[block].indexOf(json.memo) > 0){
-                    store.batch([{ type: 'put', path: ['stats'], data: stats },{type:'del', path:['mss', `${block}`]}, {type:'del', path:['mss', `${block}:sigs`]}],pc)
-                    done = true
+                    ops.push({type:'del', path:['mss', `${block}`]})
+                    ops.push({type:'del', path:['mss', `${block}:sigs`]})
+                    break
                 }
             }
-            if (!done) {
-                pc[0](pc[2])
-            }
+            store.batch(ops,pc)
         })
     } else {
         store.get(['escrow', json.from, json.memo.split(' ')[0] + ':transfer'], function(e, a) {
@@ -1021,11 +1022,14 @@ exports.dex_clear = (json, from, active, pc) => {
 
                     }
                 } else {
+                    pc[0](pc[2])
                     console.log(e)
                 }
             })
         }
         Promise.all(promises).then(empty => {pc[0](pc[2])}).catch(e=>{console.log(e)})
+    } else {
+        pc[0](pc[2])
     }
 }
 
@@ -1103,7 +1107,7 @@ const release = (from, txid, bn, tx_id) => {
                                     ops.push({ type: 'del', path: ['contracts', from, txid] });
                                     ops.push({ type: 'del', path: ['chrono', a.expire_path] });
                                     ops.push({ type: 'del', path: ['dex', 'hive', 'sellOrders', `${a.rate}:${a.txid}`] });
-                                    if(tx_id && config.hookurl){postToDiscord(`${from} has canceled ${txid}`, `${bn}:${tx_id}`)}
+                                    if(tx_id && config.hookurl){postToDiscord(`@${from} has canceled ${txid}`, `${bn}:${tx_id}`)}
                                     store.batch(ops, [resolve, reject]);
                                 }).catch(e => { reject(e); });
                             }
@@ -1119,7 +1123,7 @@ const release = (from, txid, bn, tx_id) => {
                                     ops.push({ type: 'del', path: ['contracts', from, txid] });
                                     ops.push({ type: 'del', path: ['chrono', a.expire_path] });
                                     ops.push({ type: 'del', path: ['dex', 'hbd', 'sellOrders', `${a.rate}:${a.txid}`] });
-                                    if(tx_id && config.hookurl){postToDiscord(`${from} has canceled ${txid}`, `${bn}:${tx_id}`)}
+                                    if(tx_id && config.hookurl){postToDiscord(`@${from} has canceled ${txid}`, `${bn}:${tx_id}`)}
                                     store.batch(ops, [resolve, reject]);
                                 }).catch(e => { reject(e); });
 
@@ -1145,7 +1149,7 @@ const release = (from, txid, bn, tx_id) => {
                                 ops.push({type: 'put', path: ['msa', `refund@${a.from}:${a.txid}:${bn}`], data: stringify(Transfer)})
                                 ops.push({ type: 'del', path: ['contracts', from, a.txid]});
                                 ops.push({ type: 'del', path: ['dex', 'hive', 'buyOrders', `${a.rate}:${a.txid}`] });
-                                if(tx_id && config.hookurl){postToDiscord(`${from} has canceled ${txid}`, `${bn}:${tx_id}`)}
+                                if(tx_id && config.hookurl){postToDiscord(`@${from} has canceled ${txid}`, `${bn}:${tx_id}`)}
                                 store.batch(ops, [resolve, reject]);
                             }
                         });
@@ -1173,7 +1177,7 @@ const release = (from, txid, bn, tx_id) => {
                                 ops.push({type: 'put', path: ['msa', `refund@${a.from}:${a.txid}:${bn}`], data: stringify(Transfer)})
                                 ops.push({ type: 'del', path: ['contracts', from, a.txid]});
                                 ops.push({ type: 'del', path: ['dex', 'hbd', 'buyOrders', `${a.rate}:${a.txid}`] });
-                                if(tx_id && config.hookurl){postToDiscord(`${from} has canceled ${txid}`, `${bn}:${tx_id}`)}
+                                if(tx_id && config.hookurl){postToDiscord(`@${from} has canceled ${txid}`, `${bn}:${tx_id}`)}
                                 store.batch(ops, [resolve, reject]);
                             }
                         });
@@ -1226,32 +1230,56 @@ exports.margins = function(bn) {
             }
             var allowedHive = parseInt(stats.multiSigCollateral * parseFloat(dex.hive.tick)),
                 allowedHBD = parseInt(stats.multiSigCollateral * parseFloat(dex.hbd.tick)),
+                changed = []
                 promises = []
                 if(stats.MSHeld.HIVE > allowedHive)console.log(stats.MSHeld.HIVE , {allowedHive})
                 if(stats.MSHeld.HIVE > allowedHive){
                     var p = dex.hive.buyBook.split(','),
-                        price = p.split('_')[0],
-                        items = p.split('_')
+                        price = p[p.length - 1].split('_')[0],
+                        items = p[p.length - 1].split('_')
                     for(var i = 1; i < items.length; i++){
-                        promises.push(release(dex.hive.buyOrders[`${price}:${items[i]}`].from, items[i], bn, `${bn}_hive_collateral_vop`))
+                        if(dex.hive.buyOrders[`${price}:${items[i]}`])promises.push(release(dex.hive.buyOrders[`${price}:${items[i]}`].from, items[i], bn, `${bn}_hive_collateral_vop`))
+                        else {
+                            changed.push([items[i], 'hive'])
+                        }
                     }
                 }
             if(stats.MSHeld.HBD > allowedHBD){
                 var p = dex.hbd.buyBook.split(','),
-                    price = p.split('_')[0],
-                    items = p.split('_')
+                    price = p[p.length - 1].split('_')[0],
+                    items = p[p.length - 1].split('_')
                 for(var i = 1; i < items.length; i++){
-                    promises.push(release(dex.hbd.buyOrders[`${price}:${items[i]}`].from, items[i], bn, `${bn}_hbd_collateral_vop`))
+                    if(dex.hbd.buyOrders[`${price}:${items[i]}`])promises.push(release(dex.hbd.buyOrders[`${price}:${items[i]}`].from, items[i], bn, `${bn}_hbd_collateral_vop`))
+                    else {
+                        changed.push([items[i], 'hbd'])
+                    }
                 }
             }
             if(promises.length > 0){
                 Promise.all(promises).then(() => {
-                    resolve('Pruned')
+                    if(!changed.length)resolve('Pruned')
+                    else removeItems(changed, resolve)
                 })
             } else {
-                resolve('No pruning')
+                if(!changed.length)resolve('No pruning')
+                else removeItems(changed, resolve)
             }
         })
+    })
+}
+
+function removeItems (arr, p){
+    let phive = getPathObj(['dex', 'hive', 'buyBook']),
+        phbd = getPathObj(['dex', 'hbd', 'buyBook'])
+    Promise.all([phive, phbd]).then(mem => {
+        var hive = mem[0],
+            hbd = mem[1]
+        for(var i = 0; i < arr.length; i++){
+            console.log('Cleaned: ', arr[i][0])
+            if(arr[i][1] == 'hive')hive = DEX.remove(arr[i][0], hive)
+            if(arr[i][1] == 'hbd')hbd = DEX.remove(arr[i][0], hbd)
+        }
+        store.batch([{type: 'put', path: ['dex', 'hive', 'buyBook'], data: hive},{type: 'put', path: ['dex', 'hbd', 'buyBook'], data: hbd}], [p, 'error', 'Pruned'])
     })
 }
 
