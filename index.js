@@ -1,5 +1,5 @@
 const config = require('./config');
-const VERSION = 'v1.0.3'
+const VERSION = 'v1.0.4'
 exports.VERSION = VERSION
 exports.exit = exit;
 exports.processor = processor;
@@ -218,7 +218,7 @@ function startApp() {
     })
     processor = hiveState(client, hive, startingBlock, 10, config.prefix, streamMode, cycleAPI);
     processor.on('send', HR.send);
-    processor.on('claim', HR.drop_claim);
+    processor.on('claim', HR.claim);
     processor.on('node_add', HR.node_add);
     processor.on('node_delete', HR.node_delete);
     processor.on('report', HR.report);
