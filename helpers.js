@@ -595,7 +595,7 @@ exports.DEX = DEX
 
 const Watchdog = {
     current : 0,
-    timeout: 120000, // 120 seconds to init with up to 288 blocks
+    timeout: 180000, // 120 seconds to init with up to 288 blocks
     monitor : function(){
         if(!this.current)console.log('Watchdog: Monitoring...')
         setTimeout(() => {
