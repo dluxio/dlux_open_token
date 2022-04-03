@@ -776,6 +776,7 @@ exports.protocol = (req, res, next) => {
             multisig: config.msaccount,
             jsontoken: config.jsonTokenName,
             memoKey: config.msPubMemo,
+            features: config.featuresModel,
             behind: RAM.behind,
             info: '/markets will return node information and published APIs for the consensus nodes, you may check these other APIs to ensure that the information in the API is in consensus.\nThe prefix is used to address this tokens architecture built on Hive.',
             VERSION
@@ -1732,7 +1733,6 @@ exports.user = (req, res, next) => {
                 }
                 arr.push(c)
             }
-            for (var i in v[3]) {arr.push(v[3][i])}
             res.send(JSON.stringify({
                 balance: v[0],
                 claim: v[9],

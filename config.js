@@ -81,6 +81,72 @@ const features = {
     state: true, //api dumps
     claimdrop: false //claim drops
 }
+const featuresModel = {
+            claim_id: 'claim',
+            claim_S: 'Airdrop',
+            claim_B: false,
+            claim_json: 'drop',
+            rewards_id: 'claim',
+            rewards_S: 'Rewards',
+            rewards_B: true,
+            rewards_json: 'claim',
+            rewardSel: false,
+            reward2Gov: false,
+            send_id: 'send',
+            send_S: 'Send',
+            send_B: true,
+            send_json: 'send',
+            powup_id: 'power_up',
+            powup_B: true,
+            pow_val: '',
+            powdn_id: 'power_down',
+            powdn_B: true,
+            powsel_up: true,
+            govup_id: 'gov_up',
+            govup_B: true,
+            gov_val: '',
+            govsel_up: true,
+            govdn_id: 'gov_down',
+            govdn_B: true,
+            node: {
+              id: 'node_add',
+              opts: [{
+                  S: 'Domain',
+                  type: 'text',
+                  info: 'https://no-trailing-slash.com',
+                  json: 'domain',
+                  val: ''
+                },
+                {
+                  S: 'DEX Fee Vote',
+                  type: 'number',
+                  info: '500 = .5%',
+                  max: 1000,
+                  min: 0,
+                  json: 'bidRate',
+                  val: ''
+                },
+                {
+                  S: 'DEX Max Vote',
+                  type: 'number',
+                  info: '10000 = 100%',
+                  max: 10000,
+                  min: 0,
+                  json: 'dm',
+                  val: ''
+                },
+                {
+                  S: 'DEX Slope Vote',
+                  type: 'number',
+                  info: '10000 = 100%',
+                  max: 10000,
+                  min: 0,
+                  json: 'ds',
+                  val: ''
+                }
+              ],
+            }
+          }
 const adverts = [
     'https://camo.githubusercontent.com/954558e3ca2d68e0034cae13663d9807dcce3fcf/68747470733a2f2f697066732e627573792e6f72672f697066732f516d64354b78395548366a666e5a6748724a583339744172474e6b514253376359465032357a3467467132576f50'
 ]
@@ -150,7 +216,8 @@ let config = {
     hive_service_fee,
     features,
     stream,
-    mode
+    mode,
+    featuresModel
 };
 
 module.exports = config;
