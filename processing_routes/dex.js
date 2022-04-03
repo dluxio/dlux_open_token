@@ -703,7 +703,7 @@ exports.transfer = (json, pc) => {
                         else price = dex.tick
                         console.log({price,item})
                         if (item && (order.pair == 'hbd' || (order.pair == 'hive' && (price <= stats.icoPrice/1000 || !config.features.ico))) && ( order.type == 'MARKET' || (order.type == 'LIMIT' && order.rate >= price))) {
-                            var next = dex.sellOrders[`${price}:${item}`]
+                            var next = dex.sellOrders?.[`${price}:${item}`]
                             console.log({next})
                             if (next && next[order.pair] <= remaining){
                                 if (next[order.pair]){
