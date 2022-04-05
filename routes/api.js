@@ -392,7 +392,6 @@ exports.dex = (req, res, next) => {
     var Pdex = getPathObj(['dex'])
     var Pstats = getPathObj(['stats'])
     var Pico = getPathObj(['balances', 'ri'])
-    var PQueue = getPathObj(['queue'])
     res.setHeader('Content-Type', 'application/json');
     Promise.all([Pdex, Pstats, Pico, PQueue])
         .then(function(v) {
@@ -552,7 +551,6 @@ exports.dex = (req, res, next) => {
             res.send(JSON.stringify({
                 markets,
                 stats: v[1],
-                queue: v[3],
                 node: config.username,
                 behind: RAM.behind,
                 VERSION
