@@ -393,7 +393,7 @@ exports.dex = (req, res, next) => {
     var Pstats = getPathObj(['stats'])
     var Pico = getPathObj(['balances', 'ri'])
     res.setHeader('Content-Type', 'application/json');
-    Promise.all([Pdex, Pstats, Pico, PQueue])
+    Promise.all([Pdex, Pstats, Pico])
         .then(function(v) {
             var markets = v[0]
             markets.hive.sells = []
