@@ -1,5 +1,5 @@
 const config = require('./config');
-const VERSION = 'v1.0.5'
+const VERSION = 'v1.2.6r'
 exports.VERSION = VERSION
 exports.exit = exit;
 exports.processor = processor;
@@ -131,8 +131,8 @@ exports.processor = processor
 //HIVE API CODE
 
 //Start Program Options   
-dynStart()
-//startWith('QmW4S24ipDvcoJj1mM2FeuwoY17EiuUgabn2f255by9Cp2', true)
+//dynStart()
+startWith('QmRpdbGt4KCbQdK9M7jofvb4ffDsLJqkMipDLzQubWtPGW', true)
 Watchdog.monitor()
 
 // API defs
@@ -306,7 +306,8 @@ function startApp() {
                         mss = mem[1], //resign mss
                         msa = mem[2], //if length > 80... sign these
                         mso = mem[3],
-                        msso = mem[4]
+                        msso = mem[4],	
+                        mso_keys = Object.keys(mso)
                     let chrops = {},
                         msa_keys = Object.keys(msa)
                     for (var i in a) {
@@ -421,25 +422,29 @@ function startApp() {
                 function every(){
                     return new Promise((res, rej)=>{
                         let promises = [HR.margins()]
-                        if(num % 100 !== 50){
-                            if(mso.length){
-                                promises.push(new Promise((res,rej)=>{
-                                    osig_submit(consolidate(num, plasma, bh, 'owner'))
-                                    .then(nodeOp => {
-                                        res('SAT')
-                                        if(plasma.rep)NodeOps.unshift(nodeOp)
-                                    })
-                                    .catch(e => { rej(e) })
-                                }))
-                            } else if(msso.length){
-                                promises.push(new Promise((res,rej)=>{
-                                    osig_submit(osign(num, plasma, msso, bh))
-                                    .then(nodeOp => {
-                                        res('SAT')
-                                        if(plasma.rep)NodeOps.unshift(nodeOp) //check to see if sig
-                                    })
-                                    .catch(e => { rej(e) })
-                                }))
+                        if(num % 100 !== 50){	
+                            if(mso_keys.length){	
+                                promises.push(new Promise((res,rej)=>{	
+                                    osig_submit(osign(num, 'mso', mso_keys, bh))	
+                                    .then(nodeOp => {	
+                                        res('SAT')	
+                                        try{	
+                                            if(plasma.rep && JSON.parse(nodeOp[1][1].json).sig)NodeOps.unshift(nodeOp)	
+                                        }catch(e){}	
+                                    })	
+                                    .catch(e => { rej(e) })	
+                                }))	
+                            } else if(msso.length){	
+                                promises.push(new Promise((res,rej)=>{	
+                                    osig_submit(osign(num, 'msso', msso, bh))	
+                                    .then(nodeOp => {	
+                                        res('SAT')	
+                                        try {	
+                                            if(plasma.rep && JSON.parse(nodeOp[1][1].json).sig)NodeOps.unshift(nodeOp) //check to see if sig	
+                                        }catch(e){}	
+                                    })	
+                                    .catch(e => { rej(e) })	
+                                }))	
                             } else if(msa_keys.length > 80){
                                 promises.push(new Promise((res,rej)=>{
                                     sig_submit(consolidate(num, plasma, bh))
@@ -716,43 +721,6 @@ function startWith(hash, second) {
                         if (!e && (second || data[0] > API.RAM.head - 325)) {
                             if (hash) {
                                 var cleanState = data[1]
-                                /*
-                                delete cleanState.msso
-                                cleanState.runners = {
-                                    regardspk: {
-                                        g: 1
-                                    }
-                                }
-                                cleanState.dex.hive.buyBook = '0.100000_LARYNXQma5oc2b9ZdzoopAgwXBSDt3jNL8W82GLXhKhUcduLeHwo'
-                                cleanState.dex.hive.buyOrders = {
-                                    ["0.100000:LARYNXQma5oc2b9ZdzoopAgwXBSDt3jNL8W82GLXhKhUcduLeHwo"]: {
-                                        "amount": 100,
-                                        "block": 62333881,
-                                        "expire_path": "63197881:QmabtCEwsKm9LJmt6WA2N2c8kvnWXaPxoAAvZixrwEP7hs",
-                                        "fee": 1,
-                                        "from": "balvinder294",
-                                        "hbd": 0,
-                                        "hive": 10,
-                                        "rate": "0.100000",
-                                        "txid": "LARYNXQma5oc2b9ZdzoopAgwXBSDt3jNL8W82GLXhKhUcduLeHwo",
-                                        "type": "hive:buy"
-                                    }
-                                }
-                                cleanState.contracts.balvinder294 = {
-                                    "LARYNXQma5oc2b9ZdzoopAgwXBSDt3jNL8W82GLXhKhUcduLeHwo": {
-                                    "amount": 100,
-                                    "block": 62333881,
-                                    "expire_path": "63197881:QmabtCEwsKm9LJmt6WA2N2c8kvnWXaPxoAAvZixrwEP7hs",
-                                    "fee": 1,
-                                    "from": "balvinder294",
-                                    "hbd": 0,
-                                    "hive": 10,
-                                    "rate": "0.100000",
-                                    "txid": "LARYNXQma5oc2b9ZdzoopAgwXBSDt3jNL8W82GLXhKhUcduLeHwo",
-                                    "type": "hive:buy"
-                                    }
-                                }
-                                */
                                 store.put([], cleanState, function(err) {
                                     if (err) {
                                         console.log('errr',err)
@@ -773,7 +741,6 @@ function startWith(hash, second) {
                                                     }
                                                 }
                                             })
-                                            //getPathNum(['balances', 'ra']).then(r=>console.log(r))
                                             })  
                                         .catch(e=>console.log('Failure of rundelta'))
                                         } else {

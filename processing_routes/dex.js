@@ -701,37 +701,39 @@ exports.transfer = (json, pc) => {
                         let item = ''
                         if(price)item = dex.sellBook.split('_')[1].split(',')[0]
                         else price = dex.tick
-                        console.log({price,item})
+                        console.log('Matching...',{order,price,item})
                         if (item && (order.pair == 'hbd' || (order.pair == 'hive' && (price <= stats.icoPrice/1000 || !config.features.ico))) && ( order.type == 'MARKET' || (order.type == 'LIMIT' && order.rate >= price))) {
                             var next = dex.sellOrders?.[`${price}:${item}`]
-                            console.log({next})
+                            console.log('Matched order', {next})
                             if (next && next[order.pair] <= remaining){
                                 if (next[order.pair]){
+                                    console.log('Partial Fill')
                                     filled += next.amount - next.fee
-                                bal += next.amount - next.fee //update the balance
-                                fee += next.fee //add the fees
-                                remaining -= next[order.pair]
-                                dex.tick = next.rate
-                                his[`${json.block_num}:${i}:${json.transaction_id}`] = {type: 'buy', t:Date.parse(json.timestamp), block: json.block_num, base_vol: next.amount, target_vol: next[order.pair], target: order.pair, price: next.rate, id: json.transaction_id + i}
-                                dex.sellBook = DEX.remove(item, dex.sellBook) //adjust the orderbook
-                                delete dex.sellOrders[`${price}:${item}`]
-                                const transfer = [
-                                        "transfer",
-                                        {
-                                            "from": config.msaccount,
-                                            "to": next.from,
-                                            "amount": parseFloat(next[order.pair]/1000).toFixed(3) + ' ' + order.pair.toUpperCase(),
-                                            "memo": `Filled ${item}:${json.transaction_id}`
-                                        }
-                                    ]
-                                let msg = `@${json.from} bought ${parseFloat(parseInt(next.amount)/1000).toFixed(3)} ${config.TOKEN} with ${parseFloat(parseInt(next[order.pair])/1000).toFixed(3)} ${order.pair.toUpperCase()} from ${next.from} (${item})`
-                                ops.push({type: 'put', path: ['feed', `${json.block_num}:${json.transaction_id}.${i}`], data: msg})
-                                if(Object.keys(his).length)ops.push({type: 'put', path: ['dex', order.pair, 'his'], data: his})
-                                ops.push({type: 'put', path: ['msa', `${item}:${json.transaction_id}:${i}`], data: stringify(transfer)}) //send HIVE out via MS
-                                ops.push({type: 'del', path: ['dex', order.pair, 'sellOrders', `${price}:${item}`]}) //remove the order
-                                ops.push({type: 'del', path: ['contracts', next.from , item]}) //remove the contract
-                                ops.push({type: 'del', path: ['chrono', next.expire_path]}) //remove the chrono
+                                    bal += next.amount - next.fee //update the balance
+                                    fee += next.fee //add the fees
+                                    remaining -= next[order.pair]
+                                    dex.tick = next.rate
+                                    his[`${json.block_num}:${i}:${json.transaction_id}`] = {type: 'buy', t:Date.parse(json.timestamp), block: json.block_num, base_vol: next.amount, target_vol: next[order.pair], target: order.pair, price: next.rate, id: json.transaction_id + i}
+                                    dex.sellBook = DEX.remove(item, dex.sellBook) //adjust the orderbook
+                                    delete dex.sellOrders[`${price}:${item}`]
+                                    const transfer = [
+                                            "transfer",
+                                            {
+                                                "from": config.msaccount,
+                                                "to": next.from,
+                                                "amount": parseFloat(next[order.pair]/1000).toFixed(3) + ' ' + order.pair.toUpperCase(),
+                                                "memo": `Filled ${item}:${json.transaction_id}`
+                                            }
+                                        ]
+                                    let msg = `@${json.from} bought ${parseFloat(parseInt(next.amount)/1000).toFixed(3)} ${config.TOKEN} with ${parseFloat(parseInt(next[order.pair])/1000).toFixed(3)} ${order.pair.toUpperCase()} from ${next.from} (${item})`
+                                    ops.push({type: 'put', path: ['feed', `${json.block_num}:${json.transaction_id}.${i}`], data: msg})
+                                    if(Object.keys(his).length)ops.push({type: 'put', path: ['dex', order.pair, 'his'], data: his})
+                                    ops.push({type: 'put', path: ['msa', `${item}:${json.transaction_id}:${i}`], data: stringify(transfer)}) //send HIVE out via MS
+                                    ops.push({type: 'del', path: ['dex', order.pair, 'sellOrders', `${price}:${item}`]}) //remove the order
+                                    ops.push({type: 'del', path: ['contracts', next.from , item]}) //remove the contract
+                                    ops.push({type: 'del', path: ['chrono', next.expire_path]}) //remove the chrono
                                 } else {
+                                    console.log('Only fees left...')
                                     fee += next.fee
                                     fee += next.amount
                                     dex.sellBook = DEX.remove(item, dex.sellBook) //adjust the orderbook
@@ -741,9 +743,10 @@ exports.transfer = (json, pc) => {
                                     ops.push({type: 'del', path: ['chrono', next.expire_path]}) //remove the chrono
                                 }
                             } else if(!next && dex.sellBook.indexOf(item) > -1) {
-                                console.log(dex.sellBook)
+                                console.log('Sell Book Error:', dex.sellBook)
                                 dex.sellBook = DEX.remove(item, dex.sellBook)
                             } else {
+                                console.log('Filled')
                                 next[order.pair] = next[order.pair] - remaining // modify the contract
                                 const tokenAmount = parseInt(remaining / parseFloat(next.rate))
                                 const feeAmount = parseInt((tokenAmount / next.amount) * next.fee)
@@ -780,6 +783,7 @@ exports.transfer = (json, pc) => {
                             }
                         } else {
                             if (config.features.ico && order.pair == 'hive' && ( order.type == 'MARKET' || (order.type == 'LIMIT' && order.rate >= stats.icoPrice/1000 ))){
+                                console.log('ICO')
                                 let purchase
                                 const transfer = [
                                         "transfer",
@@ -825,10 +829,12 @@ exports.transfer = (json, pc) => {
                                     store.batch(ops, pc)
                                 }
                             } else {
+                                console.log('Building contract')
                                 const txid = config.TOKEN + hashThis(json.from + json.transaction_id),
                                     crate = parseFloat(order.rate) > 0 ? order.rate : dex.tick,
                                     toRefund = maxAllowed(stats, dex.tick, remaining, crate)
                                     remaining = remaining - toRefund
+                                    console.log({toRefund, remaining})
                                 const hours = 720,
                                     expBlock = json.block_num + (hours * 1200)
                                 if (toRefund){
@@ -868,6 +874,7 @@ exports.transfer = (json, pc) => {
                                     })
                                 remaining = 0
                                 }
+                                console.log({contract})
                             }
                         }
                     }
