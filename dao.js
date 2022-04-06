@@ -40,7 +40,7 @@ function dao(num) {
             Pfeed = getPathObj(['feed']),
             Ppaid = getPathObj(['paid']),
             Prnfts = getPathObj(['rnfts']);
-            Pgov = getPathNum(['gov']);
+            Pgov = getPathObj(['gov']);
             Pdistro = Distro()
         Promise.all([Pnews, Pbals, Prunners, Pnodes, Pstats, Pdelegations, Pico, Pdex, Pbr, Ppbal, Pnomen, Pposts, Pfeed, Ppaid, Prnfts, Pdistro, Pcbals, Pgov]).then(function(v) {
             daops.push({ type: 'del', path: ['postQueue'] });
