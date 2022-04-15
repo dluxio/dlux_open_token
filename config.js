@@ -35,8 +35,8 @@ const ipfsprotocol = ENV.ipfsprotocol || 'https' //IPFS upload/download protocol
 const bidRate = ENV.BIDRATE || 2500 //
 
 //HIVE CONFIGS
-var startURL = ENV.STARTURL || "https://rpc.ecency.com/"
-var clientURL = ENV.APIURL || "https://rpc.ecency.com/"
+var startURL = ENV.STARTURL || "https://api.deathwing.me/"
+var clientURL = ENV.APIURL || "https://api.deathwing.me/"
 const clients = ENV.clients || [
     "https://api.deathwing.me/",
     //"https://api.c0ff33a.uk/",
@@ -81,6 +81,7 @@ const features = {
     state: true, //api dumps
     claimdrop: false //claim drops
 }
+
 const featuresModel = {
             claim_id: 'claim',
             claim_S: 'Airdrop',
@@ -149,7 +150,9 @@ const featuresModel = {
           }
 const adverts = [
     'https://camo.githubusercontent.com/954558e3ca2d68e0034cae13663d9807dcce3fcf/68747470733a2f2f697066732e627573792e6f72672f697066732f516d64354b78395548366a666e5a6748724a583339744172474e6b514253376359465032357a3467467132576f50'
-]
+const adverts = [
+    'https://images.hive.blog/0x0/https://camo.githubusercontent.com/954558e3ca2d68e0034cae13663d9807dcce3fcf/68747470733a2f2f697066732e627573792e6f72672f697066732f516d64354b78395548366a666e5a6748724a583339744172474e6b514253376359465032357a3467467132576f50'
+
 const detail = {
                 name: 'Decentralized Limitless User eXperiences',
                 symbol: TOKEN,

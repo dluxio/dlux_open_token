@@ -126,7 +126,6 @@ function dao(num) {
             if(stats.marketingRate)post = post + `${parseFloat(parseInt(t * stats.marketingRate / 10000) / 1000).toFixed(3)} ${config.TOKEN} moved to Marketing Allocation.\n`;
             if (bals.rm > 1000000000) {
                 bals.rc += bals.rm - 1000000000;
-                console.log('1000000000 reached: ', bals.rm - 1000000000, ' moved to rc');
                 post = post + `${parseFloat((bals.rm - 1000000000) / 1000).toFixed(3)} moved from Marketing Allocation to Content Allocation due to Marketing Holdings Cap of 1,000,000.000 ${config.TOKEN}\n`;
                 bals.rm = 1000000000;
             }
@@ -134,7 +133,6 @@ function dao(num) {
             
             i = 0, j = 0;
             if(bals.rm)post = post + `${parseFloat(parseInt(bals.rm) / 1000).toFixed(3)} ${config.TOKEN} is in the Marketing Allocation.\n##### Node Rewards for Elected Reports and Escrow Transfers\n`;
-            console.log(num + `:${bals.rm} is availible in the marketing account\n${bals.rn} ${config.TOKEN} set aside to distribute to nodes`);
             for (var node in mnode) { //tally the wins
                 j = j + parseInt(mnode[node].wins);
             }
@@ -182,6 +180,21 @@ function dao(num) {
             stats.dex_fee = parseFloat((dexfeea / dexfeed)/100).toFixed(5);
             stats.dex_max = parseFloat((dexmaxa / dexmaxd)*100).toFixed(2);
             stats.dex_slope = parseFloat((dexslopea / dexsloped)*100).toFixed(2);
+            var newOwners = {}
+            if(j){
+                for (var node in mnode) { //and pay them
+                    i = parseInt(mnode[node].wins / j * b);
+                    cbals[node] ? cbals[node] += i : cbals[node] = i;
+                    bals.rn -= i;
+                    const _at = _atfun(node);
+                    if (i) {
+                        post = post + `* ${_at}${node} awarded ${parseFloat(i / 1000).toFixed(3)} ${config.TOKEN} for ${mnode[node].wins} credited transaction(s)\n`;
+                        console.log(num + `:@${node} awarded ${parseFloat(i / 1000).toFixed(3)} ${config.TOKEN} for ${mnode[node].wins} credited transaction(s)`);
+                    }
+                    newOwners[node] = {wins:mnode[node].wins}
+                    mnode[node].wins = 0;
+                }
+            }
             for(var node in newOwners){
                 newOwners[node].g = runners[node]?.g ? runners[node].g : 0;
             }
@@ -367,7 +380,7 @@ function dao(num) {
                         dex.hbd.days = {};
                     dex.hbd.days[num] = hib;
                 }
-                let liqt = parseInt((bal.rm/365)*(stats.liq_reward/100))
+                let liqt = config.features.liquidity ? parseInt((bals.rm/365)*(stats.liq_reward/100)) : 0
                 if (liqt > 0){
                     let liqa = 0
                     for (var acc in dex.liq){
@@ -385,18 +398,14 @@ function dao(num) {
                 post = post + `*****\n### DEX Report\n#### Prices:\n* ${parseFloat(dex.hive.tick).toFixed(3)} HIVE per ${config.TOKEN}\n* ${parseFloat(dex.hbd.tick).toFixed(3)} HBD per ${config.TOKEN}\n#### Daily Volume:\n* ${parseFloat(vol / 1000).toFixed(3)} ${config.TOKEN}\n* ${parseFloat(vols / 1000).toFixed(3)} HIVE\n* ${parseFloat(parseInt(volhbd) / 1000).toFixed(3)} HBD\n*****\n`;
             }
             stats.movingWeight.dailyPool = bals.ra
-            if(config.features.pob){
-                console.log('POB allocation. RC start: ', bals.rc)
-                bals.rc = bals.rc + bals.ra;
-                console.log('POB allocation. RC end: ', bals.rc)
-            } else bals.rn = bals.rn + bals.ra
-            bals.ra = 0
+            if(config.features.pob)bals.rc = bals.rc + bals.ra;
+            else bals.rn = bals.rn + bals.ra
+            bals.ra = 0;
             var q = 0,
                 r = bals.rc;
             for (var i in br) {
                 q += br[i].post.totalWeight;
             }
-            console.log({br})
             var contentRewards = ``,
                 vo = [];
             if (Object.keys(br).length) {
@@ -618,6 +627,7 @@ function accountUpdate(stats, nodes, arr){
     },
     "memo_key": config.msPubMemo,
     "json_metadata": stringify(config.msmeta)
+
   }
   for (var i = 0; i < arr.length; i++) {
     updateOp.active.account_auths.push([arr[i], 1])

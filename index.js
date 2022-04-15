@@ -310,6 +310,7 @@ function startApp() {
                         mso_keys = Object.keys(mso)
                     let chrops = {},
                         msa_keys = Object.keys(msa)
+                        mso_keys = Object.keys(mso)
                     for (var i in a) {
                         chrops[a[i]] = a[i]
                     }
@@ -511,6 +512,7 @@ function startApp() {
                         block.ops = []
                         store.get([], function(err, obj) {
                             const blockState = Buffer.from(stringify([num + 1, obj]))
+
                             ipfsSaveState(num, blockState, ipfs)
                                 .then(pla => {
                                     TXID.saveNumber = pla.hashBlock
@@ -721,6 +723,12 @@ function startWith(hash, second) {
                         if (!e && (second || data[0] > API.RAM.head - 325)) {
                             if (hash) {
                                 var cleanState = data[1]
+                                delete cleanState.stats.HiveVWMA
+                                delete cleanState.stats.HbdVWMA //remove when dynamic
+                                cleanState.stats.MSHeld = {
+                                    "HIVE": 0,
+                                    "HBD": 0
+                                }
                                 store.put([], cleanState, function(err) {
                                     if (err) {
                                         console.log('errr',err)
@@ -742,6 +750,7 @@ function startWith(hash, second) {
                                                 }
                                             })
                                             })  
+
                                         .catch(e=>console.log('Failure of rundelta'))
                                         } else {
                                             console.log('No Chain')
@@ -888,6 +897,7 @@ function rundelta(arr, ops, sb, pr){
                     block.prev_root = pr
                     startingBlock = sb
                     TXID.saveNumber = sb
+
                     unwrapOps(ops).then(last=>{
                     if(last.length){
                         store.batch(last, [reorderOps, reject, a ? a : []])
@@ -908,6 +918,7 @@ function unwrapOps(arr){
     return new Promise((resolve, reject) => {
         var d = []
         if(arr[arr.length - 1] !== 'W')arr.push('W')
+
         if(arr.length)write(0)
         else resolve([])
         function write (int){
