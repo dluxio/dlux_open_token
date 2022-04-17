@@ -1352,7 +1352,7 @@ function naizer(obj){
         }
         return obj
     }
-
+}
 function maxAllowed(stats, tick, remaining, crate) {
     const max = stats.safetyLimit * tick * (1 - ((crate/tick) * (stats.dex_slope/100))) * (stats.dex_max/100)
     return max > remaining ? 0 : parseInt(remaining - max)
