@@ -204,10 +204,12 @@ function insertNewPost(post) { //is good
 }
 
 exports.updateRating = function (author, permlink, rating, rater) {
+    console.log('update rating: ', {author, permlink, rating, rater})
     rating = parseInt(rating)
     if (rating >= 1 && rating <= 5) {
-        getPost(author, permlink).then(posts => {
-            var record = posts[0]
+        getPost(author, permlink).then(post => {
+            console.log("post:" + post)
+            var record = post
             var raters = record.raters.split(',')
             if (raters.indexOf(rater) == -1) {
                 raters.push(`{${rater}:${rating}}`);
