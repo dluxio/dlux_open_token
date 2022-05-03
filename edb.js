@@ -209,11 +209,15 @@ exports.updateRating = function (author, permlink, rater, rating) {
     if (rating >= 1 && rating <= 5) {
         getPost(author, permlink).then(post => {
             var record = post
-            var raters = record.raters.split(',')
-            if (raters.indexOf(rater) == -1) {
-                raters.push(`{${rater}:${rating}}`);
+            var raters = record.raters ? record.raters.split(",") : []
+            if (raters.indexOf(`{${rater}:1`) == -1 &&
+                raters.indexOf(`{${rater}:2`) == -1 &&
+                raters.indexOf(`{${rater}:3`) == -1 &&
+                raters.indexOf(`{${rater}:4`) == -1 &&
+                raters.indexOf(`{${rater}:5`) == -1) {
+              raters.push(`{${rater}:${rating}}`);
             } else {
-                raters[raters.indexOf(rater)] = `{${rater}:${rating}}`
+              raters[raters.indexOf(rater)] = `{${rater}:${rating}}`;
             }
             var a = 0, b = 0
             for (var i = 0; i < raters.length; i++) {
