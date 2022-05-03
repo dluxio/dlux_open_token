@@ -1,34 +1,34 @@
-const {Pool} = require('pg');
+const { Pool } = require('pg');
 const config = require('./config');
 const pool = new Pool({
- connectionString: config.dbcs,
- ssl: {
- rejectUnauthorized: false
- }
+    connectionString: config.dbcs,
+    ssl: {
+        rejectUnauthorized: false
+    }
 });
 
-function getStats(table){
-    return new Promise ((r,e)=>{
+function getStats(table) {
+    return new Promise((r, e) => {
         pool.query(`SELECT * FROM statssi;`, (err, res) => {
-    if (err) {
-        console.log(`Error - Failed to select all from ${table}`);
-        e(err);
-    }
-    else{
-        r(res.rows);
-    }
-});
+            if (err) {
+                console.log(`Error - Failed to select all from ${table}`);
+                e(err);
+            }
+            else {
+                r(res.rows);
+            }
+        });
     })
 }
 
 exports.getPromotedPosts = getPromotedPosts
 
-function getPromotedPosts(amount, offset){
+function getPromotedPosts(amount, offset) {
     let off = offset,
         amt = amount
-        if(!amount)amt = 50
-        if(!off)off = 0
-    return new Promise ((r,e)=>{
+    if (!amount) amt = 50
+    if (!off) off = 0
+    return new Promise((r, e) => {
         pool.query(`SELECT 
                         author, 
                         permlink, 
@@ -48,7 +48,7 @@ function getPromotedPosts(amount, offset){
                 console.log(`Error - Failed to select some new from ${table}`);
                 e(err);
             }
-            else{
+            else {
                 r(res.rows);
             }
         });
@@ -57,12 +57,12 @@ function getPromotedPosts(amount, offset){
 
 exports.getTrendingPosts = getTrendingPosts
 
-function getTrendingPosts(amount, offset){
+function getTrendingPosts(amount, offset) {
     let off = offset,
         amt = amount
-        if(!amount)amt = 50
-        if(!off)off = 0
-    return new Promise ((r,e)=>{
+    if (!amount) amt = 50
+    if (!off) off = 0
+    return new Promise((r, e) => {
         pool.query(`SELECT 
                         author, 
                         permlink, 
@@ -82,7 +82,7 @@ function getTrendingPosts(amount, offset){
                 console.log(`Error - Failed to select some new from ${table}`);
                 e(err);
             }
-            else{
+            else {
                 r(res.rows);
             }
         });
@@ -91,34 +91,34 @@ function getTrendingPosts(amount, offset){
 
 exports.getPost = getPost
 
-function getPost(author,permlink){
-    return new Promise ((r,e)=>{
+function getPost(author, permlink) {
+    return new Promise((r, e) => {
         pool.query(`SELECT * FROM posts WHERE author = '${author}' AND permlink = '${permlink}';`, (err, res) => {
-    if (err) {
-        console.log(`Error - Failed to get a post from posts`);
-        e(err);
-    }
-    else{
-        r(res.rows);
-    }
-});
+            if (err) {
+                console.log(`Error - Failed to get a post from posts`);
+                e(err);
+            }
+            else {
+                r(res.rows);
+            }
+        });
     })
 }
 
 exports.getNewPosts = getNewPosts
 
-function getNewPosts(amount, offset){
+function getNewPosts(amount, offset) {
     let off = offset,
         amt = amount
-        if(!amount)amt = 50
-        if(!off)off = 0
-    return new Promise ((r,e)=>{
+    if (!amount) amt = 50
+    if (!off) off = 0
+    return new Promise((r, e) => {
         pool.query(`SELECT author, permlink, block, votes, voteweight, promote, paid FROM posts ORDER BY block DESC OFFSET ${off} ROWS FETCH FIRST ${amt} ROWS ONLY;`, (err, res) => {
             if (err) {
                 console.log(`Error - Failed to select some new from ${table}`);
                 e(err);
             }
-            else{
+            else {
                 r(res.rows);
             }
         });
@@ -127,12 +127,12 @@ function getNewPosts(amount, offset){
 
 exports.getAuthorPosts = getAuthorPosts
 
-function getAuthorPosts(author, amount, offset){
+function getAuthorPosts(author, amount, offset) {
     let off = offset,
         amt = amount
-        if(!amount)amt = 50
-        if(!off)off = 0
-    return new Promise ((r,e)=>{
+    if (!amount) amt = 50
+    if (!off) off = 0
+    return new Promise((r, e) => {
         pool.query(`SELECT 
                         author, 
                         permlink, 
@@ -152,7 +152,7 @@ function getAuthorPosts(author, amount, offset){
                 console.log(`Error - Failed to select some new from ${table}`);
                 e(err);
             }
-            else{
+            else {
                 r(res.rows);
             }
         });
@@ -162,7 +162,7 @@ function getAuthorPosts(author, amount, offset){
 
 exports.insertNewPost = insertNewPost
 
-function insertNewPost(post){ //is good
+function insertNewPost(post) { //is good
     let record = {
         author: post.author,
         permlink: post.permlink,
@@ -177,58 +177,90 @@ function insertNewPost(post){ //is good
         voters: post.voters || '',
         voters_paid: post.voters_paid || '',
     }
-    return new Promise((r,e)=>{
-        pool.query(`INSERT INTO posts(author,permlink,block,votes,voteweight,promote,paid,payout,payout_author,linear_weight,voters,voters_paid)VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12)`, 
-                [
-                    record.author,
-                    record.permlink,
-                    record.block,
-                    record.votes,
-                    record.voteweight,
-                    record.promote,
-                    record.paid,
-                    record.payout,
-                    record.payout_author,
-                    record.linear_weight,
-                    record.voters,
-                    record.voters_paid
-                ], (err, res) => {
-            if (err) {
-                console.log(`Error - Failed to insert data into posts`);
-                e(err);
-            } else {
-                r(res)
-            }
-        });
+    return new Promise((r, e) => {
+        pool.query(`INSERT INTO posts(author,permlink,block,votes,voteweight,promote,paid,payout,payout_author,linear_weight,voters,voters_paid)VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12)`,
+            [
+                record.author,
+                record.permlink,
+                record.block,
+                record.votes,
+                record.voteweight,
+                record.promote,
+                record.paid,
+                record.payout,
+                record.payout_author,
+                record.linear_weight,
+                record.voters,
+                record.voters_paid
+            ], (err, res) => {
+                if (err) {
+                    console.log(`Error - Failed to insert data into posts`);
+                    e(err);
+                } else {
+                    r(res)
+                }
+            });
     })
+}
+
+exports.updateRating = function (author, permlink, rating, rater) {
+    rating = parseInt(rating)
+    if (rating >= 1 && rating <= 5) {
+        getPost(author, permlink).then(posts => {
+            var record = posts[0]
+            var raters = record.raters.split(',')
+            if (raters.indexOf(rater) == -1) {
+                raters.push(`{${rater}:${rating}}`);
+            } else {
+                raters[raters.indexOf(rater)] = `{${rater}:${rating}}`
+            }
+            var a = 0, b = 0
+            for (var i = 0; i < raters.length; i++) {
+                a += parseInt(raters[i].split(':')[1])
+                b++
+            }
+            var avg = parseFloat(a / b).toFixed(2)
+            var raters = raters.join(',')
+            pool.query(
+                `UPDATE posts
+                    SET rating = '${avg}',
+                        raters = '${raters}'
+                    WHERE author = '${record.author}' AND
+                        permlink = '${record.permlink}';`,
+                (err, res) => {
+                    console.log(`Updated rating:${author}/${permlink}:`, err ? err : res);
+                }
+            );
+        })
+    }
 }
 
 exports.updatePost = updatePost
 
-function updatePost(post){ 
+function updatePost(post) {
     let record = {
-            author: post.author,
-            permlink: post.permlink,
-            block: post.block,
-            votes: Object.keys(post.votes).length,
-            voteweight: post.t.totalWeight,
-            paid: true,
-            payout: post.paid,
-            payout_author: post.author_payout,
-            linear_weight: post.t.linearWeight || 0,
-            voters: post.voters || '',
-            voters_paid: post.voters_paid || '',
-        }
-        for(v in post.votes){
-            record.voters += v + ','
-            record.voters_paid += post.votes[v].p + ','
-        }
-        record.voters = record.voters.substring(0, record.voters.length -1)
-        record.voters_paid = record.voters_paid.substring(0, record.voters_paid.length -1)
-    return new Promise((r,e)=>{
-        getPost(post.author,post.permlink)
-        .then(ret=>{
-            pool.query(`UPDATE posts
+        author: post.author,
+        permlink: post.permlink,
+        block: post.block,
+        votes: Object.keys(post.votes).length,
+        voteweight: post.t.totalWeight,
+        paid: true,
+        payout: post.paid,
+        payout_author: post.author_payout,
+        linear_weight: post.t.linearWeight || 0,
+        voters: post.voters || '',
+        voters_paid: post.voters_paid || '',
+    }
+    for (v in post.votes) {
+        record.voters += v + ','
+        record.voters_paid += post.votes[v].p + ','
+    }
+    record.voters = record.voters.substring(0, record.voters.length - 1)
+    record.voters_paid = record.voters_paid.substring(0, record.voters_paid.length - 1)
+    return new Promise((r, e) => {
+        getPost(post.author, post.permlink)
+            .then(ret => {
+                pool.query(`UPDATE posts
                     SET votes = ${record.votes},
                         voteweight = ${record.voteweight},
                         paid = ${record.paid},
@@ -239,62 +271,39 @@ function updatePost(post){
                         voters_paid = '${record.voters_paid}'
                     WHERE author = '${record.author}' AND
                         permlink = '${record.permlink}';`, (err, res) => {
-                if (err) {
-                    console.log(`Error - Failed to insert data into posts`);
-                    e(err);
-                } else {
-                    console.log(res)
-                    r(res)
-                }
-            });
-        })
+                    if (err) {
+                        console.log(`Error - Failed to insert data into posts`);
+                        e(err);
+                    } else {
+                        console.log(res)
+                        r(res)
+                    }
+                });
+            })
 
     })
 }
 
 exports.updatePostVotes = updatePostVotes
 
-function updatePostVotes(post){ //live votes
-    return new Promise((r,e)=>{
+function updatePostVotes(post) { //live votes
+    return new Promise((r, e) => {
         let votes = Object.keys(post.votes).length,
             voteweight = 0,
             voters = ''
-        for (v in post.votes){
+        for (v in post.votes) {
             voteweight += post.votes[v].v
             voters += v + ','
         }
-        voters = voters.substring(0,voters.length -1 )
+        voters = voters.substring(0, voters.length - 1)
         pool.query(`UPDATE posts
                     SET votes = ${votes},
                         voteweight = ${voteweight},
                         voters = '${voters}'
                     WHERE author = '${post.author}' AND
                         permlink = '${post.permlink}';`, (err, res) => {
-                if (err) {
-                    console.log(`Error - Failed to insert data into posts`);
-                    e(err);
-                } else {
-                    r(res)
-                }
-            });
-    })
-}
-
-exports.updateStat = updateStat
-
-function insertStats(stat){ //is good
-    let stats = {
-        string: stat.string,
-        int: stat.int
-    }
-    return new Promise((r,e)=>{
-        pool.query(`INSERT INTO statssi(string,int)VALUES($1,$2)`, 
-                [
-                    stats.string,
-                    stats.int
-                ], (err, res) => {
             if (err) {
-                console.log(`Error - Failed to insert data into statssi`);
+                console.log(`Error - Failed to insert data into posts`);
                 e(err);
             } else {
                 r(res)
@@ -303,24 +312,22 @@ function insertStats(stat){ //is good
     })
 }
 
-function updateStat(stat){ //is good
-    let record = {
+exports.updateStat = updateStat
+
+function insertStats(stat) { //is good
+    let stats = {
         string: stat.string,
         int: stat.int
     }
-    return new Promise((r,e)=>{
-        pool.query(`UPDATE statssi
-                    SET int = '${record.int}'
-                    WHERE string = '${record.string}';`, (err, res) => {
+    return new Promise((r, e) => {
+        pool.query(`INSERT INTO statssi(string,int)VALUES($1,$2)`,
+            [
+                stats.string,
+                stats.int
+            ], (err, res) => {
                 if (err) {
-                    insertStats(stat)
-                    .then(ret=>{
-                        r(ret)
-                    })
-                    .catch(errr=>{
-                        console.log(err,errr)
-                        e(err,errr)
-                    })
+                    console.log(`Error - Failed to insert data into statssi`);
+                    e(err);
                 } else {
                     r(res)
                 }
@@ -328,30 +335,55 @@ function updateStat(stat){ //is good
     })
 }
 
+function updateStat(stat) { //is good
+    let record = {
+        string: stat.string,
+        int: stat.int
+    }
+    return new Promise((r, e) => {
+        pool.query(`UPDATE statssi
+                    SET int = '${record.int}'
+                    WHERE string = '${record.string}';`, (err, res) => {
+            if (err) {
+                insertStats(stat)
+                    .then(ret => {
+                        r(ret)
+                    })
+                    .catch(errr => {
+                        console.log(err, errr)
+                        e(err, errr)
+                    })
+            } else {
+                r(res)
+            }
+        });
+    })
+}
+
 exports.updatePromote = updatePromote
 
-function updatePromote(author, permlink, amt){ //is good
-    return new Promise((r,e)=>{
-        getPost(post.author,post.permlink)
+function updatePromote(author, permlink, amt) { //is good
+    return new Promise((r, e) => {
+        getPost(post.author, post.permlink)
             .then(post => {
                 amount = post.promote + amt
                 pool.query(`UPDATE posts
                     SET promote = '${amount}'
                     WHERE author = '${author}' AND
                         permlink = '${permlink}';`, (err, res) => {
-                if (err) {
-                    insertStats(stat)
-                    .then(ret=>{
-                        r(ret)
-                    })
-                    .catch(errr=>{
-                        console.log(err,errr)
-                        e(err,errr)
-                    })
-                } else {
-                    r(res)
-                }
-            });
+                    if (err) {
+                        insertStats(stat)
+                            .then(ret => {
+                                r(ret)
+                            })
+                            .catch(errr => {
+                                console.log(err, errr)
+                                e(err, errr)
+                            })
+                    } else {
+                        r(res)
+                    }
+                });
             })
     })
 }

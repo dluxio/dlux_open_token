@@ -3,7 +3,7 @@ const { store } = require('./../index')
 const { chronAssign } = require('./../lil_ops')
 const { getPathObj } = require('../getPathObj')
 const { contentToDiscord } = require('./../discord')
-const { insertNewPost } = require('./../edb');
+const { insertNewPost, updateRating } = require('./../edb');
 
 exports.comment = (json, pc) => {
     let meta = {}
@@ -98,8 +98,22 @@ exports.comment = (json, pc) => {
                         })
                         .catch(e => console.log(e))
             */
+    } else if (
+      config.dbcs && json.parent_author &&
+      json.parent_permlink &&
+      meta?.review?.rating &&
+        meta.review.rating >= 1 &&
+        meta.review.rating <= 5
+    ) {
+      updateRating(
+        json.parent_author,
+        json.parent_permlink,
+        json.author,
+        meta.review.rating
+      );
+      pc[0](pc[2]);
     } else {
-        pc[0](pc[2])
+      pc[0](pc[2]);
     }
 }
 
