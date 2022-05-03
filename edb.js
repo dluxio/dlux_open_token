@@ -94,12 +94,13 @@ exports.getPost = getPost
 function getPost(author, permlink) {
     return new Promise((r, e) => {
         pool.query(`SELECT * FROM posts WHERE author = '${author}' AND permlink = '${permlink}';`, (err, res) => {
+            console.log(res, err)
             if (err) {
                 console.log(`Error - Failed to get a post from posts`);
                 e(err);
             }
             else {
-                r(res.rows);
+                r(res);
             }
         });
     })
@@ -203,7 +204,7 @@ function insertNewPost(post) { //is good
     })
 }
 
-exports.updateRating = function (author, permlink, rating, rater) {
+exports.updateRating = function (author, permlink, rater, rating) {
     console.log('update rating: ', {author, permlink, rating, rater})
     rating = parseInt(rating)
     if (rating >= 1 && rating <= 5) {
