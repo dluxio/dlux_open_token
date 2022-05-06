@@ -176,9 +176,10 @@ function insertNewPost(post) { //is good
         linear_weight: post.linear_weight || 0,
         voters: post.voters || '',
         voters_paid: post.voters_paid || '',
+        type: post.type,
     }
     return new Promise((r, e) => {
-        pool.query(`INSERT INTO posts(author,permlink,block,votes,voteweight,promote,paid,payout,payout_author,linear_weight,voters,voters_paid)VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12)`,
+        pool.query(`INSERT INTO posts(author,permlink,block,votes,voteweight,promote,paid,payout,payout_author,linear_weight,voters,voters_paid,type)VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13)`,
             [
                 record.author,
                 record.permlink,
@@ -191,7 +192,8 @@ function insertNewPost(post) { //is good
                 record.payout_author,
                 record.linear_weight,
                 record.voters,
-                record.voters_paid
+                record.voters_paid,
+                record.type
             ], (err, res) => {
                 if (err) {
                     console.log(`Error - Failed to insert data into posts`);
@@ -201,6 +203,19 @@ function insertNewPost(post) { //is good
                 }
             });
     })
+}
+
+exports.moderate = function(hide, why, author, permlink) {
+    pool.query(
+                `UPDATE posts
+                    SET hide = '${hide ? true : false}',
+                        why = '${parseInt(why)}'
+                    WHERE author = '${author}' AND
+                        permlink = '${permlink}';`,
+                (err, res) => {
+                    console.log(`Updated rating:${author}/${permlink}:`, err ? err : res);
+                }
+            )
 }
 
 exports.updateRating = function (author, permlink, rater, rating) {
@@ -225,11 +240,13 @@ exports.updateRating = function (author, permlink, rater, rating) {
                 b++
             }
             var avg = parseFloat(a / b).toFixed(2)
+            var ratings = raters.length
             var raters = raters.join(',')
             pool.query(
                 `UPDATE posts
                     SET rating = '${avg}',
-                        raters = '${raters}'
+                        raters = '${raters}',
+                        ratings = '${ratings}'
                     WHERE author = '${record.author}' AND
                         permlink = '${record.permlink}';`,
                 (err, res) => {

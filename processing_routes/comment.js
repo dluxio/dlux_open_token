@@ -3,7 +3,7 @@ const { store } = require('./../index')
 const { chronAssign } = require('./../lil_ops')
 const { getPathObj } = require('../getPathObj')
 const { contentToDiscord } = require('./../discord')
-const { insertNewPost, updateRating } = require('./../edb');
+const { insertNewPost, updateRating, moderate } = require('./../edb');
 
 exports.comment = (json, pc) => {
     let meta = {}
@@ -112,6 +112,20 @@ exports.comment = (json, pc) => {
         meta.review.rating
       );
       pc[0](pc[2]);
+    } else if (
+      config.dbcs &&
+      config?.dbmods.includes(json.author) &&
+      json.parent_author &&
+      json.parent_permlink &&
+      meta?.review?.moderate 
+    ) {
+        moderate(
+          meta?.review?.moderate.hide,
+          meta?.review?.moderate.reason,
+          json.parent_author,
+          json.parent_permlink
+        );
+      pc[0](pc[2]);
     } else {
       pc[0](pc[2]);
     }
@@ -155,10 +169,34 @@ exports.comment_options = (json, pc) => {
                         }
                     })
                     if(config.dbcs){
-                                insertNewPost({
+                        var type = "Blog";
+                        if (config.typeDefs['360'].includes(a.meta.vrHash))
+                          type = "360";
+                        else if (
+                          a.meta.vrHash
+                        )
+                          type = "VR";
+                        else if (
+                          a.meta.arHash
+                        )
+                          type = "AR";
+                        else if (
+                          a.meta.appHash
+                        )
+                          type = "APP";
+                        else if (
+                          a.meta.audHash
+                        )
+                          type = "Audio";
+                        else if (
+                          a.meta.vidHash
+                        )
+                          type = "Video";
+                        insertNewPost({
                             block: json.block_num,
                             author: json.author,
-                            permlink: json.permlink
+                            permlink: json.permlink,
+                            type: type,
                         })
                     }
                     var pins = {}

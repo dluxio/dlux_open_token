@@ -68,3 +68,5 @@ exports.postToDiscord = (msg, id) => {
     if(config.hookurl)hook.send(msg)
     if(config.status)TXID.store(msg, id)
 }
+
+//great place to build a feed function to edb
