@@ -88,10 +88,26 @@ exports.power_grant = (json, from, active, pc) => {
                     ops.push({ type: 'put', path: ['granted', to, from], data: granted_to_from + more });
                     ops.push({ type: 'put', path: ['granted', to, 't'], data: granted_to_total + more });
                     ops.push({ type: 'put', path: ['pow', from], data: from_power - more }); //weeks wait? chron ops? no because of the power growth at vote
-                    ops.push({ type: 'put', path: ['up', from], data: up_from });
-                    ops.push({ type: 'put', path: ['down', from], data: down_from });
-                    ops.push({ type: 'put', path: ['up', to], data: up_to });
-                    ops.push({ type: 'put', path: ['down', to], data: down_to });
+                    if (Object.keys(up_from).length)
+                      ops.push({
+                        type: "put",
+                        path: ["up", from],
+                        data: up_from,
+                      });
+                    if (Object.keys(down_from).length)
+                      ops.push({
+                        type: "put",
+                        path: ["down", from],
+                        data: down_from,
+                      });
+                    if (Object.keys(up_to).length)
+                      ops.push({ type: "put", path: ["up", to], data: up_to });
+                    if (Object.keys(down_to).length)
+                      ops.push({
+                        type: "put",
+                        path: ["down", to],
+                        data: down_to,
+                      });
                     const msg = `@${from}| Has granted ${parseFloat(amount/1000).toFixed(3)} to ${to}`
                     if (config.hookurl || config.status) postToDiscord(msg, `${json.block_num}:${json.transaction_id}`)
                     ops.push({ type: 'put', path: ['feed', `${json.block_num}:${json.transaction_id}`], data: msg });
@@ -147,7 +163,6 @@ exports.power_grant = (json, from, active, pc) => {
                 if (config.hookurl || config.status) postToDiscord(msg, `${json.block_num}:${json.transaction_id}`)
                 ops.push({ type: 'put', path: ['feed', `${json.block_num}:${json.transaction_id}`], data: msg });
             }
-            console.log(ops)
             store.batch(ops, pc);
         })
         .catch(e => { console.log(e); });
