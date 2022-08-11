@@ -1704,19 +1704,20 @@ exports.coin = (req, res, next) => {
 
 exports.user = (req, res, next) => {
     let un = req.params.un,
-        bal = getPathNum(['balances', un]),
-        cbal = getPathNum(['cbalances', un]),
-        claims = getPathObj(['claims', un]),
-        pb = getPathNum(['pow', un]),
-        lp = getPathNum(['granted', un, 't']),
-        lg = getPathNum(['granting', un, 't']),
-        contracts = getPathObj(['contracts', un]),
-        incol = getPathNum(['col', un]), //collateral
-        gp = getPathNum(['gov', un]),
-        pup = getPathObj(['up', un]),
-        pdown = getPathObj(['down', un])
+      bal = getPathNum(["balances", un]),
+      cbal = getPathNum(["cbalances", un]),
+      claims = getPathObj(["claims", un]),
+      pb = getPathNum(["pow", un]),
+      lp = getPathNum(["granted", un, "t"]),
+      lg = getPathNum(["granting", un, "t"]),
+      contracts = getPathObj(["contracts", un]),
+      incol = getPathNum(["col", un]), //collateral
+      gp = getPathNum(["gov", un]),
+      pup = getPathObj(["up", un]),
+      pdown = getPathObj(["down", un]),
+      tick = getPathObj(["dex", "hive", "tick"]);
     res.setHeader('Content-Type', 'application/json');
-    Promise.all([bal, pb, lp, contracts, incol, gp, pup, pdown, lg, cbal, claims])
+    Promise.all([bal, pb, lp, contracts, incol, gp, pup, pdown, lg, cbal, claims, tick])
         .then(function(v) {
             var arr = []
             for (var i in v[3]) {
@@ -1742,6 +1743,7 @@ exports.user = (req, res, next) => {
                 up: v[6],
                 down: v[7],
                 gov: v[5],
+                tick: v[11],
                 node: config.username,
                 behind: RAM.behind,
                 VERSION

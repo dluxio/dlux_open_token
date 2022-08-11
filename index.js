@@ -1,5 +1,5 @@
 const config = require('./config');
-const VERSION = 'v1.2.7-api'
+const VERSION = 'v1.2.8r'
 exports.VERSION = VERSION
 exports.exit = exit;
 exports.processor = processor;
@@ -131,8 +131,8 @@ exports.processor = processor
 //HIVE API CODE
 
 //Start Program Options   
-dynStart()
-//startWith('QmTE5LtzLUyhnb1UMxb1YRrdq8cPxdtqvfCBo7hEZeYwQs', true)
+//dynStart()
+startWith("QmZiL1qa5zkU5DG2Kc2uZUa46UZJ9qdKAwexhc5WbKSpHW", true);
 Watchdog.monitor()
 
 // API defs
@@ -220,7 +220,7 @@ function startApp() {
     processor.on('send', HR.send);
     processor.on('claim', HR.claim);
     processor.on('node_add', HR.node_add);
-    processor.on('node_delete', HR.node_delete);
+    //processor.on('node_delete', HR.node_delete);
     processor.on('report', HR.report);
     processor.on('gov_down', HR.gov_down);
     processor.on('gov_up', HR.gov_up);
@@ -705,271 +705,363 @@ function dynStart(account) {
 
 //pulls state from IPFS, loads it into memory, starts the block processor
 function startWith(hash, second) {
-    console.log(`${hash} inserted`)
-    if (hash && hash != 'pending') {
-        console.log(`Attempting to start from IPFS save state ${hash}`);
-        ipfspromise(hash).then(blockInfo=>{
-            var blockinfo = JSON.parse(blockInfo);
-            ipfspromise(blockinfo[1].root ? blockinfo[1].root : hash).then( file => {
-                var data = JSON.parse(file);
-                startingBlock = data[0]
-                block.root = blockinfo[1].root ? blockinfo[1].root : hash
-                block.prev_root = data[1].prev_root ? data[1].prev_root : data[1].stats.root || ''
-                console.log('root', block.root)
-                if (!startingBlock) {
-                    startWith(sh)
-                } else {
-                    store.del([], function(e) {
-                        if (!e && (second || data[0] > API.RAM.head - 325)) {
-                            if (hash) {
-                                var cleanState = data[1]
-                                delete cleanState.stats.HiveVWMA
-                                delete cleanState.stats.HbdVWMA //remove when dynamic
-                                cleanState.stats.MSHeld = {
-                                    "HIVE": 0,
-                                    "HBD": 0
-                                }
-                                store.put([], cleanState, function(err) {
-                                    if (err) {
-                                        console.log('errr',err)
-                                    } else {
-                                        if(blockinfo[1].chain){
-                                            rundelta(blockinfo[1].chain, blockinfo[1].ops, blockinfo[0], blockinfo[1].prev_root)
-                                            .then(empty=>{
-                                                const blockState = Buffer.from(stringify([startingBlock, block]))
-                                                block.ops = []
-                                                issc(startingBlock, blockState, startApp, 0, 1)
-                                            store.get(['stats', 'lastBlock'], function(error, returns) {
-                                                if (!error) {
-                                                    console.log(`State Check:  ${returns}\nAccount: ${config.username}\nKey: ${config.active.substr(0,3)}...`)
-                                                    let info = API.coincheck(cleanState)
-                                                    console.log('check', info.check)
-                                                    if (cleanState.stats.tokenSupply != info.supply) {
-                                                        console.log('check',info.info)
-                                                    }
-                                                }
-                                            })
-                                            })  
-
-                                        .catch(e=>console.log('Failure of rundelta'))
-                                        } else {
-                                            console.log('No Chain')
-                                            TXID.saveNumber = startingBlock
-                                            startApp()
-                                        }
-                                    }
-                                })
-                            } else {
-                                store.put([], data[1], function(err) {
-                                    if (err) { console.log(err) } else {
-                                        store.get(['balances', 'ra'], function(error, returns) {
-                                            if (!error) {
-                                                console.log('there' + returns)
-                                            }
-                                        })
-                                        startApp()
-                                    }
-                                })
-                            }
-                        } else if(!second) {
-                            var promises = []
-                            for( var runner in data[1].runners) {
-                                    promises.push(new Promise((resolve, reject) => {
-                                        console.log('runner', runner)
-                                        hiveClient.api.setOptions({ url: config.startURL });
-                                        hiveClient.api.getAccountHistory(runner, -1, 100, ...walletOperationsBitmask, function(err, result) {
-                                            var recents = {block:0}
-                                            if (err) {
-                                                console.log('error in retrieval')
-                                                resolve({hash:null,block:null})
-                                            } else {
-                                                let ebus = result.filter(tx => tx[1].op[1].id === `${config.prefix}report`)
-                                                for (i = ebus.length - 1; i >= 0; i--) {
-                                                    if (JSON.parse(ebus[i][1].op[1].json).hash) {
-                                                        if(recents.block < JSON.parse(ebus[i][1].op[1].json).block){
-                                                            recents = {
-                                                                hash: JSON.parse(ebus[i][1].op[1].json).hash,
-                                                                block: parseInt(JSON.parse(ebus[i][1].op[1].json).block)}
-                                                        }
-                                                        else {
-                                                            recents[0] = {hash: JSON.parse(ebus[i][1].op[1].json).hash,
-                                                            block: parseInt(JSON.parse(ebus[i][1].op[1].json).block)
-                                                            }
-                                                        }
-                                                    }
-                                                }
-                                                if (recents.block) {
-                                                    resolve(recents)
-                                                } else {
-                                                    console.log('error in processing')
-                                                    resolve({hash:null,block:null})
-                                                }
-                                            }
-                                        });
-                                    }))
-                                }
-                            Promise.all(promises).then(values =>{
-                                hiveClient.api.setOptions({ url: config.clientURL });
-                                var newest = 0, votes = {}, blocks = {}
-                                for(var acc in values){
-                                    if(values[acc].block >= newest && !votes[values[acc].hash]){
-                                        newest = values[acc].block
-                                        votes[values[acc].hash] = 1
-                                        blocks[values[acc].hash] = values[acc].block
-                                    } else if(values[acc].block >= newest && votes[values[acc].hash]){
-                                        votes[values[acc].hash]++
-                                    }
-                                }
-                                var tally = 0, winner = null
-                                for(hash in votes){
-                                    if(votes[hash] >= tally && blocks[values[acc].hash] == newest){
-                                        tally = votes[hash]
-                                        var winner = hash
-                                    }
-                                }
-                                if(winner)startWith(winner, true)
-                                else startWith(hash, true)
-                                        return
-                            })
-                        }
-                    })
-                }
-        });
-        })
-        .catch(e=>{
-            console.log('error in ipfs', e)
-            process.exit(4)
-        })
-    } else {
-        startingBlock = config.starting_block
-        store.del([], function(e) {
-            if (e) { console.log({e}) }
-            store.put([], statestart, function(err) {
-                if (err) {
-                    console.log({err})
-                } else {
-                    store.get(['stats', 'hashLastIBlock'], function(error, returns) {
-                        if (!error) {
-                            console.log(`State Check:  ${returns}\nAccount: ${config.username}\nKey: ${config.active.substr(0,3)}...`)
-                        }
-                    })
-                    TXID.saveNumber = config.starting_block
-                    startApp()
-                }
-            })
-        })
-    }
-}
-
-function rundelta(arr, ops, sb, pr){
-    return new Promise((resolve, reject) => {
-        var promises = []
-        for (var i = 0; i < arr.length; i++){
-            promises.push(ipfspromise(arr[i].hash))
-            plasma.hashBlock = arr[i].hive_block
-            plasma.hashLastIBlock = arr[i].hash
-        }
-        Promise.all(promises).then(values => {
-            delta(values)
-            function delta(a){
-                if(a.length){
-                    console.log('Blocks to apply:', a.length)
-                    var b
-                    try {
-                        b = JSON.parse(a.shift())
-                        block.ops = []
-                        block.chain = b[1].chain
-                        block.prev_root = pr
-                        startingBlock = b[0]
-                        TXID.saveNumber = b[0]
-                        unwrapOps(b[1].ops).then(last=>{
-                            if(last.length){
-                            store.batch(last, [delta, reject, a ? a : []])
-                        } else delta(a ? a : [])
-                        })
-                    } catch(e) {
-                        resolve([])
-                    }
-                } else {
-                    console.log('Current Block')
-                    block.ops = []
-                    block.chain = arr
-                    block.prev_root = pr
-                    startingBlock = sb
-                    TXID.saveNumber = sb
-
-                    unwrapOps(ops).then(last=>{
-                    if(last.length){
-                        store.batch(last, [reorderOps, reject, a ? a : []])
-                    } else reorderOps()
-                    })
-                }
-                function reorderOps(){
-                    block.ops = ops
-                    resolve([])
-                }
-            }
-        })
-        .catch(e=>reject(e))
-    })
-}
-
-function unwrapOps(arr){
-    return new Promise((resolve, reject) => {
-        var d = []
-        if(arr[arr.length - 1] !== 'W')arr.push('W')
-
-        if(arr.length)write(0)
-        else resolve([])
-        function write (int){
-        d = []
-        for(var i = int; i < arr.length; i++){
-                var e = arr[i]
-                try {
-                    e = JSON.parse(e)
-                } catch(e){e = arr[i]}
-                if (e == 'W' && i == arr.length - 1){
-                    store.batch(d, [resolve, null, i+1])
-                    break
-                } else if (e == 'W'){
-                    store.batch(d, [write, null, i+1])
-                    break
-                } else d.push(e)
-            }
-        }
-})
-}
-
-function ipfspromise(hash){
-    return new Promise((resolve, reject) => {
-        ipfs.cat(hash, function(err, data) {
-            if (err) {
-                //console.log(err)
+  console.log(`${VERSION} =>\n ${hash} inserted`);
+  if (hash && hash != "pending") {
+    console.log(`Attempting to start from IPFS save state ${hash}`);
+    ipfspromise(hash)
+      .then((blockInfo) => {
+        var blockinfo = JSON.parse(blockInfo);
+        ipfspromise(blockinfo[1].root ? blockinfo[1].root : hash).then(
+          (file) => {
+            var data = JSON.parse(file);
+            startingBlock = data[0];
+            block.root = blockinfo[1].root ? blockinfo[1].root : hash;
+            block.prev_root = data[1].prev_root
+              ? data[1].prev_root
+              : data[1].stats.root || "";
+            console.log("root", block.root);
+            if (!startingBlock) {
+              startWith(sh);
             } else {
-                resolve(data)
+              store.del([], function (e) {
+                if (!e && (second || data[0] > API.RAM.head - 325)) {
+                  if (hash) {
+                    var cleanState = data[1];
+                    cleanState.stats.MSHeld = {
+                        "HBD": 1,
+                        "HIVE": 106000
+                    }
+                    store.put([], cleanState, function (err) {
+                      if (err) {
+                        console.log("errr", err);
+                      } else {
+                        if (blockinfo[1].chain) {
+                          rundelta(
+                            blockinfo[1].chain,
+                            blockinfo[1].ops,
+                            blockinfo[0],
+                            blockinfo[1].prev_root
+                          )
+                            .then((empty) => {
+                              const blockState = Buffer.from(
+                                stringify([startingBlock, block])
+                              );
+                              block.ops = [];
+                              issc(startingBlock, blockState, startApp, 0, 1);
+                              store.get(
+                                ["stats", "lastBlock"],
+                                function (error, returns) {
+                                  if (!error) {
+                                    console.log(
+                                      `State Check:  ${returns}\nAccount: ${
+                                        config.username
+                                      }\nKey: ${config.active.substr(0, 3)}...`
+                                    );
+                                    let info = API.coincheck(cleanState);
+                                    console.log("check", info.check);
+                                    if (
+                                      cleanState.stats.tokenSupply !=
+                                      info.supply
+                                    ) {
+                                      console.log("check", info.info);
+                                    }
+                                  }
+                                }
+                              );
+                              //getPathNum(['balances', 'ra']).then(r=>console.log(r))
+                            })
+                            .catch((e) => console.log("Failure of rundelta", e));
+                        } else {
+                          console.log("No Chain");
+                          TXID.saveNumber = startingBlock;
+                          startApp();
+                        }
+                      }
+                    });
+                  } else {
+                    store.put([], data[1], function (err) {
+                      if (err) {
+                        console.log(err);
+                      } else {
+                        store.get(
+                          ["balances", "ra"],
+                          function (error, returns) {
+                            if (!error) {
+                              console.log("there" + returns);
+                            }
+                          }
+                        );
+                        startApp();
+                      }
+                    });
+                  }
+                } else if (!second) {
+                  var promises = [];
+                  for (var runner in data[1].runners) {
+                    promises.push(
+                      new Promise((resolve, reject) => {
+                        console.log("runner", runner);
+                        hiveClient.api.setOptions({ url: config.startURL });
+                        hiveClient.api.getAccountHistory(
+                          runner,
+                          -1,
+                          100,
+                          ...walletOperationsBitmask,
+                          function (err, result) {
+                            var recents = { block: 0 };
+                            if (err) {
+                              console.log("error in retrieval");
+                              resolve({ hash: null, block: null });
+                            } else {
+                              let ebus = result.filter(
+                                (tx) =>
+                                  tx[1].op[1].id === `${config.prefix}report`
+                              );
+                              for (i = ebus.length - 1; i >= 0; i--) {
+                                if (JSON.parse(ebus[i][1].op[1].json).hash) {
+                                  if (
+                                    recents.block <
+                                    JSON.parse(ebus[i][1].op[1].json).block
+                                  ) {
+                                    recents = {
+                                      hash: JSON.parse(ebus[i][1].op[1].json)
+                                        .hash,
+                                      block: parseInt(
+                                        JSON.parse(ebus[i][1].op[1].json).block
+                                      ),
+                                    };
+                                  } else {
+                                    recents[0] = {
+                                      hash: JSON.parse(ebus[i][1].op[1].json)
+                                        .hash,
+                                      block: parseInt(
+                                        JSON.parse(ebus[i][1].op[1].json).block
+                                      ),
+                                    };
+                                  }
+                                }
+                              }
+                              if (recents.block) {
+                                resolve(recents);
+                              } else {
+                                console.log("error in processing");
+                                resolve({ hash: null, block: null });
+                              }
+                            }
+                          }
+                        );
+                      })
+                    );
+                  }
+                  Promise.all(promises).then((values) => {
+                    hiveClient.api.setOptions({ url: config.clientURL });
+                    var newest = 0,
+                      votes = {},
+                      blocks = {};
+                    for (var acc in values) {
+                      if (
+                        values[acc].block >= newest &&
+                        !votes[values[acc].hash]
+                      ) {
+                        newest = values[acc].block;
+                        votes[values[acc].hash] = 1;
+                        blocks[values[acc].hash] = values[acc].block;
+                      } else if (
+                        values[acc].block >= newest &&
+                        votes[values[acc].hash]
+                      ) {
+                        votes[values[acc].hash]++;
+                      }
+                    }
+                    var tally = 0,
+                      winner = null;
+                    for (hash in votes) {
+                      if (
+                        votes[hash] >= tally &&
+                        blocks[values[acc].hash] == newest
+                      ) {
+                        tally = votes[hash];
+                        var winner = hash;
+                      }
+                    }
+                    if (winner) startWith(winner, true);
+                    else startWith(hash, true);
+                    return;
+                  });
+                }
+              });
             }
-        })
-        fetch(`https://ipfs.io/ipfs/${hash}`)
-        .then(r=>r.text())
-        .then(res => {resolve(res)})
-        .catch(e=>{fetch(`https://ipfs.infura.io/ipfs/${hash}`)
-        .then(r=>r.text())
-        .then(res => {resolve(res)})
-        .catch(e=>reject(e))})
-    })
+          }
+        );
+      })
+      .catch((e) => {
+        console.log("error in ipfs", e);
+        process.exit(4);
+      });
+  } else {
+    startingBlock = config.starting_block;
+    store.del([], function (e) {
+      if (e) {
+        console.log({ e });
+      }
+      store.put([], statestart, function (err) {
+        if (err) {
+          console.log({ err });
+        } else {
+          store.get(["stats", "hashLastIBlock"], function (error, returns) {
+            if (!error) {
+              console.log(
+                `State Check:  ${returns}\nAccount: ${
+                  config.username
+                }\nKey: ${config.active.substr(0, 3)}...`
+              );
+            }
+          });
+          TXID.saveNumber = config.starting_block;
+          startApp();
+        }
+      });
+    });
+  }
 }
 
-function issc(n,b,i,r,a){
-    ipfsSaveState(n,b,i,r,a)
-    .then(pla => {
-        TXID.saveNumber = pla.hashBlock
-        block.chain.push({hash: pla.hashLastIBlock, hive_block: n - a})
-        plasma.hashSecIBlock = plasma.hashLastIBlock
-        plasma.hashLastIBlock = pla.hashLastIBlock
-        plasma.hashBlock = pla.hashBlock
-        if(block.chain.length > 2 && block.chain[block.chain.length - 2].hive_block < block.chain[block.chain.length - 1].hive_block - 100){
-            exit(block.chain[block.chain.length - 2].hash, 'Chain Out Of Order')
-        } else if (typeof i == 'function'){console.log('Requesting Blocks from:', config.clientURL);i()}
+function rundelta(arr, ops, sb, pr) {
+  return new Promise((resolve, reject) => {
+    var promises = [];
+    for (var i = 0; i < arr.length; i++) {
+      promises.push(ipfspromise(arr[i].hash));
+      plasma.hashBlock = arr[i].hive_block;
+      plasma.hashLastIBlock = arr[i].hash;
+    }
+    Promise.all(promises)
+      .then((values) => {
+        delta(values);
+        function delta(a) {
+          if (a.length) {
+            console.log("Blocks to apply:", a.length);
+            var b;
+            try {
+              b = JSON.parse(a.shift());
+              block.ops = [];
+              block.chain = b[1].chain;
+              block.prev_root = pr;
+              startingBlock = b[0];
+              TXID.saveNumber = b[0];
+              unwrapOps(b[1].ops).then((last) => {
+                if (last.length) {
+                  store.batch(last, [delta, reject, a ? a : []]);
+                } else delta(a ? a : []);
+              });
+            } catch (e) {
+              resolve([]);
+            }
+          } else {
+            console.log("Current Block");
+            block.ops = [];
+            block.chain = arr;
+            block.prev_root = pr;
+            startingBlock = sb;
+            TXID.saveNumber = sb;
+            unwrapOps(ops).then((last) => {
+              if (last.length) {
+                store.batch(last, [reorderOps, reject, a ? a : []]);
+              } else reorderOps();
+            });
+          }
+          function reorderOps() {
+            block.ops = ops;
+            resolve([]);
+          }
+        }
+      })
+      .catch((e) => reject(e));
+  });
+}
+
+function unwrapOps(arr) {
+  return new Promise((resolve, reject) => {
+    var d = [];
+    if (arr[arr.length - 1] !== "W") arr.push("W");
+    if (arr.length) write(0);
+    else resolve([]);
+    function write(int) {
+      d = [];
+      for (var i = int; i < arr.length; i++) {
+        var e = arr[i];
+        try {
+          e = JSON.parse(e);
+        } catch (e) {
+          e = arr[i];
+        }
+        if (e == "W" && i == arr.length - 1) {
+          store.batch(d, [resolve, null, i + 1]);
+          break;
+        } else if (e == "W") {
+          store.batch(d, [write, null, i + 1]);
+          break;
+        } else d.push(e);
+      }
+    }
+  });
+}
+
+function ipfspromise(hash) {
+  return new Promise((resolve, reject) => {
+    const ipfslinks = [
+      "https://ipfs:8080/ipfs/",
+      "https://ipfs.io/ipfs/",
+      "https://ipfs.infura.io/ipfs/",
+    ];
+    if (config.ipfshost == "ipfs") {
+      catIPFS(hash, 0, ipfslinks);
+    } else {
+      catIPFS(hash, 1, ipfslinks);
+    }
+    function catIPFS(hash, i, arr) {
+      fetch(arr[i] + hash)
+        .then((r) => r.text())
+        .then((res) => {
+          if (res.split("")[0] == "<") throw Error("HTML");
+          else resolve(res);
+        })
+        .catch((e) => {
+          if (i < arr.length - 1) {
+            catIPFS(hash, i + 1, ipfslinks);
+          } else {
+            reject(e);
+          }
+        });
+    }
+  });
+}
+
+function issc(n, b, i, r, a) {
+  ipfsSaveState(n, b, i, r, a)
+    .then((pla) => {
+      TXID.saveNumber = pla.hashBlock;
+      block.chain.push({ hash: pla.hashLastIBlock, hive_block: n - a });
+      plasma.hashSecIBlock = plasma.hashLastIBlock;
+      plasma.hashLastIBlock = pla.hashLastIBlock;
+      plasma.hashBlock = pla.hashBlock;
+      if (
+        block.chain.length > 2 &&
+        block.chain[block.chain.length - 2].hive_block <
+          block.chain[block.chain.length - 1].hive_block - 100
+      ) {
+        exit(block.chain[block.chain.length - 2].hash, "Chain Out Of Order");
+      } else if (typeof i == "function") {
+        console.log("Requesting Blocks from:", config.clientURL);
+        i();
+      }
     })
-    .catch(e => { if(r<2){console.log('Retrying IPFS Save');setTimeout(()=>{issc(n,b,i,r++, a)}, 1000)}else{exit(plasma.hashLastIBlock, 'IPFS Save Failed')} })
+    .catch((e) => {
+      if (r < 2) {
+        console.log("Retrying IPFS Save");
+        setTimeout(() => {
+          issc(n, b, i, r++, a);
+        }, 1000);
+      } else {
+        exit(plasma.hashLastIBlock, "IPFS Save Failed");
+      }
+    });
 }
