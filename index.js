@@ -1,5 +1,5 @@
 const config = require('./config');
-const VERSION = 'v1.2.8r'
+const VERSION = 'v1.2.8'
 exports.VERSION = VERSION
 exports.exit = exit;
 exports.processor = processor;
@@ -131,8 +131,8 @@ exports.processor = processor
 //HIVE API CODE
 
 //Start Program Options   
-//dynStart()
-startWith("QmZiL1qa5zkU5DG2Kc2uZUa46UZJ9qdKAwexhc5WbKSpHW", true);
+dynStart()
+//startWith("QmZiL1qa5zkU5DG2Kc2uZUa46UZJ9qdKAwexhc5WbKSpHW", true);
 Watchdog.monitor()
 
 // API defs
@@ -727,10 +727,6 @@ function startWith(hash, second) {
                 if (!e && (second || data[0] > API.RAM.head - 325)) {
                   if (hash) {
                     var cleanState = data[1];
-                    cleanState.stats.MSHeld = {
-                        "HBD": 1,
-                        "HIVE": 106000
-                    }
                     store.put([], cleanState, function (err) {
                       if (err) {
                         console.log("errr", err);
