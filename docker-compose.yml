@@ -2,7 +2,7 @@ version: '3'
 services:
   ipfs:
     # docker run -d --name ipfs_host -v $ipfs_staging:/export -v $ipfs_data:/data/ipfs -p 4001:4001 -p 127.0.0.1:8080:8080 -p 127.0.0.1:5001:5001 ipfs/go-ipfs:latest
-    image: ipfs/go-ipfs:latest
+    image: ipfs/kubo:latest
     restart: unless-stopped
     ports:
       - 4001:4001
@@ -18,6 +18,8 @@ services:
       - ./staging_dir:/export
       # - ./data_dir:/data/ipfs
       - ipfs:/data/ipfs
+    networks:
+      - honeycomb
   honeycomb:
     # depends_on:
     #   - ipfs
@@ -37,6 +39,8 @@ services:
     # tty: true
     stdin_open: true
     tty: true
+    networks:
+      - honeycomb
   # node-2:
   #   image: ipfs/go-ipfs:latest
   #   build:
@@ -67,3 +71,6 @@ volumes:
   ipfs:
   # node-2:
   # node-3:
+
+networks:
+  honeycomb:

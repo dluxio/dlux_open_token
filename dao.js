@@ -607,7 +607,7 @@ function accountUpdate(stats, nodes, arr){
         if(stats.ms.active_account_auths[arr[i]] != 1)differrent = true
     }
     if((same && current >= 3) || !differrent || arr.length < 2)return
-    if(arr.length > 3)arr = [arr[0], arr[1], arr[2]]
+    //if(arr.length > 3)arr = [arr[0], arr[1], arr[2]]
     var updateOp = {
     "account": config.msaccount,
     "active": {

@@ -1,9 +1,7 @@
 const config = require('./../config')
-const { store } = require("./../index");
-const { getPathObj, deleteObjs } = require("./../getPathObj");
-//const { postToDiscord } = require('./../discord')
-//const { chronAssign } = require('./../lil_ops')
-const { verify_broadcast } = require('./../tally')
+const { store, Owners } = require("./../index");
+const { getPathObj } = require("./../getPathObj");
+const { verify_broadcast, verify_sig } = require("./../tally");
 
 exports.account_update = (json, pc) => {
     if(json.account == config.msaccount){
@@ -37,7 +35,10 @@ exports.account_update = (json, pc) => {
             if(json.memo_key) ops.push({type:'put', path:['stats', 'ms', 'memo_key'], data: json.memo_key})
             ops.push({type:'del', path:['msso']})
             store.batch(ops, pc)
-        }
+        } 
+    } else if (json.active && Owners.is(json.account)) {
+        Owners.activeUpdate(json.account, json.active.account_auths[0][0]);
+        pc[0](pc[2])
     } else {
         pc[0](pc[2])
     }

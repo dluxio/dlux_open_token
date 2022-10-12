@@ -1,5 +1,5 @@
 const config = require('./config');
-const VERSION = 'v1.2.8'
+const VERSION = 'v1.3.0'
 exports.VERSION = VERSION
 exports.exit = exit;
 exports.processor = processor;
@@ -13,18 +13,18 @@ var block = {
     chain:[]
 }
 exports.block = block
-const args = require('minimist')(process.argv.slice(2));
 const express = require('express');
 const stringify = require('json-stable-stringify');
-const IPFS = require('ipfs-api'); //ipfs-http-client doesn't work
+const IPFS = require("ipfs-http-client-lite"); //ipfs-http-client doesn't work
 const fetch = require('node-fetch');
-var ipfs = new IPFS({    
-    host: config.ipfshost,
-    port: config.ipfsport,
-    protocol: config.ipfsprotocol
-})
-console.log(`IPFS: ${config.ipfshost == 'ipfs' ? 'DockerIPFS' : config.ipfshost}:${config.ipfsport}`)
-exports.ipfs = ipfs;
+var ipfs = IPFS(
+  `${config.ipfsprotocol}://${config.ipfshost}:${config.ipfsport}`
+);
+console.log(
+  `IPFS: ${config.ipfshost == "ipfs" ? "DockerIPFS" : config.ipfshost}:${
+    config.ipfsport
+  }`
+);exports.ipfs = ipfs;
 const rtrades = require('./rtrades');
 var Pathwise = require('./pathwise');
 var level = require('level');
@@ -49,12 +49,10 @@ var plasma = {
         page: [],
         hashLastIBlock: 0,
         hashSecIBlock: 0
-            //pagencz: []
     },
     jwt;
 exports.plasma = plasma
 var NodeOps = [];
-//aare these used still?
 exports.GetNodeOps = function() { return NodeOps }
 exports.newOps = function(array) { NodeOps = array }
 exports.unshiftOp = function(op) { NodeOps.unshift(op) }
@@ -100,6 +98,43 @@ let TXID = {
 }},
 }
 exports.TXID = TXID
+let owners = {};
+let Owners = {
+  is: function (acc) {
+    if (owners[acc]) return 1;
+    else return 0;
+  },
+  activeUpdate: function (acc, key) {
+    delete owners[owners[acc]];
+    owners[acc].key = key;
+  },
+  getKey: function (acc) {
+    return owners[acc].key;
+  },
+  getAKey: function (i = 0) {
+    return Object.keys(owners)[i];
+  },
+  numKeys: function () {
+    return Object.keys(owners).length;
+  },
+  init: function () {
+    getPathObj(["stats", "ms", "active_account_auths"]).then((auths) => {
+      var q = [];
+      for (var key in auths) {
+        q.push(key);
+      }
+      const { Hive } = require("./hive");
+      Hive.getAccounts(q).then((r) => {
+        owners = {};
+        for (var i = 0; i < r.length; i++) {
+          owners[r[i].account] = { key: r[i].active.key_auths[0][0] };
+        }
+      });
+    });
+  },
+};
+
+exports.Owners = Owners;
 const API = require('./routes/api');
 const HR = require('./processing_routes/index')
 const { NFT, Chron, Watchdog } = require('./helpers');
@@ -119,11 +154,8 @@ const api = express()
 var http = require('http').Server(api);
 var escrow = false;
 exports.escrow = escrow;
-//const wif = hiveClient.auth.toWif(config.username, config.active, 'active')
 var startingBlock = config.starting_block
-    //var current
-    //exports.current = current
-const streamMode = config.stream || 'irreversible';
+const streamMode = 'irreversible';
 console.log("Streaming using mode", streamMode);
 var processor;
 exports.processor = processor
@@ -132,7 +164,7 @@ exports.processor = processor
 
 //Start Program Options   
 dynStart()
-//startWith("QmZiL1qa5zkU5DG2Kc2uZUa46UZJ9qdKAwexhc5WbKSpHW", true);
+//startWith("Qmb3n7KhfgZNqRQfXLwJSrDEBTaYCxLcKLnU9dbD8VHRkq", true);
 Watchdog.monitor()
 
 // API defs
@@ -211,12 +243,13 @@ if (config.rta && config.rtp) {
 
 //starts block processor after memory has been loaded
 function startApp() {
+    Owners.init();
     TXID.blocknumber = 0
     if(config.ipfshost == 'ipfs')ipfs.id(function (err, res) {
         if(err){}
         if(res)plasma.id = res.id
     })
-    processor = hiveState(client, hive, startingBlock, 10, config.prefix, streamMode, cycleAPI);
+    processor = hiveState(client, startingBlock, config.prefix);
     processor.on('send', HR.send);
     processor.on('claim', HR.claim);
     processor.on('node_add', HR.node_add);
@@ -840,7 +873,7 @@ function startWith(hash, second) {
                               if (recents.block) {
                                 resolve(recents);
                               } else {
-                                console.log("error in processing");
+                                console.log("error in processing", runner);
                                 resolve({ hash: null, block: null });
                               }
                             }
@@ -1003,11 +1036,7 @@ function unwrapOps(arr) {
 
 function ipfspromise(hash) {
   return new Promise((resolve, reject) => {
-    const ipfslinks = [
-      "https://ipfs:8080/ipfs/",
-      "https://ipfs.io/ipfs/",
-      "https://ipfs.infura.io/ipfs/",
-    ];
+    const ipfslinks = config.ipfsLinks;
     if (config.ipfshost == "ipfs") {
       catIPFS(hash, 0, ipfslinks);
     } else {
@@ -1017,14 +1046,17 @@ function ipfspromise(hash) {
       fetch(arr[i] + hash)
         .then((r) => r.text())
         .then((res) => {
-          if (res.split("")[0] == "<") throw Error("HTML");
-          else resolve(res);
+          if (res.split("")[0] == "<") {
+            console.log("HTML IPFS reply", res);
+            catIPFS(hash, i + 1, ipfslinks);
+          } else resolve(res);
         })
         .catch((e) => {
           if (i < arr.length - 1) {
             catIPFS(hash, i + 1, ipfslinks);
           } else {
-            reject(e);
+            console.log("End of IPFS tries");
+            //reject(e);
           }
         });
     }
@@ -1032,6 +1064,7 @@ function ipfspromise(hash) {
 }
 
 function issc(n, b, i, r, a) {
+  const chain = JSON.parse(b.toString())[1].chain;
   ipfsSaveState(n, b, i, r, a)
     .then((pla) => {
       TXID.saveNumber = pla.hashBlock;
@@ -1040,9 +1073,12 @@ function issc(n, b, i, r, a) {
       plasma.hashLastIBlock = pla.hashLastIBlock;
       plasma.hashBlock = pla.hashBlock;
       if (
-        block.chain.length > 2 &&
-        block.chain[block.chain.length - 2].hive_block <
-          block.chain[block.chain.length - 1].hive_block - 100
+        (block.chain.length > 2 &&
+          block.chain[block.chain.length - 2].hive_block <
+            block.chain[block.chain.length - 1].hive_block - 100) ||
+        (chain.length > block.chain.length &&
+          block.chain[block.chain.length - 1].hash !=
+            chain[block.chain.length - 1].hash)
       ) {
         exit(block.chain[block.chain.length - 2].hash, "Chain Out Of Order");
       } else if (typeof i == "function") {

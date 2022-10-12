@@ -761,8 +761,8 @@ exports.nft_sell = function(json, from, active, pc) {
     .then(mem => {
         if (mem[0].s && !mem[0].l && active){
                 var ls = mem[1], nft = mem[0], set = mem[2], div = mem[3], h = config.TOKEN
-                if(json?.type.toUpperCase() == 'HIVE')h = 'HIVE'
-                else if (json?.type.toUpperCase() == 'HBD')h = 'HBD'
+                if(json?.type?.toUpperCase() == 'HIVE')h = 'HIVE'
+                else if (json?.type?.toUpperCase() == 'HBD')h = 'HBD'
                 var p = json.price || 1000
                     var listing = {
                             p, //starting price
