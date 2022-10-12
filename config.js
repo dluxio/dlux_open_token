@@ -51,16 +51,18 @@ const ipfsprotocol = ENV.ipfsprotocol || 'https' //IPFS upload/download protocol
 const bidRate = ENV.BIDRATE || 2500 //
 
 //HIVE CONFIGS
-var startURL = ENV.STARTURL || "https://rpc.ecency.com/"
-var clientURL = ENV.APIURL || "https://rpc.ecency.com/"
-const clients = ENV.clients || [
-    "https://api.deathwing.me/",
-    //"https://api.c0ff33a.uk/",
-    //"https://rpc.ecency.com/",
-    "https://hived.emre.sh/",
-    //"https://rpc.ausbit.dev/",
-    "https://api.hive.blog/"
-]
+var startURL = ENV.STARTURL || "https://hive-api.dlux.io/"
+var clientURL = ENV.APIURL || "https://hive-api.dlux.io/";
+const clients = ENV.clients
+  ? ENV.clients.split(" ")
+  : [
+      "https://api.deathwing.me/",
+      "https://hive-api.dlux.io/",
+      "https://rpc.ecency.com/",
+      "https://hived.emre.sh/",
+      "https://rpc.ausbit.dev/",
+      "https://api.hive.blog/",
+    ];
 
 //!!!!!!! -- THESE ARE COMMUNITY CONSTANTS -- !!!!!!!!!//
 //TOKEN CONFIGS -- ALL COMMUNITY RUNNERS NEED THESE SAME VALUES
