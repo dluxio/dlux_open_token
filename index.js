@@ -742,8 +742,6 @@ function startWith(hash, second) {
                 if (!e && (second || data[0] > API.RAM.head - 325)) {
                   if (hash) {
                     var cleanState = data[1];
-                    cleanState.stats.MSHeld.HBD = 0
-                    cleanState.stats.MSHeld.HIVE = 0;
                     store.put([], cleanState, function (err) {
                       if (err) {
                         console.log("errr", err);
@@ -1047,7 +1045,7 @@ function ipfspromise(hash) {
   });
 }
 
-function issc(n, b, i, r, a) {
+function issc(n, b, i, r, a) { //ipfs save state command
   const chain = JSON.parse(b.toString())[1].chain;
   ipfsSaveState(n, b, i, r, a)
     .then((pla) => {
