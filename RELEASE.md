@@ -2,6 +2,10 @@
 
 ## 1.3
 
+### 1.3.2
+
+* Remove artifacts
+
 ### 1.3.1
 
 * Fix signature verification

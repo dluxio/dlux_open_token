@@ -1642,6 +1642,7 @@ exports.coincheck = (state) => {
                 gov += state.gov[bal]
             }
         }
+        console.log(Object.keys(state))
         var pow = 0,
             powt = state.pow.t
         for (bal in state.pow) {

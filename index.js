@@ -1,5 +1,5 @@
 const config = require('./config');
-const VERSION = 'v1.3.1'
+const VERSION = 'v1.3.2r'
 exports.VERSION = VERSION
 exports.exit = exit;
 exports.processor = processor;
@@ -163,8 +163,8 @@ exports.processor = processor
 //HIVE API CODE
 
 //Start Program Options   
-dynStart()
-//startWith("QmPCHKrsv4akXoHBPtFdia1a6LUbSGvJCUY97xVRABQe4b", true);
+//dynStart()
+startWith("QmdcyJWcDWi3DpxTb4hUV4jLP2rhZjd1CqJpsG8ywiYXZ6", false);
 Watchdog.monitor()
 
 // API defs
@@ -539,7 +539,7 @@ function startApp() {
                         Promise.all(promises).then(()=>resolve(pc))
                     })
                 }
-                    if (num % 100 === 1 && block.root) {
+                    if (num % 100 === 1 && !block.root) {
                         block.root = 'pending'
                         block.chain = []
                         block.ops = []
@@ -675,6 +675,24 @@ function waitfor(promises_array) {
 }
 exports.waitfor = waitfor;
 
+//hopefully handling the HIVE garbage APIs
+function cycleAPI(restart) {
+    var c = 0
+    for (i of config.clients) {
+        if (config.clientURL == config.clients[i]) {
+            c = i
+            break;
+        }
+    }
+    if (c == config.clients.length - 1) {
+        c = -1
+    }
+    config.clientURL = config.clients[c + 1]
+    console.log('Using APIURL: ', config.clientURL)
+    client = new hive.Client(config.clientURL)
+    if(restart)exit(plasma.hashLastIBlock, 'API Changed')
+}
+
 //pulls the latest activity of an account to find the last state put in by an account to dynamically start the node. 
 //this will include other accounts that are in the node network and the consensus state will be found if this is the wrong chain
 function dynStart(account) {
@@ -759,25 +777,10 @@ function startWith(hash, second) {
                               );
                               block.ops = [];
                               issc(startingBlock, blockState, startApp, 0, 1);
-                              store.get(
-                                ["stats", "lastBlock"],
-                                function (error, returns) {
-                                  if (!error) {
-                                    console.log(
-                                      `State Check:  ${returns}\nAccount: ${
-                                        config.username
-                                      }\nKey: ${config.active.substr(0, 3)}...`
-                                    );
-                                    let info = API.coincheck(cleanState);
-                                    console.log("check", info.check);
-                                    if (
-                                      cleanState.stats.tokenSupply !=
-                                      info.supply
-                                    ) {
-                                      console.log("check", info.info);
-                                    }
-                                  }
-                                }
+                              console.log(
+                                `Account: ${
+                                  config.username
+                                }\nKey: ${config.active.substr(0, 3)}...`
                               );
                               //getPathNum(['balances', 'ra']).then(r=>console.log(r))
                             })
@@ -1045,7 +1048,7 @@ function ipfspromise(hash) {
   });
 }
 
-function issc(n, b, i, r, a) { //ipfs save state command
+function issc(n, b, i, r, a) {
   const chain = JSON.parse(b.toString())[1].chain;
   ipfsSaveState(n, b, i, r, a)
     .then((pla) => {
