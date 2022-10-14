@@ -615,3 +615,19 @@ const Watchdog = {
 }
 
 exports.Watchdog = Watchdog
+
+var log = {
+  last: 0,
+  block: function (num) {
+    if (log.last + 1 == num || !log.last) {
+      log.last = num;
+      console.log(`${num}`);
+    } else {
+      log.last = num;
+      console.log(`${num} WARNING`);
+      process.exit(111)
+    }
+  },
+};
+
+exports.Log = log;

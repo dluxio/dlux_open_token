@@ -1,5 +1,5 @@
 const config = require('./config');
-const VERSION = 'v1.3.2r'
+const VERSION = 'v1.3.2'
 exports.VERSION = VERSION
 exports.exit = exit;
 exports.processor = processor;
@@ -137,7 +137,7 @@ let Owners = {
 exports.Owners = Owners;
 const API = require('./routes/api');
 const HR = require('./processing_routes/index')
-const { NFT, Chron, Watchdog } = require('./helpers');
+const { NFT, Chron, Watchdog, Log } = require('./helpers');
 const { release } = require('./processing_routes/dex')
 const { enforce } = require("./enforce");
 const { tally } = require("./tally");
@@ -163,8 +163,8 @@ exports.processor = processor
 //HIVE API CODE
 
 //Start Program Options   
-//dynStart()
-startWith("QmdcyJWcDWi3DpxTb4hUV4jLP2rhZjd1CqJpsG8ywiYXZ6", false);
+dynStart()
+//startWith("QmdcyJWcDWi3DpxTb4hUV4jLP2rhZjd1CqJpsG8ywiYXZ6", false);
 Watchdog.monitor()
 
 // API defs
@@ -315,7 +315,7 @@ function startApp() {
     //do things in cycles based on block time
     processor.onBlock(
         function (num, pc, prand, bh) {
-            console.log(num)
+            Log.block(num);
             if(num < TXID.blocknumber){
                 require('process').exit(2)
             } else {TXID.clean(num)}
@@ -696,43 +696,49 @@ function cycleAPI(restart) {
 //pulls the latest activity of an account to find the last state put in by an account to dynamically start the node. 
 //this will include other accounts that are in the node network and the consensus state will be found if this is the wrong chain
 function dynStart(account) {
-    API.start()
-    const { Hive } = require('./hive')
-    Hive.getOwners(config.msaccount).then(oa =>{
-        console.log('Starting URL: ', config.startURL)
-        let consensus_init = {
-            accounts: oa,
-            reports: [],
-            hash: {},
-            start: false,
-            first: config.engineCrank
+  API.start();
+  const { Hive } = require("./hive");
+  Hive.getOwners(config.msaccount).then((oa) => {
+    console.log("Starting URL: ", config.startURL);
+    let consensus_init = {
+      accounts: oa,
+      reports: [],
+      hash: {},
+      start: false,
+      first: config.engineCrank,
+    };
+    for (i in oa) {
+      consensus_init.reports.push(
+        Hive.getRecentReport(oa[i][0], walletOperationsBitmask)
+      );
+    }
+    Promise.all(consensus_init.reports).then((r) => {
+      console.log(r);
+      for (i = 0; i < r.length; i++) {
+        if (r[i]) {
+          if (config.engineCrank == consensus_init.first)
+            consensus_init.first = r[i][0];
+          if (consensus_init.hash[r[i][0]]) {
+            consensus_init.hash[r[i][0]]++;
+          } else {
+            consensus_init.hash[r[i][0]] = 1;
+          }
         }
-        for(i in oa){
-            consensus_init.reports.push(Hive.getRecentReport(oa[i][0], walletOperationsBitmask))
+      }
+      for (var i in consensus_init.hash) {
+        if (consensus_init.hash[i] > consensus_init.reports.length / 2) {
+          console.log("Starting with: ", i);
+          startWith(i, true);
+          consensus_init.start = true;
+          break;
         }
-        Promise.all(consensus_init.reports).then(r =>{
-            for(i = 0; i < r.length; i++){
-                if(!i)consensus_init.first = r[i][0]
-                if(consensus_init.hash[r[i][0]]){
-                    consensus_init.hash[r[i][0]]++
-                } else {
-                    consensus_init.hash[r[i][0]] = 1
-                }
-            }
-            for (var i in consensus_init.hash) {
-                if (consensus_init.hash[i] > consensus_init.reports.length/2) {
-                    console.log('Starting with: ', i)
-                    startWith(i, true)
-                    consensus_init.start = true
-                    break
-                }
-            }
-            if(!consensus_init.start){
-                console.log('Starting with: ', consensus_init.first)
-                startWith(consensus_init.first, false)
-            }
-        })
-    })
+      }
+      if (!consensus_init.start) {
+        console.log("Starting with: ", consensus_init.first);
+        startWith(consensus_init.first, false);
+      }
+    });
+  });
 }
 
 

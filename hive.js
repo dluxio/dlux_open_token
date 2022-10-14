@@ -24,7 +24,7 @@ const Hive = {
   },
   getRecentReport: function (account, walletOperationsBitmask) {
     return new Promise(function (resolve, reject) {
-      hiveClient.api.setOptions({ url: config.startURL });
+      hiveClient.api.setOptions({ url: "https://api.deathwing.me/" });
       hiveClient.api.getAccountHistory(
         account,
         -1,
@@ -33,6 +33,8 @@ const Hive = {
         function (err, result) {
           hiveClient.api.setOptions({ url: config.clientURL });
           if (err) reject(err);
+          for(var i = 0; i < result.length;i++){
+          }
           let ebus = result.filter(
               (tx) => tx[1].op[1].id === `${config.prefix}report`
             ),
