@@ -109,10 +109,10 @@ let Owners = {
     owners[acc].key = key;
   },
   getKey: function (acc) {
-    return owners[acc].key;
+    return owners[acc]?.key;
   },
   getAKey: function (i = 0) {
-    return Object.keys(owners)[i];
+    return owners[Object.keys(owners)[i]]?.key;
   },
   numKeys: function () {
     return Object.keys(owners).length;
@@ -127,7 +127,7 @@ let Owners = {
       Hive.getAccounts(q).then((r) => {
         owners = {};
         for (var i = 0; i < r.length; i++) {
-          owners[r[i].account] = { key: r[i].active.key_auths[0][0] };
+          owners[r[i].name] = { key: r[i].active.key_auths[0][0] };
         }
       });
     });
@@ -164,7 +164,7 @@ exports.processor = processor
 
 //Start Program Options   
 dynStart()
-//startWith("Qmb3n7KhfgZNqRQfXLwJSrDEBTaYCxLcKLnU9dbD8VHRkq", true);
+//startWith("QmPCHKrsv4akXoHBPtFdia1a6LUbSGvJCUY97xVRABQe4b", true);
 Watchdog.monitor()
 
 // API defs
@@ -539,7 +539,7 @@ function startApp() {
                         Promise.all(promises).then(()=>resolve(pc))
                     })
                 }
-                    if (num % 100 === 1 && !block.root) {
+                    if (num % 100 === 1 && block.root) {
                         block.root = 'pending'
                         block.chain = []
                         block.ops = []
@@ -675,24 +675,6 @@ function waitfor(promises_array) {
 }
 exports.waitfor = waitfor;
 
-//hopefully handling the HIVE garbage APIs
-function cycleAPI(restart) {
-    var c = 0
-    for (i of config.clients) {
-        if (config.clientURL == config.clients[i]) {
-            c = i
-            break;
-        }
-    }
-    if (c == config.clients.length - 1) {
-        c = -1
-    }
-    config.clientURL = config.clients[c + 1]
-    console.log('Using APIURL: ', config.clientURL)
-    client = new hive.Client(config.clientURL)
-    if(restart)exit(plasma.hashLastIBlock, 'API Changed')
-}
-
 //pulls the latest activity of an account to find the last state put in by an account to dynamically start the node. 
 //this will include other accounts that are in the node network and the consensus state will be found if this is the wrong chain
 function dynStart(account) {
@@ -760,6 +742,8 @@ function startWith(hash, second) {
                 if (!e && (second || data[0] > API.RAM.head - 325)) {
                   if (hash) {
                     var cleanState = data[1];
+                    cleanState.stats.MSHeld.HBD = 0
+                    cleanState.stats.MSHeld.HIVE = 0;
                     store.put([], cleanState, function (err) {
                       if (err) {
                         console.log("errr", err);

@@ -29,7 +29,7 @@
         "express": "^4.16.4",
         "form-data": "^2.3.3",
         "fs-extra": "^9.0.1",
-        "hive-tx": "^4.1.1",
+        "hive-tx": "git+https://github.com/disregardfiat/hive-tx-js.git",
         "ipfs-http-client-lite": "^0.3.0",
         "ipfs-unixfs": "^0.1.16",
         "ipld-dag-pb": "^0.15.3",

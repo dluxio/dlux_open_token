@@ -27,7 +27,7 @@ module.exports = function (
           getBlockNumber(nextBlock);
           if (!(last % 3))
             getHeadOrIrreversibleBlockNumber(function (result) {
-              if (nextBlock < result - 3) {
+              if (nextBlock < result - 5) {
                 behind = result - nextBlock;
                 beginBlockComputing();
               } else if (!isStreaming) {
@@ -175,14 +175,16 @@ module.exports = function (
           })
           .catch((err) => {
             if (at < 3) {
-              gb(bn, at + 1);
+              setTimeout(() => {
+                gbr(bln, at + 1);
+              }, Math.pow(10, at + 1));
             } else {
                 console.log('Get block attempt:', at, client.currentAddress)
             }
           });
       } else {
         setTimeout(() => {
-          gb(bln, at);
+          gb(bln, at + 1);
         }, 1000);
       }
     }
@@ -233,7 +235,7 @@ module.exports = function (
           })
           .catch((err) => {
             if (at < 3) {
-              gb(bn, at);
+              setTimeout(()=>{gb(bn, at + 1);},Math.pow(10, at + 1))
             } else {
               console.log("Get block range error", err);
             }

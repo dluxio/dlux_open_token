@@ -1,8 +1,18 @@
+# Release Notes
+
 ## 1.3
+
+### 1.3.1
+
+* Fix signature verification
+* Fix Auto-Healing Consensus
+* Backoff timer in processor retries
+
+### 1.3.0
 
 * Can Add IPFS Node API
 * Ensure Consensus has a majority of owners (double majority)
-* Ensure reassembled State is equivilent to Consensus
+* Ensure reassembled State is equivalent to Consensus
 * Allow for more than 3 Multi-Signature holders
 * Verify Signature without outside of HiveAPI
 * GetBlock Retry

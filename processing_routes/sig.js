@@ -1,7 +1,7 @@
 const config = require('./../config')
 const { store, Owners } = require("./../index");
 const { getPathObj } = require("./../getPathObj");
-const { verify_broadcast, verify_sig } = require("./../tally");
+const { verify_broadcast, verify_tx_sig } = require("./../tally");
 
 exports.account_update = (json, pc) => {
     if(json.account == config.msaccount){
@@ -58,15 +58,23 @@ exports.sig_submit = (json, from, active, pc) => {
                     msop = JSON.parse(msop)
                 } catch (e){}
             if (active && stats.ms.active_account_auths[from] && msop.expiration) {
-                sigs[from] = json.sig
-                if(Object.keys(sigs).length >= stats.ms.active_threshold){
-                    let sigarr = []
-                    for(var i in sigs){
-                        sigarr.push(sigs[i])
+                if(config.mode == 'verbose')console.log({sigs, from}, msop, json.sig, Owners.getKey(from))
+                if (verify_tx_sig(msop, json.sig, Owners.getKey(from))){
+                    if (config.mode == "verbose") console.log("VERIFIED");
+                    ops.push({
+                      type: "put",
+                      path: ["mss", `${json.sig_block}:sigs`],
+                      data: sigs,
+                    });
+                    sigs[from] = json.sig;
+                    if (Object.keys(sigs).length >= stats.ms.active_threshold) {
+                      let sigarr = [];
+                      for (var i in sigs) {
+                        sigarr.push(sigs[i]);
+                      }
+                      verify_broadcast(msop, sigarr, stats.ms.active_threshold);
                     }
-                    verify_broadcast(msop, sigarr, stats.ms.active_threshold)
                 }
-                ops.push({ type: 'put', path: ['mss', `${json.sig_block}:sigs`], data: sigs })
                 store.batch(ops, pc);
                 //try to sign
             } else {
