@@ -1,5 +1,5 @@
 const config = require('./config');
-const VERSION = 'v1.3.2'
+const VERSION = 'v1.3.2r2'
 exports.VERSION = VERSION
 exports.exit = exit;
 exports.processor = processor;
@@ -163,8 +163,8 @@ exports.processor = processor
 //HIVE API CODE
 
 //Start Program Options   
-dynStart()
-//startWith("QmdcyJWcDWi3DpxTb4hUV4jLP2rhZjd1CqJpsG8ywiYXZ6", false);
+//dynStart()
+startWith("QmfKNDRb5nNMz8b4TiXG4BRCV8gkWGq2DYX5S6aMx7efF9", false);
 Watchdog.monitor()
 
 // API defs

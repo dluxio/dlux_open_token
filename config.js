@@ -51,8 +51,8 @@ const ipfsprotocol = ENV.ipfsprotocol || 'https' //IPFS upload/download protocol
 const bidRate = ENV.BIDRATE || 2500 //
 
 //HIVE CONFIGS
-var startURL = ENV.STARTURL || "https://hive-api.dlux.io/"
-var clientURL = ENV.APIURL || "https://hive-api.dlux.io/";
+var startURL = ENV.STARTURL || "https://api.hive.blog/";
+var clientURL = ENV.APIURL || "https://api.hive.blog/";
 const clients = ENV.clients
   ? ENV.clients.split(" ")
   : [
