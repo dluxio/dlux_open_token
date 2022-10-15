@@ -1,5 +1,5 @@
 const config = require('./config');
-const VERSION = 'v1.3.2r2'
+const VERSION = 'v1.3.3r'
 exports.VERSION = VERSION
 exports.exit = exit;
 exports.processor = processor;
@@ -164,7 +164,7 @@ exports.processor = processor
 
 //Start Program Options   
 //dynStart()
-startWith("QmfKNDRb5nNMz8b4TiXG4BRCV8gkWGq2DYX5S6aMx7efF9", false);
+startWith("QmXc5jfp2NzHV8kMtipHmKYa5aojtbyEmuW6XnavNppk9X", true); // 68780002
 Watchdog.monitor()
 
 // API defs

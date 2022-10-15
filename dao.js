@@ -388,9 +388,9 @@ function dao(num) {
                     }
                     for (var acc in dex.liq){
                         thisd = parseInt(liqt*(dex.liq[acc]/liqa))
-                        if(!bal[acc])bal[acc] = 0
-                        bal[acc] += thisd
-                        bal.rm -= thisd
+                        if(!bals[acc])bals[acc] = 0
+                        bals[acc] += thisd
+                        bals.rm -= thisd
                     }
                 }
                 delete dex.liq
