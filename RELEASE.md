@@ -4,6 +4,8 @@
 
 ### 1.4.0
 
+* Allow for API address updates via configuration
+
 ## 1.3
 
 ### 1.3.3

@@ -6,7 +6,7 @@ exports.onStreamingStart = () => {
     console.log("At real time.");
     TXID.current()
     store.get(['markets', 'node', config.username], function(e, a) {
-        if (!a.domain && config.NODEDOMAIN) {
+        if ((!a.domain && config.NODEDOMAIN) || (a.domain != config.NODEDOMAIN)) {
             var mskey, mschallenge
             if(config.msowner && config.mspublic){
                 mskey = config.mspublic
