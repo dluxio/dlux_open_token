@@ -4,7 +4,16 @@
 
 ### 1.4.0
 
+* Built 1.4 branch for community contributions
+
 ## 1.3
+
+### 1.3.4
+
+* Switch back to hive-tx after updates to package.
+* Retooling transaction verification and broadcasting
+* Quiet logging unless env.mode == 'verbose'
+* Fix error on account update logic
 
 ### 1.3.3
 

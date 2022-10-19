@@ -543,8 +543,10 @@ exports.verify_sig = isValidSig;
 function isValidTxSig(trx, sig, key) {
   const publicKey = hiveTx.PublicKey.from(key);
   const tx = new hiveTx.Transaction(trx);
-  const message = tx.digest()
-  return publicKey.verify(message, hiveTx.Signature.from(sig));
+  const message = tx.digest().digest
+  const valid = publicKey.verify(message, hiveTx.Signature.from(sig));
+  if(config.mode == 'verbose')console.log({trx, key, valid})
+  return valid
 }
 
 exports.verify_tx_sig = isValidTxSig;
@@ -555,10 +557,11 @@ function verify(trx, sig, at, active = true) {
         sendit(trx, sig, at);
 
         function sendit(tx, sg, t, f) {
-            console.log(sg)
+            if(config.mode == 'verbose')console.log(sg)
             if (sg.length >= t || !f) {
                 var signatures = [];
                 if (active) {
+                    console.log('active')
                     var k = [],
                         l = Owners.numKeys();
                     for (var i = 0; i < l; i++) {
@@ -566,7 +569,7 @@ function verify(trx, sig, at, active = true) {
                     }
                     for (var i = 0; i < sg.length; i++) {
                         for (var j = 0; j < k.length; j++) {
-                            if (isValidSig(tx, sg[i], Owners.getAKey(k[j]))) {
+                            if (isValidTxSig(tx, sg[i], Owners.getAKey(k[j]))) {
                                 k.splice(j, 1);
                                 signatures.push(sg[i]);
                                 break;
@@ -576,47 +579,38 @@ function verify(trx, sig, at, active = true) {
                     }
                     tx.signatures = signatures
                 } else {
+                    console.log('owner')
                     tx.signatures = sg;
                 }
                 if (tx.signatures.length == t && tx.operations.length) {
-                    hiveClient.api.verifyAuthority(tx, function (err, result) {
-                        if (err) {
-                            if (err.data.code == 4030100) {
-                                console.log("EXPIRED");
-                                resolve("EXPIRED");
-                            } else if (err.data.code == 3010000) {
-                                //missing authority
-                                console.log("MISSING");
-                                sendit(tx, sg, t, 1);
-                            } else if (err.data.code == 10) {
-                                //duplicate transaction
-                                console.log("SENT:Verifier");
+                    console.log('Attempting MS Broadcast...')
+                    hiveClient.api.broadcastTransactionSynchronous(
+                      tx,
+                      function (err, result) {
+                        if (err && err.data.code == 4030100) {
+                          console.log("EXPIRED");
+                          resolve("EXPIRED");
+                        } else if (err && err.data.code == 3010000) {
+                          //missing authority
+                          console.log("MISSING");
+                        } else if (err && err.data.code == 10) {
+                          //duplicate transaction
+                          console.log("SENT:Signer");
+                          resolve("SENT");
+                        } else {
+                            if(result){
+                                console.log('SENT:broadcaster')
                                 resolve("SENT");
                             } else {
-                                console.log(err.data);
-                                sendit(tx, sg, t, 1);
+                          console.log(err);
                             }
-                        } else {
-                            hiveClient.api.broadcastTransactionSynchronous(
-                                tx,
-                                function (err, result) {
-                                    if (err && err.data.code == 4030100) {
-                                        console.log("EXPIRED");
-                                        resolve("EXPIRED");
-                                    } else if (err && err.data.code == 3010000) {
-                                        //missing authority
-                                        console.log("MISSING");
-                                    } else if (err && err.data.code == 10) {
-                                        //duplicate transaction
-                                        console.log("SENT:Signer");
-                                        resolve("SENT");
-                                    } else {
-                                        console.log(err);
-                                    }
-                                }
-                            );
                         }
-                    });
+                      }
+                    );
+                } else {
+                    if(config.mode == 'verbose'){
+                        console.log(tx)
+                    }
                 }
             } else {
                 resolve("FAIL");
