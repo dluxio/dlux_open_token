@@ -1,12 +1,14 @@
 # Release Notes
 
-## 1.4
-
-### 1.4.0
-
-* Allow for API address updates via configuration
-
 ## 1.3
+
+### 1.3.4
+
+* Switch back to hive-tx after updates to package.
+* Retooling transaction verification and broadcasting
+* Quiet logging unless env.mode == 'verbose'
+* Fix error on account update logic
+* Allow for API address updates via configuration
 
 ### 1.3.3
 
