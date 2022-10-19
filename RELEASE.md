@@ -1,11 +1,5 @@
 # Release Notes
 
-## 1.4
-
-### 1.4.0
-
-* Built 1.4 branch for community contributions
-
 ## 1.3
 
 ### 1.3.4
@@ -14,6 +8,7 @@
 * Retooling transaction verification and broadcasting
 * Quiet logging unless env.mode == 'verbose'
 * Fix error on account update logic
+* Allow for API address updates via configuration
 
 ### 1.3.3
 
