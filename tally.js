@@ -103,7 +103,7 @@ exports.tally = (num, plasma, isStreaming) => {
                         }
                     }
                     let threshhold = tally.agreements.votes;
-                    let altThreshhold = tally.agreements.votes - stats.chaos;
+                    let altThreshhold = tally.agreements.votes - (stats.chaos < tally.agreements.votes/3 ? stats.chaos : parseInt(tally.agreements.votes/3));
                     if (Object.keys(runners).length > threshhold)
                         threshhold = Object.keys(runners).length;
                     for (hash in tally.agreements.hashes) {
