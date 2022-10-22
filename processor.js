@@ -3,7 +3,7 @@ const { TXID } = require("./index");
 module.exports = function (
   client,
   nextBlock = 1,
-  prefix = "",
+  prefix = 'dlux_',
   vOpsRequired = false
 ) {
   var onCustomJsonOperation = {}; // Stores the function to be run for each operation id.
@@ -151,9 +151,9 @@ module.exports = function (
     client.database
       .getBlock(bln)
       .then((result) => {
-        if(result){
-            blocks[parseInt(result.block_id.slice(0, 8), 16)] = result;
-            blocks.manage(bln);
+        if (result) {
+          blocks[parseInt(result.block_id.slice(0, 8), 16)] = result;
+          blocks.manage(bln);
         }
       })
       .catch((e) => {
@@ -179,20 +179,20 @@ module.exports = function (
                 gbr(bln, at + 1);
               }, Math.pow(10, at + 1));
             } else {
-                console.log('Get block attempt:', at, client.currentAddress)
+              console.log("Get block attempt:", at, client.currentAddress);
             }
           });
       } else {
         setTimeout(() => {
           gb(bln, at + 1);
-        }, 1000);
+        }, Math.pow(10, at + 1));
       }
     }
     function gbr(bln, count, at) {
       if (bln > TXID.saveNumber + 150)
         setTimeout(() => {
-          gbr(bln, count, at);
-        }, 2000);
+          gbr(bln, count, at + 1);
+        }, Math.pow(10, at + 1));
       else
         fetch(client.currentAddress, {
           body: `{"jsonrpc":"2.0", "method":"block_api.get_block_range", "params":{"starting_block_num": ${bln}, "count": ${count}}, "id":1}`,
@@ -235,7 +235,9 @@ module.exports = function (
           })
           .catch((err) => {
             if (at < 3) {
-              setTimeout(()=>{gb(bn, at + 1);},Math.pow(10, at + 1))
+              setTimeout(() => {
+                gb(bn, at + 1);
+              }, Math.pow(10, at + 1));
             } else {
               console.log("Get block range error", err);
             }

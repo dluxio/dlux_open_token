@@ -1,10 +1,10 @@
 const config = require('./config');
-const VERSION = 'v1.3.5'
+const VERSION = 'v1.3.6'
 exports.VERSION = VERSION
 exports.exit = exit;
 exports.processor = processor;
 const hive = require('@hiveio/dhive');
-var client = new hive.Client(config.clientURL);
+var client = new hive.Client(config.clients);
 exports.client = client
 var block = {
     ops:[],
