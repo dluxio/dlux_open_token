@@ -13,6 +13,7 @@ module.exports = function (
   var onNewBlock = function () {};
   var onStreamingStart = function () {};
   var behind = 0;
+  var outstanding_requests = 0
   var isStreaming;
   var vOps = false;
   var stream;
@@ -118,7 +119,7 @@ module.exports = function (
         body: `{"jsonrpc":"2.0", "method":"condenser_api.get_ops_in_block", "params":[${bn},true], "id":1}`,
         headers: {
           "Content-Type": "application/x-www-form-urlencoded",
-          "User-Agent": `${prefix}-HoneyComb/${account}`,
+          "User-Agent": `${prefix}HoneyComb/${account}`,
         },
         method: "POST",
       })
@@ -191,21 +192,23 @@ module.exports = function (
       }
     }
     function gbr(bln, count, at) {
+      outstanding_requests++
       if (bln > TXID.saveNumber + 150)
         setTimeout(() => {
           gbr(bln, count, at + 1);
         }, Math.pow(10, at + 1));
-      else
+      else if (outstanding_requests < 3)
         fetch(client.currentAddress, {
           body: `{"jsonrpc":"2.0", "method":"block_api.get_block_range", "params":{"starting_block_num": ${bln}, "count": ${count}}, "id":1}`,
           headers: {
             "Content-Type": "application/x-www-form-urlencoded",
-            "User-Agent": `${prefix}-HoneyComb/${account}`,
+            "User-Agent": `${prefix}HoneyComb/${account}`,
           },
           method: "POST",
         })
           .then((res) => res.json())
           .then((result) => {
+            outstanding_requests--
             var Blocks = result.result.blocks;
             for (var i = 0; i < Blocks.length; i++) {
               const bkn = parseInt(Blocks[i].block_id.slice(0, 8), 16);
@@ -237,6 +240,7 @@ module.exports = function (
               gbr(bln + 100, behind > 200 ? 100 : 200 - behind, at);
           })
           .catch((err) => {
+            outstanding_requests--
             if (at < 3) {
               setTimeout(() => {
                 gb(bn, at + 1);
