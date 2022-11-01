@@ -4,6 +4,7 @@ module.exports = function (
   client,
   nextBlock = 1,
   prefix = 'dlux_',
+  account = 'null',
   vOpsRequired = false
 ) {
   var onCustomJsonOperation = {}; // Stores the function to be run for each operation id.
@@ -117,6 +118,7 @@ module.exports = function (
         body: `{"jsonrpc":"2.0", "method":"condenser_api.get_ops_in_block", "params":[${bn},true], "id":1}`,
         headers: {
           "Content-Type": "application/x-www-form-urlencoded",
+          "User-Agent": `${prefix}-HoneyComb/${account}`,
         },
         method: "POST",
       })
@@ -198,6 +200,7 @@ module.exports = function (
           body: `{"jsonrpc":"2.0", "method":"block_api.get_block_range", "params":{"starting_block_num": ${bln}, "count": ${count}}, "id":1}`,
           headers: {
             "Content-Type": "application/x-www-form-urlencoded",
+            "User-Agent": `${prefix}-HoneyComb/${account}`,
           },
           method: "POST",
         })
