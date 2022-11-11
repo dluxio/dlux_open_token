@@ -13,7 +13,7 @@ module.exports = function (
   var onNewBlock = function () {};
   var onStreamingStart = function () {};
   var behind = 0;
-  var outstanding_requests = 0
+  var head_block
   var isStreaming;
   var vOps = false;
   var stream;
@@ -61,7 +61,38 @@ module.exports = function (
       }
     },
     v: {},
+    requests: {
+      last_range: 0,
+      last_block: 0
+    },
     manage: function (block_num, vOp = false) {
+      if (!head_block || block_num > head_block)
+        getHeadOrIrreversibleBlockNumber(function (result) {
+          head_block = result;
+        });
+      if (
+        !(block_num % 50) &&
+        head_block > blocks.requests.last_range + 200 &&
+        blocks.requests.last_range < block_num + 1000
+      ) {
+        gbr(
+          blocks.requests.last_range + 1,
+          head_block - blocks.requests.last_range + 1 > 100
+            ? 100
+            : 100 - (head_block - blocks.requests.last_range + 1),
+          0
+        );
+        blocks.clean();
+      }
+      if (!(block_num % 100)) {
+        gbr(
+          blocks.requests.last_range + 1,
+          head_block - blocks.requests.last_range + 1 > 100
+            ? 100
+            : 100 - (head_block - blocks.requests.last_range + 1),
+          0
+        );
+      }
       if (blocks.processing) {
         setTimeout(() => {
           blocks.manage(block_num);
@@ -92,6 +123,7 @@ module.exports = function (
         }
         if (!isStreaming || behind < 5) {
           getHeadOrIrreversibleBlockNumber(function (result) {
+            head_block = result
             if (nextBlock < result - 3) {
               behind = result - nextBlock;
               beginBlockComputing();
@@ -141,6 +173,7 @@ module.exports = function (
 
   function isAtRealTime(computeBlock) {
     getHeadOrIrreversibleBlockNumber(function (result) {
+      head_block = result;
       if (nextBlock >= result) {
         beginBlockStreaming();
       } else {
@@ -168,47 +201,51 @@ module.exports = function (
     if (behind && !stopping) gbr(bn, behind > 100 ? 100 : behind, 0);
     if (stopping) stream = undefined;
     else if (!stopping) gb(bn, 0);
-    function gb(bln, at) {
-      if (bln < TXID.saveNumber + 50) {
-        client.database
-          .getBlock(bln)
-          .then((result) => {
-            blocks[parseInt(result.block_id.slice(0, 8), 16)] = result;
-            blocks.manage(bln);
-          })
-          .catch((err) => {
-            if (at < 3) {
-              setTimeout(() => {
-                gbr(bln, at + 1);
-              }, Math.pow(10, at + 1));
-            } else {
-              console.log("Get block attempt:", at, client.currentAddress);
-            }
-          });
-      } else {
-        setTimeout(() => {
-          gb(bln, at + 1);
-        }, Math.pow(10, at + 1));
-      }
-    }
-    function gbr(bln, count, at) {
-      outstanding_requests++
-      if (bln > TXID.saveNumber + 150)
-        setTimeout(() => {
-          gbr(bln, count, at + 1);
-        }, Math.pow(10, at + 1));
-      else if (outstanding_requests < 3)
-        fetch(client.currentAddress, {
-          body: `{"jsonrpc":"2.0", "method":"block_api.get_block_range", "params":{"starting_block_num": ${bln}, "count": ${count}}, "id":1}`,
-          headers: {
-            "Content-Type": "application/x-www-form-urlencoded",
-            "User-Agent": `${prefix}HoneyComb/${account}`,
-          },
-          method: "POST",
+  }
+
+  function gb(bln, at) {
+    if(blocks[bln]){
+      blocks.manage(bln)
+      return
+    } else if( blocks.requests.last_block == bln)return
+    if (bln < TXID.saveNumber + 50) {
+      blocks.requests.last_block = bln;
+      client.database
+        .getBlock(bln)
+        .then((result) => {
+          blocks[parseInt(result.block_id.slice(0, 8), 16)] = result;
+          blocks.manage(bln);
         })
-          .then((res) => res.json())
-          .then((result) => {
-            outstanding_requests--
+        .catch((err) => {
+          if (at < 3) {
+            setTimeout(() => {
+              gbr(bln, at + 1);
+            }, Math.pow(10, at + 1));
+          } else {
+            console.log("Get block attempt:", at, client.currentAddress);
+          }
+        });
+    } else {
+      setTimeout(() => {
+        gb(bln, at + 1);
+      }, Math.pow(10, at + 1));
+    }
+  }
+  function gbr(bln, count, at) {
+    if (!at && blocks.requests.last_range > bln) return;
+    console.log({ bln, count, at });
+    if(!at)blocks.requests.last_range = bln + count - 1;
+      fetch(client.currentAddress, {
+        body: `{"jsonrpc":"2.0", "method":"block_api.get_block_range", "params":{"starting_block_num": ${bln}, "count": ${count}}, "id":1}`,
+        headers: {
+          "Content-Type": "application/x-www-form-urlencoded",
+          "User-Agent": `${prefix}HoneyComb/${account}`,
+        },
+        method: "POST",
+      })
+        .then((res) => res.json())
+        .then((result) => {
+          try {
             var Blocks = result.result.blocks;
             for (var i = 0; i < Blocks.length; i++) {
               const bkn = parseInt(Blocks[i].block_id.slice(0, 8), 16);
@@ -236,20 +273,27 @@ module.exports = function (
               }
             }
             blocks.manage(bln);
-            if (behind > 100)
-              gbr(bln + 100, behind > 200 ? 100 : 200 - behind, at);
-          })
-          .catch((err) => {
-            outstanding_requests--
+          } catch (e) {
+            console.log(e);
             if (at < 3) {
               setTimeout(() => {
-                gb(bn, at + 1);
+                gbr(bln, count, at + 1);
               }, Math.pow(10, at + 1));
             } else {
               console.log("Get block range error", err);
             }
-          });
-    }
+          }
+        })
+        .catch((err) => {
+          console.log(err)
+          if (at < 3) {
+            setTimeout(() => {
+              gbr(bln, count, at + 1);
+            }, Math.pow(10, at + 1));
+          } else {
+            console.log("Get block range error", err);
+          }
+        });
   }
 
   function beginBlockComputing() {
