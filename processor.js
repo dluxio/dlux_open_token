@@ -37,7 +37,7 @@ module.exports = function (
               }
             });
         }
-      }, 6000);
+      }, 1000);
     },
     clean: function (stop = false) {
       var blockNums = Object.keys(blocks);
