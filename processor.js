@@ -66,9 +66,10 @@ module.exports = function (
       last_block: 0
     },
     manage: function (block_num, vOp = false) {
-      if (!head_block || block_num > head_block)
+      if (!head_block || block_num > head_block || !(block_num%100))
         getHeadOrIrreversibleBlockNumber(function (result) {
           head_block = result;
+          behind = result - nextBlock;
         });
       if (
         !(block_num % 50) &&
@@ -280,7 +281,7 @@ module.exports = function (
                 gbr(bln, count, at + 1);
               }, Math.pow(10, at + 1));
             } else {
-              console.log("Get block range error", err);
+              console.log("Get block range error", e);
             }
           }
         })
@@ -311,6 +312,8 @@ module.exports = function (
     stream.on("data", function (Block) {
       var blockNum = parseInt(Block.block_id.slice(0, 8), 16);
       blocks[blockNum] = Block;
+      blocks.requests.last_block = blockNum;
+      blocks.requests.last_range = blockNum;
       blocks.manage(blockNum);
     });
     stream.on("end", function () {
