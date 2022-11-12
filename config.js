@@ -22,7 +22,9 @@ const typeDefs = ENV.APPTYPES || {
 }
 const history = ENV.history || 3600
 const stream = ENV.stream || 'irreversible'
-const mode = ENV.mode || 'normal'
+const mode = ENV.mode || "normal";
+const timeoutStart = ENV.timeoutStart || 180000;
+const timeoutContinuous = ENV.timeoutContinuous || 30000;
 
 // testing configs for replays
 const override = ENV.override || 0 //69116600 //will use standard restarts after this blocknumber
@@ -51,8 +53,8 @@ const ipfsprotocol = ENV.ipfsprotocol || 'https' //IPFS upload/download protocol
 const bidRate = ENV.BIDRATE || 2500 //
 
 //HIVE CONFIGS
-var startURL = ENV.STARTURL || "https://api.hive.blog/";
-var clientURL = ENV.APIURL || "https://api.hive.blog/";
+var startURL = ENV.STARTURL || "https://hive-api.dlux.io/";
+var clientURL = ENV.APIURL || "https://hive-api.dlux.io/";
 const clients = ENV.clients
   ? ENV.clients.split(" ")
   : [
@@ -81,7 +83,7 @@ const msPubMemo = 'STM5GNM3jpjWh7Msts5Z37eM9UPfGwTMU7Ksats3RdKeRaP5SveR9' //memo
 const msPriMemo = '5KDZ9fzihXJbiLqUCMU2Z2xU8VKb9hCggyRPZP37aprD2kVKiuL'
 const msmeta = ''
 const mainAPI = 'token.dlux.io' //leaders API probably
-const mainRender = 'dluxdata.herokuapp.com' //data and render server
+const mainRender = 'data.dlux.io' //data and render server
 const mainFE = 'dlux.io' //frontend for content
 const mainIPFS = 'a.ipfs.dlux.io' //IPFS service
 const mainICO = 'robotolux' //Account collecting ICO HIVE
@@ -187,6 +189,8 @@ let config = {
     msowner,
     mspublic,
     memoKey,
+    timeoutContinuous,
+    timeoutStart,
     follow,
     NODEDOMAIN,
     hookurl,

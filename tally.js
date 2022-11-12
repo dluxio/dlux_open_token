@@ -103,7 +103,11 @@ exports.tally = (num, plasma, isStreaming) => {
                         }
                     }
                     let threshhold = tally.agreements.votes;
-                    let altThreshhold = tally.agreements.votes - (stats.chaos < tally.agreements.votes/3 ? stats.chaos : parseInt(tally.agreements.votes/3));
+                    let altThreshhold =
+                      tally.agreements.votes -
+                      (stats.chaos < tally.agreements.votes / 3
+                        ? stats.chaos
+                        : parseInt(tally.agreements.votes / 3));
                     if (Object.keys(runners).length > threshhold)
                         threshhold = Object.keys(runners).length;
                     for (hash in tally.agreements.hashes) {
@@ -131,13 +135,13 @@ exports.tally = (num, plasma, isStreaming) => {
                             ) {
                                 var owners = 0;
                                 for (var owner in stats.ms
-                                  .active_account_auths) {
-                                  if (
-                                    nodes[owner].report.hash ==
-                                    tally.agreements.hashes[hash]
-                                  ) {
-                                    owners++;
-                                  }
+                                    .active_account_auths) {
+                                    if (
+                                        nodes[owner].report.hash ==
+                                        tally.agreements.hashes[hash]
+                                    ) {
+                                        owners++;
+                                    }
                                 }
                                 if (owners >= stats.ms.active_threshold) {
                                     consensus = tally.agreements.hashes[hash];
@@ -541,12 +545,12 @@ function isValidSig(trx, sig, key) {
 exports.verify_sig = isValidSig;
 
 function isValidTxSig(trx, sig, key) {
-  const publicKey = hiveTx.PublicKey.from(key);
-  const tx = new hiveTx.Transaction(trx);
-  const message = tx.digest().digest
-  const valid = publicKey.verify(message, hiveTx.Signature.from(sig));
-  if(config.mode == 'verbose')console.log({trx, key, valid})
-  return valid
+    const publicKey = hiveTx.PublicKey.from(key);
+    const tx = new hiveTx.Transaction(trx);
+    const message = tx.digest().digest
+    const valid = publicKey.verify(message, hiveTx.Signature.from(sig));
+    if (config.mode == 'verbose') console.log({ trx, key, valid })
+    return valid
 }
 
 exports.verify_tx_sig = isValidTxSig;
@@ -557,7 +561,7 @@ function verify(trx, sig, at, active = true) {
         sendit(trx, sig, at);
 
         function sendit(tx, sg, t, f) {
-            if(config.mode == 'verbose')console.log(sg)
+            if (config.mode == 'verbose') console.log(sg)
             if (sg.length >= t || !f) {
                 var signatures = [];
                 if (active) {
@@ -585,30 +589,30 @@ function verify(trx, sig, at, active = true) {
                 if (tx.signatures.length == t && tx.operations.length) {
                     console.log('Attempting MS Broadcast...')
                     hiveClient.api.broadcastTransactionSynchronous(
-                      tx,
-                      function (err, result) {
-                        if (err && err.data.code == 4030100) {
-                          console.log("EXPIRED");
-                          resolve("EXPIRED");
-                        } else if (err && err.data.code == 3010000) {
-                          //missing authority
-                          console.log("MISSING");
-                        } else if (err && err.data.code == 10) {
-                          //duplicate transaction
-                          console.log("SENT:Signer");
-                          resolve("SENT");
-                        } else {
-                            if(result){
-                                console.log('SENT:broadcaster')
+                        tx,
+                        function (err, result) {
+                            if (err && err.data.code == 4030100) {
+                                console.log("EXPIRED");
+                                resolve("EXPIRED");
+                            } else if (err && err.data.code == 3010000) {
+                                //missing authority
+                                console.log("MISSING");
+                            } else if (err && err.data.code == 10) {
+                                //duplicate transaction
+                                console.log("SENT:Signer");
                                 resolve("SENT");
                             } else {
-                          console.log(err);
+                                if (result) {
+                                    console.log('SENT:broadcaster')
+                                    resolve("SENT");
+                                } else {
+                                    console.log(err);
+                                }
                             }
                         }
-                      }
                     );
                 } else {
-                    if(config.mode == 'verbose'){
+                    if (config.mode == 'verbose') {
                         console.log(tx)
                     }
                 }

@@ -204,8 +204,8 @@ exports.dex_sell = (json, from, active, pc) => {
                   type: "sell",
                   t: Date.parse(json.timestamp),
                   block: json.block_num,
-                  base_vol: remaining,
-                  target_vol: thistarget + thisfee,
+                  base_vol: remaining + thisfee,
+                  target_vol: thistarget,
                   target: order.pair,
                   price: next.rate,
                   id: json.transaction_id + i,
@@ -700,7 +700,7 @@ exports.transfer = (json, pc) => {
               },
             ];
             if (royalties) {
-              DEX.buyDluxFromDex(
+              DEX.buyTokenFromDex(
                 royalties,
                 type,
                 json.block_num,
@@ -708,7 +708,7 @@ exports.transfer = (json, pc) => {
                 `n:${set.n}`,
                 json.timestamp
               ).then((empty) => {
-                DEX.buyDluxFromDex(
+                DEX.buyTokenFromDex(
                   fee,
                   type,
                   json.block_num,
@@ -720,7 +720,7 @@ exports.transfer = (json, pc) => {
                 });
               });
             } else {
-              DEX.buyDluxFromDex(
+              DEX.buyTokenFromDex(
                 fee,
                 type,
                 json.block_num,
@@ -1007,7 +1007,7 @@ exports.transfer = (json, pc) => {
               },
             ];
             if (royalties) {
-              DEX.buyDluxFromDex(
+              DEX.buyTokenFromDex(
                 royalties,
                 listing.h,
                 json.block_num,
@@ -1015,7 +1015,7 @@ exports.transfer = (json, pc) => {
                 `n:${set.n}`,
                 json.timestamp
               ).then((empty) => {
-                DEX.buyDluxFromDex(
+                DEX.buyTokenFromDex(
                   fee,
                   listing.h,
                   json.block_num,
@@ -1027,7 +1027,7 @@ exports.transfer = (json, pc) => {
                 });
               });
             } else {
-              DEX.buyDluxFromDex(
+              DEX.buyTokenFromDex(
                 fee,
                 listing.h,
                 json.block_num,
@@ -1555,11 +1555,11 @@ exports.transfer = (json, pc) => {
           if (remaining == order.amount) {
             msg = `@${json.from} set a buy order at ${contrate.rate}.`;
           } else if (json.from != "rn") {
-            msg = `@${json.from} | order recieved.`;
+            msg = `@${json.from} | order received.`;
             waiting = add("rn", fee);
           } else {
             console.log({ fee });
-            msg = `@${json.from} | order recieved.`;
+            msg = `@${json.from} | order received.`;
             bal += fee;
           }
           if (config.hookurl || config.status)
@@ -2027,7 +2027,7 @@ const release = (from, txid, bn, tx_id) => {
                     from: config.msaccount,
                     to: a.from,
                     amount: parseFloat(a.hive / 1000).toFixed(3) + " HIVE",
-                    memo: `Canceled DLUX buy ${a.txid}`,
+                    memo: `Canceled ${config.TOKEN} buy ${a.txid}`,
                   },
                 ];
                 ops.push({
@@ -2071,7 +2071,7 @@ const release = (from, txid, bn, tx_id) => {
                     from: config.msaccount,
                     to: a.from,
                     amount: parseFloat(a.hbd / 1000).toFixed(3) + " HBD",
-                    memo: `Canceled DLUX buy ${a.txid}`,
+                    memo: `Canceled ${config.TOKEN} buy ${a.txid}`,
                   },
                 ];
                 ops.push({

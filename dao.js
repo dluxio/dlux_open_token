@@ -467,7 +467,14 @@ function dao(num) {
                     })
                 }
             ];
-            if(up_op)daops.push({ type: 'put', path: ['mso', `${num}:ac`], data: stringify(['account_update', up_op]) });
+            if (up_op) {
+              daops.push({ type: "del", path: ["mso"] });
+              daops.push({
+                type: "put",
+                path: ["mso", `${num}:ac`],
+                data: stringify(["account_update", up_op]),
+              });
+            }
             daops.push({ type: 'put', path: ['dex'], data: dex });
             daops.push({ type: 'put', path: ['stats'], data: stats });
             daops.push({ type: 'put', path: ['balances'], data: bals });
@@ -584,7 +591,7 @@ function accountUpdate(stats, nodes, arr){
         if(stats.ms.active_account_auths[arr[i]] != 1)differrent = true
     }
     if(!differrent || arr.length < 3)return //don't send duplicate updates, don't reduce key holders below 3
-    //if(arr.length > 3)arr = [arr[0], arr[1], arr[2]]
+    if(arr.length > 40)arr = arr.slice(0,40)
     var updateOp = {
     "account": config.msaccount,
     "active": {

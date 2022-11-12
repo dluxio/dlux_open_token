@@ -691,7 +691,7 @@ exports.runners = (req, res, next) => {
             result,
             runners,
             latest: [
-                {api: "https://spkinstant.hivehoneycomb.com"}
+                {api: "https://token.dlux.io"}
             ],
             node: config.username,
             behind: RAM.behind,
