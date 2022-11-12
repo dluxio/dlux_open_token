@@ -3,8 +3,8 @@ const { TXID } = require("./index");
 module.exports = function (
   client,
   nextBlock = 1,
-  prefix = 'dlux_',
-  account = 'null',
+  prefix = "dlux_",
+  account = "null",
   vOpsRequired = false
 ) {
   var onCustomJsonOperation = {}; // Stores the function to be run for each operation id.
@@ -13,7 +13,7 @@ module.exports = function (
   var onNewBlock = function () {};
   var onStreamingStart = function () {};
   var behind = 0;
-  var head_block
+  var head_block;
   var isStreaming;
   var vOps = false;
   var stream;
@@ -63,10 +63,10 @@ module.exports = function (
     v: {},
     requests: {
       last_range: 0,
-      last_block: 0
+      last_block: 0,
     },
     manage: function (block_num, vOp = false) {
-      if (!head_block || block_num > head_block || !(block_num%100))
+      if (!head_block || block_num > head_block || !(block_num % 100))
         getHeadOrIrreversibleBlockNumber(function (result) {
           head_block = result;
           behind = result - nextBlock;
@@ -76,23 +76,15 @@ module.exports = function (
         head_block > blocks.requests.last_range + 200 &&
         Object.keys(blocks).length < 1000
       ) {
-        gbr(
-          blocks.requests.last_range + 1,
-          100,
-          0
-        );
+        gbr(blocks.requests.last_range + 1, 100, 0);
       }
       if (
         !(block_num % 100) &&
         head_block - blocks.requests.last_range + 1 > 100
       ) {
-        gbr(
-          blocks.requests.last_range + 1,
-          100,
-          0
-        );
+        gbr(blocks.requests.last_range + 1, 100, 0);
       }
-      if(!(block_num % 100))blocks.clean();
+      if (!(block_num % 100)) blocks.clean();
       if (blocks.processing) {
         setTimeout(() => {
           blocks.manage(block_num);
@@ -123,7 +115,7 @@ module.exports = function (
         }
         if (!isStreaming || behind < 5) {
           getHeadOrIrreversibleBlockNumber(function (result) {
-            head_block = result
+            head_block = result;
             if (nextBlock < result - 3) {
               behind = result - nextBlock;
               beginBlockComputing();
@@ -204,10 +196,10 @@ module.exports = function (
   }
 
   function gb(bln, at) {
-    if(blocks[bln]){
-      blocks.manage(bln)
-      return
-    } else if( blocks.requests.last_block == bln)return
+    if (blocks[bln]) {
+      blocks.manage(bln);
+      return;
+    } else if (blocks.requests.last_block == bln) return;
     if (bln < TXID.saveNumber + 50) {
       blocks.requests.last_block = bln;
       client.database
@@ -234,66 +226,66 @@ module.exports = function (
   function gbr(bln, count, at) {
     if (!at && blocks.requests.last_range > bln) return;
     console.log({ bln, count, at });
-    if(!at)blocks.requests.last_range = bln + count - 1;
-      fetch(client.currentAddress, {
-        body: `{"jsonrpc":"2.0", "method":"block_api.get_block_range", "params":{"starting_block_num": ${bln}, "count": ${count}}, "id":1}`,
-        headers: {
-          "Content-Type": "application/x-www-form-urlencoded",
-          "User-Agent": `${prefix}HoneyComb/${account}`,
-        },
-        method: "POST",
-      })
-        .then((res) => res.json())
-        .then((result) => {
-          try {
-            var Blocks = result.result.blocks;
-            for (var i = 0; i < Blocks.length; i++) {
-              const bkn = parseInt(Blocks[i].block_id.slice(0, 8), 16);
-              for (var j = 0; j < Blocks[i].transactions.length; j++) {
-                Blocks[i].transactions[j].block_num = bkn;
-                Blocks[i].transactions[j].transaction_id =
-                  Blocks[i].transaction_ids[j];
-                Blocks[i].transactions[j].transaction_num = j;
-                var ops = [];
-                for (
-                  var k = 0;
-                  k < Blocks[i].transactions[j].operations.length;
-                  k++
-                ) {
-                  ops.push([
-                    Blocks[i].transactions[j].operations[k].type.replace(
-                      "_operation",
-                      ""
-                    ),
-                    Blocks[i].transactions[j].operations[k].value,
-                  ]);
-                }
-                Blocks[i].transactions[j].operations = ops;
-                blocks[bkn] = Blocks[i];
+    if (!at) blocks.requests.last_range = bln + count - 1;
+    fetch(client.currentAddress, {
+      body: `{"jsonrpc":"2.0", "method":"block_api.get_block_range", "params":{"starting_block_num": ${bln}, "count": ${count}}, "id":1}`,
+      headers: {
+        "Content-Type": "application/x-www-form-urlencoded",
+        "User-Agent": `${prefix}HoneyComb/${account}`,
+      },
+      method: "POST",
+    })
+      .then((res) => res.json())
+      .then((result) => {
+        try {
+          var Blocks = result.result.blocks;
+          for (var i = 0; i < Blocks.length; i++) {
+            const bkn = parseInt(Blocks[i].block_id.slice(0, 8), 16);
+            for (var j = 0; j < Blocks[i].transactions.length; j++) {
+              Blocks[i].transactions[j].block_num = bkn;
+              Blocks[i].transactions[j].transaction_id =
+                Blocks[i].transaction_ids[j];
+              Blocks[i].transactions[j].transaction_num = j;
+              var ops = [];
+              for (
+                var k = 0;
+                k < Blocks[i].transactions[j].operations.length;
+                k++
+              ) {
+                ops.push([
+                  Blocks[i].transactions[j].operations[k].type.replace(
+                    "_operation",
+                    ""
+                  ),
+                  Blocks[i].transactions[j].operations[k].value,
+                ]);
               }
-            }
-            blocks.manage(bln);
-          } catch (e) {
-            console.log(e);
-            if (at < 3) {
-              setTimeout(() => {
-                gbr(bln, count, at + 1);
-              }, Math.pow(10, at + 1));
-            } else {
-              console.log("Get block range error", e);
+              Blocks[i].transactions[j].operations = ops;
+              blocks[bkn] = Blocks[i];
             }
           }
-        })
-        .catch((err) => {
-          console.log(err)
+          blocks.manage(bln);
+        } catch (e) {
+          console.log(e);
           if (at < 3) {
             setTimeout(() => {
               gbr(bln, count, at + 1);
             }, Math.pow(10, at + 1));
           } else {
-            console.log("Get block range error", err);
+            console.log("Get block range error", e);
           }
-        });
+        }
+      })
+      .catch((err) => {
+        console.log(err);
+        if (at < 3) {
+          setTimeout(() => {
+            gbr(bln, count, at + 1);
+          }, Math.pow(10, at + 1));
+        } else {
+          console.log("Get block range error", err);
+        }
+      });
   }
 
   function beginBlockComputing() {

@@ -249,7 +249,7 @@ function startApp() {
         if(err){}
         if(res)plasma.id = res.id
     })
-    processor = hiveState(client, startingBlock, config.prefix);
+    processor = hiveState(client, startingBlock, config.prefix, config.username);
     processor.on('send', HR.send);
     processor.on('claim', HR.claim);
     processor.on('node_add', HR.node_add);
