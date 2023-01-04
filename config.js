@@ -45,7 +45,6 @@ const ipfsLinks = ENV.ipfsLinks
       "https://ipfs.3speak.tv/ipfs/",
       "https://infura-ipfs.io/ipfs/",
       "https://ipfs.alloyxuast.co.uk/ipfs/",
-      "https://ipfs1.alloyxuast.tk/ipfs/",
     ];
 
 const ipfsprotocol = ENV.ipfsprotocol || 'https' //IPFS upload/download protocol
