@@ -1,3 +1,7 @@
+# Archived DLUX_OPEN_TOKEN
+## Archived
+This software lives on at disregardfiat/honeycomb
+
 # HoneyComb
 
 This is a Decentralized Autonomous Organization built on the HIVE ecosystem. Customize it as you need
